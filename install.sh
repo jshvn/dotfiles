@@ -10,11 +10,10 @@ ln -sf "$HOME"/Git/personal/dotfiles/ssh/.ssh/config "$HOME"/.ssh/config
 
 # Get Oh My ZSH up and running
 if [ ! -e ~/.oh-my-zsh ]; then
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+  sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 fi
 
 if [ "$(uname)" == "Darwin" ]; then
-  # shellcheck disable=SC1091
   source ./macos/macos.sh
 else
   echo ""
