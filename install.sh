@@ -8,14 +8,6 @@ ln -sf "$HOME"/Git/personal/dotfiles/git/.gitconfig "$HOME"/.gitconfig
 ln -sf "$HOME"/Git/personal/dotfiles/git/.gitignore_global "$HOME"/.gitignore_global
 ln -sf "$HOME"/Git/personal/dotfiles/ssh/.ssh/config "$HOME"/.ssh/config
 
-# Get Oh My ZSH up and running
-if [ ! -e ~/.oh-my-zsh ]; then
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
-fi
-
-# Make ZSH the default shell environment (maybe unnecessary on Catalina?)
-# shellcheck disable=SC2230
-chsh -s "$(which zsh)"
 
 if [ "$(uname)" == "Darwin" ]; then
   # shellcheck disable=SC1091
