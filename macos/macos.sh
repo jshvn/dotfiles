@@ -9,6 +9,17 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 GITDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
+if test ! "$(which brew)"; then
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+fi
+
+# Update Homebrew recipes
+brew update
+
+# Install all apps from the Brewfile
+brew tap homebrew/bundle
+brew bundle
+
 if xcode-select -p 1>/dev/null; then
   echo "Xcode Command Line Tools already installed, skipping installation"
 else
