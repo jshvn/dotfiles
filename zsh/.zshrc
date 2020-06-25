@@ -80,6 +80,11 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
+DIR="${(%):-%N}"
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+source $DIR/zsh/aliases.zsh
+source $DIR/zsh/functions.zsh
+
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
