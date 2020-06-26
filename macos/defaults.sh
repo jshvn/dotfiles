@@ -35,5 +35,7 @@ defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 # Four-letter codes for the other view modes: `icnv`, `clmv`, `Flwv`
 defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
 
+# Turn off the guest account
+sysadminctl -guestAccount off
 
 echo "All done! Some of these changes require a logout/restart to take effect."
