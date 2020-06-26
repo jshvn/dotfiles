@@ -11,6 +11,7 @@ tap "homebrew/cask-versions"
 
 brew "mas"
 brew "wget"
+brew "coreutils"
 
 ###############################
 #  macOS Apps via Cask        #

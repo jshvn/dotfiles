@@ -2,6 +2,8 @@
 ###### General
 ##############################
 
+alias ls="/usr/local/bin/gls --color=always"
+
 # reload current configuration
 alias reload="source ~/.zshrc"
 
