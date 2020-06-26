@@ -13,6 +13,7 @@ brew "mas" # https://github.com/mas-cli/mas
 brew "wget"
 brew "coreutils"
 brew "glow" # https://github.com/charmbracelet/glow
+brew "highlight"
 
 ###############################
 #  macOS Apps via Cask        #

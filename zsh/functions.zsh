@@ -1,3 +1,4 @@
+
 # Start a bash shell inside of a running Docker container
 docker-bash() {
   docker exec -ti $1 /bin/bash

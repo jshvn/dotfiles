@@ -7,14 +7,32 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 GITDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 parentdir="$(dirname "$GITDIR")"
-cheatsdir="$(dirname "$parentdir")"/cheat/
+rootdir="$(dirname "$parentdir")"
+cheatsdir="$rootdir"/cheat/
  
+
+cheathelp="""
+Available cheat functions:
+    $ cheat reload      :   reloads zsh configuration
+    $ cheat conda [pdf] :   lists useful conda functions and operations. append 'pdf' to open pdf copy    
+    $ cheat zsh         :   lists useful zsh tips and tricks
+    $ cheat aliases     :   lists all of the custom aliases defined in dotfiles
+    $ cheat functions   :   lists all of the custom fucntions defined in dotfiles
+    $ cheat help        :   views this help document
+"""
+
 
 function cheat() {
     case $1 in
-        conda)   glow --style "$cheatsdir/glow_style.json" "$cheatsdir/conda.md"    ;;
-        help)    echo "blah"     ;;
-        *)       echo "'$1' wasn't found in list of cheat sheets" ;;
+        conda)              
+            case $2 in 
+                pdf)        open "$cheatsdir/pdf/conda.pdf"                                         ;;
+                *)          glow --style "$cheatsdir/glow_style.json" "$cheatsdir/md/conda.md"      ;;
+            esac
+        ;;
+        zsh|bash|sh)        glow --style "$cheatsdir/glow_style.json" "$cheatsdir/md/zsh.md"        ;;
+        alias|aliases)      highlight "$rootdir/zsh/aliases.zsh"                                    ;;
+        func|functions)     highlight "$rootdir/zsh/functions.zsh"                                  ;;
+        help|*)             echo "$cheathelp"                                                       ;;
     esac
-
 }
