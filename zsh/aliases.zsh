@@ -8,6 +8,16 @@ alias reload="source ~/.zshrc"
 # open finder at current location
 alias finder="open -a Finder ./"
 
+# going afk
+alias afk="/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession -suspend"
+
+# Print each PATH entry on a separate line
+alias path='echo -e ${PATH//:/\\n}'
+
+# Show/hide hidden files in Finder
+alias findershow="defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder"
+alias finderhide="defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder"
+
 ##############################
 ###### Networking
 ##############################
@@ -21,6 +31,7 @@ alias ipv6="curl -6 simpip.com --max-time 1 --proto-default https --silent"
 alias ip="ipv4; ipv6; iploc"
 alias iploc="ipconfig getifaddr en0"
 alias ips="ip; ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }'"
+
 
 ##############################
 ###### Keys

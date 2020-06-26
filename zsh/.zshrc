@@ -91,6 +91,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
 source $DIR/aliases.zsh
 source $DIR/functions.zsh
+source $DIR/theme.zsh
 
 # User configuration
 
@@ -133,6 +134,5 @@ fi
 unset __conda_setup
 # <<< conda initialize <<<
 
-
 # Path to cloned dotfiles repo
-export DOTFILES=$HOME/git/personal/dotfiles
+export DOTFILES=$DIR
