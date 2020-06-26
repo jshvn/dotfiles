@@ -1,1 +1,0 @@
-wget --user-agent="Mozilla" -O - https://www.redfin.ca/ab/edmonton/23-Windermere-Dr-SW-T6W-0S2/home/157322426 | echo -e $(egrep -o "https:\\\\u002F\\\\u002Fssl.cdn-redfin.com\\\\u002Fphoto\\\\u002F\d*247\\\\u002Fbigphoto\\\\u002F426\\\\u002FE[0-9_]*.jpg") | xargs wget --user-agent="Mozilla" | rm *.jpg.*

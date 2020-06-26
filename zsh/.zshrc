@@ -79,6 +79,7 @@ plugins=(
 )
 
 source $ZSH/oh-my-zsh.sh
+echo "Loaded $ZSH/oh-my-zsh.sh"
 
 # find git directory
 SOURCE="${(%):-%N}"
@@ -89,9 +90,28 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 GITDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
+
+# load ZSH custom alisess
 source $GITDIR/aliases.zsh
+echo "Loaded $GITDIR/aliases.zsh"
+
+# load ZSH custom functions
 source $GITDIR/functions.zsh
+echo "Loaded $GITDIR/functions.sh"
+
+# load ZSH custom themes
 source $GITDIR/theme.zsh
+echo "Loaded $GITDIR/functions.sh"
+
+# load helper scripts
+for file in "$GITDIR/scripts/"*
+do
+    if [[ -f $file ]]; then
+        source $file
+        echo "Loaded $file"
+    fi
+done
+
 
 # User configuration
 
