@@ -8,12 +8,17 @@ This was sourced from: [https://docs.conda.io/projects/conda/en/4.6.0/_downloads
 
 |Task|Command|
 |:--|:--|
-|* Verify conda is installed, check version number|`$ conda info`|
-|* Update conda to the current version|`$ conda update conda`|
-|* Install a package included in Anaconda|`$ conda install PACKAGENAME`|
-|* Run a package after install, example Spyder*|`$ spyder`|
-|* Update any installed program|`$ conda update PACKAGENAME`|
-|* Command line help|`$ conda install --help`|
+|**Verify conda is installed**, check version number|`$ conda info`|
+|||
+|**Update conda** to the current version|`$ conda update conda`|
+|||
+|**Install a package** included in Anaconda|`$ conda install PACKAGENAME`|
+|||
+|**Run a package** after install, example Spyder*|`$ spyder`|
+|||
+|**Update** any installed program|`$ conda update PACKAGENAME`|
+|||
+|Command line help|`$ conda install --help`|
 
 ### Using environments
 
