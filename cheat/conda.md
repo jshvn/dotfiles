@@ -32,7 +32,7 @@ This was sourced from: [https://docs.conda.io/projects/conda/en/4.6.0/_downloads
 |* Create environment from a text file|`$ conda env create --file bio-env.txt `|
 |* Stack commands: create a new environment, name it bio-env and install the biopython package|`$ conda create --name bio-env biopython`|
 
-### finding conda packages
+### Finding conda packages
 
 |Task|Command|
 |:--|:--|
@@ -43,11 +43,17 @@ This was sourced from: [https://docs.conda.io/projects/conda/en/4.6.0/_downloads
 |Task|Command|
 |:--|:--|
 |* Install a new package (Jupyter Notebook) in the active environment|`$ conda install jupyter`|
+|||
 |* Run an installed package (Jupyter Notebook)|`$ jupyter-notebook`|
+|||
 |* Install a new package (toolz) in a different environment (bio-env)|`$ conda install --name bio-env toolz`|
+|||
 |* Update a package in the current environment|`$ conda update scikit-learn`|
+|||
 |* Install a package (boltons) from a specific channel (conda-forge)|`$ conda install --channel conda-forge boltons`|
+|||
 |* Install a package directly from PyPI into the current active environment using pip|`$ pip install boltons`|
+|||
 |* Remove one or more packages (toolz, boltons) from a specific environment (bio-env)|`$ conda remove --name bio-env toolz boltons`|
 
 
@@ -60,9 +66,6 @@ This was sourced from: [https://docs.conda.io/projects/conda/en/4.6.0/_downloads
 |* Switch to the new environment that has a different version of Python|`$  source activate py34`|
 |* Show the locations of all versions of Python that are currently in the path|`$ which -a python`|
 |* Show version information for the current active Python|`$ python --version`|
-|* |`$ `|
-|* |`$ `|
-|* |`$ `|
 
 ### Specifying version numbers
 
