@@ -10,6 +10,7 @@ tap "homebrew/cask-versions"
 ###############################
 
 brew "mas"
+brew "wget"
 
 ###############################
 #  macOS Apps via Cask        #
@@ -36,6 +37,8 @@ cask "appcleaner"
 ###############################
 #  macOS Apps via App Store   #
 ###############################
+
+# to see existing macOS apps, run $ mast list
 
 # Apple
 mas "Xcode", id: 497799835
