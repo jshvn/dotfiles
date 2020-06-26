@@ -12,6 +12,7 @@ tap "homebrew/cask-versions"
 brew "mas"
 brew "wget"
 brew "coreutils"
+brew "glow"
 
 ###############################
 #  macOS Apps via Cask        #
