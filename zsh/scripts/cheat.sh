@@ -30,6 +30,12 @@ function cheat() {
                 *)          glow --style "$cheatsdir/glow_style.json" "$cheatsdir/md/conda.md"      ;;
             esac
         ;;
+        git)              
+            case $2 in 
+                pdf)        open "$cheatsdir/pdf/git.pdf"                                         ;;
+                *)          glow --style "$cheatsdir/glow_style.json" "$cheatsdir/md/git.md"      ;;
+            esac
+        ;;
         zsh|bash|sh)        glow --style "$cheatsdir/glow_style.json" "$cheatsdir/md/zsh.md"        ;;
         alias|aliases)      highlight "$rootdir/zsh/aliases.zsh"                                    ;;
         func|functions)     highlight "$rootdir/zsh/functions.zsh"                                  ;;
