@@ -13,7 +13,7 @@ GITDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
 # Set up symbolic links for ZSH and Git pointing to this cloned repo
 ln -sf "$GITDIR"/zsh/.zshrc "$HOME"/.zshrc
-ln -sf "$GITDIR"zsh/aliases.zsh "$HOME"/.aliases.zsh
+ln -sf "$GITDIR"/zsh/aliases.zsh "$HOME"/.aliases.zsh
 ln -sf "$GITDIR"/functions.zsh "$HOME"/.functions.zsh
 ln -sf "$GITDIR"/git/.gitconfig "$HOME"/.gitconfig
 ln -sf "$GITDIR"/git/.gitignore_global "$HOME"/.gitignore_global
