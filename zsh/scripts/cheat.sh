@@ -9,37 +9,24 @@ GITDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 parentdir="$(dirname "$GITDIR")"
 rootdir="$(dirname "$parentdir")"
 cheatsdir="$rootdir"/cheat/
- 
-
-cheathelp="""
-Available cheat functions:
-    $ reload            :   reloads zsh configuration
-    $ cheat conda [pdf] :   lists useful conda functions and operations. append 'pdf' to open pdf copy 
-    $ cheat git [pdf]   :   lists useful git commands. append 'pdf' to open pdf copy   
-    $ cheat zsh         :   lists useful zsh tips and tricks
-    $ cheat aliases     :   lists all of the custom aliases defined in dotfiles
-    $ cheat functions   :   lists all of the custom fucntions defined in dotfiles
-    $ cheat help        :   views this help document
-"""
-
 
 function cheat() {
     case $1 in
         conda)              
             case $2 in 
                 pdf)        open "$cheatsdir/pdf/conda.pdf"                                         ;;
-                *)          glow --style "$cheatsdir/glow_style.json" "$cheatsdir/md/conda.md"      ;;
+                *)          glow --style "$cheatsdir/glow_style.json" -w 120 "$cheatsdir/md/conda.md"      ;;
             esac
         ;;
         git)              
             case $2 in 
                 pdf)        open "$cheatsdir/pdf/git.pdf"                                         ;;
-                *)          glow --style "$cheatsdir/glow_style.json" "$cheatsdir/md/git.md"      ;;
+                *)          glow --style "$cheatsdir/glow_style.json" -w 120 "$cheatsdir/md/git.md"      ;;
             esac
         ;;
-        zsh|bash|sh)        glow --style "$cheatsdir/glow_style.json" "$cheatsdir/md/zsh.md"        ;;
+        zsh|bash|sh)        glow --style "$cheatsdir/glow_style.json" -w 120 "$cheatsdir/md/zsh.md"        ;;
         alias|aliases)      highlight "$rootdir/zsh/aliases.zsh"                                    ;;
         func|functions)     highlight "$rootdir/zsh/functions.zsh"                                  ;;
-        help|*)             echo "$cheathelp"                                                       ;;
+        help|*)             glow --style "$cheatsdir/glow_style.json" -w 120 "$cheatsdir/cheat.md"                                                      ;;
     esac
 }
