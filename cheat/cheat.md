@@ -13,3 +13,11 @@ This file can be found by running `$ cheat` from anywhere on the system as long 
     $ cheat functions   :   lists all of the custom fucntions defined in dotfiles
     $ cheat help        :   views this help document
 ```
+
+
+### File links
+
+Use `⌘ + double click` (command + double click) on these links to open these in the browser.
+
+* [conda pdf](https://github.com/jshvn/dotfiles/blob/master/cheat/pdf/conda.pdf)
+* [git pdf](https://github.com/jshvn/dotfiles/blob/master/cheat/pdf/git.pdf)
