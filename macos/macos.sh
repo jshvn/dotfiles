@@ -9,14 +9,18 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 GITDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
+echo "Installing homebrew..."
 if test ! "$(which brew)"; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
+
 # Update Homebrew recipes
+echo "Updating homebrew..."
 brew update
 
 # Install all apps from the Brewfile
+echo "Installing all packages and applications from the Brewfile"
 brew tap homebrew/bundle
 brew bundle
 
@@ -30,4 +34,6 @@ else
   sudo xcodebuild -license accept
 fi
 
+# Set macOS defaults
+echo "Setting macOS defaults..."
 source "$GITDIR"/defaults.sh
