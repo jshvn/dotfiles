@@ -12,8 +12,9 @@ cheatsdir="$(dirname "$parentdir")"/cheat/
 
 function cheat() {
     case $1 in
-        conda)   glow "$cheatsdir/conda.md"    ;;
+        conda)   glow --style "$cheatsdir/glow_style.json" "$cheatsdir/conda.md"    ;;
         help)    echo "blah"     ;;
         *)       echo "'$1' wasn't found in list of cheat sheets" ;;
     esac
+
 }
