@@ -14,3 +14,5 @@ brew "glow" # https://github.com/charmbracelet/glow
 brew "highlight"
 brew "pcre" 
 brew "htop"
+brew "unrar"
+brew "p7zip"
