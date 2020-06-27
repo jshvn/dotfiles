@@ -9,7 +9,7 @@ fi
 echo 'eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)' >> ~/.profile
 
 # add homebrew to the permanent path variable
-sudo eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
 
 
 # Update Homebrew recipes
