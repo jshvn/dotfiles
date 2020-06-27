@@ -40,6 +40,7 @@ function fs() {
             du $arg .[^.]* ./*;
         else
             find . -type f | du -ah -d1
+        fi;
 	fi;
 }
 
