@@ -67,13 +67,11 @@ else
 
   # now lets make ZSH our default shell
   # this wont take effect until after we have rebooted
-  echo "changing default shell"
   sudo chsh -s $(which zsh)
 
   ####### Step 1
   ####### Setup links
 
-  echo "setting up links"
   # Set up symbolic links for ZSH and Git pointing to this cloned repo
   source "$DOTFILEDIR"/install/linux/link.sh
 
@@ -89,7 +87,6 @@ else
   ####### Step 3
   ####### Run Linux steps
 
-  echo "running linux install steps"
   # run Linux specific install steps
   source "$DOTFILEDIR"/install/linux/linux.sh
 fi
