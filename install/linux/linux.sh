@@ -6,7 +6,7 @@ echo "We're asking for sudo access here so that we can install curl, build-essen
 sudo apt install curl build-essential zsh
 
 # now lets make ZSH our default shell
-usermod -s $(which zsh) $(whoami)
+sudo usermod -s $(which zsh) $(whoami)
 
 echo "Installing homebrew..."
 if test ! "$(which brew)"; then
