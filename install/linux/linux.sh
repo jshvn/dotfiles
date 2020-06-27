@@ -7,16 +7,16 @@ fi
 
 # Update Homebrew recipes
 echo "Updating homebrew..."
-/bin/bash brew update
+brew update
 
 # gcc is needed by a number of binaries, go ahead and install it
-/bin/bash brew install gcc
+brew install gcc
 
 # Install all apps from the Brewfile
-/bin/bash echo "Installing all packages and applications from the Brewfile"
-/bin/bash brew tap homebrew/bundle
-/bin/bash brew bundle --file "$DOTFILEDIR"/install/common/Brewfile
-/bin/bash brew bundle --file "$DOTFILEDIR"/install/linux/Brewfile
+echo "Installing all packages and applications from the Brewfile"
+brew tap homebrew/bundle
+brew bundle --file "$DOTFILEDIR"/install/common/Brewfile
+brew bundle --file "$DOTFILEDIR"/install/linux/Brewfile
 
 # install complete
-/bin/bash echo "Install complete! You'll probably need to log back in to switch to ZSH, or simply run $ chsh -s $(which zsh)"
+echo "Install complete! You'll probably need to log back in to switch to ZSH, or simply run $ chsh -s $(which zsh)"
