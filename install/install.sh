@@ -66,7 +66,8 @@ else
   sudo apt install curl build-essential zsh
 
   # now lets make ZSH our default shell
-  sudo usermod -s $(which zsh) $(whoami)
+  # this wont take effect until after we have rebooted
+  sudo chsh -s $(which zsh)
 
   ####### Step 1
   ####### Setup links
