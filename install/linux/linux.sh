@@ -8,7 +8,7 @@ fi
 # now, because homebrew installs to /home/linuxbrew/.linuxbrew/ by default it obviously won't be in my path 
 # so I need to go ahead and update my path and profile
 echo 'eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)' >> ~/.profile
-eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+#eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
 
 # Update Homebrew recipes
 echo "Updating homebrew..."
