@@ -2,19 +2,14 @@
 #  Taps                       #
 ###############################
 
-tap "homebrew/homebrew-cask"
-tap "homebrew/cask-versions"
+# none!
 
 ###############################
 #  Binaries                   #
 ###############################
 
 brew "mas" # https://github.com/mas-cli/mas 
-brew "wget"
-brew "coreutils"
-brew "glow" # https://github.com/charmbracelet/glow
-brew "highlight"
-brew "pcre" 
+brew "p7zip"
 
 ###############################
 #  macOS Apps via Cask        #
