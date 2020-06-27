@@ -169,6 +169,9 @@ else
     #export VISUAL="code"
     #export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
 
+    # make sure our brew applications can be found
+    eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+
     # load ZSH custom alisess
     source $DOTFILEDIR/zsh/linux/aliases.zsh
 
