@@ -1,3 +1,8 @@
+####################################################################################
+#################################### Common ########################################
+####################################################################################
+
+
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
@@ -6,8 +11,6 @@ export ZSH=$HOME/.oh-my-zsh
 
 # tool defaults
 export EDITOR="nano"
-export VISUAL="code"
-export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
@@ -80,35 +83,6 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
-#  Find dotfile repo directory on this system, set $DOTFILEDIR to contain absolute path
-SOURCE="${(%):-%N}"
-while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
-  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
-  SOURCE="$(readlink "$SOURCE")"
-  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-done
-ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
-DOTFILEDIR="$(dirname "$ZSHDIR")"
-
-
-# load ZSH custom alisess
-source $DOTFILEDIR/zsh/aliases.zsh
-
-# load ZSH custom functions
-source $DOTFILEDIR/zsh/functions.zsh
-
-# load ZSH custom themes
-source $DOTFILEDIR/zsh/theme.zsh
-
-# load helper scripts
-for file in "$DOTFILEDIR/zsh/scripts/"*
-do
-    if [[ -f $file ]]; then
-        source $file
-    fi
-done
-
-
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
@@ -135,19 +109,69 @@ done
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/Users/josh/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/Users/josh/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "/Users/josh/miniconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/Users/josh/miniconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
+#  Find dotfile repo directory on this system, set $DOTFILEDIR to contain absolute path
+SOURCE="${(%):-%N}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+DOTFILEDIR="$(dirname "$ZSHDIR")"
 
-#export $DOTFILEDIR
+# load common ZSH custom themes
+source $DOTFILEDIR/zsh/theme.zsh
+
+# load common helper scripts
+for file in "$DOTFILEDIR/zsh/scripts/"*
+do
+    if [[ -f $file ]]; then
+        source $file
+    fi
+done
+
+
+if [ "$(uname)" == "Darwin" ]; then
+    ####################################################################################
+    #################################### macOS #########################################
+    ####################################################################################
+    export VISUAL="code"
+    export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
+
+    # load ZSH custom alisess
+    source $DOTFILEDIR/zsh/macos/aliases.zsh
+
+    # load ZSH custom functions
+    source $DOTFILEDIR/zsh/macos/functions.zsh
+
+    # >>> conda initialize >>>
+    # !! Contents within this block are managed by 'conda init' !!
+    __conda_setup="$('/Users/josh/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+    if [ $? -eq 0 ]; then
+        eval "$__conda_setup"
+    else
+        if [ -f "/Users/josh/miniconda3/etc/profile.d/conda.sh" ]; then
+            . "/Users/josh/miniconda3/etc/profile.d/conda.sh"
+        else
+            export PATH="/Users/josh/miniconda3/bin:$PATH"
+        fi
+    fi
+    unset __conda_setup
+    # <<< conda initialize <<<
+
+
+else
+    ####################################################################################
+    #################################### Linux #########################################
+    ####################################################################################
+
+    # eventually figure out what to export for visual and browser
+    #export VISUAL="code"
+    #export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
+
+    # load ZSH custom alisess
+    source $DOTFILEDIR/zsh/macos/aliases.zsh
+
+    # load ZSH custom functions
+    source $DOTFILEDIR/zsh/macos/functions.zsh
+fi
