@@ -1,11 +1,11 @@
-# dotfiles
+## 👨🏻‍💻 Josh's dotfiles
 
-This repo is a backup of the environment configuration, SSH settings, macOS settings, general applications, and more for my personal machines.
+This repository is meant to act as a working copy of my computer configuration, SSH settings, macOS settings, general applications, and more for my personal and development machines. 
 
-This is meant to be run on macOS only.
+These dotfiles have only been tested on macOS, but in theory should also work on Linux systems.
 
 
-## Usage
+## 🖥 How to install and use
 
 When setting up a new machine, or wanting to update an existing machine after updates or major changes, run the following commands.
 
@@ -19,7 +19,7 @@ cd dotfiles
 ./install.sh
 ```
 
-### Install details
+### 🛠 Install details
 
 The install process is multi-step and will likely take quite a bit of time to complete depending on your internet connection and machine capability. In general it is recommended to connect via ethernet and let this run until completion.
 
@@ -41,7 +41,7 @@ Installation process:
 * `macos/defaults.sh`
     * script will set systemwide preferences applicable to any macOS install
 
-### ZSH details
+### 🦪 ZSH details
 
 The symlinks that are created during the install process will link to the zsh files located here in this repository. They effectively replace whatever files were already there on the system, which allow me to have the same environment and utilities available on all my machines without much effort.
 
@@ -67,7 +67,7 @@ ZSH scripts:
     * this will set $LS_COLOR / $LSCOLOR overrides
     * this will set $PROMPT overrides
 
-### Notes
+## 📘 Notes
 
 If you chnage the location of this repo on the filesystem, you will need to re-run the `install.sh` script again because the symlinks to the files within this repo will be broken.
 
@@ -75,7 +75,7 @@ The scripts are intelligent enough to work regardless of where the git repo is l
 
 You need not worry about packages being reinstalled: if the packages are already installed, brew will identify that and skip them. Some of the casks and App Store packages will give an error indicating they are already installed - this is expected and can be safely ignored.
 
-## References
+## 📚 References
 
 Some useful places to grab dotfile functionality:
 
