@@ -14,9 +14,10 @@ Brew will give errors when packages are already installed - these can be safely 
 You may need to run the install file more than once as sometimes things can get stuck.
 
 ```
-git clone https://github.com/jshvn/dotfiles.git
-cd dotfiles
-./install.sh
+    $ git clone https://github.com/jshvn/dotfiles.git
+    $ cd dotfiles
+    $ chmod +x install.sh
+    $ ./install.sh
 ```
 
 ### 🛠 Install details
