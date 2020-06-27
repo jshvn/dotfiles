@@ -79,7 +79,7 @@ ZSH scripts:
 
 ## 📘 Notes
 
-If you chnage the location of this repo on the filesystem, you will need to re-run the `install.sh` script again because the symlinks to the files within this repo will be broken.
+If you change the location of this repo on the filesystem, you will need to re-run the `install.sh` script again because the symlinks to the files within this repo will be broken.
 
 The scripts are intelligent enough to work regardless of where the git repo is located on the system. It will automatically pick up the location and make the appropriate symlinks when the `install.sh` script is run.
 
