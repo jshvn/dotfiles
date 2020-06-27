@@ -119,6 +119,12 @@ done
 ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 DOTFILEDIR="$(dirname "$ZSHDIR")"
 
+# load common ZSH aliases
+source $DOTFILEDIR/zsh/common/aliases.zsh
+
+# load common ZSH functions
+source $DOTFILEDIR/zsh/common/functions.zsh
+
 # load common ZSH custom themes
 source $DOTFILEDIR/zsh/theme.zsh
 
