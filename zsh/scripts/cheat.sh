@@ -1,32 +1,23 @@
-# set cheatsdir to the directory where cheat markdown files are located
-SOURCE="${(%):-%N}"
-while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
-    DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-done
-GITDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
-parentdir="$(dirname "$GITDIR")"
-rootdir="$(dirname "$parentdir")"
-cheatsdir="$rootdir"/cheat/
+# set CHEATSDIR to the directory where cheat files are located
+CHEATSDIR="$DOTFILEDIR"/zsh/cheat/
 
 function cheat() {
     case $1 in
         conda)              
             case $2 in 
-                pdf)        open "$cheatsdir/pdf/conda.pdf"                                         ;;
-                *)          glow --style "$cheatsdir/glow_style.json" -w 120 "$cheatsdir/md/conda.md"      ;;
+                pdf)        open "$CHEATSDIR/pdf/conda.pdf"                                         ;;
+                *)          glow --style "$CHEATSDIR/glow_style.json" -w 120 "$CHEATSDIR/md/conda.md"      ;;
             esac
         ;;
         git)              
             case $2 in 
-                pdf)        open "$cheatsdir/pdf/git.pdf"                                         ;;
-                *)          glow --style "$cheatsdir/glow_style.json" -w 120 "$cheatsdir/md/git.md"      ;;
+                pdf)        open "$CHEATSDIR/pdf/git.pdf"                                         ;;
+                *)          glow --style "$CHEATSDIR/glow_style.json" -w 120 "$CHEATSDIR/md/git.md"      ;;
             esac
         ;;
-        zsh|bash|sh)        glow --style "$cheatsdir/glow_style.json" -w 120 "$cheatsdir/md/zsh.md"        ;;
-        alias|aliases)      highlight "$rootdir/zsh/aliases.zsh"                                    ;;
-        func|functions)     highlight "$rootdir/zsh/functions.zsh"                                  ;;
-        help|*)             glow --style "$cheatsdir/glow_style.json" -w 120 "$cheatsdir/cheat.md"                                                      ;;
+        zsh|bash|sh)        glow --style "$CHEATSDIR/glow_style.json" -w 120 "$CHEATSDIR/md/zsh.md"        ;;
+        alias|aliases)      highlight "$DOTFILEDIR/zsh/aliases.zsh"                                    ;;
+        func|functions)     highlight "$DOTFILEDIR/zsh/functions.zsh"                                  ;;
+        help|*)             glow --style "$CHEATSDIR/glow_style.json" -w 120 "$CHEATSDIR/cheat.md"                                                      ;;
     esac
 }

@@ -40,6 +40,7 @@ function fs() {
 	fi;
 }
 
+# Grabs certificates for a given domain name
 function getcertnames() {
 	if [ -z "${1}" ]; then
 		echo "ERROR: No domain specified.";

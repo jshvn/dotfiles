@@ -80,27 +80,28 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
-# find git directory
+#  Find dotfile repo directory on this system, set $DOTFILEDIR to contain absolute path
 SOURCE="${(%):-%N}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
   DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
   SOURCE="$(readlink "$SOURCE")"
   [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
-GITDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+DOTFILEDIR="$(dirname "$ZSHDIR")"
 
 
 # load ZSH custom alisess
-source $GITDIR/aliases.zsh
+source $DOTFILEDIR/zsh/aliases.zsh
 
 # load ZSH custom functions
-source $GITDIR/functions.zsh
+source $DOTFILEDIR/zsh/functions.zsh
 
 # load ZSH custom themes
-source $GITDIR/theme.zsh
+source $DOTFILEDIR/zsh/theme.zsh
 
 # load helper scripts
-for file in "$GITDIR/scripts/"*
+for file in "$DOTFILEDIR/zsh/scripts/"*
 do
     if [[ -f $file ]]; then
         source $file
@@ -149,5 +150,4 @@ fi
 unset __conda_setup
 # <<< conda initialize <<<
 
-# Path to cloned dotfiles repo
-export DOTFILES=$DIR
+#export $DOTFILEDIR
