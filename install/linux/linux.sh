@@ -5,6 +5,13 @@ if test ! "$(which brew)"; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
+# add homebrew to the current shell session
+echo 'eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)' >> ~/.profile
+
+# add homebrew to the permanent path variable
+sudo eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+
+
 # Update Homebrew recipes
 echo "Updating homebrew..."
 brew update
