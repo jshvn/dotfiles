@@ -12,7 +12,7 @@ brew update
 # Install all apps from the Brewfile
 echo "Installing all packages and applications from the Brewfile"
 brew tap homebrew/bundle
-brew bundle --file "$DOTFILEDIR"/apps/Brewfile
+brew bundle --file "$DOTFILEDIR"/macos/apps/Brewfile
 
 if xcode-select -p 1>/dev/null; then
   echo "Xcode Command Line Tools already installed, skipping installation"
