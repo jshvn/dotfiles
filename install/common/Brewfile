@@ -14,4 +14,3 @@ brew "glow" # https://github.com/charmbracelet/glow
 brew "highlight"
 brew "pcre" 
 brew "htop"
-

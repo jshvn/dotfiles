@@ -17,8 +17,8 @@ fi
 # Set up symbolic links for ZSH and Git pointing to this cloned repo
 echo "Setting up symbolic links for ZSH, gitconfig, sshconfig"
 ln -sf "$DOTFILEDIR"/zsh/.zshrc "$HOME"/.zshrc
-ln -sf "$DOTFILEDIR"/zsh/aliases.zsh "$HOME"/.aliases.zsh
-ln -sf "$DOTFILEDIR"/zsh/functions.zsh "$HOME"/.functions.zsh
+ln -sf "$DOTFILEDIR"/zsh/macos/aliases.zsh "$HOME"/.aliases.zsh
+ln -sf "$DOTFILEDIR"/zsh/macos/functions.zsh "$HOME"/.functions.zsh
 ln -sf "$DOTFILEDIR"/git/macos/.gitconfig "$HOME"/.gitconfig
 ln -sf "$DOTFILEDIR"/git/macos/.gitignore_global "$HOME"/.gitignore_global
 ln -sf "$DOTFILEDIR"/ssh/.ssh/config "$HOME"/.ssh/config
