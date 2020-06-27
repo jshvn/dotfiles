@@ -8,6 +8,8 @@
 ### Git for All Platforms
 [git-scm.com](https://git-scm.com)
 
+---
+
 ## Configure tooling
 Configure user information for all local repositories
 
@@ -22,6 +24,8 @@ Sets the email you want attached to your commit transactions
 ```$ git config --global color.ui auto```
 
 Enables helpful colorization of command line output
+
+---
 
 ## Branches
 
@@ -43,6 +47,8 @@ Combines the specified branch's history into the current branch. This is usually
 
 Deletes the specified branch
 
+---
+
 ## Create repositories
 
 When starting out with a new repository, you only need to do it once; either locally, then push to GitHub, or by cloning an existing repository.
@@ -59,9 +65,13 @@ Turn an existing directory into a Git repository
 
 Clone (download) a repository that already exists on GitHub, including all of the files, branches, and commits
 
+---
+
 ## The .gitignore file
 
 Sometimes it may be a good idea to exclude files from being tracked with Git. This is typically done in a special file named `.gitignore`. You can find helpful templates for `.gitignore` files at [github.com/github/gitignore](https://github.com/github/gitignore).
+
+---
 
 ## Synchronize changes
 
@@ -82,6 +92,8 @@ Uploads all local branch commits to GitHub
 ```$ git pull```
 
 Updates your current local working branch with all new commits from the corresponding remote branch on GitHub. `git pull` is a combination of `git fetch` and `git merge`
+
+---
 
 ## Make changes
 
@@ -111,6 +123,8 @@ Snapshots the file in preparation for versioning
 
 Records file snapshots permanently in version history
 
+---
+
 ## Redo commits
 
 Erase mistakes and craft replacement history
@@ -124,6 +138,8 @@ Undoes all commits after `[commit]`, preserving changes locally
 Discards all history and changes back to the specified commit
 
 > CAUTION! Changing history can have nasty side effects. If you need to change commits that exist on GitHub (the remote), proceed with caution. If you need help, reach out at github.community or contact support.
+
+---
 
 ## Glossary
 

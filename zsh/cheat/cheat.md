@@ -30,5 +30,6 @@ This file can be found by running `$ cheat` from anywhere on the system as long 
 
 Use `⌘ + double click` (command + double click) on these links to open these in the browser.
 
+* [dotfiles repo](https://github.com/jshvn/dotfiles)
 * [conda pdf](https://github.com/jshvn/dotfiles/blob/master/zsh/cheat/pdf/conda.pdf)
 * [git pdf](https://github.com/jshvn/dotfiles/blob/master/zsh/cheat/pdf/git.pdf)
