@@ -15,7 +15,7 @@ You may need to run the install file more than once as sometimes things can get 
 
 ```
     $ git clone https://github.com/jshvn/dotfiles.git
-    $ cd dotfiles
+    $ cd dotfiles/install
     $ chmod +x install.sh
     $ ./install.sh
 ```
@@ -26,9 +26,9 @@ The install process is multi-step and will likely take quite a bit of time to co
 
 Installation process:
 
-* `install.sh`
+* `install/install.sh`
     * script will identify dotfiles repo location
-    * script will symlink over ~/.dotfiles to repo location (this includes installing all custom `zsh/aliases.zsh` and `zsh/functions.zsh`)
+    * script will source `install/link.sh`
     * script will load any custom functions available in `zsh/scripts`
     * script will install [oh my zsh](https://github.com/ohmyzsh/ohmyzsh)
     * script will source `macos/macos.sh`
@@ -41,6 +41,15 @@ Installation process:
     * install XCode developer tools and command line application
 * `macos/defaults.sh`
     * script will set systemwide preferences applicable to any macOS install
+
+
+If for some reason you need to update the location of this repository, or change your links around, or just want to make sure your symlinks to the dotfiles are working correctly you can run that directly.
+
+Link process:
+
+* `install/link.sh`
+    * script will symlink over ~/.dotfiles to repo location (this includes installing all custom `zsh/aliases.zsh` and `zsh/functions.zsh`)
+
 
 ### 🦪 ZSH details
 
@@ -82,4 +91,4 @@ Some useful places to grab dotfile functionality:
 
 - https://github.com/mathiasbynens/dotfiles
 - https://github.com/jakejarvis/dotfiles
-
+- https://github.com/holman/dotfiles

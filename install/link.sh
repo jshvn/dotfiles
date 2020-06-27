@@ -9,7 +9,8 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
   SOURCE="$(readlink "$SOURCE")"
   [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
-DOTFILEDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+INSTALLFILEDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+DOTFILEDIR="$(dirname "$INSTALLFILEDIR")"
 
 # Set up symbolic links for ZSH and Git pointing to this cloned repo
 echo "Setting up symbolic links for ZSH, gitconfig, sshconfig"
@@ -19,21 +20,3 @@ ln -sf "$DOTFILEDIR"/zsh/functions.zsh "$HOME"/.functions.zsh
 ln -sf "$DOTFILEDIR"/git/.gitconfig "$HOME"/.gitconfig
 ln -sf "$DOTFILEDIR"/git/.gitignore_global "$HOME"/.gitignore_global
 ln -sf "$DOTFILEDIR"/ssh/.ssh/config "$HOME"/.ssh/config
-
-
-# Get Oh My ZSH up and running
-echo "Installing oh-my-zsh"
-if [ ! -e ~/.oh-my-zsh ]; then
-  sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-fi
-
-# Execute macOS specific setup
-if [ "$(uname)" == "Darwin" ]; then
-  source "$DOTFILEDIR"/macos/macos.sh
-  source "$DOTFILEDIR"/macos/defaults.sh
-else
-  echo ""
-  echo "This isn't a Mac, so we're all done here!"
-  echo "Logout/restart now for the full effects."
-  exit 0
-fi
