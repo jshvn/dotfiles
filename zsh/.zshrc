@@ -170,8 +170,8 @@ else
     #export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
 
     # load ZSH custom alisess
-    source $DOTFILEDIR/zsh/macos/aliases.zsh
+    source $DOTFILEDIR/zsh/linux/aliases.zsh
 
     # load ZSH custom functions
-    source $DOTFILEDIR/zsh/macos/functions.zsh
+    source $DOTFILEDIR/zsh/linux/functions.zsh
 fi
