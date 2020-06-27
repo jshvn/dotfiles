@@ -147,9 +147,6 @@ if [[ $(uname) == "Darwin" ]]; then
     # load ZSH custom alisess
     source $DOTFILEDIR/zsh/macos/aliases.zsh
 
-    # load ZSH custom functions
-    source $DOTFILEDIR/zsh/macos/functions.zsh
-
     # >>> conda initialize >>>
     # !! Contents within this block are managed by 'conda init' !!
     __conda_setup="$('/Users/josh/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
@@ -180,7 +177,4 @@ else
 
     # load ZSH custom alisess
     source $DOTFILEDIR/zsh/linux/aliases.zsh
-
-    # load ZSH custom functions
-    source $DOTFILEDIR/zsh/linux/functions.zsh
 fi
