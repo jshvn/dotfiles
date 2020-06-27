@@ -35,12 +35,6 @@ if [ "$(uname)" == "Darwin" ]; then
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
   fi
 
-  # install homebrew
-  echo "Installing homebrew..."
-  if test ! "$(which brew)"; then
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-  fi
-
   source "$DOTFILEDIR"/install/macos/macos.sh
   source "$DOTFILEDIR"/install/macos/defaults.sh
 else
@@ -50,10 +44,8 @@ else
 #################################### Linux #########################################
 ####################################################################################
   
-  echo "Installing homebrew..."
-  if test ! "$(which brew)"; then
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-  fi
+  source "$DOTFILEDIR"/install/linux/linux.sh
+
   
 fi
 
