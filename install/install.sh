@@ -26,14 +26,26 @@ if [ "$(uname)" == "Darwin" ]; then
 #################################### macOS #########################################
 ####################################################################################
 
+  ####### Step 0
+  ####### Install any dependencies to run the setup scripts
+
+  ####### Step 1
+  ####### Setup links
+
   # Set up symbolic links for ZSH and Git pointing to this cloned repo
   source "$DOTFILEDIR"/install/macos/link.sh
+
+  ####### Step 2
+  ####### Setup ZSH
 
   # Get Oh My ZSH up and running
   echo "Installing oh-my-zsh"
   if [ ! -e ~/.oh-my-zsh ]; then
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
   fi
+
+  ####### Step 3
+  ####### Run macOS steps
 
   # run macOS specific install steps
   source "$DOTFILEDIR"/install/macos/macos.sh
@@ -44,15 +56,38 @@ else
 ####################################################################################
 #################################### Linux #########################################
 ####################################################################################
-  
+
+  ####### Step 0
+  ####### Install any dependencies to run the setup scripts
+
+  # curl isn't always available by default on ubuntu, install it. 
+  # while we're at it, lets install zsh too
+  echo "We're asking for sudo access here so that we can install curl, build-essential, zsh"
+  sudo apt install curl build-essential zsh
+
+  # now lets make ZSH our default shell
+  sudo usermod -s $(which zsh) $(whoami)
+
+  ####### Step 1
+  ####### Setup links
 
   # Set up symbolic links for ZSH and Git pointing to this cloned repo
   source "$DOTFILEDIR"/install/linux/link.sh
 
+  ####### Step 2
+  ####### Setup ZSH
+
+  # Get Oh My ZSH up and running
+  echo "Installing oh-my-zsh"
+  if [ ! -e ~/.oh-my-zsh ]; then
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  fi
+
+  ####### Step 3
+  ####### Run Linux steps
+
   # run Linux specific install steps
   source "$DOTFILEDIR"/install/linux/linux.sh
-
-  
 fi
 
 

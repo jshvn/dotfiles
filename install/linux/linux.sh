@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
 
-# curl isn't always available by default on ubuntu, install it. 
-# while we're at it, lets install zsh too
-echo "We're asking for sudo access here so that we can install curl, build-essential, zsh"
-sudo apt install curl build-essential zsh
-
-# now lets make ZSH our default shell
-sudo usermod -s $(which zsh) $(whoami)
-
 echo "Installing homebrew..."
 if test ! "$(which brew)"; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
