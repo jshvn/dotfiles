@@ -35,6 +35,7 @@ if [ "$(uname)" == "Darwin" ]; then
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
   fi
 
+  # run macOS specific install steps
   source "$DOTFILEDIR"/install/macos/macos.sh
   source "$DOTFILEDIR"/install/macos/defaults.sh
 else
@@ -44,6 +45,11 @@ else
 #################################### Linux #########################################
 ####################################################################################
   
+
+  # Set up symbolic links for ZSH and Git pointing to this cloned repo
+  source "$DOTFILEDIR"/install/linux/link.sh
+
+  # run Linux specific install steps
   source "$DOTFILEDIR"/install/linux/linux.sh
 
   

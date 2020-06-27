@@ -15,10 +15,9 @@ if [[ -z $DOTFILEDIR ]]; then
 fi
 
 # Set up symbolic links for ZSH and Git pointing to this cloned repo
-echo "Setting up symbolic links for ZSH, gitconfig, sshconfig"
-#ln -sf "$DOTFILEDIR"/zsh/.zshrc "$HOME"/.zshrc
-#ln -sf "$DOTFILEDIR"/zsh/aliases.zsh "$HOME"/.aliases.zsh
-#ln -sf "$DOTFILEDIR"/zsh/functions.zsh "$HOME"/.functions.zsh
+echo "Setting up symbolic links for ZSH, gitconfig"
+ln -sf "$DOTFILEDIR"/zsh/.zshrc "$HOME"/.zshrc
+ln -sf "$DOTFILEDIR"/zsh/aliases.zsh "$HOME"/.aliases.zsh
+ln -sf "$DOTFILEDIR"/zsh/functions.zsh "$HOME"/.functions.zsh
 ln -sf "$DOTFILEDIR"/git/linux/.gitconfig "$HOME"/.gitconfig
 ln -sf "$DOTFILEDIR"/git/linux/.gitignore_global "$HOME"/.gitignore_global
-#ln -sf "$DOTFILEDIR"/ssh/.ssh/config "$HOME"/.ssh/config

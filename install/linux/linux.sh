@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 
-# curl isn't always available by default on ubuntu, install it
-echo "We're asking for sudo access here so that we can install curl and build-essential"
-sudo apt install curl build-essential
+# curl isn't always available by default on ubuntu, install it. 
+# while we're at it, lets install zsh too
+echo "We're asking for sudo access here so that we can install curl, build-essential, zsh"
+sudo apt install curl build-essential zsh
+
+# now lets make ZSH our default shell
+usermod -s $(which zsh) $(whoami)
 
 echo "Installing homebrew..."
 if test ! "$(which brew)"; then
@@ -26,3 +30,6 @@ echo "Installing all packages and applications from the Brewfile"
 brew tap homebrew/bundle
 brew bundle --file "$DOTFILEDIR"/install/common/Brewfile
 brew bundle --file "$DOTFILEDIR"/install/linux/Brewfile
+
+# install complete
+echo "Install complete! You'll probably need to log back in to switch to ZSH, or simply run $ chsh -s $(which zsh)"
