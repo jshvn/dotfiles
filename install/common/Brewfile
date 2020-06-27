@@ -10,7 +10,6 @@ tap "homebrew/cask-versions"
 ###############################
 
 brew "wget"
-brew "coreutils"
 brew "glow" # https://github.com/charmbracelet/glow
 brew "highlight"
 brew "pcre" 

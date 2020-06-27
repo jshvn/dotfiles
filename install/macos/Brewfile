@@ -8,6 +8,7 @@
 #  Binaries                   #
 ###############################
 
+brew "coreutils"
 brew "mas" # https://github.com/mas-cli/mas 
 brew "p7zip"
 
