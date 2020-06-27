@@ -65,8 +65,8 @@ ZSH scripts:
     * this will define all the useful custom functions for injection into shell environment
 * `zsh/theme.zsh`
     * this will define any theme overrides
-    * this will set $LS_COLOR / $LSCOLOR overrides
-    * this will set $PROMPT overrides
+    * this will set `$LS_COLOR` / `$LSCOLOR` overrides
+    * this will set `$PROMPT` overrides
 
 ## 📘 Notes
 
