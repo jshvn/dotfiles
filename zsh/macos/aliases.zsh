@@ -2,6 +2,7 @@
 ###### General
 ##############################
 
+# make sure ls always has color
 alias ls="/usr/local/bin/gls --color=always"
 
 # open finder at current location
