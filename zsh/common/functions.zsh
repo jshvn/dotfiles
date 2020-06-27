@@ -36,7 +36,10 @@ function fs() {
 	if [[ -n "$@" ]]; then
 		du $arg -- "$@";
 	else
-		du $arg .[^.]* ./*;
+        if [[ $(uname) == "Darwin" ]]; then
+            du $arg .[^.]* ./*;
+        else
+            find . -type f | du -ah -d1
 	fi;
 }
 
