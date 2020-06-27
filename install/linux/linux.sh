@@ -5,11 +5,6 @@ if test ! "$(which brew)"; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
-# now, because homebrew installs to /home/linuxbrew/.linuxbrew/ by default it obviously won't be in my path 
-# so I need to go ahead and update my path and profile
-/bin/bash echo 'eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)' >> ~/.profile
-#eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
-
 # Update Homebrew recipes
 echo "Updating homebrew..."
 /bin/bash brew update

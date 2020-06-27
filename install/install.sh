@@ -80,6 +80,11 @@ else
   ####### Step 2
   ####### Setup ZSH
 
+  # before we install oh my zsh, set $RUNZSH so that the install script does not automatically
+  # switch into the zsh shell in the midst of running this script (and thereby halting it)
+  # info in script directly
+  export RUNZSH=no
+
   # Get Oh My ZSH up and running
   echo "Installing oh-my-zsh"
   if [ ! -e ~/.oh-my-zsh ]; then
