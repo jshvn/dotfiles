@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-/bin/bash echo "Installing homebrew..."
+echo "Installing homebrew..."
 if test ! "$(which brew)"; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
