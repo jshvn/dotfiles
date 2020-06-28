@@ -10,6 +10,11 @@ Reload shell:
 $ reload
 ```
 
+Update dotfiles:
+```
+$ update
+```
+
 View cheat sheets:
 ```
 $ cheat
