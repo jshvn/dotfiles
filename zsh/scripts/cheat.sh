@@ -30,7 +30,8 @@ function aliaslist() {
     else
         local PLATFORMLIST=$(grep alias "$DOTFILEDIR/zsh/linux/aliases.zsh" | highlight --syntax=bash --out-format=xterm256)
     fi
-    echo "$COMMONLIST\n$PLATFORMLIST"
+    local COMBINED="$COMMONLIST"+"$PLATFORMLIST"
+    echo "$COMBINED" | sort -u -d -s
 }
 
 function functionlist() {
@@ -40,5 +41,6 @@ function functionlist() {
     else
         local PLATFORMLIST=$(grep 'function' "$DOTFILEDIR/zsh/linux/functions.zsh" | highlight --syntax=bash --out-format=xterm256)
     fi
-    echo "$COMMONLIST\n$PLATFORMLIST"
+    local COMBINED="$COMMONLIST"+"$PLATFORMLIST"
+    echo "$COMBINED" | sort -u -d -s
 }
