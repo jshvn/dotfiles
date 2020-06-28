@@ -6,7 +6,7 @@ This file can be found by running `$ cheat` from anywhere on the system as long 
 
 ```
     $ dotfiles              :   navigates to where the dotfiles are installed
-    $ ./bootstrap.sh        :   reinstall and update dotfiles
+    $ update                :   update and reinstall dotfiles from origin
 ```
 
 ### 😇 Cheat functions
