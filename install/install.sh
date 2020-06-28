@@ -111,9 +111,9 @@ fi
 
 echo """
 
-Install complete!
+$(tput setaf 2)Install complete!
 
-Depending on which platform you are running this on, you might need to log out
+$(tput setaf 7)Depending on which platform you are running this on, you might need to log out
 and log back in to activate ZSH. 
 
 You might also need to manually set your shell if the settings didn't take. To
