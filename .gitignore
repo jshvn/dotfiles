@@ -130,3 +130,4 @@ dmypy.json
 
 # macOS
 Brewfile.lock.json
+Brewfile.rb.lock.json
