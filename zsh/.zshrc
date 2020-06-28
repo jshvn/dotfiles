@@ -123,6 +123,9 @@ done
 ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 DOTFILEDIR="$(dirname "$ZSHDIR")"
 
+# load cheat scripts
+source $DOTFILEDIR/zsh/cheat/cheat.zsh
+
 # load common ZSH aliases
 source $DOTFILEDIR/zsh/common/aliases.zsh
 
@@ -133,7 +136,7 @@ source $DOTFILEDIR/zsh/common/functions.zsh
 source $DOTFILEDIR/zsh/theme.zsh
 
 # load common helper scripts
-for file in "$DOTFILEDIR/zsh/scripts/"*
+for file in "$DOTFILEDIR/zsh/common/scripts/"*
 do
     if [[ -f $file ]]; then
         source $file
@@ -148,8 +151,11 @@ if [[ $(uname) == "Darwin" ]]; then
     export VISUAL="code"
     export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
 
-    # load ZSH custom alisess
+    # load ZSH custom aliases
     source $DOTFILEDIR/zsh/macos/aliases.zsh
+
+    # load ZSH custom functions
+    source $DOTFILEDIR/zsh/macos/functions.zsh
 
     # >>> conda initialize >>>
     # !! Contents within this block are managed by 'conda init' !!
@@ -179,6 +185,9 @@ else
     # make sure our brew applications can be found
     eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
 
-    # load ZSH custom alisess
+    # load ZSH custom aliases
     source $DOTFILEDIR/zsh/linux/aliases.zsh
+
+    # load ZSH custom functions
+    source $DOTFILEDIR/zsh/linux/functions.zsh
 fi

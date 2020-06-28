@@ -30,10 +30,11 @@ function aliaslist() {
     local commonlist=$(grep '^alias' "$DOTFILEDIR/zsh/common/aliases.zsh" | highlight --syntax=bash --out-format=xterm256)
     
     # grab all of the platform specific aliases
+    local platformlist="\n"
     if [[ $(uname) == "Darwin" ]]; then
-        local platformlist=$(grep '^alias' "$DOTFILEDIR/zsh/macos/aliases.zsh" | highlight --syntax=bash --out-format=xterm256)
+        platformlist+=$(grep '^alias' "$DOTFILEDIR/zsh/macos/aliases.zsh" | highlight --syntax=bash --out-format=xterm256)
     else
-        local platformlist=$(grep '^alias' "$DOTFILEDIR/zsh/linux/aliases.zsh" | highlight --syntax=bash --out-format=xterm256)
+        platformlist+=$(grep '^alias' "$DOTFILEDIR/zsh/linux/aliases.zsh" | highlight --syntax=bash --out-format=xterm256)
     fi
 
     # combine and print
@@ -46,15 +47,16 @@ function functionlist() {
     local commonlist=$(grep '^function' "$DOTFILEDIR/zsh/common/functions.zsh" | highlight --syntax=bash --out-format=xterm256)
     
     # grab all of the platform specific functions
+    local platformlist="\n"
     if [[ $(uname) == "Darwin" ]]; then
-        local platformlist=$(grep '^function' "$DOTFILEDIR/zsh/macos/functions.zsh" | highlight --syntax=bash --out-format=xterm256)
+        platformlist+=$(grep '^function' "$DOTFILEDIR/zsh/macos/functions.zsh" | highlight --syntax=bash --out-format=xterm256)
     else
-        local platformlist=$(grep '^function' "$DOTFILEDIR/zsh/linux/functions.zsh" | highlight --syntax=bash --out-format=xterm256)
+        platformlist+=$(grep '^function' "$DOTFILEDIR/zsh/linux/functions.zsh" | highlight --syntax=bash --out-format=xterm256)
     fi
 
     # grab all of the functions defined in the scripts directory
     local scriptfunctionlist=""
-    for script in $DOTFILEDIR/zsh/scripts/*; do 
+    for script in $DOTFILEDIR/zsh/common/scripts/*; do 
         scriptfunctionlist+="\n"+$(grep '^function' "$script" | highlight --syntax=bash --out-format=xterm256)
     ; done
 
