@@ -27,7 +27,7 @@ The install process is multi-step and will likely take quite a bit of time to co
 **Install process**
 
 
-* `install/install.sh`
+* **`install/install.sh`**
     * script will identify dotfiles repo location
     * script will check which system it is being run on
     * macos:
