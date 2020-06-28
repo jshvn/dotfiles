@@ -28,6 +28,15 @@ Brew will give errors when packages are already installed - these can be safely 
 
 The install process is multi-step and will likely take quite a bit of time to complete depending on your internet connection and machine capability. In general it is recommended to connect via ethernet and let this run until completion.
 
+
+**Boostrap:**
+
+This launcher will install and configure the complete dotfiles. 
+
+**` $ bootstrap.sh`**
+
+**Install process:**
+
 * **`install/install.sh`**
     * script will identify dotfiles repo location
     * script will check which system it is being run on
@@ -44,7 +53,7 @@ The install process is multi-step and will likely take quite a bit of time to co
         * script will source `install/linux/linux.sh` which installs [homebrew](https://brew.sh/) and macOS specifics like Xcode
 
 
-**Platform specific install process**
+**Platform specific install process:**
 
 * **`install/macos/macos.sh`**
     * script will install [homebrew](https://brew.sh/)
