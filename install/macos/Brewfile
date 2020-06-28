@@ -19,14 +19,14 @@ brew "mas" # https://github.com/mas-cli/mas
 
 cask_args appdir: "/Applications"
 
-cask "discord"
-cask "sourcetree"
-cask "sublime-text"
-cask "cyberduck"
-cask "mountain-duck"
-cask "visual-studio-code"
-cask "spotify"
-cask "appcleaner"
+cask "discord" unless system("test -e /Applications/Discord.app")
+cask "sourcetree" unless system("test -e /Applications/Sourcetree.app")
+cask "sublime-text" unless system("test -e \"/Applications/Sublime Text.app\"")
+cask "cyberduck" unless system("test -e /Applications/Cyberduck.app")
+cask "mountain-duck" unless system("test -e \"/Applications/Mountain Duck.app\"")
+cask "visual-studio-code" unless system("test -e \"/Applications/Visual Studio Code.app\"")
+cask "spotify" unless system("test -e /Applications/Spotify.app")
+cask "appcleaner" unless system("test -e /Applications/AppCleaner.app")
 
 # download these directly from source
 #cask "dropbox"
