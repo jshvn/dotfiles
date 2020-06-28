@@ -5,9 +5,9 @@ This file can be found by running `$ cheat` from anywhere on the system as long 
 ### 👨🏻‍💻 Dotfiles
 
 ```
-    $ dotfiles              :   navigates to where the dotfiles are installed
-    $ reload                :   reloads zsh configuration from dotfiles
-    $ update                :   update and reinstall dotfiles from origin
+    $ dotfiles              :   change directory to where dotfiles are installed
+    $ reload                :   reloads zsh configuration from local dotfiles
+    $ update                :   update and reinstall dotfiles from origin dotfiles
 ```
 
 ### 😇 Cheat functions
