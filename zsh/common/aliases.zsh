@@ -14,3 +14,6 @@ alias dotfiles='cd $DOTFILEDIR'
 
 # enter ncdu
 alias fsa='ncdu'
+
+# update the dotfiles
+alias update='dotfiles; git pull; ./bootstrap.sh;'

@@ -6,6 +6,11 @@ osascript -e 'tell application "System Preferences" to quit'
 # Ask for the administrator password upfront
 sudo -v
 
+echo "We're setting our defaults and preferences now. Some of these require us to use administrator credentials"
+echo "to do so, so we'll ask for your user password now if you haven't already authenticated with sudo."
+echo "In some cases it takes awhile for changes to be made, so you may be asked for your adminstrator"
+echo "credentials one more time."
+
 # Keep-alive: update existing `sudo` time stamp until this script has finished
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
@@ -36,8 +41,6 @@ defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
 
 # Turn off the guest account
-echo "We want to turn off the guest account, but this requires administrator privileges. You might be"
-echo "prompted for your user password now:"
 sudo sysadminctl -guestAccount off
 
 echo "All done! Some of the defaults / preferences changes require a logout/restart to take effect."
