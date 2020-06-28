@@ -119,9 +119,7 @@ and log back in to activate ZSH.
 You might also need to manually set your shell if the settings didn't take. To
 do that you can run the command: $ chsh -s $(which zsh)
 
-If you want to update to the latest version of the dotfiles, run the following commands:
-    $ dotfiles
-    $ git pull
-    $ ./bootstrap.sh
+If you want to update to the latest version of the dotfiles, run the following command:
+    $ update
 
 """
