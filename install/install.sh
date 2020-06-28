@@ -65,16 +65,13 @@ else
   echo "We're asking for sudo access here so that we can install curl, build-essential, zsh"
   sudo apt install curl build-essential zsh
 
-  # now lets make ZSH our default shell
+  # now lets make ZSH our default shell if it is not already
   # this wont take effect until after we have rebooted
-  echo "We're going to update our default shell to ZSH and to do that you need to enter your password:"
   ISZSHDEFAULTSHELL=$(awk -F: -v user="$USER" '$1 == user {print $NF}' /etc/passwd)
-  if [ "$ISZSHDEFAULTSHELL" == "$(which zsh)" ]; then
-    echo "some shit"
+  if [ "$ISZSHDEFAULTSHELL" != "$(which zsh)" ]; then
+    echo "We're going to update our default shell to ZSH and to do that you need to enter your password:"
+    chsh -s $(which zsh)
   fi
-
-  exit 0 
-  chsh -s $(which zsh)
 
   ####### Step 1
   ####### Setup oh my zsh
