@@ -68,7 +68,7 @@ else
   # now lets make ZSH our default shell
   # this wont take effect until after we have rebooted
   echo "We're going to update our default shell to ZSH and to do that you need to enter your password:"
-  local ISZSHDEFAULTSHELL=$(awk -F: -v user="$USER" '$1 == user {print $NF}' /etc/passwd)
+  ISZSHDEFAULTSHELL=$(awk -F: -v user="$USER" '$1 == user {print $NF}' /etc/passwd)
   if [ "$ISZSHDEFAULTSHELL" != $(which zsh)]; then
     echo "some shit"
   fi
