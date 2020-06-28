@@ -16,8 +16,29 @@ function cheat() {
             esac
         ;;
         zsh|bash|sh)        glow --style "$CHEATSDIR/glow_style.json" -w 120 "$CHEATSDIR/md/zsh.md"        ;;
-        alias|aliases)      highlight "$DOTFILEDIR/zsh/aliases.zsh"                                    ;;
-        func|functions)     highlight "$DOTFILEDIR/zsh/functions.zsh"                                  ;;
+        alias|aliases)      aliaslist                                    ;;
+        func|functions)     functionlist                                  ;;
         help|*)             glow --style "$CHEATSDIR/glow_style.json" -w 120 "$CHEATSDIR/cheat.md"                                                      ;;
     esac
+}
+
+
+function aliaslist() {
+    local COMMONLIST=$(grep alias "$DOTFILEDIR/zsh/common/aliases.zsh" | highlight --syntax=bash --out-format=xterm256)
+    if [[ $(uname) == "Darwin" ]]; then
+        local PLATFORMLIST=$(grep alias "$DOTFILEDIR/zsh/macos/aliases.zsh" | highlight --syntax=bash --out-format=xterm256)
+    else
+        local PLATFORMLIST=$(grep alias "$DOTFILEDIR/zsh/linux/aliases.zsh" | highlight --syntax=bash --out-format=xterm256)
+    fi
+    echo "$COMMONLIST\n$PLATFORMLIST"
+}
+
+function functionlist() {
+    local COMMONLIST=$(grep 'function' "$DOTFILEDIR/zsh/common/functions.zsh" | highlight --syntax=bash --out-format=xterm256)
+    if [[ $(uname) == "Darwin" ]]; then
+        local PLATFORMLIST=$(grep 'function' "$DOTFILEDIR/zsh/macos/functions.zsh" | highlight --syntax=bash --out-format=xterm256)
+    else
+        local PLATFORMLIST=$(grep 'function' "$DOTFILEDIR/zsh/linux/functions.zsh" | highlight --syntax=bash --out-format=xterm256)
+    fi
+    echo "$COMMONLIST\n$PLATFORMLIST"
 }

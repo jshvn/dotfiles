@@ -1,11 +1,11 @@
 
 # Start a bash shell inside of a running Docker container
-docker-bash() {
+function docker-bash() {
   docker exec -ti $1 /bin/bash
 }
 
 # Extract a compressed archive without worrying about which tool to use
-extract() {
+function extract() {
   if [ -f $1 ]; then
     case $1 in
       *.tar.bz2)   tar xjf $1    ;;
