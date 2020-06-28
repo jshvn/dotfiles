@@ -2,6 +2,13 @@
 
 This file can be found by running `$ cheat` from anywhere on the system as long as the dotfiles are loaded.
 
+### 👨🏻‍💻 Dotfiles
+
+```
+    $ dotfiles              :   navigates to where the dotfiles are installed
+    # ./bootstrap           :   reinstall and update dotfiles
+```
+
 ### 😇 Cheat functions
 
 ```
