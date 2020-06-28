@@ -67,7 +67,7 @@ else
 
   # now lets make ZSH our default shell
   # this wont take effect until after we have rebooted
-  sudo chsh -s $(which zsh)
+  chsh -s $(which zsh)
 
   ####### Step 1
   ####### Setup links
