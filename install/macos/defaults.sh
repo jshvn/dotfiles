@@ -3,13 +3,13 @@
 # Quit System Preferences.app if open
 osascript -e 'tell application "System Preferences" to quit'
 
-# Ask for the administrator password upfront
-sudo -v
-
 echo "We're setting our defaults and preferences now. Some of these require us to use administrator credentials"
 echo "to do so, so we'll ask for your user password now if you haven't already authenticated with sudo."
 echo "In some cases it takes awhile for changes to be made, so you may be asked for your adminstrator"
 echo "credentials one more time."
+
+# Ask for the administrator password upfront
+sudo -v
 
 # Keep-alive: update existing `sudo` time stamp until this script has finished
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
