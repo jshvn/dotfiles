@@ -11,3 +11,6 @@ alias path='echo -e ${PATH//:/\\n}'
 # print the dotfile directory
 alias dotfile='cd $DOTFILEDIR'
 alias dotfiles='cd $DOTFILEDIR'
+
+# enter ncdu
+alias fsa='ncdu'
