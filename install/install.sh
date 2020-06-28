@@ -41,7 +41,7 @@ if [ "$(uname)" == "Darwin" ]; then
   # Get Oh My ZSH up and running
   echo "Installing oh-my-zsh"
   if [ ! -e ~/.oh-my-zsh ]; then
-    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended"
   fi
 
   ####### Step 3
