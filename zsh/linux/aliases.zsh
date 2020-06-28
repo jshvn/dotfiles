@@ -18,9 +18,6 @@ alias dcupdate="docker-compose up -d --force-recreate --build"
 ##############################
 
 # get current IP information. show all: $ ips
-getipv4=$(curl -4 simpip.com --max-time 1 --proto-default https --silent)
-getipv6=$(curl -6 simpip.com --max-time 1 --proto-default https --silent)
-
 alias ipv4="echo IPv4: $getipv4"
 alias ipv6="echo IPv6: $getipv6"
 alias ip="ipv4; ipv6;"

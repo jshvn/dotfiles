@@ -26,8 +26,6 @@ alias dnsflush="sudo killall -HUP mDNSResponder; sudo killall mDNSResponderHelpe
 
 # get current IP information. show all: $ ips
 activeinterfaces=$(ifconfig | pcregrep -M -o '^[^\t:]+(?=:([^\n]|\n\t)*status: active)' | tr '\n' ' ')
-getipv4=$(curl -4 simpip.com --max-time 1 --proto-default https --silent)
-getipv6=$(curl -6 simpip.com --max-time 1 --proto-default https --silent)
 getiploc=$(ipconfig getifaddr en0)
 
 alias ipv4="echo IPv4: $getipv4"

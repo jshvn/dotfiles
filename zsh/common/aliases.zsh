@@ -17,5 +17,10 @@ alias dotfiles='cd $DOTFILEDIR'
 # enter ncdu
 alias fsa='ncdu'
 
-# update the dotfiles
-#alias update='dotfiles; git pull; ./bootstrap.sh;'
+##############################
+###### Networking
+##############################
+
+# helper methods
+getipv4=$(curl -4 simpip.com --max-time 1 --proto-default https --silent)
+getipv6=$(curl -6 simpip.com --max-time 1 --proto-default https --silent)
