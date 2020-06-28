@@ -5,7 +5,7 @@ This repository is meant to act as a working copy of my computer configuration, 
 These dotfiles have only been tested on macOS, but in theory should also work on Linux systems.
 
 
-## 🖥 How to install and use
+## 🖥 How to install or update
 
 When setting up a new machine, or wanting to update an existing machine after updates or major changes, run the following commands.
 
@@ -24,31 +24,44 @@ You may need to run the install file more than once as sometimes things can get 
 
 The install process is multi-step and will likely take quite a bit of time to complete depending on your internet connection and machine capability. In general it is recommended to connect via ethernet and let this run until completion.
 
-Installation process:
+**Install process**
+
 
 * `install/install.sh`
     * script will identify dotfiles repo location
-    * script will source `install/link.sh`
-    * script will load any custom functions available in `zsh/scripts`
-    * script will install [oh my zsh](https://github.com/ohmyzsh/ohmyzsh)
-    * script will source `macos/macos.sh`
-    * script will source `macos/defaults.sh`
-* `macos/macos.sh`
+    * script will check which system it is being run on
+    * macos:
+        * script will source `install/macos/link.sh` which sets up symlinks for custom aliases and functions here
+        * script will install [oh my zsh](https://github.com/ohmyzsh/ohmyzsh)
+        * script will source `install/macos/macos.sh` which installs [homebrew](https://brew.sh/) and macOS specifics like Xcode
+        * script will source `install/macos/defaults.sh` which sets a bunch of macOS system preferences
+    * linux:
+        * script will install `curl`, `build-essential`, and the `zsh` shell since Ubuntu's default is `bash`
+        * script will set `zsh` as default shell
+        * script will source `install/linux/link.sh` which sets up symlinks for custom aliases and functions here
+        * script will install [oh my zsh](https://github.com/ohmyzsh/ohmyzsh)
+        * script will source `install/linux/linux.sh` which installs [homebrew](https://brew.sh/) and macOS specifics like Xcode
+
+
+**Platform specific install process**
+
+* `install/macos/macos.sh`
     * script will install [homebrew](https://brew.sh/)
-    * homebrew will install utilities acording to what is defined in `macos/apps/Brewfile`
-    * homebrew will install packages according to what is defined in `macos/apps/Brewfile`
-    * homebrew will install applications from Apple App Store according to what is defined in `macos/apps/Brewfile`
-    * install XCode developer tools and command line application
-* `macos/defaults.sh`
-    * script will set systemwide preferences applicable to any macOS install
+    * homebrew will install utilities, packages, and applications acording to what is defined in `install/common/Brewfile`
+    * homebrew will install utilities, packages, and applications acording to what is defined in `install/macos/Brewfile`
+    * script will install XCode developer tools and command line application
+* `install/linux/linux.sh`
+    * script will install [homebrew](https://brew.sh/) and add it to the current shell environment
+    * homebrew will install utilities, packages, and applications acording to what is defined in `install/common/Brewfile`
+    * homebrew will install utilities, packages, and applications acording to what is defined in `install/linux/Brewfile`
 
+**Update process**
 
-If for some reason you need to update the location of this repository, or change your links around, or just want to make sure your symlinks to the dotfiles are working correctly you can run that directly.
+If you just need to update what is exposed to `zsh` in the `zsh` directory then a simple `$ reload` command should suffice.
 
-Link process:
+If you need to download additional binaries that have been added to the dotfiles then you will want to run through the install process again. That process is detailed above.
 
-* `install/link.sh`
-    * script will symlink over ~/.dotfiles to repo location (this includes installing all custom `zsh/aliases.zsh` and `zsh/functions.zsh`)
+You may need to do this multiple times or resolve any cross-platform issues that arise.
 
 
 ### 🦪 ZSH details
@@ -63,25 +76,28 @@ ZSH scripts:
     * this is the main shell configuration script that runs every time terminal starts
     * this will set the ZSH theme and choose which plugins to import
     * this will source oh-my-zsh
-    * this will source the `zsh/aliases.zsh` custom aliases
-    * this will source the `zsh/functions.zsh` custom functions
+    * this will source the `common`, `macos`, or `linux` custom aliases
+    * this will source the `common`, `macos`, or `linux` custom functions
     * this will source the `zsh/theme.zsh` custom theme overrides
     * this will source any helper scripts that exist in the `zsh/scripts/` subdirectory
-    * this will also configure the miniconda environment
-* `zsh/aliases.zsh`
-    * this will define all the useful custom aliases for injection into shell environment
-* `zsh/functions.zsh`
-    * this will define all the useful custom functions for injection into shell environment
+    * this will also configure the miniconda environment for macOS devices
 * `zsh/theme.zsh`
-    * this will define any theme overrides
+    * this will define any theme overrides for all platforms
     * this will set `$LS_COLOR` / `$LSCOLOR` overrides
     * this will set `$PROMPT` overrides
+* `*/aliases.zsh`
+    * this will define all the useful custom aliases for injection into shell environment
+    * aliases should strive to be `common` when possible, but there exist platform specific subdirectories
+* `*/functions.zsh`
+    * this will define all the useful custom functions for injection into shell environment
+    * functions should strive to be `common` when possible, but there exist platform specific subdirectories
+
 
 ## 📘 Notes
 
-If you change the location of this repo on the filesystem, you will need to re-run the `install.sh` script again because the symlinks to the files within this repo will be broken.
+If you change the location of this repo on the filesystem, you will need to re-run the appropriate `install/*/link.sh` script again because the symlinks to the files within this repo will be broken.
 
-The scripts are intelligent enough to work regardless of where the git repo is located on the system. It will automatically pick up the location and make the appropriate symlinks when the `install.sh` script is run.
+The scripts are intelligent enough to work regardless of where the git repo is located on the system. It will automatically pick up the location and make the appropriate symlinks when the `install/install.sh` script is run.
 
 You need not worry about packages being reinstalled: if the packages are already installed, brew will identify that and skip them. Some of the casks and App Store packages will give an error indicating they are already installed - this is expected and can be safely ignored.
 
