@@ -6,6 +6,7 @@ This file can be found by running `$ cheat` from anywhere on the system as long 
 
 ```
     $ dotfiles              :   navigates to where the dotfiles are installed
+    $ reload                :   reloads zsh configuration from dotfiles
     $ update                :   update and reinstall dotfiles from origin
 ```
 
@@ -18,10 +19,9 @@ This file can be found by running `$ cheat` from anywhere on the system as long 
     $ cheat help            :   views this help document
 ```
 
-### 🦪 Shell functions
+### 🦪 Useful shell functions
 
 ```
-    $ reload                :   reloads zsh configuration
     $ aliaslist             :   lists all of the custom aliases defined in dotfiles
     $ functionlist          :   lists all of the custom functions defined in dotfiles
 ```
