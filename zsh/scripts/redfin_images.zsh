@@ -1,3 +1,5 @@
+#!/bin/zsh
+
 function redfinimages() {
     if [ -z "${1}" ]; then
 		echo "ERROR: No listing URL specified";

@@ -1,3 +1,5 @@
+#!/bin/zsh
+
 # set CHEATSDIR to the directory where cheat files are located
 CHEATSDIR="$DOTFILEDIR"/zsh/cheat/
 

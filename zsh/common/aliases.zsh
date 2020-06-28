@@ -1,3 +1,5 @@
+#!/bin/zsh
+
 ##############################
 ###### General
 ##############################
@@ -16,4 +18,4 @@ alias dotfiles='cd $DOTFILEDIR'
 alias fsa='ncdu'
 
 # update the dotfiles
-alias update='dotfiles; git pull; ./bootstrap.sh;'
+#alias update='dotfiles; git pull; ./bootstrap.sh;'

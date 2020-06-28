@@ -20,8 +20,7 @@ Brew will give errors when packages are already installed - these can be safely 
 
 **Update:**
 ```
-    $ dotfiles 
-    $ ./bootstrap
+    $ update
 ```
 
 ### 🛠 Install details

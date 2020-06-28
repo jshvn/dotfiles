@@ -1,3 +1,5 @@
+#!/bin/zsh
+
 # useful ls_colors / lscolor converter tool: 
 # https://geoff.greer.fm/lscolors/ - https://github.com/ggreer/lscolors
 
