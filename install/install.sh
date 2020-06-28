@@ -67,16 +67,11 @@ else
 
   # now lets make ZSH our default shell
   # this wont take effect until after we have rebooted
+  echo "We're going to update our default shell to ZSH and to do that you need to enter your password:"
   chsh -s $(which zsh)
 
   ####### Step 1
-  ####### Setup links
-
-  # Set up symbolic links for ZSH and Git pointing to this cloned repo
-  source "$DOTFILEDIR"/install/linux/link.sh
-
-  ####### Step 2
-  ####### Setup ZSH
+  ####### Setup oh my zsh
 
   # Get Oh My ZSH up and running
   echo "Installing oh-my-zsh"
@@ -84,11 +79,17 @@ else
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended"
   fi
 
-  ####### Step 3
+  ####### Step 2
   ####### Run Linux steps
 
   # run Linux specific install steps
   source "$DOTFILEDIR"/install/linux/linux.sh
+
+  ####### Step 3
+  ####### Setup links
+
+  # Set up symbolic links for ZSH and Git pointing to this cloned repo
+  source "$DOTFILEDIR"/install/linux/link.sh
 fi
 
 
