@@ -9,6 +9,7 @@ alias dcu="docker-compose up -d"
 alias dcd="docker-compose down"
 alias dcr="docker-compose down && docker-compose up -d"
 alias dcl="docker-compose logs -f"
+alias dcupdate="docker-compose up -d --force-recreate --build"
 
 
 ##############################
