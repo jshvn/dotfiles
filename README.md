@@ -2,14 +2,16 @@
 
 This repository is meant to act as a working copy of my computer configuration, SSH settings, macOS settings, general applications, and more for my personal and development machines. 
 
-These dotfiles have only been tested on macOS, but in theory should also work on Linux systems.
+These dotfiles have been tested on:
+
+* macOS 10.15
+* Ubuntu 18.04
+* Ubuntu 20.04
 
 
 ## 🖥 How to install or update
 
 When setting up a new machine, or wanting to update an existing machine after updates or major changes, run the following commands.
-
-Brew will give errors when packages are already installed - these can be safely ignored.
 
 **Fresh install:**
 ```
@@ -27,12 +29,11 @@ Brew will give errors when packages are already installed - these can be safely 
 
 The install process is multi-step and will likely take quite a bit of time to complete depending on your internet connection and machine capability. In general it is recommended to connect via ethernet and let this run until completion.
 
-
 **Boostrap:**
 
 This launcher will install and configure the complete dotfiles. 
 
-**` $ bootstrap.sh`**
+**`$ bootstrap.sh`**
 
 **Install process:**
 
@@ -66,16 +67,14 @@ This launcher will install and configure the complete dotfiles.
 
 ### 🔭 Update details
 
-If you just need to update what is exposed to `zsh` in the `zsh` directory then a simple `$ reload` command should suffice.
+If you simply need to reload what is already exposed to `zsh` in your local filesystem then a simple `$ reload` command is sufficient.
 
-If you need to download additional binaries that have been added to the dotfiles then you will want to run through the install process again. That process is detailed above.
-
-You may need to do this multiple times or resolve any cross-platform issues that arise.
+If you need to update the dotfiles from origin and potentially install new applications, see the update details above.
 
 
 ### 🦪 ZSH details
 
-The symlinks that are created during the install process will link to the zsh files located here in this repository. They effectively replace whatever files were already there on the system, which allow me to have the same environment and utilities available on all my machines without much effort.
+The symlinks that are created during the install process for the dotfiles will link to the zsh files located here in this repository. They effectively replace whatever files were already there on the system, which allow me to have the same environment and utilities available on all my machines without much effort.
 
 These will be sourced every time a new shell is spawned. They can also be resourced on the fly with a `$ reload` command.
 
@@ -104,11 +103,11 @@ ZSH scripts:
 
 ## 📘 Notes
 
-If you change the location of this repo on the filesystem, you will need to re-run the appropriate `install/*/link.sh` script again because the symlinks to the files within this repo will be broken.
+If you change the location of this repo on the filesystem, you will need to re-run the `bootstrap.sh` or `link.sh` script again because the symlinks to the files within this repo will be broken.
 
 The scripts are intelligent enough to work regardless of where the git repo is located on the system. It will automatically pick up the location and make the appropriate symlinks when the `install/install.sh` script is run.
 
-You need not worry about packages being reinstalled: if the packages are already installed, brew will identify that and skip them. Some of the casks and App Store packages will give an error indicating they are already installed - this is expected and can be safely ignored.
+You need not worry about packages being reinstalled: if the packages are already installed, brew will identify that and skip them.
 
 ## 📚 References
 
