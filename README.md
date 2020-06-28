@@ -24,9 +24,6 @@ You may need to run the install file more than once as sometimes things can get 
 
 The install process is multi-step and will likely take quite a bit of time to complete depending on your internet connection and machine capability. In general it is recommended to connect via ethernet and let this run until completion.
 
-**Install process**
-
-
 * **`install/install.sh`**
     * script will identify dotfiles repo location
     * script will check which system it is being run on
@@ -55,7 +52,7 @@ The install process is multi-step and will likely take quite a bit of time to co
     * homebrew will install utilities, packages, and applications acording to what is defined in `install/common/Brewfile`
     * homebrew will install utilities, packages, and applications acording to what is defined in `install/linux/Brewfile`
 
-**Update process**
+### 🔭 Update details
 
 If you just need to update what is exposed to `zsh` in the `zsh` directory then a simple `$ reload` command should suffice.
 
