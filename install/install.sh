@@ -106,7 +106,6 @@ do that you can run the command: $ chsh -s $(which zsh)
 
 If you want to update to the latest version of the dotfiles, run the following commands:
     $ dotfile 
-    $ cd $DOTFILEDIR
     $ git pull
     $ ./bootstrap.sh
 """

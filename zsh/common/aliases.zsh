@@ -9,5 +9,5 @@ alias reload="source ~/.zshrc"
 alias path='echo -e ${PATH//:/\\n}'
 
 # print the dotfile directory
-alias dotfile='echo $DOTFILEDIR'
-alias dotfiles='echo $DOTFILEDIR'
+alias dotfile='cd $DOTFILEDIR'
+alias dotfiles='cd $DOTFILEDIR'

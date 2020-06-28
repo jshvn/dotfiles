@@ -11,13 +11,17 @@ When setting up a new machine, or wanting to update an existing machine after up
 
 Brew will give errors when packages are already installed - these can be safely ignored.
 
-You may need to run the install file more than once as sometimes things can get stuck.
-
+**Fresh install:**
 ```
     $ git clone https://github.com/jshvn/dotfiles.git
-    $ cd dotfiles/install
-    $ chmod +x install.sh
-    $ ./install.sh
+    $ cd dotfiles
+    $ ./bootstrap.sh
+```
+
+**Update:**
+```
+    $ dotfiles 
+    $ ./bootstrap
 ```
 
 ### 🛠 Install details
