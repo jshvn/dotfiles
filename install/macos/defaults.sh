@@ -36,6 +36,8 @@ defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
 
 # Turn off the guest account
+echo "We want to turn off the guest account, but this requires administrator privileges. You might be"
+echo "prompted for your user password now:"
 sudo sysadminctl -guestAccount off
 
 echo "All done! Some of these changes require a logout/restart to take effect."
