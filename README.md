@@ -45,12 +45,12 @@ The install process is multi-step and will likely take quite a bit of time to co
 
 **Platform specific install process**
 
-* `install/macos/macos.sh`
+* **`install/macos/macos.sh`**
     * script will install [homebrew](https://brew.sh/)
     * homebrew will install utilities, packages, and applications acording to what is defined in `install/common/Brewfile`
     * homebrew will install utilities, packages, and applications acording to what is defined in `install/macos/Brewfile`
     * script will install XCode developer tools and command line application
-* `install/linux/linux.sh`
+* **`install/linux/linux.sh`**
     * script will install [homebrew](https://brew.sh/) and add it to the current shell environment
     * homebrew will install utilities, packages, and applications acording to what is defined in `install/common/Brewfile`
     * homebrew will install utilities, packages, and applications acording to what is defined in `install/linux/Brewfile`
@@ -72,7 +72,7 @@ These will be sourced every time a new shell is spawned. They can also be resour
 
 ZSH scripts:
 
-* `zsh/.zshrc`
+* **`zsh/.zshrc`**
     * this is the main shell configuration script that runs every time terminal starts
     * this will set the ZSH theme and choose which plugins to import
     * this will source oh-my-zsh
@@ -81,14 +81,14 @@ ZSH scripts:
     * this will source the `zsh/theme.zsh` custom theme overrides
     * this will source any helper scripts that exist in the `zsh/scripts/` subdirectory
     * this will also configure the miniconda environment for macOS devices
-* `zsh/theme.zsh`
+* **`zsh/theme.zsh`**
     * this will define any theme overrides for all platforms
     * this will set `$LS_COLOR` / `$LSCOLOR` overrides
     * this will set `$PROMPT` overrides
-* `*/aliases.zsh`
+* **`*/aliases.zsh`**
     * this will define all the useful custom aliases for injection into shell environment
     * aliases should strive to be `common` when possible, but there exist platform specific subdirectories
-* `*/functions.zsh`
+* **`*/functions.zsh`**
     * this will define all the useful custom functions for injection into shell environment
     * functions should strive to be `common` when possible, but there exist platform specific subdirectories
 
