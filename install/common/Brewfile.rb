@@ -43,3 +43,6 @@ brew "tldr"
 
 # fd is a find replacement
 brew "fd" 
+
+# cloudflared client
+brew "cloudflare/cloudflare/cloudflared"
