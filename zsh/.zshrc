@@ -172,6 +172,11 @@ if [[ $(uname) == "Darwin" ]]; then
     unset __conda_setup
     # <<< conda initialize <<<
 
+    # Add visual studio code to the path if it isn't already there
+    if [ -d "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" ] && [[ ":$PATH:" != *":/Applications/Visual Studio Code.app/Contents/Resources/app/bin:"* ]]; then
+        PATH="${PATH:+"$PATH:"}/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+    fi
+
 
 else
     ####################################################################################
