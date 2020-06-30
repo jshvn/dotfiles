@@ -2,8 +2,9 @@
 
 # helper functions
 disable_agent() {
-	mv "$1" "$1_DISABLED" >/dev/null 2>&1 ||
-		sudo mv "$1" "$1_DISABLED" >/dev/null 2>&1
+    if [ -e "$1" ]; then
+	    mv "$1" "$1_DISABLED" >/dev/null 2>&1 || sudo mv "$1" "$1_DISABLED" >/dev/null 2>&1
+    fi 
 }
 unload_agent() {
 	launchctl unload -w "$1" >/dev/null 2>&1
