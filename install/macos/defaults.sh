@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+# helper functions
+disable_agent() {
+	mv "$1" "$1_DISABLED" >/dev/null 2>&1 ||
+		sudo mv "$1" "$1_DISABLED" >/dev/null 2>&1
+}
+unload_agent() {
+	launchctl unload -w "$1" >/dev/null 2>&1
+}
+
 # Quit System Preferences.app if open
 osascript -e 'tell application "System Preferences" to quit'
 
