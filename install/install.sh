@@ -68,11 +68,11 @@ else
   REQUIRED_PKG="zsh curl build-essential"
   for package in $REQUIRED_PKG
   do
-    PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $REQUIRED_PKG|grep "install ok installed")
-    echo Checking for $REQUIRED_PKG: $PKG_OK
+    PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $package|grep "install ok installed")
+    echo Checking for $package: $PKG_OK
     if [ "" = "$PKG_OK" ]; then
-      echo "$REQUIRED_PKG not yet installed. installing $REQUIRED_PKG"
-      sudo apt install $REQUIRED_PKG 
+      echo "$package not yet installed. installing $package"
+      sudo apt install $package
     fi
   done
 
