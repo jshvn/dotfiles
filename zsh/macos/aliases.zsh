@@ -37,7 +37,7 @@ alias ips="ip; echo; ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+
 
 # jgrid.net machines
 alias atium="ssh josh@atium-ssh.jgrid.net"
-alias copperin="ssh josh@copper-ssh.jgrid.net"
+alias copper="ssh josh@copper-ssh.jgrid.net"
 alias tin="ssh josh@tin-ssh.jgrid.net"
 alias zinc="ssh josh@zinc-ssh.jgrid.net"
 
