@@ -10,8 +10,18 @@ echo "credentials one more time."
 
 # General
 
+# Require password immediately after sleep or screen saver begins
+defaults write com.apple.screensaver askForPassword -int 1
+defaults write com.apple.screensaver askForPasswordDelay -int 0
+
 # Menu bar: show battery percentage
-defaults write com.apple.menuextra.battery ShowPercent "YES"
+defaults write com.apple.menuextra.battery ShowPercent -bool true
+
+# Automatically hide and show the dock
+defaults write com.apple.dock autohide -bool true
+
+# Set dock icon size to 45px
+defaults write com.apple.dock tilesize -int 45
 
 # Require password immediately after sleep or screen saver begins
 defaults write com.apple.screensaver askForPassword -int 1
@@ -22,6 +32,9 @@ defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 
 # Disable the warning when changing a file extension
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+
+# Stop photos from opening every time a device is plugged in
+defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
 
 # Enable snap-to-grid for icons on the desktop and in other icon views
 /usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist
@@ -39,5 +52,12 @@ if grep -q "enabled" <<< "$(sysadminctl -guestAccount status 2>&1)"; then
     echo "Bummer its enabled. You're going to need to give your password to complete this step"
     sudo sysadminctl -guestAccount off
 fi
+
+# Disable iTunes
+disable_agent /Applications/iTunes.app/Contents/MacOS/iTunesHelper.app
+unload_agent /System/Library/LaunchAgents/com.apple.rcd.plist
+
+# Don't rearrange spaces based on recent use
+defaults write com.apple.dock mru-spaces -bool false
 
 echo "All done! Some of the defaults / preferences changes require a logout/restart to take effect."
