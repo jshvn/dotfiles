@@ -57,13 +57,13 @@ This launcher will install and configure the complete dotfiles.
 
 * **`install/macos/macos.sh`**
     * script will install [homebrew](https://brew.sh/)
-    * homebrew will install utilities, packages, and applications acording to what is defined in `install/common/Brewfile`
-    * homebrew will install utilities, packages, and applications acording to what is defined in `install/macos/Brewfile`
+    * homebrew will install utilities, packages, and applications acording to what is defined in `install/common/Brewfile.rb`
+    * homebrew will install utilities, packages, and applications acording to what is defined in `install/macos/Brewfile.rb`
     * script will install XCode developer tools and command line application
 * **`install/linux/linux.sh`**
     * script will install [homebrew](https://brew.sh/) and add it to the current shell environment
-    * homebrew will install utilities, packages, and applications acording to what is defined in `install/common/Brewfile`
-    * homebrew will install utilities, packages, and applications acording to what is defined in `install/linux/Brewfile`
+    * homebrew will install utilities, packages, and applications acording to what is defined in `install/common/Brewfile.rb`
+    * homebrew will install utilities, packages, and applications acording to what is defined in `install/linux/Brewfile.rb`
 
 ### 🔭 Update details
 
