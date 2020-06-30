@@ -116,3 +116,4 @@ Some useful places to grab dotfile functionality:
 - https://github.com/mathiasbynens/dotfiles
 - https://github.com/jakejarvis/dotfiles
 - https://github.com/holman/dotfiles
+- https://github.com/sirugh/dotfiles/
