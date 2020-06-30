@@ -3,17 +3,10 @@
 # Quit System Preferences.app if open
 osascript -e 'tell application "System Preferences" to quit'
 
-echo "We're setting our defaults and preferences now. Some of these require us to use administrator credentials"
-echo "to do so, so we'll ask for your user password now if you haven't already authenticated with sudo."
+echo "We're setting our defaults and preferences now. Some of these may require us to use administrator credentials"
+echo "to do so, so we'll ask for your user password if you haven't already authenticated with sudo."
 echo "In some cases it takes awhile for changes to be made, so you may be asked for your adminstrator"
 echo "credentials one more time."
-
-# Ask for the administrator password upfront
-sudo -v
-
-# Keep-alive: update existing `sudo` time stamp until this script has finished
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
-
 
 # General
 
@@ -41,6 +34,10 @@ defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
 
 # Turn off the guest account
-sudo sysadminctl -guestAccount off
+echo "If the guest account is enabled, we will disable it now"
+if grep -q "enabled" <<< "$(sysadminctl -guestAccount status 2>&1)"; then
+    echo "Bummer its enabled. You're going to need to give your password to complete this step"
+    sudo sysadminctl -guestAccount off
+fi
 
 echo "All done! Some of the defaults / preferences changes require a logout/restart to take effect."
