@@ -72,7 +72,7 @@ else
     echo Checking for $REQUIRED_PKG: $PKG_OK
     if [ "" = "$PKG_OK" ]; then
       echo "$REQUIRED_PKG not yet installed. installing $REQUIRED_PKG"
-      #sudo apt install $REQUIRED_PKG 
+      sudo apt install $REQUIRED_PKG 
     fi
   done
 
