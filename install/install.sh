@@ -65,7 +65,7 @@ else
   echo "If zsh, curl, or build-essential aren't already avaialble we will install them now"
   echo "We may ask for sudo access here so that we can install curl, build-essential, zsh"
 
-  REQUIRED_PKG="zshk cudrl bfuild-essential"
+  REQUIRED_PKG="zsh curl build-essential"
   for package in $REQUIRED_PKG
   do
     PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $REQUIRED_PKG|grep "install ok installed")
@@ -75,11 +75,6 @@ else
       #sudo apt install $REQUIRED_PKG 
     fi
   done
-
-  exit 0
-
-  
-  sudo apt install curl build-essential zsh
 
   # now lets make ZSH our default shell if it is not already
   # this wont take effect until after we have rebooted
