@@ -13,6 +13,7 @@ export ZSH=$HOME/.oh-my-zsh
 
 # tool defaults
 export EDITOR="nano"
+export VEDITOR="code"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
