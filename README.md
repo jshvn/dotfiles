@@ -118,9 +118,11 @@ The scripts are intelligent enough to work regardless of where the git repo is l
 
 You need not worry about packages being reinstalled: if the packages are already installed, brew will identify that and skip them.
 
-## 📚 References
+## 📚 License and references
 
-Some useful places to grab dotfile functionality:
+There are a ton of folks with better dotfiles than these that were the inspiration for this project. The links for those are below.
+
+I'm packaging up what is here under the MIT license. Feel free to pick and pull whatever is useful to you. Happy hacking!
 
 - https://github.com/mathiasbynens/dotfiles
 - https://github.com/jakejarvis/dotfiles
