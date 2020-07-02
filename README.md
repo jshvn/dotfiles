@@ -50,7 +50,7 @@ This launcher will install and configure the complete dotfiles.
         * script will set `zsh` as default shell
         * script will source `install/linux/link.sh` which sets up symlinks for custom aliases and functions here
         * script will install [oh my zsh](https://github.com/ohmyzsh/ohmyzsh)
-        * script will source `install/linux/linux.sh` which installs [homebrew](https://brew.sh/) and macOS specifics like Xcode
+        * script will source `install/linux/linux.sh` which installs [homebrew](https://brew.sh/) 
 
 
 **Platform specific install process:**
