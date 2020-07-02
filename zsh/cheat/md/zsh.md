@@ -26,5 +26,5 @@ $ cheat
 
 SSH to any name.jgrid.net host:
 ```
-$ ssh name
+$ name
 ```
