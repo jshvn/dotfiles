@@ -35,12 +35,6 @@ alias interfaces="echo Active Interfaces: $activeinterfaces"
 alias ip="ipv4; ipv6; iploc;"
 alias ips="ip; echo; ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }'"
 
-# jgrid.net machines
-alias atium="ssh josh@atium-ssh.jgrid.net"
-alias copper="ssh josh@copper-ssh.jgrid.net"
-alias tin="ssh josh@tin-ssh.jgrid.net"
-alias zinc="ssh josh@zinc-ssh.jgrid.net"
-
 ##############################
 ###### Keys
 ##############################
