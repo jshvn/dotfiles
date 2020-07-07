@@ -98,3 +98,17 @@ function getcertnames() {
 		return 1;
 	fi;
 }
+
+# Prints permissions of file
+function permissions() {
+	if [ -z "${1}" ]; then
+		echo "ERROR: No file or directory specified";
+		return 1;
+	fi;
+
+    if [[ $(uname) == "Darwin" ]]; then
+        stat -f "%Sp %OLp %N" $1
+    else
+        stat -c '%A %a %n' $1
+    fi;
+}

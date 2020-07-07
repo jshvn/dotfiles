@@ -17,6 +17,9 @@ alias dotfiles='cd $DOTFILEDIR'
 # enter ncdu
 alias fsa='ncdu'
 
+# shorthand for permissions function
+alias perms='permissions'
+
 ##############################
 ###### Networking
 ##############################
