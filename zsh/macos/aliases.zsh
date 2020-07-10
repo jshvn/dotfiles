@@ -36,13 +36,6 @@ alias ip="ipv4; ipv6; iploc;"
 alias ips="ip; echo; ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }'"
 
 ##############################
-###### Keys
-##############################
-
-# copy primary public key to clipboard
-alias pubkey="more ~/.ssh/id_rsa.pub | pbcopy | echo '=> Public key copied to clipboard.'"
-
-##############################
 ###### Hardware
 ##############################
 
