@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # update the dotfiles completely
-function update() {
+function update() {    # update() will update the current dotfiles installation and dependencies. ex: $ update
 	# save the current directory
 	currentdir=$(pwd)
 
@@ -22,12 +22,12 @@ function update() {
 
 
 # Start a bash shell inside of a running Docker container
-function docker-bash() {
+function docker-bash() {    # docker-bash() will start a bash session inside a docker container. ex: $ docker-bash portainer
   docker exec -ti $1 /bin/bash
 }
 
 # Extract a compressed archive without worrying about which tool to use
-function extract() {
+function extract() { # extract() will unzip/unrar/untar any type of compressed file. ex $ extract file.tar.gz
   if [ -f $1 ]; then
     case $1 in
       *.tar.bz2)   tar xjf $1    ;;
@@ -49,7 +49,7 @@ function extract() {
 }
 
 # Determine size of a file or total size of a directory
-function fs() {
+function fs() {    # fs() will print a human readable size of given file or directory. ex: $ fs ~
 	if du -b /dev/null > /dev/null 2>&1; then
 		local arg=-sbh;
 	else
@@ -67,7 +67,7 @@ function fs() {
 }
 
 # Grabs certificates for a given domain name
-function getcertnames() {
+function getcertnames() {    # getcertnames() will print SSL certificate information for a given domain. ex: $ getcertnames ijosh.com
 	if [ -z "${1}" ]; then
 		echo "ERROR: No domain specified.";
 		return 1;
@@ -100,7 +100,7 @@ function getcertnames() {
 }
 
 # Prints permissions of file
-function permissions() {
+function permissions() {    # permissions() will print human readable permissions for a given file or directory. ex: $ permissions ~
 	if [ -z "${1}" ]; then
 		echo "ERROR: No file or directory specified";
 		return 1;
