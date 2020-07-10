@@ -1,6 +1,9 @@
 [user]
 	name = Josh Vaughen
-	email = vaughen@adobe.com
+[includeIf "gitdir:~/Git/personal/"]
+    path = ~/.gitconfig-personal
+[includeIf "gitdir:~/Git/work/"]
+    path = ~/.gitconfig-work
 [core]
 	excludesfile = ~/.gitignore_global
 [difftool "sourcetree"]
