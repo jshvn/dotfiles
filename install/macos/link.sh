@@ -22,3 +22,5 @@ ln -sf "$DOTFILEDIR"/zsh/macos/functions.zsh "$HOME"/.functions.zsh
 ln -sf "$DOTFILEDIR"/git/macos/.gitconfig "$HOME"/.gitconfig
 ln -sf "$DOTFILEDIR"/git/macos/.gitignore_global "$HOME"/.gitignore_global
 ln -sf "$DOTFILEDIR"/ssh/.ssh/config "$HOME"/.ssh/config
+ln -sf "$DOTFILEDIR"/ssh/.ssh/id_ed25519_personal.pub "$HOME"/.ssh/id_ed25519_personal.pub
+ln -sf "$DOTFILEDIR"/ssh/.ssh/id_rsa_work.pub "$HOME"/.ssh/id_rsa_work.pub
