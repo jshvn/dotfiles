@@ -2,8 +2,12 @@
 
 # this file is meant to encapsulate functions that are general and cover things like
 # files, system operations, dotfile changes, etc.
+
 # any scripts that interact with APIs or non-system software should be placed
 # in their own script in the scripts subdirectory
+
+# any scripts that are platform specific should be included in their respective
+# platform's functions.zsh file
 
 # update the dotfiles completely
 function update() {    # update() will update the current dotfiles installation and dependencies. ex: $ update
