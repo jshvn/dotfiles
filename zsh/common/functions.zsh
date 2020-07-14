@@ -25,6 +25,9 @@ function update() {    # update() will update the current dotfiles installation 
 	# and we're calling it from zsh. bad things happen if you use source instead
 	bash $DOTFILEDIR/install/install.sh
 
+  # update tldr definitions
+  tldr --update
+
 	# return user to previous directory
 	cd $currentdir
 }
