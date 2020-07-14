@@ -21,6 +21,10 @@ brew "glow"
 # https://gitlab.com/saalen/highlight
 brew "highlight" 
 
+# install highlighting for several commands like whois, ping, etc
+# https://github.com/garabik/grc
+brew "grc"
+
 # perl-like regular expressions, used in some aliases
 brew "pcre" 
 

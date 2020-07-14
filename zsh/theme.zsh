@@ -45,3 +45,35 @@ man() {
     LESS_TERMCAP_us=$(printf "\e[1;32m") \
     man "$@"
 }
+
+##############################
+###### Miscellaneous commands
+##############################
+
+if [[ "$TERM" != dumb ]] && (( $+commands[grc] )) ; then
+
+  # Supported commands
+  cmds=(
+    df \
+    diff \
+    dig \
+    ifconfig \
+    netstat \
+    ping \
+    ping6 \
+    ps \
+    traceroute \
+    traceroute6 \
+    whois \
+  );
+
+  # Set alias for available commands.
+  for cmd in $cmds ; do
+    if (( $+commands[$cmd] )) ; then
+      alias $cmd="grc --colour=auto $(whence $cmd)"
+    fi
+  done
+
+  # Clean up variables
+  unset cmds cmd
+fi
