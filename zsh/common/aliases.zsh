@@ -20,6 +20,9 @@ alias fsa='ncdu'
 # shorthand for permissions function
 alias perms='permissions'
 
+# highlight printing
+alias highlight-blue="highlight --out-format=xterm256 --style=fine_blue"
+
 ##############################
 ###### Networking
 ##############################

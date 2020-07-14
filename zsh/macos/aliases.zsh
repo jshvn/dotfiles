@@ -33,7 +33,7 @@ alias ipv6="echo IPv6: $getipv6"
 alias iploc="echo Local IP: $getiploc"
 alias interfaces="echo Active Interfaces: $activeinterfaces"
 alias ip="ipv4; ipv6; iploc;"
-alias ips="ip; echo; ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }' | highlight --syntax=txt --out-format=xterm256 --style=fine_blue"
+alias ips="ip; echo; ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }' | highlight-blue --syntax=txt"
 
 ##############################
 ###### Hardware

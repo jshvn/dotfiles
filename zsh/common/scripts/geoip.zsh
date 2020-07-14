@@ -6,5 +6,5 @@ function geoip() {    # geoip() will print geolocation information for a given I
 	fi;
 
 	jsonobject=$(curl -s --request GET --url https://freegeoip.app/json/$1 --header 'accept: application/json' --header 'content-type: application/json' | python -m json.tool)
-	echo $jsonobject | highlight --syntax=json --out-format=xterm256 --style=fine_blue
+	echo $jsonobject | highlight-blue --syntax=json
 }
