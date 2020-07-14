@@ -1,5 +1,9 @@
 #!/bin/zsh
 
+##############################
+###### Prompt Colors
+##############################
+
 # useful ls_colors / lscolor converter tool: 
 # https://geoff.greer.fm/lscolors/ - https://github.com/ggreer/lscolors
 
@@ -17,5 +21,27 @@ export LS_COLORS
 PROMPT='%{$fg[green]%}%n@%{$fg[green]%}%m%{$reset_color%}:%{$fg[blue]%}%~%{$reset_color%}$ '
 export PROMPT
 
+##############################
+###### Syntax highlighting
+##############################
+
 # set default highlighting colors
 alias highlight="highlight --out-format=xterm256 --style=fine_blue"
+
+##############################
+###### Man pages
+##############################
+
+# set default colors for man pages
+# some useful information this here: https://unix.stackexchange.com/questions/108699/documentation-on-less-termcap-variables
+man() {
+  env \
+    LESS_TERMCAP_mb=$(printf "\e[1;34m") \
+    LESS_TERMCAP_md=$(printf "\e[1;34m") \
+    LESS_TERMCAP_me=$(printf "\e[0m") \
+    LESS_TERMCAP_se=$(printf "\e[0m") \
+    LESS_TERMCAP_so=$(printf "\e[1;44;33m") \
+    LESS_TERMCAP_ue=$(printf "\e[0m") \
+    LESS_TERMCAP_us=$(printf "\e[1;32m") \
+    man "$@"
+}
