@@ -27,14 +27,14 @@ function cheat() {
 
 function aliaslist() {
     # grab all of the common aliases to both platforms
-    local commonlist=$(grep '^alias' "$DOTFILEDIR/zsh/common/aliases.zsh" | highlight --syntax=bash --out-format=xterm256)
+    local commonlist=$(grep '^alias' "$DOTFILEDIR/zsh/common/aliases.zsh" | highlight --syntax=bash --out-format=xterm256 --style=fine_blue)
     
     # grab all of the platform specific aliases
     local platformlist="\n"
     if [[ $(uname) == "Darwin" ]]; then
-        platformlist+=$(grep '^alias' "$DOTFILEDIR/zsh/macos/aliases.zsh" | highlight --syntax=bash --out-format=xterm256)
+        platformlist+=$(grep '^alias' "$DOTFILEDIR/zsh/macos/aliases.zsh" | highlight --syntax=bash --out-format=xterm256 --style=fine_blue)
     else
-        platformlist+=$(grep '^alias' "$DOTFILEDIR/zsh/linux/aliases.zsh" | highlight --syntax=bash --out-format=xterm256)
+        platformlist+=$(grep '^alias' "$DOTFILEDIR/zsh/linux/aliases.zsh" | highlight --syntax=bash --out-format=xterm256 --style=fine_blue)
     fi
 
     # combine and print
@@ -44,20 +44,20 @@ function aliaslist() {
 
 function functionlist() {
     # grab all of the common functions to both platforms
-    local commonlist=$(grep '^function' "$DOTFILEDIR/zsh/common/functions.zsh" | highlight --syntax=bash --out-format=xterm256)
+    local commonlist=$(grep '^function' "$DOTFILEDIR/zsh/common/functions.zsh" | highlight --syntax=bash --out-format=xterm256 --style=fine_blue)
     
     # grab all of the platform specific functions
     local platformlist="\n"
     if [[ $(uname) == "Darwin" ]]; then
-        platformlist+=$(grep '^function' "$DOTFILEDIR/zsh/macos/functions.zsh" | highlight --syntax=bash --out-format=xterm256)
+        platformlist+=$(grep '^function' "$DOTFILEDIR/zsh/macos/functions.zsh" | highlight --syntax=bash --out-format=xterm256 --style=fine_blue)
     else
-        platformlist+=$(grep '^function' "$DOTFILEDIR/zsh/linux/functions.zsh" | highlight --syntax=bash --out-format=xterm256)
+        platformlist+=$(grep '^function' "$DOTFILEDIR/zsh/linux/functions.zsh" | highlight --syntax=bash --out-format=xterm256 --style=fine_blue)
     fi
 
     # grab all of the functions defined in the scripts directory
     local scriptfunctionlist=""
     for script in $DOTFILEDIR/zsh/common/scripts/*; do 
-        scriptfunctionlist+="\n"+$(grep '^function' "$script" | highlight --syntax=bash --out-format=xterm256)
+        scriptfunctionlist+="\n"+$(grep '^function' "$script" | highlight --syntax=bash --out-format=xterm256 --style=fine_blue)
     ; done
 
     # combine and print
