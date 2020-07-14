@@ -26,7 +26,7 @@ export PROMPT
 ##############################
 
 # set default highlighting colors
-alias highlight="highlight --out-format=xterm256 --style=fine_blue"
+alias highlight="highlight --out-format=xterm256 --style=duotone-dark-sky"
 
 ##############################
 ###### Man pages
