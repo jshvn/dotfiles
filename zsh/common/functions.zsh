@@ -1,5 +1,10 @@
 #!/bin/zsh
 
+# this file is meant to encapsulate functions that are general and cover things like
+# files, system operations, dotfile changes, etc.
+# any scripts that interact with APIs or non-system software should be placed
+# in their own script in the scripts subdirectory
+
 # update the dotfiles completely
 function update() {    # update() will update the current dotfiles installation and dependencies. ex: $ update
 	# save the current directory
@@ -18,12 +23,6 @@ function update() {    # update() will update the current dotfiles installation 
 
 	# return user to previous directory
 	cd $currentdir
-}
-
-
-# Start a bash shell inside of a running Docker container
-function docker-bash() {    # docker-bash() will start a bash session inside a docker container. ex: $ docker-bash portainer
-  docker exec -ti $1 /bin/bash
 }
 
 # Extract a compressed archive without worrying about which tool to use
@@ -65,7 +64,6 @@ function fs() {    # fs() will print a human readable size of given file or dire
         fi;
 	fi;
 }
-
 
 # Prints permissions of file
 function permissions() {    # permissions() will print human readable permissions for a given file or directory. ex: $ permissions ~

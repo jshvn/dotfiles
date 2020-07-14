@@ -17,7 +17,7 @@
 	template = ~/.stCommitMsg
 [alias]
 	# list all git aliases
-	aliases = !git config -l | grep alias | cut -c 7- | highlight --syntax=bash --out-format=xterm256
+	aliases = !git config -l | grep alias | cut -c 7- | highlight --style=fine_blue --syntax=bash --out-format=xterm256
 	
 	# useful displays
 	hist = log --graph --abbrev-commit --decorate --all --format=format:\"%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(dim white) - %an%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset)\"
