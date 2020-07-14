@@ -16,3 +16,6 @@ export LS_COLORS
 # set custom prompt colors for the "alanpeabody" theme
 PROMPT='%{$fg[green]%}%n@%{$fg[green]%}%m%{$reset_color%}:%{$fg[blue]%}%~%{$reset_color%}$ '
 export PROMPT
+
+# set default highlighting colors
+alias highlight="highlight --out-format=xterm256 --style=fine_blue"
