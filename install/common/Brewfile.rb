@@ -17,6 +17,7 @@ brew "wget"
 brew "glow" 
 
 # highlight for syntax highlighting in the terminal
+# http://www.andre-simon.de/doku/highlight/en/highlight.php
 brew "highlight" 
 
 # perl-like regular expressions, used in some aliases
