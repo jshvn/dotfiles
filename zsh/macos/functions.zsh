@@ -20,6 +20,11 @@ function pubkey() {    # pubkey() will copy a public key to the clipboard. ex: $
 	more $DOTFILEDIR/ssh/.ssh/$1 | pbcopy | echo '=> Public key copied to clipboard.'
 }
 
+# list all ssh endpoints from /ssh/.ssh/config
+function sshlist() {    # sshlist() will list all available ssh endpoints. ex: $ sshlist
+	cat $DOTFILEDIR/ssh/.ssh/config | grep "Host " | grep -v "Host \*" | grep "Host "
+}
+
 # set the computer's hostname to specified name
 function sethostname() {    # sethostname() will set the machine's hostname to the given string. ex: $ sethostname JWORK
 	if [ -z "${1}" ]; then
