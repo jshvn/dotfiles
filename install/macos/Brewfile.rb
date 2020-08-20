@@ -37,6 +37,7 @@ cask "appcleaner" unless system("test -e /Applications/AppCleaner.app")
 
 # productivity
 cask "fantastical" unless system("test -e /Applications/Fantastical.app")
+cask "cardhop" unless system("test -e /Applications/Cardhop.app")
 cask "microsoft-word" unless system("test -e \"/Applications/Microsoft Word.app\"")
 cask "microsoft-excel" unless system("test -e \"/Applications/Microsoft Excel.app\"")
 cask "microsoft-powerpoint" unless system("test -e \"/Applications/Microsoft PowerPoint.app\"")
