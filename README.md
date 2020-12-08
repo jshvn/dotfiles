@@ -5,6 +5,7 @@ This repository is meant to act as a working copy of my computer configuration, 
 These dotfiles have been tested on:
 
 * macOS 10.15
+* macOS 11.0
 * Ubuntu 18.04
 * Ubuntu 20.04
 
