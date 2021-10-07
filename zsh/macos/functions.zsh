@@ -22,7 +22,7 @@ function pubkey() {    # pubkey() will copy a public key to the clipboard. ex: $
 
 # list all ssh endpoints from /ssh/.ssh/config
 function sshlist() {    # sshlist() will list all available ssh endpoints. ex: $ sshlist
-	cat $DOTFILEDIR/ssh/.ssh/config | grep "Host " | grep -v "Host \*" | grep "Host "
+	cat $DOTFILEDIR/ssh/.ssh/config | grep -e "Host" -e "Personal" -e "Adobe" | grep -v "Host \*" | grep "Host \|###### Personal\|###### Adobe"
 }
 
 # set the computer's hostname to specified name
