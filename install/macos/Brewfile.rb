@@ -48,6 +48,7 @@ cask "firefox" unless system("test -e /Applications/Firefox.app")
 # download these directly from source
 #cask "dropbox"
 #cask "1password" 
+cask "1password-cli"
 
 ###############################
 #  macOS Apps via App Store   #
