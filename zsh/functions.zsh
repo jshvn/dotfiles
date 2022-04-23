@@ -6,6 +6,14 @@
 # any scripts that interact with APIs or non-system software should be placed
 # in their own script in the scripts subdirectory
 
+# this func allows you to easily list all of the available funcs
+function functionlist() {
+    # grab all of the common funcs to both platforms
+    local list=$(grep 'function' "$DOTFILEDIR/zsh/functions.zsh" | awk '{$1=$1};1' | highlight --syntax=bash)
+
+    echo "$list" | sort -u -d -s | tr -d '\\+'
+}
+
 # update the dotfiles completely
 function update() {    # update() will update the current dotfiles installation and dependencies. ex: $ update
 	# save the current directory

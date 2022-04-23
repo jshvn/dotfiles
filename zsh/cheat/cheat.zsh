@@ -23,18 +23,3 @@ function cheat() {
         help|*)             glow --style "$CHEATSDIR/glow_style.json" -w 120 "$CHEATSDIR/cheat.md"                                                      ;;
     esac
 }
-
-
-function aliaslist() {
-    # grab all of the common aliases to both platforms
-    local list=$(grep 'alias' "$DOTFILEDIR/zsh/aliases.zsh" | awk '{$1=$1};1' | highlight --syntax=bash)
-
-    echo "$list" | sort -u -d -s
-}
-
-function functionlist() {
-    # grab all of the common functions to both platforms
-    local list=$(grep 'function' "$DOTFILEDIR/zsh/functions.zsh" | awk '{$1=$1};1' | highlight --syntax=bash)
-
-    echo "$list" | sort -u -d -s | tr -d '\\+'
-}
