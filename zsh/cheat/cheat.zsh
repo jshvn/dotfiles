@@ -27,40 +27,14 @@ function cheat() {
 
 function aliaslist() {
     # grab all of the common aliases to both platforms
-    local commonlist=$(grep '^alias' "$DOTFILEDIR/zsh/common/aliases.zsh" | highlight --syntax=bash)
-    
-    # grab all of the platform specific aliases
-    local platformlist="\n"
-    if [[ $(uname) == "Darwin" ]]; then
-        platformlist+=$(grep '^alias' "$DOTFILEDIR/zsh/macos/aliases.zsh" | highlight --syntax=bash)
-    else
-        platformlist+=$(grep '^alias' "$DOTFILEDIR/zsh/linux/aliases.zsh" | highlight --syntax=bash)
-    fi
+    local list=$(grep 'alias' "$DOTFILEDIR/zsh/aliases.zsh" | awk '{$1=$1};1' | highlight --syntax=bash)
 
-    # combine and print
-    local combined="$commonlist"+"$platformlist"
-    echo "$combined" | sort -u -d -s
+    echo "$list" | sort -u -d -s
 }
 
 function functionlist() {
     # grab all of the common functions to both platforms
-    local commonlist=$(grep '^function' "$DOTFILEDIR/zsh/common/functions.zsh" | highlight --syntax=bash)
-    
-    # grab all of the platform specific functions
-    local platformlist="\n"
-    if [[ $(uname) == "Darwin" ]]; then
-        platformlist+=$(grep '^function' "$DOTFILEDIR/zsh/macos/functions.zsh" | highlight --syntax=bash)
-    else
-        platformlist+=$(grep '^function' "$DOTFILEDIR/zsh/linux/functions.zsh" | highlight --syntax=bash)
-    fi
+    local list=$(grep 'function' "$DOTFILEDIR/zsh/functions.zsh" | awk '{$1=$1};1' | highlight --syntax=bash)
 
-    # grab all of the functions defined in the scripts directory
-    local scriptfunctionlist=""
-    for script in $DOTFILEDIR/zsh/common/scripts/*; do 
-        scriptfunctionlist+="\n"+$(grep '^function' "$script" | highlight --syntax=bash)
-    ; done
-
-    # combine and print
-    local combined="$commonlist"+"$platformlist"+"$scriptfunctionlist"
-    echo "$combined" | sort -u -d -s | tr -d '\\+'
+    echo "$list" | sort -u -d -s | tr -d '\\+'
 }
