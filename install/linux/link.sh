@@ -22,4 +22,5 @@ ln -sf "$DOTFILEDIR"/zsh/functions.zsh "$HOME"/.functions.zsh
 
 # setup git related links
 ln -sf "$DOTFILEDIR"/git/.gitconfig "$HOME"/.gitconfig
+ln -sf "$DOTFILEDIR"/git/.stCommitMsg "$HOME"/.stCommitMsg
 ln -sf "$DOTFILEDIR"/git/.gitignore_global "$HOME"/.gitignore_global
