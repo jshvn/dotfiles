@@ -123,16 +123,16 @@ if [[ `uname` == "Darwin" ]]; then
     function pubkey() {    # pubkey() will copy a public key to the clipboard. ex: $ pubkey id_rsa_work.pub
         if [ -z "${1}" ]; then
             echo "ERROR: No key specified. The possible keys are:";
-            local keylist=$(ls $DOTFILEDIR/ssh/.ssh/keys/*.pub);
+            local keylist=$(ls ~/.ssh/*.pub);
             echo $keylist;
             return 1;
         fi;
-        more $DOTFILEDIR/ssh/.ssh/$1 | pbcopy | echo '=> Public key copied to clipboard.'
+        more ~/.ssh/$1 | pbcopy | echo '=> Public key copied to clipboard.'
     }
 
     # list all ssh endpoints from /ssh/.ssh/config
     function sshlist() {    # sshlist() will list all available ssh endpoints. ex: $ sshlist
-        local CONFIG_PATH=("$DOTFILEDIR/ssh/.ssh/configs"/*)
+        local CONFIG_PATH=("$DOTFILEDIR/ssh/configs"/*)
         for f in $CONFIG_PATH
         do
             cat "$f" | 

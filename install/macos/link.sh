@@ -28,10 +28,10 @@ ln -sf "$DOTFILEDIR"/git/personal/.gitconfig-personal "$HOME"/.gitconfig-persona
 ln -sf "$DOTFILEDIR"/git/work/.gitconfig-work "$HOME"/.gitconfig-work
 
 # setup SSH related links
-ln -sf "$DOTFILEDIR"/ssh/.ssh/configs/config "$HOME"/.ssh/config
-ln -sf "$DOTFILEDIR"/ssh/.ssh/configs/config_personal "$HOME"/.ssh/config_personal
-ln -sf "$DOTFILEDIR"/ssh/.ssh/configs/config_adobe "$HOME"/.ssh/config_adobe
-ln -sf "$DOTFILEDIR"/ssh/.ssh/configs/config_dcds "$HOME"/.ssh/config_dcds
-ln -sf "$DOTFILEDIR"/ssh/.ssh/configs/config_3di "$HOME"/.ssh/config_3di
-ln -sf "$DOTFILEDIR"/ssh/.ssh/keys/id_ed25519_personal.pub "$HOME"/.ssh/id_ed25519_personal.pub
-ln -sf "$DOTFILEDIR"/ssh/.ssh/keys/id_rsa_work.pub "$HOME"/.ssh/id_rsa_work.pub
+ln -sf "$DOTFILEDIR"/ssh/configs/config "$HOME"/.ssh/config
+ln -sf "$DOTFILEDIR"/ssh/configs/config_personal "$HOME"/.ssh/config_personal
+ln -sf "$DOTFILEDIR"/ssh/configs/config_adobe "$HOME"/.ssh/config_adobe
+ln -sf "$DOTFILEDIR"/ssh/configs/config_dcds "$HOME"/.ssh/config_dcds
+ln -sf "$DOTFILEDIR"/ssh/configs/config_3di "$HOME"/.ssh/config_3di
+ln -sf "$DOTFILEDIR"/ssh/keys/id_ed25519_personal.pub "$HOME"/.ssh/id_ed25519_personal.pub
+ln -sf "$DOTFILEDIR"/ssh/keys/id_rsa_work.pub "$HOME"/.ssh/id_rsa_work.pub
