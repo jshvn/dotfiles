@@ -86,6 +86,15 @@ plugins=(
     zsh-autosuggestions
 )
 
+# Perform compinit only once a day for speed
+# https://gist.github.com/ctechols/ca1035271ad134841284#gistcomment-2308206
+autoload -Uz compinit
+for dump in ~/.zcompdump(N.mh+24); do
+   echo "reloading compinit"
+  compinit
+done
+compinit -C
+
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
