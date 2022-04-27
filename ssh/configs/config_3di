@@ -2,6 +2,21 @@
 ######## 3DI ########
 ##############################
 
+####
+#### 3DI Jenkins
+####
+
+Host 3di-jenkins
+  HostName cc-3di-2-204-4.ci.corp.adobe.com
+  KexAlgorithms +diffie-hellman-group1-sha1
+  User jnks4all
+  IdentityFile ~/.ssh/id_rsa_work.pub
+  IdentitiesOnly yes
+
+#### 
+#### Hadoop edge node
+####
+
 Host hadoop-3di-edge
   HostName sshp.wipc.adobe.com
   User vaughen@cc3di#ids-security-endpoint.corp.adobe.com@or1010051166055.corp.adobe.com
