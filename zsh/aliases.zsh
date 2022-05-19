@@ -33,10 +33,11 @@ alias perms='permissions'
 ##############################
 
 # jgrid.net machines
-alias atium="ssh josh@atium-ssh.jgrid.net"
-alias copper="ssh josh@copper-ssh.jgrid.net"
-alias tin="ssh josh@tin-ssh.jgrid.net"
-alias zinc="ssh josh@zinc-ssh.jgrid.net"
+alias atium="ssh josh@ssh.atium.jgrid.net"
+alias copper="ssh josh@ssh.copper.jgrid.net"
+alias tin="ssh josh@ssh.tin.jgrid.net"
+alias zinc="ssh josh@ssh.zinc.jgrid.net"
+alias pewter="ssh josh@ssh.pewter.jgrid.net"
 
 ####################################################################################
 #################################### macOS #########################################
