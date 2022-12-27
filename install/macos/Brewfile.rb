@@ -10,6 +10,8 @@
 
 brew "coreutils"
 brew "mas" # https://github.com/mas-cli/mas 
+# install git since macOS git is often old
+brew "git"
 
 ###############################
 #  macOS Apps via Cask        #
