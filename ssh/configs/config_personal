@@ -6,28 +6,28 @@ Host ssh.atium.jgrid.net
     IdentityFile ~/.ssh/id_ed25519_personal.pub
     IdentitiesOnly yes
     User josh
-    ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
+    ProxyCommand ~/.ssh/platform.sh access ssh --hostname %h
 
 Host ssh.tin.jgrid.net
     IdentityFile ~/.ssh/id_ed25519_personal.pub
     IdentitiesOnly yes
     User josh
-    ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
+    ProxyCommand ~/.ssh/platform.sh access ssh --hostname %h
 
 Host ssh.copper.jgrid.net
     IdentityFile ~/.ssh/id_ed25519_personal.pub
     IdentitiesOnly yes
     User josh
-    ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
+    ProxyCommand ~/.ssh/platform.sh access ssh --hostname %h
 
 Host ssh.zinc.jgrid.net
     IdentityFile ~/.ssh/id_ed25519_personal.pub
     IdentitiesOnly yes
     User josh
-    ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
+    ProxyCommand ~/.ssh/platform.sh access ssh --hostname %h
 
 Host ssh.pewter.jgrid.net
     IdentityFile ~/.ssh/id_ed25519_personal.pub
     IdentitiesOnly yes
     User josh
-    ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
+    ProxyCommand ~/.ssh/platform.sh access ssh --hostname %h

@@ -67,6 +67,16 @@ This launcher will install and configure the complete dotfiles.
     * homebrew will install utilities, packages, and applications acording to what is defined in `install/common/Brewfile.rb`
     * homebrew will install utilities, packages, and applications acording to what is defined in `install/linux/Brewfile.rb`
 
+**ARM vs Intel**
+
+On ARM Macs Homebrew installs packages to:
+    `/opt/homebrew/bin/`
+
+On Intel Macs Homebrew installs packages to:
+    `/usr/local/bin/`
+
+Some aliases and other functions may need to be updated or checked to ensure compatibility.
+
 ### 🔭 Update details
 
 If you simply need to reload what is already exposed to `zsh` in your local filesystem then a simple `$ reload` command is sufficient.

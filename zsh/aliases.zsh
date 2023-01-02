@@ -51,7 +51,11 @@ if [[ `uname` == "Darwin" ]]; then
     ##############################
 
     # make sure ls always has color
-    alias ls="/usr/local/bin/gls --color=always"
+    if [[ `uname -m` == "arm64" ]]; then
+        alias ls="/opt/homebrew/bin/gls --color=always"
+    else 
+        alias ls="/usr/local/bin/gls --color=always"
+    fi
 
     # open finder at current location
     alias finder="open -a Finder ./"

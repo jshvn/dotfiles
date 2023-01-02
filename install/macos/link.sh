@@ -35,3 +35,6 @@ ln -sf "$DOTFILEDIR"/ssh/configs/config_dcds "$HOME"/.ssh/config_dcds
 ln -sf "$DOTFILEDIR"/ssh/configs/config_3di "$HOME"/.ssh/config_3di
 ln -sf "$DOTFILEDIR"/ssh/keys/id_ed25519_personal.pub "$HOME"/.ssh/id_ed25519_personal.pub
 ln -sf "$DOTFILEDIR"/ssh/keys/id_rsa_work.pub "$HOME"/.ssh/id_rsa_work.pub
+
+# setup SSH platform detection
+ln -sf "$DOTFILEDIR"/ssh/configs/platform.sh "$HOME"/.ssh/platform.sh

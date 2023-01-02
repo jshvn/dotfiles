@@ -55,7 +55,11 @@ if [ "$(uname)" == "Darwin" ]; then
   ####### Install miniconda
   echo "Installing miniconda"
   if [ ! -e ~/.conda ]; then
-    sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh) --unattended"
+    if [[ `uname -m` == "arm64" ]]; then
+        sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh) --unattended"
+    else 
+        sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh) --unattended"
+    fi
   fi
 else
   

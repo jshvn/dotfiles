@@ -52,4 +52,4 @@ brew "tldr"
 brew "fd" 
 
 # cloudflared client
-brew "cloudflare/cloudflare/cloudflared"
+brew "cloudflared"
