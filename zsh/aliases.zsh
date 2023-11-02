@@ -72,8 +72,10 @@ if [[ `uname` == "Darwin" ]]; then
     alias dnsflush="sudo killall -HUP mDNSResponder; sudo killall mDNSResponderHelper; sudo dscacheutil -flushcache"
 
     # get current IP information. show all: $ ips
-    activeinterfaces=$(ifconfig | pcregrep -M -o '^[^\t:]+(?=:([^\n]|\n\t)*status: active)' | tr '\n' ' ')
-    getiploc=$(ipconfig getifaddr en0)
+    local activeinterfaces=$(ifconfig | pcregrep -M -o '^[^\t:]+(?=:([^\n]|\n\t)*status: active)' | tr '\n' ' ')
+    local getiploc=$(ipconfig getifaddr en0)
+    local getipv4=$(curl -4 simpip.com --max-time 1 --proto-default https --silent)
+    local getipv6=$(curl -6 simpip.com --max-time 1 --proto-default https --silent)
 
     alias ipv4="echo IPv4: $getipv4"
     alias ipv6="echo IPv6: $getipv6"
