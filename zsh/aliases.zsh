@@ -39,6 +39,9 @@ alias tin="ssh josh@ssh.tin.jgrid.net"
 alias zinc="ssh josh@ssh.zinc.jgrid.net"
 alias pewter="ssh josh@ssh.pewter.jgrid.net"
 
+local getipv4=$(curl -4 simpip.com --max-time 1 --proto-default https --silent)
+local getipv6=$(curl -6 simpip.com --max-time 1 --proto-default https --silent)
+
 ####################################################################################
 #################################### macOS #########################################
 ####################################################################################
@@ -74,8 +77,6 @@ if [[ `uname` == "Darwin" ]]; then
     # get current IP information. show all: $ ips
     local activeinterfaces=$(ifconfig | pcregrep -M -o '^[^\t:]+(?=:([^\n]|\n\t)*status: active)' | tr '\n' ' ')
     local getiploc=$(ipconfig getifaddr en0)
-    local getipv4=$(curl -4 simpip.com --max-time 1 --proto-default https --silent)
-    local getipv6=$(curl -6 simpip.com --max-time 1 --proto-default https --silent)
 
     alias ipv4="echo IPv4: $getipv4"
     alias ipv6="echo IPv6: $getipv6"
