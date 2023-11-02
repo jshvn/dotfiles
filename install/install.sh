@@ -4,9 +4,6 @@
 #################################### Common ########################################
 ####################################################################################
 
-# for any errors, go ahead and cancel
-set -e
-
 # Find dotfile repo directory on this system, set $DOTFILEDIR to contain absolute path
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -28,6 +25,9 @@ if [ "$(uname)" == "Darwin" ]; then
 
   ####### Step 0
   ####### Install any dependencies to run the setup scripts
+
+  # for macOS, we want to stop install flow if we hit an error
+  set -e
 
   ####### Step 1
   ####### Setup links
