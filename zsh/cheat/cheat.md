@@ -26,13 +26,6 @@ This file can be found by running `$ cheat` from anywhere on the system as long 
     $ functionlist          :   lists all of the custom functions defined in dotfiles
 ```
 
-### 🛠  VS Code functions
-
-```
-    $ shift + option + U    :  upload current settings to gist
-    $ shift + option + D    :  download settings from gist
-```
-
 ### 📁 File links
 
 Use `⌘ + double click` (command + double click) on these links to open these in the browser.

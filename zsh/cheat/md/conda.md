@@ -76,7 +76,7 @@ This cheatsheet was sourced from: [https://docs.conda.io/projects/conda/en/4.6.0
 |:--|:--|
 |Install different version of Python in a new environment named py34 |`$ conda create --name py34 python=3.4`|
 |||
-|Switch to the new environment that has a different version of Python|`$  source activate py34`|
+|Switch to the new environment that has a different version of Python|`$ source activate py34`|
 |||
 |Show the locations of all versions of Python that are currently in the path|`$ which -a python`|
 |||

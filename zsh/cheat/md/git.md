@@ -1,15 +1,5 @@
 ## Git cheatsheet
 
-## Install
-
-### GitHub Desktop
-[desktop.github.com](https://desktop.github.com)
-
-### Git for All Platforms
-[git-scm.com](https://git-scm.com)
-
----
-
 ## Configure tooling
 Configure user information for all local repositories
 
