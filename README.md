@@ -4,11 +4,8 @@ This repository is meant to act as a working copy of my computer configuration, 
 
 These dotfiles have been tested on:
 
-* macOS 10.15+
-* macOS 11.0+
-* macOS 12.0+
-* Ubuntu 18.04
-* Ubuntu 20.04
+* macOS 14.0 Sonoma
+* Ubuntu 22.04
 
 
 ## 🖥 How to install or update
@@ -30,6 +27,8 @@ When setting up a new machine, or wanting to update an existing machine after up
 ### 🛠 Install details
 
 The install process is multi-step and will likely take quite a bit of time to complete depending on your internet connection and machine capability. In general it is recommended to connect via ethernet and let this run until completion.
+
+There are almost always bugs when upgrading to a new OS version. The install process is set such that when an error occurs, the process will halt and you will need to diagnose and fix.
 
 **Boostrap:**
 
