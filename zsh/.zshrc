@@ -159,6 +159,8 @@ if [[ $(uname) == "Darwin" ]]; then
     ####################################################################################
     export VISUAL="code"
     export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
+    # Set 1Password as SSH agent on macOS
+    export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
 
     # >>> conda initialize >>>
     # !! Contents within this block are managed by 'conda init' !!
