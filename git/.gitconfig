@@ -2,8 +2,8 @@
 	name = Josh Vaughen
 [includeIf "gitdir:~/Git/personal/"]
     path = ~/.gitconfig-personal
-[includeIf "gitdir:~/Git/work/"]
-    path = ~/.gitconfig-work
+[includeIf "gitdir:~/Git/adobe/"]
+    path = ~/.gitconfig-adobe
 [core]
 	editor = vscode
 	excludesfile = ~/.gitignore_global

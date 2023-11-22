@@ -55,14 +55,14 @@ Host hadoop-adcgener-bypass
 Host dcds-jenkins
   HostName dcds2020.ci.corp.adobe.com
   User jnks4all
-  IdentityFile ~/.ssh/id_rsa_work.pub
+  IdentityFile ~/.ssh/id_rsa_adobe.pub
   IdentitiesOnly yes
 
 Host dcds-jenkins-itc
   HostName sshp.corp.adobe.com
   User PSMConnect
   RequestTTY force
-  IdentityFile ~/.ssh/id_rsa_work.pub
+  IdentityFile ~/.ssh/id_rsa_adobe.pub
   IdentitiesOnly yes
   RemoteCommand vaughen root or1010051251041.corp.adobe.com
 
@@ -73,17 +73,17 @@ Host dcds-jenkins-itc
 Host dcds-bare-web
   HostName sj1010122109232.corp.adobe.com
   User vaughen
-  IdentityFile ~/.ssh/id_rsa_work.pub
+  IdentityFile ~/.ssh/id_rsa_adobe.pub
   IdentitiesOnly yes
 
 Host dcds-bare-mobile
   HostName sj1010122109233.corp.adobe.com
   User vaughen
-  IdentityFile ~/.ssh/id_rsa_work.pub
+  IdentityFile ~/.ssh/id_rsa_adobe.pub
   IdentitiesOnly yes
 
 Host dcds-bare-desktop
   HostName sj1010122109234.corp.adobe.com
   User vaughen
-  IdentityFile ~/.ssh/id_rsa_work.pub
+  IdentityFile ~/.ssh/id_rsa_adobe.pub
   IdentitiesOnly yes
