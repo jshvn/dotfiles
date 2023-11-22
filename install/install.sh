@@ -41,10 +41,7 @@ if [ "$(uname)" == "Darwin" ]; then
   # Get Oh My ZSH up and running
   echo "Installing oh-my-zsh"
   if [ ! -e ~/.oh-my-zsh ]; then
-    curl -O https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-    sh install.sh
-    rm install.sh
-    #sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended"
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended"
   fi
 
   ####### Step 3
@@ -59,15 +56,9 @@ if [ "$(uname)" == "Darwin" ]; then
   echo "Installing miniconda"
   if [ ! -e ~/.conda ]; then
     if [[ `uname -m` == "arm64" ]]; then
-        curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh
-        sh Miniconda3-latest-MacOSX-arm64.sh
-        rm Miniconda3-latest-MacOSX-arm64.sh
-        #sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh) --unattended"
+        sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh) --unattended"
     else 
-        curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
-        sh Miniconda3-latest-MacOSX-x86_64.sh
-        rm Miniconda3-latest-MacOSX-x86_64.sh
-        #sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh) --unattended"
+        sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh) --unattended"
     fi
   fi
 else
@@ -110,10 +101,7 @@ else
   # Get Oh My ZSH up and running
   echo "Installing oh-my-zsh"
   if [ ! -e ~/.oh-my-zsh ]; then
-    curl -O https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-    sh install.sh
-    rm install.sh
-    #sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended"
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended"
   fi
 
   ####### Step 2
@@ -132,9 +120,7 @@ else
   ####### Install miniconda
   echo "Installing miniconda"
   if [ ! -e ~/.conda ]; then
-    curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-    sh Miniconda3-latest-Linux-x86_64.sh
-    rm Miniconda3-latest-Linux-x86_64.sh
+    sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh) --unattended"
   fi
 fi
 
