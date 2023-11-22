@@ -118,15 +118,16 @@ else
 
   ####### Step 4
   ####### Install miniconda
-  echo "Installing miniconda"
-  if [ ! -e ~/.conda ]; then
+  #echo "Installing miniconda"
+  # commenting out install of miniconda for now since not being used on linux
+  #if [ ! -e ~/.conda ]; then
     # Download the Miniconda installer
-    curl -fsSL -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    #curl -fsSL -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 
     # Run the installer
-    sh miniconda.sh --unattended
+    #sh miniconda.sh -b -p $HOME/miniconda
     #sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh) --unattended"
-  fi
+  #fi
 fi
 
 
