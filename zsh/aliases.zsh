@@ -28,6 +28,9 @@ alias fsa='ncdu'
 # shorthand for permissions function
 alias perms='permissions'
 
+# shorthand for directory list
+alias ll='ls -al'
+
 ##############################
 ###### Networking
 ##############################
