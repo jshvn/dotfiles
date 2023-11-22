@@ -120,7 +120,12 @@ else
   ####### Install miniconda
   echo "Installing miniconda"
   if [ ! -e ~/.conda ]; then
-    sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh) --unattended"
+    # Download the Miniconda installer
+    curl -fsSL -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+
+    # Run the installer
+    sh miniconda.sh --unattended
+    #sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh) --unattended"
   fi
 fi
 
