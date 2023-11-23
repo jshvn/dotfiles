@@ -36,6 +36,9 @@ cask "visual-studio-code" unless system("test -e \"/Applications/Visual Studio C
 cask "cyberduck" unless system("test -e /Applications/Cyberduck.app")
 cask "mountain-duck" unless system("test -e \"/Applications/Mountain Duck.app\"")
 cask "appcleaner" unless system("test -e /Applications/AppCleaner.app")
+cask "protonvpn" unless system("test -e /Applications/ProtonVPN.app")
+cask "dropbox" unless system("test -e /Applications/Dropbox.app")
+cask "1password" unless system("test -e /Applications/1Password.app")
 
 # productivity
 cask "fantastical" unless system("test -e /Applications/Fantastical.app")
@@ -48,8 +51,6 @@ cask "microsoft-powerpoint" unless system("test -e \"/Applications/Microsoft Pow
 cask "firefox" unless system("test -e /Applications/Firefox.app")
 
 # download these directly from source
-#cask "dropbox"
-#cask "1password" 
 cask "1password-cli"
 
 ###############################
