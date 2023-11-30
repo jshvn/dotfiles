@@ -31,9 +31,7 @@ brew "pcre"
 # htop is a better top
 brew "htop"
 
-# unrar and 7zip for file compression/decompression
-# 2021-08-04: unrar has been removed from homebrew due to licensing issues
-#brew "unrar"
+# 7zip for file compression/decompression
 brew "p7zip"
 
 # domain name lookup and information
