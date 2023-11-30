@@ -39,6 +39,7 @@ cask "appcleaner" unless system("test -e /Applications/AppCleaner.app")
 cask "protonvpn" unless system("test -e /Applications/ProtonVPN.app")
 cask "dropbox" unless system("test -e /Applications/Dropbox.app")
 cask "1password" unless system("test -e /Applications/1Password.app")
+cask "cryptomator" unless system("test -e /Applications/Cryptomator.app")
 
 # productivity
 cask "fantastical" unless system("test -e /Applications/Fantastical.app")
