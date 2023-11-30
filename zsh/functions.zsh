@@ -24,14 +24,14 @@ function update() {    # update() will update the current dotfiles installation 
 
 	# pull new version from origin
 	git pull
+
+    # update tldr definitions
+    tldr --update
 	
 	# execute the install script
 	# note: we manually specify bash here, since the install script is written in bash 
 	# and we're calling it from zsh. bad things happen if you use source instead
 	bash $DOTFILEDIR/install/install.sh
-
-    # update tldr definitions
-    tldr --update
 
 	# return user to previous directory
 	cd $currentdir
