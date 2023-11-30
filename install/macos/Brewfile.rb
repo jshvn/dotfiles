@@ -51,8 +51,12 @@ cask "microsoft-powerpoint" unless system("test -e \"/Applications/Microsoft Pow
 # browser
 cask "firefox" unless system("test -e /Applications/Firefox.app")
 
-# download these directly from source
+###############################
+#  macOS Utilities via Cask   #
+###############################
+
 cask "1password-cli"
+cask "miniconda"
 
 ###############################
 #  macOS Apps via App Store   #

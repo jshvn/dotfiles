@@ -51,16 +51,6 @@ if [ "$(uname)" == "Darwin" ]; then
   source "$DOTFILEDIR"/install/macos/macos.sh
   source "$DOTFILEDIR"/install/macos/defaults.sh
 
-  ####### Step 4
-  ####### Install miniconda
-  echo "Installing miniconda"
-  if [ ! -e ~/.conda ]; then
-    if [[ `uname -m` == "arm64" ]]; then
-        sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh) --unattended"
-    else 
-        sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh) --unattended"
-    fi
-  fi
 else
   
 
@@ -116,18 +106,6 @@ else
   # Set up symbolic links for ZSH and Git pointing to this cloned repo
   source "$DOTFILEDIR"/install/linux/link.sh
 
-  ####### Step 4
-  ####### Install miniconda
-  #echo "Installing miniconda"
-  # commenting out install of miniconda for now since not being used on linux
-  #if [ ! -e ~/.conda ]; then
-    # Download the Miniconda installer
-    #curl -fsSL -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-
-    # Run the installer
-    #sh miniconda.sh -b -p $HOME/miniconda
-    #sh -c "$(curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh) --unattended"
-  #fi
 fi
 
 

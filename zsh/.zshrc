@@ -162,20 +162,8 @@ if [[ $(uname) == "Darwin" ]]; then
     # Set 1Password as SSH agent on macOS
     export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
 
-    # >>> conda initialize >>>
-    # !! Contents within this block are managed by 'conda init' !!
-    __conda_setup="$('/Users/josh/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-    if [ $? -eq 0 ]; then
-        eval "$__conda_setup"
-    else
-        if [ -f "/Users/josh/miniconda3/etc/profile.d/conda.sh" ]; then
-            . "/Users/josh/miniconda3/etc/profile.d/conda.sh"
-        else
-            export PATH="/Users/josh/miniconda3/bin:$PATH"
-        fi
-    fi
-    unset __conda_setup
-    # <<< conda initialize <<<
+    # Initialize conda for current shell
+    eval "$(conda "shell.$(basename "${SHELL}")" hook)"
 
     # Add visual studio code to the path if it isn't already there
     if [ -d "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" ] && [[ ":$PATH:" != *":/Applications/Visual Studio Code.app/Contents/Resources/app/bin:"* ]]; then
@@ -187,10 +175,6 @@ else
     ####################################################################################
     #################################### Linux #########################################
     ####################################################################################
-
-    # eventually figure out what to export for visual and browser
-    #export VISUAL="code"
-    #export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
 
     # make sure our brew applications can be found
     eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
