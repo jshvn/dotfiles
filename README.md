@@ -38,33 +38,13 @@ This launcher will install and configure the complete dotfiles.
 
 **Install process:**
 
-* **`install/install.sh`**
-    * script will identify dotfiles repo location
-    * script will check which system it is being run on
-    * macos:
-        * script will source `install/macos/link.sh` which sets up symlinks for custom aliases and functions here
-        * script will install [oh my zsh](https://github.com/ohmyzsh/ohmyzsh)
-        * script will source `install/macos/macos.sh` which installs [homebrew](https://brew.sh/) and macOS specifics like Xcode
-        * script will source `install/macos/defaults.sh` which sets a bunch of macOS system preferences
-    * linux:
-        * script will install `curl`, `build-essential`, and the `zsh` shell since Ubuntu's default is `bash`
-        * script will set `zsh` as default shell
-        * script will source `install/linux/link.sh` which sets up symlinks for custom aliases and functions here
-        * script will install [oh my zsh](https://github.com/ohmyzsh/ohmyzsh)
-        * script will source `install/linux/linux.sh` which installs [homebrew](https://brew.sh/) 
+Script sources in the following order:
 
+1. `boostrap.sh` sources `install/install.sh`
+2. `install/install.sh` sources `install/linux/linux.sh` or `install/macos/macos.sh` depending on system
+3. System install script runs `install/linux/link.sh` or `install/macos/link.sh` to setup symlinks for this repo
 
-**Platform specific install process:**
-
-* **`install/macos/macos.sh`**
-    * script will install [homebrew](https://brew.sh/)
-    * homebrew will install utilities, packages, and applications acording to what is defined in `install/common/Brewfile.rb`
-    * homebrew will install utilities, packages, and applications acording to what is defined in `install/macos/Brewfile.rb`
-    * script will install XCode developer tools and command line application
-* **`install/linux/linux.sh`**
-    * script will install [homebrew](https://brew.sh/) and add it to the current shell environment
-    * homebrew will install utilities, packages, and applications acording to what is defined in `install/common/Brewfile.rb`
-    * homebrew will install utilities, packages, and applications acording to what is defined in `install/linux/Brewfile.rb`
+On macOS, `install/macos/defaults.sh` is also sourced to set some default preferences on the machine.
 
 **ARM vs Intel**
 
@@ -99,17 +79,15 @@ ZSH scripts:
     * this will source the `common`, `macos`, or `linux` custom functions
     * this will source the `zsh/theme.zsh` custom theme overrides
     * this will source any helper scripts that exist in the `zsh/scripts/` subdirectory
-    * this will also configure the miniconda environment for macOS devices
+    * this will also initialize the miniconda environment for current shell for macOS devices
 * **`zsh/theme.zsh`**
     * this will define any theme overrides for all platforms
     * this will set `$LS_COLOR` / `$LSCOLOR` overrides
     * this will set `$PROMPT` overrides
-* **`*/aliases.zsh`**
+* **`zsh/aliases.zsh`**
     * this will define all the useful custom aliases for injection into shell environment
-    * aliases should strive to be `common` when possible, but there exist platform specific subdirectories
-* **`*/functions.zsh`**
+* **`zsh/functions.zsh`**
     * this will define all the useful custom functions for injection into shell environment
-    * functions should strive to be `common` when possible, but there exist platform specific subdirectories
 
 
 ### 🤓 Cheat details
