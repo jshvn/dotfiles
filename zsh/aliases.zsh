@@ -32,7 +32,7 @@ alias perms='permissions'
 alias ll='ls -al'
 
 # add formatting to glow command
-alias glow='glow --style "$DOTFILEDIR/zsh/styles/glow_style.json"'
+alias glow='glow --style "$DOTFILEDIR/zsh/styles/glow_style.json" -w 120'
 
 ##############################
 ###### Networking
