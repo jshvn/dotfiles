@@ -5,6 +5,6 @@ function ghpubkey() {    # ghpubkey() will print public key information for a gi
 		return 1;
 	fi;
 
-    local jsonobject=$(curl -sL --request GET --url github.com/$1.keys)
-    echo $jsonobject | highlight --syntax=bash
+    local response=$(curl -sL --request GET --url github.com/$1.keys)
+    echo $response | highlight --syntax=bash
 }
