@@ -11,6 +11,18 @@ function functionlist() {
     # grab all of the common funcs to both platforms
     local list=$(grep 'function' "$DOTFILEDIR/zsh/functions.zsh" | awk '{$1=$1};1' | highlight --syntax=bash)
 
+    local funcslist=()
+
+    # grab all of the platform agnostic funcs
+    for file in "$DOTFILEDIR/zsh/scripts/"*
+    do
+        if [[ -f $file ]]; then
+            funcslist+=$(grep 'function' "$file" | awk '{$1=$1};1' | highlight --syntax=bash)
+            funcslist+=$'\n'
+        fi
+    done
+
+    echo "$funcslist" | awk '{$1=$1};1'
     echo "$list" | sort -u -d -s | tr -d '\\+'
 }
 
