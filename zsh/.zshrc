@@ -132,9 +132,6 @@ done
 ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 DOTFILEDIR="$(dirname "$ZSHDIR")"
 
-# load cheat scripts
-source $DOTFILEDIR/zsh/cheat/cheat.zsh
-
 # load common ZSH aliases
 source $DOTFILEDIR/zsh/aliases.zsh
 

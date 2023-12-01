@@ -90,15 +90,6 @@ ZSH scripts:
     * this will define all the useful custom functions for injection into shell environment
 
 
-### 🤓 Cheat details
-
-Perhaps one of the more useful aspects of these dotfiles is the included `$ cheat` infrastructure. 
-
-There is a custom script `cheat.zsh` that gets sourced into ZSH when the dotfiles are installed that allows you to read beautified markdown files from within the terminal. I'm using this to store information about commands I use frequently enough to need to know how to use them correctly, but not frequently enough that I always remember exactly what the command syntax is. 
-
-I have added a few really common ones I use in there so far, but this can be easily expanded by updating both `zsh/cheat/cheat.zsh` and `zsh/cheat/cheat.md` with the command to access the cheatfile and the appropriate cheatfile documentation.
-
-
 ## 📘 Notes
 
 If you change the location of this repo on the filesystem, you will need to re-run the `bootstrap.sh` or `link.sh` script again because the symlinks to the files within this repo will be broken.
