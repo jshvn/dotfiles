@@ -111,7 +111,7 @@ function prettyjson() {    # prettyjson() will print human readable json that ha
 		return 1;
 	fi;
 
-  result=$(cat $1 | python -m json.tool)
+  result=$(cat $1 | python3 -m json.tool)
   echo $result | highlight --syntax=json
 }
 
