@@ -1,4 +1,16 @@
 ###############################
+#  Install helper             #
+###############################
+
+def brew_install_or_upgrade(formula)
+    if system("brew list --versions #{formula} >/dev/null")
+        system("brew upgrade #{formula}")
+    else
+        system("brew install #{formula}")
+    end
+end
+
+###############################
 #  Taps                       #
 ###############################
 
@@ -10,44 +22,44 @@ tap "homebrew/cask-versions"
 ###############################
 
 # wget for pulling web data
-brew "wget" 
+brew_install_or_upgrade("wget")
 
 # glow for markdown rendering in the terminal 
 # https://github.com/charmbracelet/glow
-brew "glow" 
+brew_install_or_upgrade("glow")
 
 # highlight for syntax highlighting in the terminal
 # http://www.andre-simon.de/doku/highlight/en/highlight.php
 # https://gitlab.com/saalen/highlight
-brew "highlight" 
+brew_install_or_upgrade("highlight")
 
 # install highlighting for several commands like whois, ping, etc
 # https://github.com/garabik/grc
-brew "grc"
+brew_install_or_upgrade("grc")
 
 # perl-like regular expressions, used in some aliases
-brew "pcre" 
+brew_install_or_upgrade("pcre")
 
 # htop is a better top
-brew "htop"
+brew_install_or_upgrade("htop")
 
 # 7zip for file compression/decompression
-brew "p7zip"
+brew_install_or_upgrade("p7zip")
 
 # domain name lookup and information
-brew "whois"
+brew_install_or_upgrade("whois")
 
 # bat is a better cat
-brew "bat"
+brew_install_or_upgrade("bat")
 
 # ncdu is a better tool for showing directory sizes
-brew "ncdu"
+brew_install_or_upgrade("ncdu")
 
 # tldr is like man, but better
-brew "tldr"
+brew_install_or_upgrade("tldr")
 
 # fd is a find replacement
-brew "fd" 
+brew_install_or_upgrade("fd")
 
 # cloudflared client
-brew "cloudflared"
+brew_install_or_upgrade("cloudflared")
