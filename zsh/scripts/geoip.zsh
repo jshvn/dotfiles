@@ -5,6 +5,6 @@ function geoip() {    # geoip() will print geolocation information for a given I
 		return 1;
 	fi;
 
-    local jsonobject=$(curl -sL --request GET --url ip.guide/$1 --header 'accept: application/json' --header 'content-type: application/json' | python -m json.tool)
+    local jsonobject=$(curl -sL --request GET --url ip.guide/$1 --header 'accept: application/json' --header 'content-type: application/json' | python3 -m json.tool)
     echo $jsonobject | highlight --syntax=json
 }
