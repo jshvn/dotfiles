@@ -98,6 +98,18 @@ The scripts are intelligent enough to work regardless of where the git repo is l
 
 You need not worry about packages being reinstalled: if the packages are already installed, brew will identify that and skip them.
 
+
+### ☁️ Cloudflare Warp
+
+I have setup Cloudflare WARP on my Mac machines such that any one Mac machine can connect to another. This was setup using the following guide:
+
+- Overall: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/private-net/warp-to-warp/
+- Split Tunnel configuration: https://developers.cloudflare.com/cloudflare-one/connections/connect-devices/warp/configure-warp/route-traffic/split-tunnels/
+
+The WARP client configuration is setup on the Zero Trust dashboard on Cloudflare. The only included network is `100.96.0.0/12` so any other network requests will not route over Cloudflare. 
+
+This allows me to connect to other machines in my network via protocols like VNC.
+
 ## 📚 License and references
 
 There are a ton of folks with better dotfiles than these that were the inspiration for this project. The links for those are below.
