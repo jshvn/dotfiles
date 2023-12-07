@@ -23,3 +23,4 @@ end
 # none!
 
 brew_install_or_upgrade("python3")
+brew_install_or_upgrade("docker")

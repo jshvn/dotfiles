@@ -69,6 +69,7 @@ cask "firefox" unless system("test -e /Applications/Firefox.app")
 
 cask "1password-cli"
 cask "miniconda"
+cask "docker"
 
 ###############################
 #  macOS Apps via App Store   #
