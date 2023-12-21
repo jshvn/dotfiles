@@ -45,8 +45,6 @@ cask "sublime-text" unless system("test -e \"/Applications/Sublime Text.app\"")
 cask "visual-studio-code" unless system("test -e \"/Applications/Visual Studio Code.app\"")
 
 # utilities
-cask "cyberduck" unless system("test -e /Applications/Cyberduck.app")
-cask "mountain-duck" unless system("test -e \"/Applications/Mountain Duck.app\"")
 cask "appcleaner" unless system("test -e /Applications/AppCleaner.app")
 cask "protonvpn" unless system("test -e /Applications/ProtonVPN.app")
 cask "dropbox" unless system("test -e /Applications/Dropbox.app")
