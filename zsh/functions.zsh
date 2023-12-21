@@ -9,7 +9,7 @@
 # this func allows you to easily list all of the available funcs
 function functionlist() {
     # grab all of the common funcs to both platforms
-    local list=$(grep 'function' "$DOTFILEDIR/zsh/functions.zsh" | awk '{$1=$1};1' | highlight --syntax=bash)
+    local list=$(grep 'function ' "$DOTFILEDIR/zsh/functions.zsh" | awk '{$1=$1};1' | highlight --syntax=bash)
 
     local funcslist=()
 
