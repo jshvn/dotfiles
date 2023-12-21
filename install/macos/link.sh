@@ -37,7 +37,10 @@ ln -sf "$DOTFILEDIR"/ssh/configs/adobe/config_3di "$HOME"/.ssh/config_3di
 ln -sf "$DOTFILEDIR"/ssh/keys/id_ed25519_personal.pub "$HOME"/.ssh/id_ed25519_personal.pub
 ln -sf "$DOTFILEDIR"/ssh/keys/id_rsa_adobe.pub "$HOME"/.ssh/id_rsa_adobe.pub
 
-# setup SSH 1Password filtering
+# setup SSH 1Password agent config file filtering
+# https://developer.1password.com/docs/ssh/agent/config
+# directory may not already exist on first run, create it if not
+mkdir -p "$HOME"/.config/1Password/ssh/
 ln -sf "$DOTFILEDIR"/ssh/configs/agent.toml "$HOME"/.config/1Password/ssh/agent.toml
 
 # setup SSH platform detection
