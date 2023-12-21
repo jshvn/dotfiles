@@ -75,13 +75,12 @@ cask "cloudflare-warp"
 #  macOS Apps via App Store   #
 ###############################
 
-# to see existing macOS apps, run $ mast list
+# to see existing macOS apps, run $ mas list
 
 # Apple
 mas "Xcode", id: 497799835
 
 # Third Party
 mas "Day One", id: 1055511498
-mas "Slack", id: 803453959
 mas "Magnet", id: 441258766
 mas "Things", id: 904280696
