@@ -7,3 +7,9 @@ Host *.jgrid.net
     IdentitiesOnly yes
     User josh
     ProxyCommand ~/.ssh/platform.sh access ssh --hostname %h
+
+Host *.plex.me
+    IdentityFile ~/.ssh/id_ed25519_personal.pub
+    IdentitiesOnly yes
+    User josh
+    ProxyCommand ~/.ssh/platform.sh access ssh --hostname %h
