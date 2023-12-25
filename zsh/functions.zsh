@@ -7,7 +7,7 @@
 # in their own script in the scripts subdirectory
 
 # this func allows you to easily list all of the available funcs
-function functionlist() {
+function functionlist() {    # functionlist() will list all of the available functions. ex: $ functionlist
     # grab all of the common funcs to both platforms
     local list=$(grep 'function ' "$DOTFILEDIR/zsh/functions.zsh" | awk '{$1=$1};1' | highlight --syntax=bash)
 
