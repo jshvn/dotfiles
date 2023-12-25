@@ -38,13 +38,6 @@ alias glow='glow --style "$DOTFILEDIR/zsh/styles/glow_style.json" -w 120'
 ###### Networking
 ##############################
 
-# jgrid.net machines
-alias atium="ssh josh@ssh.atium.jgrid.net"
-alias copper="ssh josh@ssh.copper.jgrid.net"
-alias tin="ssh josh@ssh.tin.jgrid.net"
-alias zinc="ssh josh@ssh.zinc.jgrid.net"
-alias pewter="ssh josh@ssh.pewter.jgrid.net"
-
 local getipv4=$(curl -4 simpip.com --max-time 1 --proto-default https --silent)
 local getipv6=$(curl -6 simpip.com --max-time 1 --proto-default https --silent)
 

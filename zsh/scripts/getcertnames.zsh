@@ -1,3 +1,5 @@
+#!/bin/zsh
+
 # Grabs certificates for a given domain name
 function getcertnames() {    # getcertnames() will print SSL certificate information for a given domain. ex: $ getcertnames ijosh.com
 	if [ -z "${1}" ]; then

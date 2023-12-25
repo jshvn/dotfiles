@@ -1,3 +1,5 @@
+#!/bin/zsh
+
 # GitHub public key lookup utility
 function ghpubkey() {    # ghpubkey() will print public key information for a given GitHub username. ex: $ ghpubkey jshvn
     if [ -z "${1}" ]; then

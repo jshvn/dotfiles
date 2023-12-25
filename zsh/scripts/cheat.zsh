@@ -1,3 +1,5 @@
+#!/bin/zsh
+
 # Print out helpful cheat pages to understand how commands and utilities work
 function cheat() {    # cheat() will query a web service and return a human-readable man page for that command. ex $ cheat ls
 	if [ -z "${1}" ]; then

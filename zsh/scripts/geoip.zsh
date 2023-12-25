@@ -1,3 +1,5 @@
+#!/bin/zsh
+
 # Geo IP lookup helper, uses # https://ip.guide/ as source
 function geoip() {    # geoip() will print geolocation information for a given IP or host. ex: $ geoip 1.1.1.1
     if [ -z "${1}" ]; then
