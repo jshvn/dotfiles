@@ -2,31 +2,7 @@
 ######## Personal ########
 ##############################
 
-Host ssh.atium.jgrid.net
-    IdentityFile ~/.ssh/id_ed25519_personal.pub
-    IdentitiesOnly yes
-    User josh
-    ProxyCommand ~/.ssh/platform.sh access ssh --hostname %h
-
-Host ssh.tin.jgrid.net
-    IdentityFile ~/.ssh/id_ed25519_personal.pub
-    IdentitiesOnly yes
-    User josh
-    ProxyCommand ~/.ssh/platform.sh access ssh --hostname %h
-
-Host ssh.copper.jgrid.net
-    IdentityFile ~/.ssh/id_ed25519_personal.pub
-    IdentitiesOnly yes
-    User josh
-    ProxyCommand ~/.ssh/platform.sh access ssh --hostname %h
-
-Host ssh.zinc.jgrid.net
-    IdentityFile ~/.ssh/id_ed25519_personal.pub
-    IdentitiesOnly yes
-    User josh
-    ProxyCommand ~/.ssh/platform.sh access ssh --hostname %h
-
-Host ssh.pewter.jgrid.net
+Host *.jgrid.net
     IdentityFile ~/.ssh/id_ed25519_personal.pub
     IdentitiesOnly yes
     User josh
