@@ -17,7 +17,7 @@ end
 # none!
 
 ###############################
-#  Binaries                   #
+#  Utilities                  #
 ###############################
 
 brew_install_or_upgrade("coreutils")

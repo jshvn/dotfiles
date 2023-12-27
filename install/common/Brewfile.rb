@@ -18,8 +18,12 @@ tap "homebrew/homebrew-cask"
 tap "homebrew/cask-versions"
 
 ###############################
-#  Binaries                   #
+#  Utilities                  #
 ###############################
+
+# we want ZSH as our default shell on all environments
+# and not to use system as to keep it updated with latest
+brew_install_or_upgrade("zsh")
 
 # wget for pulling web data
 brew_install_or_upgrade("wget")
