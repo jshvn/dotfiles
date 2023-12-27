@@ -132,22 +132,6 @@ done
 ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 DOTFILEDIR="$(dirname "$ZSHDIR")"
 
-# load common ZSH aliases
-source $DOTFILEDIR/zsh/aliases.zsh
-
-# load common ZSH functions
-source $DOTFILEDIR/zsh/functions.zsh
-
-# load common ZSH custom themes
-source $DOTFILEDIR/zsh/theme.zsh
-
-# load common helper scripts
-for file in "$DOTFILEDIR/zsh/scripts/"*
-do
-    if [[ -f $file ]]; then
-        source $file
-    fi
-done
 
 
 if [[ $(uname) == "Darwin" ]]; then
@@ -176,3 +160,24 @@ else
     # make sure our brew applications can be found
     eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
 fi
+
+# the below sources need to happen after the above shell initializations
+# otherwise some functions/scripts like 'which' will not be found in the 
+# correct spots, and that causes errors in aliases and functions
+
+# load common ZSH aliases
+source $DOTFILEDIR/zsh/aliases.zsh
+
+# load common ZSH functions
+source $DOTFILEDIR/zsh/functions.zsh
+
+# load common ZSH custom themes
+source $DOTFILEDIR/zsh/theme.zsh
+
+# load common helper scripts
+for file in "$DOTFILEDIR/zsh/scripts/"*
+do
+    if [[ -f $file ]]; then
+        source $file
+    fi
+done
