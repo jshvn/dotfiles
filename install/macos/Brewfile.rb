@@ -22,8 +22,6 @@ end
 
 brew_install_or_upgrade("coreutils")
 brew_install_or_upgrade("mas") # https://github.com/mas-cli/mas 
-# install git since macOS git is often old
-brew_install_or_upgrade("git")
 
 ###############################
 #  macOS Apps via Cask        #

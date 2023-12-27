@@ -24,6 +24,9 @@ tap "homebrew/cask-versions"
 # wget for pulling web data
 brew_install_or_upgrade("wget")
 
+# install git since platform git is often old
+brew_install_or_upgrade("git")
+
 # glow for markdown rendering in the terminal 
 # https://github.com/charmbracelet/glow
 brew_install_or_upgrade("glow")
