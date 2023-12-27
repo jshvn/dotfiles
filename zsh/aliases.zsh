@@ -28,8 +28,10 @@ alias fsa='ncdu'
 # shorthand for permissions function
 alias perms='permissions'
 
-# shorthand for directory list
-alias ll='ls -al'
+# shorthands for directory listing
+alias ls="$(which eza) --time-style long-iso"
+alias ll='ls -alh'
+
 
 # add formatting to glow command
 alias glow='glow --style "$DOTFILEDIR/zsh/styles/glow_style.json" -w 120'
@@ -51,13 +53,6 @@ if [[ `uname` == "Darwin" ]]; then
     ##############################
     ###### General
     ##############################
-
-    # make sure ls always has color
-    if [[ `uname -m` == "arm64" ]]; then
-        alias ls="/opt/homebrew/bin/gls --color=always"
-    else 
-        alias ls="/usr/local/bin/gls --color=always"
-    fi
 
     # open finder at current location
     alias finder="open -a Finder ./"

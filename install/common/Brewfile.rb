@@ -28,6 +28,9 @@ brew_install_or_upgrade("zsh")
 # wget for pulling web data
 brew_install_or_upgrade("wget")
 
+# eza as ls replacement
+brew_install_or_upgrade("eza")
+
 # install git since platform git is often old
 brew_install_or_upgrade("git")
 
