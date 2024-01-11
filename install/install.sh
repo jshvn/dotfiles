@@ -63,7 +63,7 @@ else
 
   # curl isn't always available by default on ubuntu, install it. 
   # while we're at it, lets install zsh too
-  echo "If zsh, curl, or build-essential aren't already avaialble we will install them now"
+  echo "If curl or build-essential aren't already avaialble we will install them now"
   echo "We may ask for sudo access here so that we can install curl, build-essential, zsh"
 
   REQUIRED_PKG="curl build-essential"
@@ -76,20 +76,6 @@ else
       sudo apt install $package
     fi
   done
-
-  # now lets make ZSH our default shell if it is not already
-  # this wont take effect until after we have rebooted
-#   ISZSHINSHELLFILE=$(grep "$(which zsh)" /etc/shells)
-#   if [ "$ISZSHINSHELLFILE" != "$(which zsh)" ]; then 
-#     echo "ZSH was not added to /etc/shells, adding now"
-#     echo "/home/linuxbrew/.linuxbrew/bin/zsh" | sudo tee -a /etc/shells
-#   fi
-
-#   ISZSHDEFAULTSHELL=$(awk -F: -v user="$USER" '$1 == user {print $NF}' /etc/passwd)
-#   if [ "$ISZSHDEFAULTSHELL" != "$(which zsh)" ]; then
-#     echo "We're going to update our default shell to ZSH and to do that you need to enter your password:"
-#     chsh -s $(which zsh)
-#   fi
 
   ####### Step 1
   ####### Setup oh my zsh
@@ -114,6 +100,9 @@ else
 
 fi
 
+
+# Ensure we're using the correct ZSH shell
+source "$DOTFILEDIR"/install/common/zsh.sh
 
 # Install ZSH plugins
 # install zsh-autosugestions
