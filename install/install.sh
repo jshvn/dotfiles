@@ -66,7 +66,7 @@ else
   echo "If zsh, curl, or build-essential aren't already avaialble we will install them now"
   echo "We may ask for sudo access here so that we can install curl, build-essential, zsh"
 
-  REQUIRED_PKG="zsh curl build-essential"
+  REQUIRED_PKG="curl build-essential"
   for package in $REQUIRED_PKG
   do
     PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $package|grep "install ok installed")
@@ -79,17 +79,17 @@ else
 
   # now lets make ZSH our default shell if it is not already
   # this wont take effect until after we have rebooted
-  ISZSHINSHELLFILE=$(grep "$(which zsh)" /etc/shells)
-  if [ "$ISZSHINSHELLFILE" != "$(which zsh)" ]; then 
-    echo "ZSH was not added to /etc/shells, adding now"
-    echo "/home/linuxbrew/.linuxbrew/bin/zsh" | sudo tee -a /etc/shells
-  fi
+#   ISZSHINSHELLFILE=$(grep "$(which zsh)" /etc/shells)
+#   if [ "$ISZSHINSHELLFILE" != "$(which zsh)" ]; then 
+#     echo "ZSH was not added to /etc/shells, adding now"
+#     echo "/home/linuxbrew/.linuxbrew/bin/zsh" | sudo tee -a /etc/shells
+#   fi
 
-  ISZSHDEFAULTSHELL=$(awk -F: -v user="$USER" '$1 == user {print $NF}' /etc/passwd)
-  if [ "$ISZSHDEFAULTSHELL" != "$(which zsh)" ]; then
-    echo "We're going to update our default shell to ZSH and to do that you need to enter your password:"
-    chsh -s $(which zsh)
-  fi
+#   ISZSHDEFAULTSHELL=$(awk -F: -v user="$USER" '$1 == user {print $NF}' /etc/passwd)
+#   if [ "$ISZSHDEFAULTSHELL" != "$(which zsh)" ]; then
+#     echo "We're going to update our default shell to ZSH and to do that you need to enter your password:"
+#     chsh -s $(which zsh)
+#   fi
 
   ####### Step 1
   ####### Setup oh my zsh
