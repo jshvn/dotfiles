@@ -64,7 +64,7 @@ else
   # curl isn't always available by default on ubuntu, install it. 
   # while we're at it, lets install zsh too
   echo "If curl or build-essential aren't already avaialble we will install them now"
-  echo "We may ask for sudo access here so that we can install curl, build-essential, zsh"
+  echo "We may ask for sudo access here so that we can install curl, build-essential"
 
   REQUIRED_PKG="curl build-essential"
   for package in $REQUIRED_PKG
