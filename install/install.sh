@@ -102,6 +102,7 @@ fi
 
 
 # Ensure we're using the correct ZSH shell
+# We want to use the latest that is installed by Homebrew
 source "$DOTFILEDIR"/install/common/zsh.sh
 
 # Install ZSH plugins
@@ -121,11 +122,10 @@ echo """
 
 $(tput setaf 2)Install complete!
 
-$(tput setaf 7)Depending on which platform you are running this on, you might need to log out
-and log back in to activate ZSH. 
+$(tput setaf 7)You might need to log out and log back in to activate Homebrew ZSH.
 
-You might also need to manually set your shell if the settings didn't take. To
-do that you can run the command: $ chsh -s $(which zsh)
+To check which shell is running use: $ which zsh
+To change which shell is running use: $ chsh -s $(which zsh)
 
 If you want to update to the latest version of the dotfiles, run the following command:
     $ update
