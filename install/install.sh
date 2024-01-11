@@ -79,6 +79,12 @@ else
 
   # now lets make ZSH our default shell if it is not already
   # this wont take effect until after we have rebooted
+  ISZSHINSHELLFILE=$(grep "$(which zsh)" /etc/shells)
+  if [ "$ISZSHINSHELLFILE" != "$(which zsh)" ]; then 
+    echo "ZSH was not added to /etc/shells, adding now"
+    echo "/home/linuxbrew/.linuxbrew/bin/zsh" | sudo tee -a /etc/shells
+  fi
+
   ISZSHDEFAULTSHELL=$(awk -F: -v user="$USER" '$1 == user {print $NF}' /etc/passwd)
   if [ "$ISZSHDEFAULTSHELL" != "$(which zsh)" ]; then
     echo "We're going to update our default shell to ZSH and to do that you need to enter your password:"
