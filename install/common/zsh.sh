@@ -24,4 +24,5 @@ if [[ "$(cat /etc/shells)" != *"$ZSHBREWSHELL"* ]]; then
     echo $ZSHBREWSHELL | sudo tee -a /etc/shells
 fi
 
+# Finally, we change our shell
 chsh -s $ZSHBREWSHELL

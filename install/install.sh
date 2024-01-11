@@ -36,6 +36,15 @@ if [ "$(uname)" == "Darwin" ]; then
   source "$DOTFILEDIR"/install/macos/link.sh
 
   ####### Step 2
+  ####### Install oh-my-zsh
+
+  # Get oh-my-zsh up and running
+  echo "Installing oh-my-zsh"
+  if [ ! -e ~/.oh-my-zsh ]; then
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended"
+  fi
+
+  ####### Step 3
   ####### Run macOS steps
 
   # run macOS specific install steps
@@ -75,6 +84,15 @@ else
   source "$DOTFILEDIR"/install/linux/linux.sh
 
   ####### Step 2
+  ####### Install oh-my-zsh
+
+  # Get oh-my-zsh up and running
+  echo "Installing oh-my-zsh"
+  if [ ! -e ~/.oh-my-zsh ]; then
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended"
+  fi
+
+  ####### Step 3
   ####### Setup links
 
   # Set up symbolic links for ZSH and Git pointing to this cloned repo
@@ -86,12 +104,6 @@ fi
 # Ensure we're using the correct ZSH shell
 # We want to use the latest that is installed by Homebrew
 source "$DOTFILEDIR"/install/common/zsh.sh
-
-# Get Oh My ZSH up and running
-echo "Installing oh-my-zsh"
-if [ ! -e ~/.oh-my-zsh ]; then
-  sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended"
-fi
 
 # Install ZSH plugins
 # install zsh-autosugestions
