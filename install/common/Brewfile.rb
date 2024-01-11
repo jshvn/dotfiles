@@ -11,13 +11,6 @@ def brew_install_or_upgrade(formula)
 end
 
 ###############################
-#  Taps                       #
-###############################
-
-tap "homebrew/homebrew-cask"
-tap "homebrew/cask-versions"
-
-###############################
 #  Utilities                  #
 ###############################
 
