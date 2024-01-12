@@ -24,5 +24,9 @@ if [[ "$(cat /etc/shells)" != *"$ZSHBREWSHELL"* ]]; then
     echo $ZSHBREWSHELL | sudo tee -a /etc/shells
 fi
 
-# Finally, we change our shell
-chsh -s $ZSHBREWSHELL
+CURRENTSHELL=$(which $SHELL)
+
+# Finally, we change our shell if it is not ZSH
+if [ "$CURRENTSHELL" != "$ZSHBREWSHELL" ]; then
+    chsh -s $ZSHBREWSHELL
+fi 
