@@ -24,9 +24,6 @@ echo "credentials one more time."
 defaults write com.apple.screensaver askForPassword -int 1
 defaults write com.apple.screensaver askForPasswordDelay -int 0
 
-# Menu bar: show battery percentage
-defaults write com.apple.menuextra.battery ShowPercent -bool true
-
 # Automatically hide and show the dock
 defaults write com.apple.dock autohide -bool true
 
