@@ -23,3 +23,4 @@ brew bundle --file "$DOTFILEDIR"/install/linux/Brewfile.rb
 
 # ensure trip has root access
 sudo chown root $(which trip) && sudo chmod +s $(which trip)
+sudo setcap CAP_NET_RAW+p $(which trip)
