@@ -20,7 +20,7 @@ ln -sf "$DOTFILEDIR"/zsh/.zprofile "$HOME"/.zprofile
 ln -sf "$DOTFILEDIR"/zsh/.zshrc "$HOME"/.zshrc
 ln -sf "$DOTFILEDIR"/zsh/aliases.zsh "$HOME"/.aliases.zsh
 ln -sf "$DOTFILEDIR"/zsh/functions.zsh "$HOME"/.functions.zsh
-ln -sf "$DOTFILEDIR"/zsh/.trippy.toml "$HOME"/.trippy.toml
+ln -sf "$DOTFILEDIR"/zsh/.trippy.toml "$HOME"/.config/.trippy.toml
 
 # setup git related links
 ln -sf "$DOTFILEDIR"/git/.gitconfig "$HOME"/.gitconfig
