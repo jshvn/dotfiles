@@ -39,9 +39,6 @@ alias glow='glow --style "$DOTFILEDIR/zsh/styles/glow_style.json" -w 120'
 ###### Networking
 ##############################
 
-# alias traceroute to trip
-alias traceroute="$(which trip) "
-
 local getipv4=$(curl -4 simpip.com --max-time 1 --proto-default https --silent)
 local getipv6=$(curl -6 simpip.com --max-time 1 --proto-default https --silent)
 
@@ -73,6 +70,9 @@ if [[ `uname` == "Darwin" ]]; then
     # get current IP information. show all: $ ips
     local activeinterfaces=$(ifconfig | pcregrep -M -o '^[^\t:]+(?=:([^\n]|\n\t)*status: active)' | tr '\n' ' ')
     local getiploc=$(ipconfig getifaddr en0)
+
+    # alias traceroute to trip
+    alias traceroute="$(which trip) -u"
 
     alias ipv4="echo IPv4: $getipv4"
     alias ipv6="echo IPv6: $getipv6"
@@ -126,6 +126,9 @@ else
     alias ipv6="echo IPv6: $getipv6"
     alias ip="ipv4; ipv6;"
     alias ips="ip;"
+
+    # alias traceroute to trip
+    alias traceroute="$(which trip) "
 
     ##############################
     ###### Keys
