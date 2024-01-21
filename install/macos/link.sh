@@ -18,8 +18,8 @@ fi
 echo "Setting up symbolic links for ZSH, gitconfig, sshconfig"
 ln -sf "$DOTFILEDIR"/zsh/.zprofile "$HOME"/.zprofile
 ln -sf "$DOTFILEDIR"/zsh/.zshrc "$HOME"/.zshrc
-ln -sf "$DOTFILEDIR"/zsh/aliases.zsh "$HOME"/.aliases.zsh
-ln -sf "$DOTFILEDIR"/zsh/functions.zsh "$HOME"/.functions.zsh
+ln -sf "$DOTFILEDIR"/zsh/aliases.zsh "$HOME"/.config/.aliases.zsh
+ln -sf "$DOTFILEDIR"/zsh/functions.zsh "$HOME"/.config/.functions.zsh
 ln -sf "$DOTFILEDIR"/zsh/.trippy.toml "$HOME"/.config/.trippy.toml
 
 # setup git related links
