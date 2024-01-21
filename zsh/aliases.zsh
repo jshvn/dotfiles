@@ -32,13 +32,15 @@ alias perms='permissions'
 alias ls="$(which eza) --time-style long-iso"
 alias ll='ls -alh'
 
-
 # add formatting to glow command
 alias glow='glow --style "$DOTFILEDIR/zsh/styles/glow_style.json" -w 120'
 
 ##############################
 ###### Networking
 ##############################
+
+# alias traceroute to trip
+alias traceroute="$(which trip) "
 
 local getipv4=$(curl -4 simpip.com --max-time 1 --proto-default https --silent)
 local getipv6=$(curl -6 simpip.com --max-time 1 --proto-default https --silent)

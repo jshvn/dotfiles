@@ -61,6 +61,9 @@ brew_install_or_upgrade("ncdu")
 # tldr is like man, but better
 brew_install_or_upgrade("tldr")
 
+# trippy is like traceroute, but better
+brew_install_or_upgrade("trippy")
+
 # fd is a find replacement
 brew_install_or_upgrade("fd")
 
