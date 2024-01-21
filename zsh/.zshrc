@@ -11,6 +11,9 @@
 # Path to your oh-my-zsh installation.
 export ZSH=$HOME/.oh-my-zsh
 
+# set XDG_CONFIG_HOME
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+
 # tool defaults
 export EDITOR="nano"
 export VEDITOR="code"
