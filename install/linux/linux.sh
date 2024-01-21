@@ -22,5 +22,6 @@ brew bundle --file "$DOTFILEDIR"/install/common/Brewfile.rb
 brew bundle --file "$DOTFILEDIR"/install/linux/Brewfile.rb
 
 # ensure trip has root access
+# https://github.com/fujiapple852/trippy
 sudo chown root $(which trip) && sudo chmod +s $(which trip)
 sudo setcap CAP_NET_RAW+p $(which trip)
