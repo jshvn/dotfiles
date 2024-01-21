@@ -20,3 +20,6 @@ echo "Installing all packages and applications from the Brewfile"
 brew tap homebrew/bundle
 brew bundle --file "$DOTFILEDIR"/install/common/Brewfile.rb
 brew bundle --file "$DOTFILEDIR"/install/linux/Brewfile.rb
+
+# ensure trip has root access
+sudo chown root $(which trip) && sudo chmod +s $(which trip)

@@ -39,7 +39,7 @@ mode = "tui"
 # Enabling will cause IPPROTO_ICMP sockets to be used.
 #
 # Note: not supported on all platforms.
-unprivileged = true
+unprivileged = false
 
 # How to format log data.
 #
