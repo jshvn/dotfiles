@@ -46,6 +46,9 @@ brew_install_or_upgrade("pcre")
 # htop is a better top
 brew_install_or_upgrade("htop")
 
+# duf is a better df
+brew_install_or_upgrade("duf")
+
 # 7zip for file compression/decompression
 brew_install_or_upgrade("p7zip")
 
