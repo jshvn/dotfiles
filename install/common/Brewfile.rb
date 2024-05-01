@@ -73,8 +73,9 @@ brew_install_or_upgrade("fd")
 # cloudflared client
 brew_install_or_upgrade("cloudflared")
 
-# neofetch used for printing system information
-brew_install_or_upgrade("neofetch")
+# fastfetch used for printing system information
+# neofetch was used previously, but it has been archived as of April 26, 2024
+brew_install_or_upgrade("fastfetch")
 
 # onefetch used for printing git repo information
 brew_install_or_upgrade("onefetch")
