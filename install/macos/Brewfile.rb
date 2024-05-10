@@ -51,6 +51,7 @@ cask "cryptomator" unless system("test -e /Applications/Cryptomator.app")
 cask "raycast" unless system("test -e /Applications/Raycast.app")
 
 # productivity
+cask "standard-notes" unless system("test -e \"/Applications/Standard Notes.app\"")
 cask "fantastical" unless system("test -e /Applications/Fantastical.app")
 cask "cardhop" unless system("test -e /Applications/Cardhop.app")
 cask "microsoft-word" unless system("test -e \"/Applications/Microsoft Word.app\"")
