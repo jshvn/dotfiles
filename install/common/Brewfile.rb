@@ -58,6 +58,9 @@ brew_install_or_upgrade("whois")
 # bat is a better cat
 brew_install_or_upgrade("bat")
 
+# hugo is useful for static site generation & deployment
+brew_install_or_upgrade("hugo")
+
 # ncdu is a better tool for showing directory sizes
 brew_install_or_upgrade("ncdu")
 
