@@ -7,15 +7,6 @@ function host() {    # host() will print information related to a given name or 
 		return 1;
 	fi;
 
-    local arecords=$(dig @1.1.1.1 +short $1. A)
-    local aaaarecords=$(dig @1.1.1.1 +short $1. AAAA)
-    local mxrecords=$(dig @1.1.1.1 +short $1. MX)
-    local txtrecords=$(dig @1.1.1.1 +short $1. TXT)
-    local nsrecords=$(dig @1.1.1.1 +short $1. NS)
-
-    echo "A records:\n$arecords" | highlight --syntax=bash
-    echo "AAAA records:\n$aaaarecords" | highlight --syntax=bash
-    echo "MX records:\n$mxrecords" | highlight --syntax=bash
-    echo "TXT records:\n$txtrecords" | highlight --syntax=bash
-    echo "NS records:\n$nsrecords" | highlight --syntax=bash
+    local records=$(doggo --type=A --type=AAAA --type=MX --type=TXT --type=NS --type=CNAME --nameserver=1.1.1.1 $1) 
+    echo "$records" | highlight --syntax=bash
 }

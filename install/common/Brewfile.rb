@@ -55,6 +55,9 @@ brew_install_or_upgrade("p7zip")
 # domain name lookup and information
 brew_install_or_upgrade("whois")
 
+# name server record lookup and information
+brew_install_or_upgrade("doggo")
+
 # bat is a better cat
 brew_install_or_upgrade("bat")
 
