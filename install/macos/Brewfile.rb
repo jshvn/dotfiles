@@ -45,6 +45,8 @@ cask "visual-studio-code" unless system("test -e \"/Applications/Visual Studio C
 # utilities
 cask "appcleaner" unless system("test -e /Applications/AppCleaner.app")
 cask "protonvpn" unless system("test -e /Applications/ProtonVPN.app")
+cask "proton-mail" unless system("test -e \"/Applications/Proton Mail.app\"")
+cask "proton-drive" unless system("test -e \"/Applications/Proton Drive.app\"")
 cask "dropbox" unless system("test -e /Applications/Dropbox.app")
 cask "1password" unless system("test -e /Applications/1Password.app")
 cask "cryptomator" unless system("test -e /Applications/Cryptomator.app")
