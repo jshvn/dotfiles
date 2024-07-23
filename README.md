@@ -2,11 +2,6 @@
 
 This repository is meant to act as a working copy of my computer configuration, SSH settings, macOS settings, general applications, and more for my personal and development machines. 
 
-These dotfiles have been tested on:
-
-* macOS 14.0 Sonoma
-* Ubuntu 22.04
-
 
 ## 🖥 How to install or update
 
