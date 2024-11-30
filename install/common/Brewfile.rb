@@ -85,3 +85,6 @@ brew_install_or_upgrade("fastfetch")
 
 # onefetch used for printing git repo information
 brew_install_or_upgrade("onefetch")
+
+# bottom is like htop
+brew_install_or_upgrade("bottom")
