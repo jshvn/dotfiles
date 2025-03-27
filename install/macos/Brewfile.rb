@@ -1,16 +1,4 @@
 ###############################
-#  Install helper             #
-###############################
-
-def brew_install_or_upgrade(formula)
-    if system("brew list --versions #{formula} >/dev/null")
-        system("brew upgrade #{formula}")
-    else
-        system("brew install #{formula}")
-    end
-end
-
-###############################
 #  Taps                       #
 ###############################
 
@@ -20,8 +8,8 @@ end
 #  Utilities                  #
 ###############################
 
-brew_install_or_upgrade("coreutils")
-brew_install_or_upgrade("mas") # https://github.com/mas-cli/mas 
+brew "coreutils"
+brew "mas" # https://github.com/mas-cli/mas 
 
 ###############################
 #  macOS Apps via Cask        #
