@@ -21,6 +21,7 @@ cask_args appdir: "/Applications"
 
 # social
 cask "discord" unless system("test -e /Applications/Discord.app")
+cask "slack" unless system("test -e /Applications/Slack.app")
 
 # music 
 cask "spotify" unless system("test -e /Applications/Spotify.app")
