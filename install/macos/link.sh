@@ -14,6 +14,9 @@ if [[ -z $DOTFILEDIR ]]; then
   DOTFILEDIR="$(dirname "$(dirname "$INSTALLFILEDIR")")"
 fi
 
+# hidden config directory may not already exist, create it
+mkdir -p "$HOME"/.config/
+
 # Set up symbolic links for ZSH and Git pointing to this cloned repo
 echo "Setting up symbolic links for ZSH, gitconfig, sshconfig"
 ln -sf "$DOTFILEDIR"/zsh/.zprofile "$HOME"/.zprofile
