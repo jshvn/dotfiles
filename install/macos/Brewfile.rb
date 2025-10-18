@@ -49,6 +49,9 @@ cask "microsoft-word" unless system("test -e \"/Applications/Microsoft Word.app\
 cask "microsoft-excel" unless system("test -e \"/Applications/Microsoft Excel.app\"")
 cask "microsoft-powerpoint" unless system("test -e \"/Applications/Microsoft PowerPoint.app\"")
 
+# games
+cask "nvidia-geforce-now" unless system("test -e /Applications/GeForceNOW.app")
+
 # browser
 cask "firefox" unless system("test -e /Applications/Firefox.app")
 
