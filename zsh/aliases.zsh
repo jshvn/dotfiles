@@ -60,6 +60,9 @@ if [[ `uname` == "Darwin" ]]; then
     alias findershow="defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder"
     alias finderhide="defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder"
 
+    # show last time macOS was installed
+    alias lastinstalled="ls -l /var/db/.AppleSetupDone"
+
     ##############################
     ###### Networking
     ##############################
