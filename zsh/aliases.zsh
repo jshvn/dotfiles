@@ -35,17 +35,6 @@ alias ll='ls -alh'
 # add formatting to glow command
 alias glow='glow --style "$DOTFILEDIR/zsh/styles/glow_style.json" -w 120'
 
-##############################
-###### Networking
-##############################
-
-local getipv4=$(curl -4 simpip.com --max-time 1 --proto-default https --silent)
-local getipv6=$(curl -6 simpip.com --max-time 1 --proto-default https --silent)
-
-##############################
-###### General
-##############################
-
 # open finder at current location
 alias finder="open -a Finder ./"
 
@@ -59,6 +48,9 @@ alias lastinstalled="ls -l /var/db/.AppleSetupDone"
 ##############################
 ###### Networking
 ##############################
+
+local getipv4=$(curl -4 simpip.com --max-time 1 --proto-default https --silent)
+local getipv6=$(curl -6 simpip.com --max-time 1 --proto-default https --silent)
 
 # flush dns cache
 alias dnsflush="sudo killall -HUP mDNSResponder; sudo killall mDNSResponderHelper; sudo dscacheutil -flushcache"
@@ -85,11 +77,4 @@ alias ips="ip; echo; ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+
 
 alias gpu="system_profiler SPDisplaysDataType"
 alias cpu="sysctl -n machdep.cpu.brand_string"
-
-##############################
-###### Web Browsing
-##############################
-
-alias firefox="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
-alias ff="firefox"
 
