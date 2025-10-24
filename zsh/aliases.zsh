@@ -42,111 +42,54 @@ alias glow='glow --style "$DOTFILEDIR/zsh/styles/glow_style.json" -w 120'
 local getipv4=$(curl -4 simpip.com --max-time 1 --proto-default https --silent)
 local getipv6=$(curl -6 simpip.com --max-time 1 --proto-default https --silent)
 
-####################################################################################
-#################################### macOS #########################################
-####################################################################################
+##############################
+###### General
+##############################
 
-# Execute setup depending on the system
-if [[ `uname` == "Darwin" ]]; then
+# open finder at current location
+alias finder="open -a Finder ./"
 
-    ##############################
-    ###### General
-    ##############################
+# Show/hide hidden files in Finder
+alias findershow="defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder"
+alias finderhide="defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder"
 
-    # open finder at current location
-    alias finder="open -a Finder ./"
+# show last time macOS was installed
+alias lastinstalled="ls -l /var/db/.AppleSetupDone"
 
-    # Show/hide hidden files in Finder
-    alias findershow="defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder"
-    alias finderhide="defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder"
+##############################
+###### Networking
+##############################
 
-    # show last time macOS was installed
-    alias lastinstalled="ls -l /var/db/.AppleSetupDone"
+# flush dns cache
+alias dnsflush="sudo killall -HUP mDNSResponder; sudo killall mDNSResponderHelper; sudo dscacheutil -flushcache"
 
-    ##############################
-    ###### Networking
-    ##############################
+# get current IP information. show all: $ ips
+local activeinterfaces=$(ifconfig | pcregrep -M -o '^[^\t:]+(?=:([^\n]|\n\t)*status: active)' | tr '\n' ' ')
+local getiploc=$(ipconfig getifaddr en0)
 
-    # flush dns cache
-    alias dnsflush="sudo killall -HUP mDNSResponder; sudo killall mDNSResponderHelper; sudo dscacheutil -flushcache"
+# replace traceroute with trip
+alias traceroute="$(which trip) -u"
 
-    # get current IP information. show all: $ ips
-    local activeinterfaces=$(ifconfig | pcregrep -M -o '^[^\t:]+(?=:([^\n]|\n\t)*status: active)' | tr '\n' ' ')
-    local getiploc=$(ipconfig getifaddr en0)
+alias ipv4="echo IPv4: $getipv4"
+alias ipv6="echo IPv6: $getipv6"
+alias iploc="echo Local IP: $getiploc"
+alias interfaces="echo Active Interfaces: $activeinterfaces"
+alias ip="ipv4; ipv6; iploc;"
+alias ips="ip; echo; ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }' | highlight --syntax=txt"
 
-    # alias traceroute to trip
-    alias traceroute="$(which trip) -u"
+##############################
+###### Hardware
+##############################
 
-    alias ipv4="echo IPv4: $getipv4"
-    alias ipv6="echo IPv6: $getipv6"
-    alias iploc="echo Local IP: $getiploc"
-    alias interfaces="echo Active Interfaces: $activeinterfaces"
-    alias ip="ipv4; ipv6; iploc;"
-    alias ips="ip; echo; ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }' | highlight --syntax=txt"
+# device information
 
-    ##############################
-    ###### Hardware
-    ##############################
+alias gpu="system_profiler SPDisplaysDataType"
+alias cpu="sysctl -n machdep.cpu.brand_string"
 
-    # device information
+##############################
+###### Web Browsing
+##############################
 
-    alias gpu="system_profiler SPDisplaysDataType"
-    alias cpu="sysctl -n machdep.cpu.brand_string"
+alias firefox="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
+alias ff="firefox"
 
-    ##############################
-    ###### Web Browsing
-    ##############################
-
-    alias firefox="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
-    alias ff="firefox"
-
-
-
-####################################################################################
-#################################### Linux #########################################
-####################################################################################
-
-else 
-    ##############################
-    ###### Docker
-    ##############################
-
-    # docker helpers
-    alias dc="docker-compose"
-    alias dcu="docker-compose up -d"
-    alias dcd="docker-compose down"
-    alias dcr="docker-compose down && docker-compose up -d"
-    alias dcl="docker-compose logs -f"
-    alias dcupdate="docker-compose up -d --force-recreate --build"
-
-
-    ##############################
-    ###### Networking
-    ##############################
-
-    # get current IP information. show all: $ ips
-    alias ipv4="echo IPv4: $getipv4"
-    alias ipv6="echo IPv6: $getipv6"
-    alias ip="ipv4; ipv6;"
-    alias ips="ip;"
-
-    # alias traceroute to trip
-    alias traceroute="$(which trip) "
-
-    ##############################
-    ###### Keys
-    ##############################
-
-    # copy primary public key to clipboard
-    alias pubkey="more ~/.ssh/id_rsa.pub"
-
-
-    ##############################
-    ###### Hardware
-    ##############################
-
-    # device information
-
-    alias gpu="sudo lshw -C display"
-    alias cpu="cat /proc/cpuinfo"
-fi

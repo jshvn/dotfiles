@@ -1,13 +1,5 @@
 #!/bin/zsh
 
-####################################################################################
-#################################### Common ########################################
-####################################################################################
-
-
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
-
 # Path to your oh-my-zsh installation.
 export ZSH=$HOME/.oh-my-zsh
 
@@ -23,12 +15,6 @@ export VEDITOR="code"
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
 ZSH_THEME="alanpeabody"
-
-# Set list of themes to pick from when loading at random
-# Setting this variable when ZSH_THEME=random will cause zsh to load
-# a theme from this variable instead of looking in $ZSH/themes/
-# If set to an empty array, this variable will have no effect.
-# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
 
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
@@ -135,23 +121,21 @@ done
 ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 DOTFILEDIR="$(dirname "$ZSHDIR")"
 
-
-
-####################################################################################
-#################################### macOS #########################################
-####################################################################################
+# set visual code editor to VS Code
 export VISUAL="code"
+# Add visual studio code to the path if it isn't already there
+if [ -d "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" ] && [[ ":$PATH:" != *":/Applications/Visual Studio Code.app/Contents/Resources/app/bin:"* ]]; then
+    PATH="${PATH:+"$PATH:"}/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+fi
+
+# set browser to Firefox
 export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
+
 # Set 1Password as SSH agent on macOS
 export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
 
 # Initialize conda for current shell
 eval "$(conda "shell.$(basename "${SHELL}")" hook)"
-
-# Add visual studio code to the path if it isn't already there
-if [ -d "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" ] && [[ ":$PATH:" != *":/Applications/Visual Studio Code.app/Contents/Resources/app/bin:"* ]]; then
-    PATH="${PATH:+"$PATH:"}/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
-fi
 
 # the below sources need to happen after the above shell initializations
 # otherwise some functions/scripts like 'which' will not be found in the 
@@ -160,14 +144,19 @@ fi
 # load common ZSH aliases
 source $DOTFILEDIR/zsh/aliases.zsh
 
-# load common ZSH functions
-source $DOTFILEDIR/zsh/functions.zsh
-
 # load common ZSH custom themes
 source $DOTFILEDIR/zsh/theme.zsh
 
-# load common helper scripts
-for file in "$DOTFILEDIR/zsh/scripts/"*
+# load jgrid environment scripts
+for file in "$DOTFILEDIR/zsh/jgrid/"*
+do
+    if [[ -f $file ]]; then
+        source $file
+    fi
+done
+
+# load ZSH function and helper scripts
+for file in "$DOTFILEDIR/zsh/functions/"*
 do
     if [[ -f $file ]]; then
         source $file
