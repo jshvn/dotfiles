@@ -34,17 +34,11 @@ brew "highlight"
 # https://github.com/garabik/grc
 brew "grc"
 
-# perl-like regular expressions, used in some aliases
-brew "pcre"
-
 # htop is a better top
 brew "htop"
 
 # duf is a better df
 brew "duf"
-
-# 7zip for file compression/decompression
-brew "p7zip"
 
 # domain name lookup and information
 brew "whois"

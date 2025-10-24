@@ -64,7 +64,7 @@ alias lastinstalled="ls -l /var/db/.AppleSetupDone"
 alias dnsflush="sudo killall -HUP mDNSResponder; sudo killall mDNSResponderHelper; sudo dscacheutil -flushcache"
 
 # get current IP information. show all: $ ips
-local activeinterfaces=$(ifconfig | pcregrep -M -o '^[^\t:]+(?=:([^\n]|\n\t)*status: active)' | tr '\n' ' ')
+local activeinterfaces=$(ifconfig | awk '/^[^[:space:]]+:/ { iface=$1; sub(/:$/,"",iface) } /status: active/ { print iface }' | tr '\n' ' ')
 local getiploc=$(ipconfig getifaddr en0)
 
 # replace traceroute with trip
