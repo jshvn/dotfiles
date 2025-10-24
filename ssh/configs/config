@@ -10,6 +10,3 @@ Host *
 # Child config includes for content
 
 Include ~/.ssh/config_personal
-Include ~/.ssh/config_adobe
-Include ~/.ssh/config_dcds
-Include ~/.ssh/config_3di

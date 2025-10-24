@@ -36,11 +36,7 @@ ln -sf "$DOTFILEDIR"/git/personal/.gitconfig-personal "$HOME"/.config/git/person
 # setup SSH related links
 ln -sf "$DOTFILEDIR"/ssh/configs/config "$HOME"/.ssh/config
 ln -sf "$DOTFILEDIR"/ssh/configs/personal/config_personal "$HOME"/.ssh/config_personal
-ln -sf "$DOTFILEDIR"/ssh/configs/adobe/config_adobe "$HOME"/.ssh/config_adobe
-ln -sf "$DOTFILEDIR"/ssh/configs/adobe/config_dcds "$HOME"/.ssh/config_dcds
-ln -sf "$DOTFILEDIR"/ssh/configs/adobe/config_3di "$HOME"/.ssh/config_3di
 ln -sf "$DOTFILEDIR"/ssh/keys/id_ed25519_personal.pub "$HOME"/.ssh/id_ed25519_personal.pub
-ln -sf "$DOTFILEDIR"/ssh/keys/id_rsa_adobe.pub "$HOME"/.ssh/id_rsa_adobe.pub
 
 # setup SSH 1Password agent config file filtering
 # https://developer.1password.com/docs/ssh/agent/config
