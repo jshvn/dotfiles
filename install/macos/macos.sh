@@ -12,7 +12,6 @@ brew update
 
 # Install all apps from the Brewfile
 echo "Installing all packages and applications from the Brewfile"
-brew bundle --file "$DOTFILEDIR"/install/common/Brewfile.rb
 brew bundle --file "$DOTFILEDIR"/install/macos/Brewfile.rb
 
 if xcode-select -p 1>/dev/null; then

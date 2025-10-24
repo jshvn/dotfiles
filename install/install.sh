@@ -16,94 +16,42 @@ INSTALLFILEDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 # set primary dotfiledir which is the directory of where this git repo lives on the system
 DOTFILEDIR="$(dirname "$INSTALLFILEDIR")"
 
-# Execute setup depending on the system
-if [ "$(uname)" == "Darwin" ]; then
-
 ####################################################################################
 #################################### macOS #########################################
 ####################################################################################
 
-  ####### Step 0
-  ####### Install any dependencies to run the setup scripts
+####### Step 0
+####### Install any dependencies to run the setup scripts
 
-  # for macOS, we want to stop install flow if we hit an error
-  set -e
+# for macOS, we want to stop install flow if we hit an error
+set -e
 
-  ####### Step 1
-  ####### Setup links
+####### Step 1
+####### Setup links
 
-  # Set up symbolic links for ZSH and Git pointing to this cloned repo
-  source "$DOTFILEDIR"/install/macos/link.sh
+# Set up symbolic links for ZSH and Git pointing to this cloned repo
+source "$DOTFILEDIR"/install/macos/link.sh
 
-  ####### Step 2
-  ####### Install oh-my-zsh
+####### Step 2
+####### Install oh-my-zsh
 
-  # Get oh-my-zsh up and running
-  echo "Installing oh-my-zsh"
-  if [ ! -e ~/.oh-my-zsh ]; then
-    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended"
-  fi
-
-  ####### Step 3
-  ####### Run macOS steps
-
-  # run macOS specific install steps
-  source "$DOTFILEDIR"/install/macos/macos.sh
-  source "$DOTFILEDIR"/install/macos/defaults.sh
-
-else
-  
-
-####################################################################################
-#################################### Linux #########################################
-####################################################################################
-
-  ####### Step 0
-  ####### Install any dependencies to run the setup scripts
-
-  # curl isn't always available by default on ubuntu, install it. 
-  # while we're at it, lets install zsh too
-  echo "If curl or build-essential aren't already avaialble we will install them now"
-  echo "We may ask for sudo access here so that we can install curl, build-essential"
-
-  REQUIRED_PKG="curl build-essential"
-  for package in $REQUIRED_PKG
-  do
-    PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $package|grep "install ok installed")
-    echo Checking for $package: $PKG_OK
-    if [ "" = "$PKG_OK" ]; then
-      echo "$package not yet installed. installing $package"
-      sudo apt install $package
-    fi
-  done
-
-  ####### Step 1
-  ####### Run Linux steps
-
-  # run Linux specific install steps
-  source "$DOTFILEDIR"/install/linux/linux.sh
-
-  ####### Step 2
-  ####### Install oh-my-zsh
-
-  # Get oh-my-zsh up and running
-  echo "Installing oh-my-zsh"
-  if [ ! -e ~/.oh-my-zsh ]; then
-    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended"
-  fi
-
-  ####### Step 3
-  ####### Setup links
-
-  # Set up symbolic links for ZSH and Git pointing to this cloned repo
-  source "$DOTFILEDIR"/install/linux/link.sh
-
+# Get oh-my-zsh up and running
+echo "Installing oh-my-zsh"
+if [ ! -e ~/.oh-my-zsh ]; then
+  sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --unattended"
 fi
+
+####### Step 3
+####### Run macOS steps
+
+# run macOS specific install steps
+source "$DOTFILEDIR"/install/macos/macos.sh
+source "$DOTFILEDIR"/install/macos/defaults.sh
 
 
 # Ensure we're using the correct ZSH shell
 # We want to use the latest that is installed by Homebrew
-source "$DOTFILEDIR"/install/common/zsh.sh
+source "$DOTFILEDIR"/install/zsh.sh
 
 # Install ZSH plugins
 # install zsh-autosugestions

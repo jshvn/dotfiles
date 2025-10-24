@@ -137,31 +137,20 @@ DOTFILEDIR="$(dirname "$ZSHDIR")"
 
 
 
-if [[ $(uname) == "Darwin" ]]; then
-    ####################################################################################
-    #################################### macOS #########################################
-    ####################################################################################
-    export VISUAL="code"
-    export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
-    # Set 1Password as SSH agent on macOS
-    export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
+####################################################################################
+#################################### macOS #########################################
+####################################################################################
+export VISUAL="code"
+export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
+# Set 1Password as SSH agent on macOS
+export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
 
-    # Initialize conda for current shell
-    eval "$(conda "shell.$(basename "${SHELL}")" hook)"
+# Initialize conda for current shell
+eval "$(conda "shell.$(basename "${SHELL}")" hook)"
 
-    # Add visual studio code to the path if it isn't already there
-    if [ -d "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" ] && [[ ":$PATH:" != *":/Applications/Visual Studio Code.app/Contents/Resources/app/bin:"* ]]; then
-        PATH="${PATH:+"$PATH:"}/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
-    fi
-
-
-else
-    ####################################################################################
-    #################################### Linux #########################################
-    ####################################################################################
-
-    # make sure our brew applications can be found
-    eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+# Add visual studio code to the path if it isn't already there
+if [ -d "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" ] && [[ ":$PATH:" != *":/Applications/Visual Studio Code.app/Contents/Resources/app/bin:"* ]]; then
+    PATH="${PATH:+"$PATH:"}/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
 fi
 
 # the below sources need to happen after the above shell initializations
