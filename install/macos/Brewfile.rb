@@ -61,8 +61,8 @@ brew "hugo"
 # ncdu is a better tool for showing directory sizes
 brew "ncdu"
 
-# tldr is like man, but better
-brew "tldr"
+# tlrc is like man, but better
+brew "tlrc"
 
 # trippy is like traceroute, but better
 brew "trippy"
