@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
-####################################################################################
-#################################### Common ########################################
-####################################################################################
+####### Step 0
+####### Export dotfiledir environment variable
 
 # Find dotfile repo directory on this system, set $DOTFILEDIR to contain absolute path
 SOURCE="${BASH_SOURCE[0]}"
@@ -15,13 +14,7 @@ INSTALLFILEDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
 # set primary dotfiledir which is the directory of where this git repo lives on the system
 DOTFILEDIR="$(dirname "$INSTALLFILEDIR")"
-
-####################################################################################
-#################################### macOS #########################################
-####################################################################################
-
-####### Step 0
-####### Install any dependencies to run the setup scripts
+export DOTFILEDIR
 
 # for macOS, we want to stop install flow if we hit an error
 set -e
