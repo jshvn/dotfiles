@@ -26,11 +26,12 @@ ln -sf "$DOTFILEDIR"/zsh/functions.zsh "$HOME"/.config/.functions.zsh
 ln -sf "$DOTFILEDIR"/zsh/.trippy.toml "$HOME"/.config/.trippy.toml
 
 # setup git related links
-ln -sf "$DOTFILEDIR"/git/.gitconfig "$HOME"/.gitconfig
-ln -sf "$DOTFILEDIR"/git/.stCommitMsg "$HOME"/.stCommitMsg
-ln -sf "$DOTFILEDIR"/git/.gitignore_global "$HOME"/.gitignore_global
-ln -sf "$DOTFILEDIR"/git/personal/.gitconfig-personal "$HOME"/.gitconfig-personal
-ln -sf "$DOTFILEDIR"/git/adobe/.gitconfig-adobe "$HOME"/.gitconfig-adobe
+mkdir -p "$HOME"/.config/git/
+ln -sf "$DOTFILEDIR"/git/.gitconfig "$HOME"/.config/git/config
+ln -sf "$DOTFILEDIR"/git/.stCommitMsg "$HOME"/.config/git/.stCommitMsg
+ln -sf "$DOTFILEDIR"/git/.gitignore_global "$HOME"/.config/git/.gitignore_global
+mkdir -p "$HOME"/.config/git/personal/
+ln -sf "$DOTFILEDIR"/git/personal/.gitconfig-personal "$HOME"/.config/git/personal/.gitconfig-personal
 
 # setup SSH related links
 ln -sf "$DOTFILEDIR"/ssh/configs/config "$HOME"/.ssh/config
