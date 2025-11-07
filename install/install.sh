@@ -38,9 +38,9 @@ fi
 ####### Run macOS steps
 
 # run macOS specific install steps
-source "$DOTFILEDIR"/install/macos/macos.sh
+source "$DOTFILEDIR"/install/macos/brew.sh
+source "$DOTFILEDIR"/install/macos/xcode.sh
 source "$DOTFILEDIR"/install/macos/defaults.sh
-
 
 # Ensure we're using the correct ZSH shell
 # We want to use the latest that is installed by Homebrew
