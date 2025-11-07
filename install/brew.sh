@@ -12,4 +12,4 @@ brew update
 
 # Install all apps from the Brewfile
 echo "Installing all packages and applications from the Brewfile"
-brew bundle --file "$DOTFILEDIR"/install/macos/Brewfile.rb
+brew bundle --file "$DOTFILEDIR"/install/Brewfile.rb

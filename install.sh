@@ -13,7 +13,7 @@ done
 INSTALLFILEDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
 # set primary dotfiledir which is the directory of where this git repo lives on the system
-DOTFILEDIR="$(dirname "$INSTALLFILEDIR")"
+#DOTFILEDIR="$(dirname "$INSTALLFILEDIR")"
 export DOTFILEDIR
 
 # for macOS, we want to stop install flow if we hit an error
@@ -23,7 +23,7 @@ set -e
 ####### Setup links
 
 # Set up symbolic links for ZSH and Git pointing to this cloned repo
-source "$DOTFILEDIR"/install/macos/link.sh
+source "$DOTFILEDIR"/install/link.sh
 
 ####### Step 2
 ####### Install oh-my-zsh
@@ -38,9 +38,9 @@ fi
 ####### Run macOS steps
 
 # run macOS specific install steps
-source "$DOTFILEDIR"/install/macos/brew.sh
-source "$DOTFILEDIR"/install/macos/xcode.sh
-source "$DOTFILEDIR"/install/macos/defaults.sh
+source "$DOTFILEDIR"/install/brew.sh
+source "$DOTFILEDIR"/install/xcode.sh
+source "$DOTFILEDIR"/install/defaults.sh
 
 # Ensure we're using the correct ZSH shell
 # We want to use the latest that is installed by Homebrew

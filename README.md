@@ -8,7 +8,7 @@ This repository is a working copy of my machine configuration, settings, and sof
 ```
     $ git clone https://github.com/jshvn/dotfiles.git
     $ cd dotfiles
-    $ ./bootstrap.sh
+    $ ./install.sh
 ```
 
 **Update software:**
@@ -23,14 +23,14 @@ This repository is a working copy of my machine configuration, settings, and sof
 Installation generally sets up several aspects of the machine for use:
 
 1. [git](git/) 
-2. [system defaults and links](install/macos/)
+2. [system defaults and links](install/)
 3. [ssh configs](ssh/configs/)
-4. [applications](install/macos/Brewfile.rb)
+4. [applications](install/Brewfile.rb)
 5. [zsh](zsh/)
 
 ## 📘 Notes
 
-If you change the location of this repo on the filesystem, you will need to re-run the `bootstrap.sh` or `link.sh` script again because the symlinks to the files within this repo will be broken.
+If you change the location of this repo on the filesystem, you will need to re-run the `install.sh` or `link.sh` script again because the symlinks to the files within this repo will be broken.
 
 ## ☁️ Cloudflare Warp
 
