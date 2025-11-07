@@ -130,7 +130,7 @@ if [ -d "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" ] && [
 fi
 
 # set browser to Firefox
-export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox-bin"
+export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
 
 # Set 1Password as SSH agent on macOS
 export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock

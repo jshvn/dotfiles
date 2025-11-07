@@ -3,7 +3,7 @@
 [includeIf "gitdir:~/Git/personal/"]
     path = ~/.config/git/personal/.gitconfig-personal
 [core]
-	editor = vscode
+	editor = code
 	excludesfile = ~/.config/git/.gitignore_global
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
