@@ -49,7 +49,7 @@ export VEDITOR="code"
 # "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
 # or set a custom format using the strftime function format specifications,
 # see 'man strftime' for details.
-# HIST_STAMPS="mm/dd/yyyy"
+# export HIST_STAMPS="%Y-%m-%d %I:%M:%S"
 
 # Would you like to use another custom folder than $ZSH/custom?
 # ZSH_CUSTOM=/path/to/new-custom-folder
@@ -72,9 +72,10 @@ source $(brew --prefix)/share/antigen/antigen.zsh
 antigen use ohmyzsh/ohmyzsh
 
 # load plugins for oh-my-zsh
-antigen bundle git
-antigen bundle colorize
-antigen bundle kubectl
+antigen bundle ohmyzsh/ohmyzsh git
+antigen bundle ohmyzsh/ohmyzsh colorize
+antigen bundle ohmyzsh/ohmyzsh kubectl
+antigen bundle ohmyzsh/ohmyzsh plugins/extract
 antigen bundle zsh-users/zsh-syntax-highlighting
 antigen bundle zsh-users/zsh-completions
 antigen bundle zsh-users/zsh-autosuggestions
