@@ -57,7 +57,11 @@ if [[ "$TERM" != dumb ]] && (( $+commands[grc] )) ; then
     df \
     diff \
     dig \
+    docker \x
+    env \
+    id \
     ifconfig \
+    kubectl \
     netstat \
     ping \
     ping6 \
