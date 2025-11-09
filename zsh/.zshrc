@@ -102,15 +102,6 @@ source $ZSH/oh-my-zsh.sh
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
 
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
-# For a full list of active aliases, run `alias`.
-#
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
-
 #  Find dotfile repo directory on this system, set $DOTFILEDIR to contain absolute path
 SOURCE="${(%):-%N}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -142,8 +133,13 @@ eval "$(conda "shell.$(basename "${SHELL}")" hook)"
 # otherwise some functions/scripts like 'which' will not be found in the 
 # correct spots, and that causes errors in aliases and functions
 
-# load common ZSH aliases
-source $DOTFILEDIR/zsh/aliases.zsh
+# load ZSH aliases
+for file in "$DOTFILEDIR/zsh/aliases/"*
+do
+    if [[ -f $file ]]; then
+        source $file
+    fi
+done
 
 # load common ZSH custom themes
 source $DOTFILEDIR/zsh/theme.zsh
