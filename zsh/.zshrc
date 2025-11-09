@@ -71,6 +71,9 @@ for dump in ~/.zcompdump(N.mh+24); do
 done
 compinit -C
 
+# set antigen config location
+export ADOTDIR=$XDG_CONFIG_HOME/antigen
+
 # load antigen for plugin management
 source $(brew --prefix)/share/antigen/antigen.zsh
 
@@ -78,10 +81,11 @@ source $(brew --prefix)/share/antigen/antigen.zsh
 antigen use oh-my-zsh
 
 # load plugins for oh-my-zsh
-antigen bundle zsh-users/git
-antigen bundle zsh-users/colorize
-antigen bundle zsh-users/kubectl
+antigen bundle git
+antigen bundle colorize
+antigen bundle kubectl
 antigen bundle zsh-users/zsh-syntax-highlighting
+antigen bundle zsh-users/zsh-completions
 antigen bundle zsh-users/zsh-autosuggestions
 antigen theme "alanpeabody"
 
@@ -101,10 +105,6 @@ export DOTFILEDIR
 
 # set visual code editor to VS Code
 export VISUAL="code"
-# Add visual studio code to the path if it isn't already there
-if [ -d "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" ] && [[ ":$PATH:" != *":/Applications/Visual Studio Code.app/Contents/Resources/app/bin:"* ]]; then
-    PATH="${PATH:+"$PATH:"}/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
-fi
 
 # set browser to Firefox
 export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
