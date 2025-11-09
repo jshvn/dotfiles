@@ -144,14 +144,6 @@ done
 # load common ZSH custom themes
 source $DOTFILEDIR/zsh/theme.zsh
 
-# load jgrid environment scripts
-for file in "$DOTFILEDIR/zsh/jgrid/"*
-do
-    if [[ -f $file ]]; then
-        source $file
-    fi
-done
-
 # load ZSH function and helper scripts
 for file in "$DOTFILEDIR/zsh/functions/"*
 do
