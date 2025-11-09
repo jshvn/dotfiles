@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-# this func allows you to easily list all of the available funcs
+# this function allows you to easily list all of the available funcs
 function functionlist() {    # functionlist() will list all of the available functions. ex: $ functionlist
     local funcslist=()
 
