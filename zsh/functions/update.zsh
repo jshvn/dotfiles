@@ -13,6 +13,9 @@ function update() {    # update() will update the current dotfiles installation 
 
     # update tldr definitions
     tldr --update
+
+    # update antigen plugins
+    antigen update
 	
 	# execute the install script
 	# note: we manually specify bash here, since the install script is written in bash 

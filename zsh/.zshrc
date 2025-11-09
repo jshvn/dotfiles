@@ -63,18 +63,6 @@ ZSH_THEME="alanpeabody"
 # Would you like to use another custom folder than $ZSH/custom?
 # ZSH_CUSTOM=/path/to/new-custom-folder
 
-# Which plugins would you like to load?
-# Standard plugins can be found in $ZSH/plugins/
-# Custom plugins may be added to $ZSH_CUSTOM/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
-plugins=(
-    git
-    colorize
-    zsh-syntax-highlighting
-    zsh-autosuggestions
-)
-
 # Perform compinit only once a day for speed
 # https://gist.github.com/ctechols/ca1035271ad134841284#gistcomment-2308206
 autoload -Uz compinit
@@ -83,24 +71,22 @@ for dump in ~/.zcompdump(N.mh+24); do
 done
 compinit -C
 
-source $ZSH/oh-my-zsh.sh
+# load antigen for plugin management
+source $(brew --prefix)/share/antigen/antigen.zsh
 
-# User configuration
+# load the oh-my-zsh's library.
+antigen use oh-my-zsh
 
-# export MANPATH="/usr/local/man:$MANPATH"
+# load plugins for oh-my-zsh
+antigen bundle zsh-users/git
+antigen bundle zsh-users/colorize
+antigen bundle zsh-users/kubectl
+antigen bundle zsh-users/zsh-syntax-highlighting
+antigen bundle zsh-users/zsh-autosuggestions
+antigen theme "alanpeabody"
 
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
-
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
-
-# Compilation flags
-# export ARCHFLAGS="-arch x86_64"
+# apply antigen plugin settings
+antigen apply
 
 #  Find dotfile repo directory on this system, set $DOTFILEDIR to contain absolute path
 SOURCE="${(%):-%N}"

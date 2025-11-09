@@ -64,6 +64,12 @@ brew "trippy"
 # fd is a find replacement
 brew "fd"
 
+# antigen is a plugin manager for zsh
+brew "antigen"
+
+# jq is a command line json parser
+brew "jq"
+
 # cloudflared client
 brew "cloudflared"
 
