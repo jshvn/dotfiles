@@ -1,17 +1,11 @@
 #!/bin/zsh
 
 # this function allows you to easily list all of the available aliases
-function aliaslist() {    # aliaslist() will list all of the available functions. ex: $ aliaslist
-    local aliaslist=()
+# it is included in the aliases directory simply because it deals with aliases
 
-    # grab all of the platform agnostic funcs
-    for file in "$DOTFILEDIR/zsh/aliases/"*
-    do
-        if [[ -f $file && ${file:t} != "aliaslist.zsh" ]]; then
-            aliaslist+=$(grep 'alias' "$file" | awk '{$1=$1};1' | highlight --syntax=bash)
-            aliaslist+=$'\n'
-        fi
-    done
+function aliaslist() {    # aliaslist() will list all of the available aliases. ex: $ aliaslist
+    local aliaslist=$(alias | awk '{$1=$1};1' | highlight --syntax=bash)
 
+    # print the final alias list
     echo "$aliaslist" | awk '{$1=$1};1'
 }

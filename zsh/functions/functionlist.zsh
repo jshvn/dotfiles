@@ -13,5 +13,5 @@ function functionlist() {    # functionlist() will list all of the available fun
         fi
     done
 
-    echo "$funcslist" | awk '{$1=$1};1'
+    echo "$funcslist" | awk '{ $1=$1; if (NR==1) { prev=$0; next } print prev; prev=$0 } END { if (NR>0) printf "%s", prev }'
 }
