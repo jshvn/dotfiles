@@ -30,5 +30,5 @@ ln -sf "$DOTFILEDIR"/ssh/keys/id_ed25519_personal.pub "$HOME"/.ssh/id_ed25519_pe
 mkdir -p "$HOME"/.config/1Password/ssh/
 ln -sf "$DOTFILEDIR"/ssh/configs/agent.toml "$HOME"/.config/1Password/ssh/agent.toml
 
-# setup SSH platform detection
-ln -sf "$DOTFILEDIR"/ssh/configs/platform.sh "$HOME"/.ssh/platform.sh
+# setup SSH cloudflared proxy command script
+ln -sf "$DOTFILEDIR"/ssh/cloudflared.sh "$HOME"/.ssh/cloudflared.sh
