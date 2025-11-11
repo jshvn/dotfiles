@@ -8,6 +8,9 @@
 # the following prompt elements are based on the "alanpeabody" oh-my-zsh theme, but are
 # customized to my liking and personal style. loosely based on ubuntu as well
 
+# alanpeabody theme reference:
+# https://github.com/ohmyzsh/ohmyzsh/blob/master/themes/alanpeabody.zsh-theme
+
 # useful ls_colors / lscolor converter tool: 
 # https://geoff.greer.fm/lscolors/ - https://github.com/ggreer/lscolors
 
