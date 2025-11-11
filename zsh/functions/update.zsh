@@ -11,6 +11,9 @@ function update() {    # update() will update the current dotfiles installation 
 	# pull new version from origin
 	git pull
 
+    # update oh-my-zsh
+    omz update
+
     # update tldr definitions
     tldr --update
 
