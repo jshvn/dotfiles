@@ -24,7 +24,6 @@ local return_code='%(?..%{$fg[red]%}%? ↵%{$reset_color%})'
 local git_branch='$(git_prompt_status)%{$reset_color%}$(git_prompt_info)%{$reset_color%}'
 local time='%{$fg[cyan]%}%T%{$reset_color%}'
 
-ZSH_THEME_RVM_PROMPT_OPTIONS="i v g"
 ZSH_THEME_GIT_PROMPT_PREFIX="%{$fg[green]%}"
 ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color%}"
 ZSH_THEME_GIT_PROMPT_DIRTY=""
@@ -40,9 +39,6 @@ ZSH_THEME_GIT_PROMPT_AHEAD="%{$fg[green]%} ↑"
 ZSH_THEME_GIT_PROMPT_BEHIND="%{$fg[red]%} ↓"
 ZSH_THEME_GIT_PROMPT_DIVERGED="%{$fg[yellow]%} ↕"
 ZSH_THEME_GIT_PROMPT_STASHED="%{$fg[blue]%} ⚑"
-
-ZSH_THEME_RUBY_PROMPT_PREFIX="%{$fg[green]%}‹"
-ZSH_THEME_RUBY_PROMPT_SUFFIX="›%{$reset_color%}"
 
 PROMPT="${user}:${pwd}$ "
 RPROMPT="${return_code} ${git_branch} ${time}"
