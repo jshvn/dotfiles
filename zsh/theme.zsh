@@ -18,7 +18,7 @@ LS_COLORS='rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:c
 local user='%{$fg[green]%}%n@%{$fg[green]%}%m%{$reset_color%}'
 local pwd='%{$fg[blue]%}%~%{$reset_color%}'
 local return_code='%(?..%{$fg[red]%}%? ↵%{$reset_color%})'
-local git_branch='$(git_prompt_status)%{$reset_color%}$(git_prompt_info)%{$reset_color%}'
+local git_branch='$(git_prompt_status)%{$reset_color%}$(git_prompt_info)'
 local time='%{$fg[cyan]%}%T%{$reset_color%}'
 
 ZSH_THEME_RVM_PROMPT_OPTIONS="i v g"
