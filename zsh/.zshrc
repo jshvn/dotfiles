@@ -6,6 +6,7 @@ export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 # tool defaults
 export EDITOR="nano"
 export VEDITOR="code"
+export VISUAL="code"
 
 # Set history timestamp format.
 export HIST_STAMPS="%Y-%m-%d %I:%M:%S"
@@ -49,9 +50,6 @@ done
 ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 DOTFILEDIR="$(dirname "$ZSHDIR")"
 export DOTFILEDIR
-
-# set visual code editor to VS Code
-export VISUAL="code"
 
 # set browser to Firefox
 export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
