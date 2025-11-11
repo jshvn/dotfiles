@@ -79,7 +79,6 @@ antigen bundle ohmyzsh/ohmyzsh plugins/extract
 antigen bundle zsh-users/zsh-syntax-highlighting
 antigen bundle zsh-users/zsh-completions
 antigen bundle zsh-users/zsh-autosuggestions
-antigen theme "alanpeabody"
 
 # apply antigen plugin settings
 antigen apply
