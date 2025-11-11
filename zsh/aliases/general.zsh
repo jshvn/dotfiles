@@ -3,6 +3,9 @@
 # reload current configuration
 alias reload="source ~/.zshrc"
 
+# show current environment variables
+alias environment="env"
+
 # Print each PATH entry on a separate line
 alias path='echo -e ${PATH//:/\\n}'
 
