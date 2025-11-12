@@ -1,10 +1,10 @@
 [user]
 	name = Josh Vaughen
 [includeIf "gitdir:~/Git/personal/"]
-    path = ${XDG_CONFIG_HOME}/git/personal/.gitconfig-personal
+    path = personal/.gitconfig-personal
 [core]
 	editor = code
-	excludesfile = ${XDG_CONFIG_HOME}/git/.gitignore_global
+	excludesfile = ./.gitignore_global
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
@@ -12,7 +12,7 @@
 	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 	trustExitCode = true
 [commit]
-	template = ${XDG_CONFIG_HOME}/git/.stCommitMsg
+	template = ./.stCommitMsg
 [alias]
 	# list all git aliases
 	aliases = !git config -l | grep alias | cut -c 7- | highlight --style=duotone-dark-sky --syntax=bash --out-format=xterm256
