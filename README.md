@@ -30,7 +30,7 @@ Installation generally sets up several aspects of the machine for use:
 
 ## 📘 Notes
 
-If you change the location of this repo on the filesystem, you will need to re-run the `install.sh` or `link.sh` script again because the symlinks to the files within this repo will be broken.
+If you change the location of this repo on the filesystem, you will need to re-run the `install.sh` or `links.sh` script again because the symlinks to the files within this repo will be broken.
 
 ## ☁️ Cloudflare Warp
 

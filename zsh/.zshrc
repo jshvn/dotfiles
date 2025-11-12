@@ -1,7 +1,10 @@
 #!/bin/zsh
 
-# set XDG_CONFIG_HOME
+# while not a strict requirement, loosely follow the XDG Base Directory Specification
+# https://specifications.freedesktop.org/basedir/latest/
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 
 # tool defaults
 export EDITOR="nano"

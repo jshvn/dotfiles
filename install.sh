@@ -22,7 +22,7 @@ set -e
 ####### Setup links
 
 # Set up symbolic links for ZSH and Git pointing to this cloned repo
-source "$DOTFILEDIR"/install/link.sh
+source "$DOTFILEDIR"/install/links.sh
 
 
 ####### Step 2
