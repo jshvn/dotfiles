@@ -11,6 +11,6 @@ alias interfaces="echo Active Interfaces: $activeinterfaces"
 alias traceroute="$(which trip) -u"
 
 # use ipv4lookup and ipv6lookup functions to get IPs
-alias ip="ipv4lookup; ipv6lookup;"
-alias ipv4="ipv4lookup"
-alias ipv6="ipv6lookup"
+alias ip="ipv4; ipv6;"
+alias ipv4="ipv4lookup | highlight --syntax=bash"
+alias ipv6="ipv6lookup | highlight --syntax=bash"
