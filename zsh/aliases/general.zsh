@@ -7,7 +7,7 @@ alias reload="source $HOME/.zshrc"
 alias environment="env"
 
 # Print each PATH entry on a separate line
-alias path='echo -e ${PATH//:/\\n}'
+alias path='echo -e ${PATH//:/\\n} | highlight --syntax=bash'
 
 # print the dotfile directory
 alias dotfile='cd $DOTFILEDIR'

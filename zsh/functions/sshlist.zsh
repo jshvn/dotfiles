@@ -6,7 +6,7 @@ function sshlist() {    # sshlist() will list all available ssh endpoints. ex: $
     for f in $CONFIG_PATH
     do
         grep "Host " "$f" | awk '{print $2}' | while read -r host; do
-            echo "$host"
+            echo "$host" | highlight --syntax=bash
         done
     done
 }
