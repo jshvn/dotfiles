@@ -84,8 +84,16 @@ ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 DOTFILEDIR="$(dirname "$ZSHDIR")"
 export DOTFILEDIR
 
-# Initialize conda for current shell
-eval "$(conda "shell.$(basename "${SHELL}")" hook)"
+# lazy conda initialization - wrapper replaces itself after performing hook, then re-runs original command
+if command -v conda >/dev/null 2>&1; then
+    function conda() {
+    unfunction conda 2>/dev/null
+        local __conda_bin
+        __conda_bin="$(command -v conda)"
+        eval "$("$__conda_bin" shell.$(basename "${SHELL}") hook)"
+        conda "$@"
+    }
+fi
 
 # the below sources need to happen after the above shell initializations
 # otherwise some functions/scripts like 'which' will not be found in the 
