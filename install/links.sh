@@ -7,6 +7,7 @@ mkdir -p "$XDG_CONFIG_HOME"
 
 # Set up symbolic links for ZSH and Git pointing to this cloned repo
 echo "Setting up symbolic links for ZSH, gitconfig, sshconfig"
+ln -sf "$DOTFILEDIR"/zsh/.zshenv "$HOME"/.zshenv
 ln -sf "$DOTFILEDIR"/zsh/.zprofile "$HOME"/.zprofile
 ln -sf "$DOTFILEDIR"/zsh/.zshrc "$HOME"/.zshrc
 ln -sf "$DOTFILEDIR"/zsh/.trippy.toml "$XDG_CONFIG_HOME"/.trippy.toml

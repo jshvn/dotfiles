@@ -1,17 +1,47 @@
 #!/bin/zsh
-
-# while not a strict requirement, loosely follow the XDG Base Directory Specification
-# https://specifications.freedesktop.org/basedir/latest/
-export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
-export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
-
-# tool defaults
-export EDITOR="nano"
-export VEDITOR="code"
-export VISUAL="code"
+# -----------------------------------------------------------------------------
+# .zshrc - Zsh interactive shell configuration
+#
+# Sourced by: interactive zsh shells (after ~/.zshenv and ~/.zprofile when login)
+# Zsh startup order (login interactive example):
+#   1) ~/.zshenv
+#   2) ~/.zprofile   (login shells)
+#   3) ~/.zshrc      (interactive shells)
+#   4) ~/.zlogin     (after .zshrc for login shells)
+#
+# Logout order (login shells):
+#   - ~/.zlogout is read when a login shell exits
+#
+# Purpose:
+#   - Configure interactive-only features: prompt, history, plugins, aliases,
+#     functions, keybindings, completions and interactive helpers.
+#
+# Typical contents / examples:
+#   - Prompt and appearance:
+#       export PROMPT='%n@%m %1~ %# '
+#   - History configuration:
+#       export HISTFILE=~/.zsh_history
+#   - Completion and shells helpers (interactive):
+#       autoload -Uz compinit && compinit
+#   - Plugin managers and interactive hooks (antigen, zinit, oh-my-zsh):
+#       source $(brew --prefix)/share/antigen/antigen.zsh
+#       antigen bundle zsh-users/zsh-autosuggestions
+#       antigen apply
+#   - Aliases and functions (interactive conveniences):
+#       alias ll='ls -la'
+#       function myfunc() { echo "interactive only" }
+#
+# Notes:
+#   - Keep .zshrc for interactive setup only. If a value must be available to
+#     non-interactive shells, put it in ~/.zshenv or ~/.zprofile instead.
+#   - Avoid lengthy blocking commands in .zshrc; prefer lazy loading or checks.
+#
+# See: Zsh manual — Startup/Shutdown Files:
+#   http://zsh.sourceforge.net/Doc/Release/Files.html
+# -----------------------------------------------------------------------------
 
 # Set history timestamp format.
+export HISTFILE="${XDG_DATA_HOME}/zsh/history"
 export HIST_STAMPS="%Y-%m-%d %I:%M:%S"
 
 # Perform compinit only once a day for speed
@@ -53,12 +83,6 @@ done
 ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 DOTFILEDIR="$(dirname "$ZSHDIR")"
 export DOTFILEDIR
-
-# set browser to Firefox
-export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
-
-# Set 1Password as SSH agent on macOS
-export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
 
 # Initialize conda for current shell
 eval "$(conda "shell.$(basename "${SHELL}")" hook)"
