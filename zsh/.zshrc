@@ -40,9 +40,11 @@
 #   http://zsh.sourceforge.net/Doc/Release/Files.html
 # -----------------------------------------------------------------------------
 
-# Set history timestamp format.
-export HISTFILE="${XDG_DATA_HOME}/zsh/history"
+# setup zsh history file in XDG data home, turn on history sharing
+export HISTFILE="$XDG_DATA_HOME/zsh/history"
 export HIST_STAMPS="%Y-%m-%d %I:%M:%S"
+mkdir -p "${HISTFILE%/*}"
+setopt SHARE_HISTORY
 
 # Perform compinit only once a day for speed
 # https://gist.github.com/ctechols/ca1035271ad134841284#gistcomment-2308206
@@ -76,9 +78,9 @@ antigen apply
 #  Find dotfile repo directory on this system, set $DOTFILEDIR to contain absolute path
 SOURCE="${(%):-%N}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
-  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
-  SOURCE="$(readlink "$SOURCE")"
-  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+    DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
 ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 DOTFILEDIR="$(dirname "$ZSHDIR")"

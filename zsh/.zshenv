@@ -39,3 +39,6 @@ export VISUAL="code"
 
 # set browser to Firefox (some tools use $BROWSER)
 export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
+
+# disable shell sessions to avoid creating .zsh/sessions/ directories and files
+export SHELL_SESSIONS_DISABLE=1
