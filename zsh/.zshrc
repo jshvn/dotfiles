@@ -46,13 +46,8 @@ export HIST_STAMPS="%Y-%m-%d %I:%M:%S"
 mkdir -p "${HISTFILE%/*}"
 setopt SHARE_HISTORY
 
-# Perform compinit only once a day for speed
-# https://gist.github.com/ctechols/ca1035271ad134841284#gistcomment-2308206
-autoload -Uz compinit
-for dump in ~/.zcompdump(N.mh+24); do
-  compinit
-done
-compinit -C
+export ZSH_COMPDUMP="$XDG_CACHE_HOME/zsh/zcompcache"
+mkdir -p "${ZSH_COMPDUMP%/*}"
 
 # set antigen config location
 export ADOTDIR=$XDG_CONFIG_HOME/antigen
