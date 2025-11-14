@@ -115,6 +115,7 @@ cask "dropbox"
 cask "1password"
 cask "cryptomator"
 cask "raycast"
+cask "alcove"
 
 # productivity
 cask "standard-notes"
