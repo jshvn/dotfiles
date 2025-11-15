@@ -36,8 +36,11 @@ ln -sf "$DOTFILEDIR"/ssh/configs/agent.toml "$XDG_CONFIG_HOME"/1Password/ssh/age
 ln -sf "$DOTFILEDIR"/ssh/cloudflared.zsh "$HOME"/.ssh/cloudflared.zsh
 
 # setup trippy (traceroute visualizer) config file
-mkdir -p "$XDG_CONFIG_HOME"/styles/
-ln -sf "$DOTFILEDIR"/zsh/styles/.trippy.toml "$XDG_CONFIG_HOME"/.trippy.toml
+ln -sf "$DOTFILEDIR"/zsh/configs/.trippy.toml "$XDG_CONFIG_HOME"/.trippy.toml
+
+# setup tlrc (tldr client) config file
+mkdir -p "$XDG_CONFIG_HOME"/tlrc/
+ln -sf "$DOTFILEDIR"/zsh/configs/tlrc.toml "$XDG_CONFIG_HOME"/tlrc/config.toml
 
 # setup eza style config yaml file  
 mkdir -p "$XDG_CONFIG_HOME"/eza/

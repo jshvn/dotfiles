@@ -52,6 +52,9 @@ mkdir -p "${ZSH_COMPDUMP%/*}"
 # set antigen config location
 export ADOTDIR=$XDG_CONFIG_HOME/antigen
 
+# set tlrc (tldr client) config and cache location
+export TLRC_CONFIG="$XDG_CONFIG_HOME/tlrc"
+
 # load antigen for plugin management
 source $(brew --prefix)/share/antigen/antigen.zsh
 
