@@ -18,9 +18,10 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
   [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
 INSTALLFILEDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+DOTFILEDIR="$INSTALLFILEDIR"
 
 # set primary dotfiledir which is the directory of where this git repo lives on the system
-export DOTFILEDIR=$INSTALLFILEDIR
+export DOTFILEDIR
 
 # for macOS, we want to stop install flow if we hit an error
 set -e
