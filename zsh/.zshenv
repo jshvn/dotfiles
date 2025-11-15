@@ -43,3 +43,6 @@ export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
 
 # disable shell sessions to avoid creating .zsh/sessions/ directories and files
 export SHELL_SESSIONS_DISABLE=1
+
+# set CF_USER_TEXT_ENCODING to avoid locale warnings in some macOS terminal apps
+export __CF_USER_TEXT_ENCODING=0x0:0:0
