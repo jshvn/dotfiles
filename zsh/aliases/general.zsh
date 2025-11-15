@@ -35,3 +35,6 @@ alias finderhide="defaults write com.apple.finder AppleShowAllFiles -bool false 
 
 # show last time macOS was installed
 alias lastinstalled="ls -l /var/db/.AppleSetupDone"
+
+# color history output
+alias history="omz_history -t '%Y-%m-%d %I:%M:%S' | highlight --syntax=bash"
