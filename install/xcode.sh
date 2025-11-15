@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/zsh
 
 if xcode-select -p 1>/dev/null; then
   echo "Xcode Command Line Tools already installed, skipping installation"

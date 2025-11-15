@@ -1,4 +1,11 @@
-#!/usr/bin/env bash
+#!/bin/zsh
+
+echo """
+$(tput setaf 2)Beginning dotfiles install: 
+$(tput setaf 7)PID=$(tput setaf 4)$$  
+$(tput setaf 7)process=$(tput setaf 4)$(ps -p $$ -o comm=)  
+$(tput setaf 7)argv0=$(tput setaf 4)$0$(tput setaf 7)
+"""
 
 ####### Step 0
 ####### Export dotfiledir environment variable
@@ -13,7 +20,7 @@ done
 INSTALLFILEDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
 # set primary dotfiledir which is the directory of where this git repo lives on the system
-export DOTFILEDIR
+export DOTFILEDIR=$INSTALLFILEDIR
 
 # for macOS, we want to stop install flow if we hit an error
 set -e
@@ -49,10 +56,10 @@ $(tput setaf 2)Install complete!
 
 $(tput setaf 7)You might need to log out and log back in to activate Homebrew ZSH.
 
-To check which shell is running use: $ which zsh
-To change which shell is running use: $ chsh -s $(which zsh)
+To check which shell is running use: $ $(tput setaf 2)which zsh$(tput setaf 7)
+To change which shell is running use: $ $(tput setaf 2)chsh -s $(which zsh)$(tput setaf 7)
 
 If you want to update to the latest version of the dotfiles, run the following command:
-    $ update
+    $ $(tput setaf 2)update$(tput setaf 7)
 
 """

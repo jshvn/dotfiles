@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/zsh
 
 # This script exists to ensure we are using the ZSH shell that is installed by Homebrew
 

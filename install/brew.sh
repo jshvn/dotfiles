@@ -1,9 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/zsh
 
 # install homebrew
 echo "Installing homebrew..."
 if test ! "$(which brew)"; then
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+  /bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
 # Update Homebrew recipes

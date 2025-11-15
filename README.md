@@ -8,7 +8,7 @@ This repository is a working copy of my machine configuration, settings, and sof
 ```
     $ git clone https://github.com/jshvn/dotfiles.git
     $ cd dotfiles
-    $ ./install.sh
+    $ zsh install.sh
 ```
 
 **Update software:**

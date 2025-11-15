@@ -26,9 +26,7 @@ function update() {    # update() will update the current dotfiles installation 
     antigen update
 	
 	# execute the install script
-	# note: we manually specify bash here, since the install script is written in bash 
-	# and we're calling it from zsh. bad things happen if you use source instead
-	bash $DOTFILEDIR/install.sh
+	zsh $DOTFILEDIR/install.sh
 
 	# return user to previous directory
 	cd $currentdir
