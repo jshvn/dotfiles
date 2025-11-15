@@ -30,16 +30,16 @@ set -e
 ####### Setup links
 
 # Set up symbolic links for ZSH and Git pointing to this cloned repo
-source "$DOTFILEDIR"/install/links.sh
+source "$DOTFILEDIR"/install/links.zsh
 
 
 ####### Step 2
 ####### Run macOS steps
 
 # run macOS specific install steps
-source "$DOTFILEDIR"/install/brew.sh
-source "$DOTFILEDIR"/install/xcode.sh
-source "$DOTFILEDIR"/install/defaults.sh
+source "$DOTFILEDIR"/install/brew.zsh
+source "$DOTFILEDIR"/install/xcode.zsh
+source "$DOTFILEDIR"/install/defaults.zsh
 
 ####### Step 3
 ####### Run macOS steps
@@ -47,7 +47,7 @@ source "$DOTFILEDIR"/install/defaults.sh
 # Ensure we're using the correct ZSH shell
 # We want to use the latest that is installed by Homebrew
 # And setup our zsh plugins
-source "$DOTFILEDIR"/install/zsh.sh
+source "$DOTFILEDIR"/install/setshell.zsh
 
 # install complete
 

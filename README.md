@@ -8,7 +8,7 @@ This repository is a working copy of my machine configuration, settings, and sof
 ```
     $ git clone https://github.com/jshvn/dotfiles.git
     $ cd dotfiles
-    $ zsh install.sh
+    $ zsh install.zsh
 ```
 
 **Update software:**
@@ -30,7 +30,7 @@ Installation generally sets up several aspects of the machine for use:
 
 ## 📘 Notes
 
-If you change the location of this repo on the filesystem, you will need to re-run the `install.sh` or `links.sh` script again because the symlinks to the files within this repo will be broken.
+If you change the location of this repo on the filesystem, you will need to re-run the `install.zsh` or `links.zsh` script again because the symlinks to the files within this repo will be broken.
 
 ## ☁️ Cloudflare Warp
 

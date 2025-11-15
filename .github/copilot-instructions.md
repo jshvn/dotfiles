@@ -3,40 +3,40 @@
 Purpose: Give an AI contributor the fastest path to making safe, effective changes in this dotfiles repo.
 
 ### 0. Quick Start
-- Install on macOS: `git clone https://github.com/jshvn/dotfiles.git && cd dotfiles && ./install.sh`
-- Re-run links only: `bash install/links.sh`
+- Install on macOS: `git clone https://github.com/jshvn/dotfiles.git && cd dotfiles && ./install.zsh`
+- Re-run links only: `bash install/links.zsh`
 - Re-run Homebrew bundle: `brew bundle --file "$DOTFILEDIR"/install/Brewfile.rb`
 - Update in an interactive Zsh: `update`
 - Debug `DOTFILEDIR`: `ZDOTDIR=$PWD/zsh zsh -i -c 'echo $DOTFILEDIR'`
 
 ### 1. Execution Flow (Install Pipeline)
-Fresh macOS install runs `./install.sh` which:
+Fresh macOS install runs `./install.zsh` which:
 1. Resolves and exports `DOTFILEDIR`.
-2. Sources (in order): `install/links.sh`, `install/brew.sh`, `install/xcode.sh`, `install/defaults.sh`, `install/zsh.sh`.
+2. Sources (in order): `install/links.zsh`, `install/brew.zsh`, `install/xcode.zsh`, `install/defaults.zsh`, `install/setshell.zsh`.
 3. Prints completion message with color (`tput setaf`).
 All steps assume Bash (`#!/usr/bin/env bash`) and abort on first error (`set -e`).
 
 ### 2. Core Layout & Key Files
-- `install.sh`: orchestrator (entrypoint).
-- `install/*.sh`: segmented install phases (idempotent expectation).
+- `install.zsh`: orchestrator (entrypoint).
+- `install/*.zsh`: segmented install phases (idempotent expectation).
 - `install/Brewfile.rb`: declarative Homebrew bundle (CLI tools + apps).
 - `zsh/.zshrc`: interactive startup; computes `DOTFILEDIR`; auto-sources `zsh/aliases/*` and `zsh/functions/*`.
 - `zsh/aliases/*.zsh`: utility aliases (loaded unconditionally). Keep side effects minimal.
 - `zsh/functions/*.zsh`: utility functions (loaded unconditionally). Keep side effects minimal.
-- `ssh/configs/`, `ssh/keys/`: symlinked into `$HOME/.ssh/` by `install/links.sh`.
+- `ssh/configs/`, `ssh/keys/`: symlinked into `$HOME/.ssh/` by `install/links.zsh`.
 
 ### 3. Required Patterns & Conventions
 - Functions: filename ends in `.zsh`, no output unless invoked, safe if sourced multiple times.
 - Aliases: group logically in separate files under `zsh/aliases/` (lexicographic load order).
-- Symlinks: follow `install/links.sh` style: `ln -sf "${DOTFILEDIR}/path" "$HOME/target"`; respect `XDG_CONFIG_HOME` when appropriate.
+- Symlinks: follow `install/links.zsh` style: `ln -sf "${DOTFILEDIR}/path" "$HOME/target"`; respect `XDG_CONFIG_HOME` when appropriate.
 - Path resolution: reuse the existing `BASH_SOURCE` / script-location approach; avoid hardcoding repo paths.
 - Plugins: `zsh/.zshrc` uses Antigen at `$(brew --prefix)/share/antigen/antigen.zsh`; add bundles with `antigen bundle <repo>` lines near existing ones.
 
 ### 4. Common Tasks (Copy/Paste)
 - Fresh install:
-  `git clone https://github.com/jshvn/dotfiles.git && cd dotfiles && ./install.sh`
+  `git clone https://github.com/jshvn/dotfiles.git && cd dotfiles && ./install.zsh`
 - Re-run only symlinks (after moving repo):
-  `bash install/links.sh`
+  `bash install/links.zsh`
 - Re-run Homebrew bundle:
   `brew bundle --file "$DOTFILEDIR"/install/Brewfile.rb`
 - Update everything interactively (inside a zsh session):
@@ -50,16 +50,16 @@ All steps assume Bash (`#!/usr/bin/env bash`) and abort on first error (`set -e`
   `brew update && brew bundle --file "$PWD/install/Brewfile.rb"`
 
 ### 5. macOS Specifics & Safety
-- Many defaults in `install/defaults.sh` require `sudo` and affect system behavior (login, UI tweaks). Announce any modifications with rationale before changing.
+- Many defaults in `install/defaults.zsh` require `sudo` and affect system behavior (login, UI tweaks). Announce any modifications with rationale before changing.
 - Preserve `set -e` in all orchestrated scripts—do not mask failing commands unless explicitly handled.
 - Detect Homebrew prefix (`/opt/homebrew` ARM vs `/usr/local` Intel) exactly as in existing scripts; do not hardcode.
-- Shell change logic: only modify `install/zsh.sh` if adjusting how Zsh is registered; follow existing flow (`/etc/shells`, `chsh -s`).
+- Shell change logic: only modify `install/setshell.zsh` if adjusting how Zsh is registered; follow existing flow (`/etc/shells`, `chsh -s`).
 
 ### 6. Adding New Capabilities
 - New function: create `zsh/functions/<name>.zsh`; ensure idempotent; no immediate execution beyond declarations; avoid global variable leakage.
 - New alias sets: add `zsh/aliases/<topic>.zsh`; keep each line simple; avoid redefining existing aliases silently.
 - New brew packages: append to `install/Brewfile.rb` in appropriate section (formula vs cask); run bundle to verify.
-- New symlinks: modify `install/links.sh` following existing pattern; test by re-running links script.
+- New symlinks: modify `install/links.zsh` following existing pattern; test by re-running links script.
 
 ### 7. Troubleshooting & Diagnostics
 - Check which shell: `echo $SHELL` or `ps -p $$ -o comm=`.
@@ -69,7 +69,7 @@ All steps assume Bash (`#!/usr/bin/env bash`) and abort on first error (`set -e`
 - SSH link correctness: `ls -l ~/.ssh | grep DOTFILEDIR`.
 
 ### 8. Sourcing vs Executing (Important)
-- Sub-steps are sourced by `install.sh` (e.g., `source "$DOTFILEDIR"/install/brew.sh`). Keep sub-scripts safe to source: avoid `set -o nounset` pitfalls, prefer returning control to caller.
+- Sub-steps are sourced by `install.zsh` (e.g., `source "$DOTFILEDIR"/install/brew.zsh`). Keep sub-scripts safe to source: avoid `set -o nounset` pitfalls, prefer returning control to caller.
 - Do not rely on being executed as standalone processes; avoid `exit` in sourced scripts unless you intend to abort the whole install.
 - Maintain idempotency: allow re-runs without breaking links or duplicating config.
 
@@ -79,7 +79,7 @@ DO:
 - Maintain portability (avoid hardcoding absolute user paths).
 - Document any system-level change in commit message / PR description.
 DO NOT:
-- Rewrite `install/defaults.sh` wholesale.
+- Rewrite `install/defaults.zsh` wholesale.
 - Introduce interactive prompts in non-interactive scripts.
 - Assume Linux parity for macOS-specific defaults.
 - Hardcode Homebrew prefix or shell paths.
@@ -87,7 +87,7 @@ DO NOT:
 ### 10. Quick Reference Checklist (Before Merging)
 1. Script passes `shellcheck` (where reasonable) or manual review for obvious issues.
 2. No unintended side effects on load (functions/aliases just define, not execute logic).
-3. Symlink changes tested by running `bash install/links.sh`.
+3. Symlink changes tested by running `zsh install/links.zsh`.
 4. Brew additions run cleanly: `brew bundle --file "$DOTFILEDIR"/install/Brewfile.rb`.
 5. Zsh plugin additions don't break startup (`zsh -x -i` shows successful antigen load).
 
@@ -99,7 +99,7 @@ Use `tput` for portability; reset with `tput sgr0`.
 Example: `echo "$(tput setaf 2)Success$(tput sgr0)"`
 
 ### 13. Known Quirks & Accuracy Notes
-- `install.sh` computes `INSTALLFILEDIR` and exports `DOTFILEDIR`, but ensure `DOTFILEDIR` is actually assigned to the repo root (e.g., `DOTFILEDIR="$INSTALLFILEDIR"; export DOTFILEDIR`). If not, subordinate `source "$DOTFILEDIR"/...` calls will fail. Ask to patch if this diverges.
+- `install.zsh` computes `INSTALLFILEDIR` and exports `DOTFILEDIR`, but ensure `DOTFILEDIR` is actually assigned to the repo root (e.g., `DOTFILEDIR="$INSTALLFILEDIR"; export DOTFILEDIR`). If not, subordinate `source "$DOTFILEDIR"/...` calls will fail. Ask to patch if this diverges.
 - macOS is the primary target. Linux support is opportunistic; do not assume parity without checks.
 
 ### 14. Security & Secrets

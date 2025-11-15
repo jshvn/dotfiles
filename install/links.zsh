@@ -10,6 +10,7 @@ echo "Setting up symbolic links for ZSH, gitconfig, sshconfig"
 ln -sf "$DOTFILEDIR"/zsh/.zshenv "$HOME"/.zshenv
 ln -sf "$DOTFILEDIR"/zsh/.zprofile "$HOME"/.zprofile
 ln -sf "$DOTFILEDIR"/zsh/.zshrc "$HOME"/.zshrc
+ln -sf "$DOTFILEDIR"/zsh/.zlogout "$HOME"/.zlogout
 ln -sf "$DOTFILEDIR"/zsh/.trippy.toml "$XDG_CONFIG_HOME"/.trippy.toml
 
 # setup git related links
@@ -32,4 +33,4 @@ mkdir -p "$XDG_CONFIG_HOME"/1Password/ssh/
 ln -sf "$DOTFILEDIR"/ssh/configs/agent.toml "$XDG_CONFIG_HOME"/1Password/ssh/agent.toml
 
 # setup SSH cloudflared proxy command script
-ln -sf "$DOTFILEDIR"/ssh/cloudflared.sh "$HOME"/.ssh/cloudflared.sh
+ln -sf "$DOTFILEDIR"/ssh/cloudflared.zsh "$HOME"/.ssh/cloudflared.zsh
