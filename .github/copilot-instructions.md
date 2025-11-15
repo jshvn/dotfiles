@@ -4,10 +4,10 @@ Purpose: Give an AI contributor the fastest path to making safe, effective chang
 
 ### 0. Quick Start
 - Install on macOS: `git clone https://github.com/jshvn/dotfiles.git && cd dotfiles && ./install.zsh`
-- Re-run links only: `bash install/links.zsh`
+- Re-run links only: `zsh install/links.zsh`
 - Re-run Homebrew bundle: `brew bundle --file "$DOTFILEDIR"/install/Brewfile.rb`
 - Update in an interactive Zsh: `update`
-- Debug `DOTFILEDIR`: `ZDOTDIR=$PWD/zsh zsh -i -c 'echo $DOTFILEDIR'`
+- Debug `DOTFILEDIR`: `echo $DOTFILEDIR` (in an active zsh session)
 
 ### 1. Execution Flow (Install Pipeline)
 Fresh macOS install runs `./install.zsh` which:
@@ -21,10 +21,32 @@ All steps abort on first error (`set -e`).
 - `install/*.zsh`: segmented install phases (idempotent expectation).
 - `install/xdg.zsh`: ensures XDG base directories exist early in the flow.
 - `install/Brewfile.rb`: declarative Homebrew bundle (CLI tools + apps).
-- `zsh/.zshrc`: interactive startup; computes `DOTFILEDIR`; auto-sources `zsh/aliases/*` and `zsh/functions/*`.
+- `zsh/.zshenv`: sourced by every zsh invocation; sets XDG vars, EDITOR, BROWSER; minimal and non-interactive safe.
+- `zsh/.zprofile`: login shell initialization; evaluates Homebrew shellenv, sets SSH agent.
+- `zsh/.zshrc`: interactive startup; computes `DOTFILEDIR`; loads Antigen plugins; auto-sources `zsh/aliases/*` and `zsh/functions/*`.
+- `zsh/.zlogout`: login shell logout hook (currently minimal cleanup/comments only).
+- `zsh/theme.zsh`: custom theme configuration sourced by `.zshrc`.
 - `zsh/aliases/*.zsh`: utility aliases (loaded unconditionally). Keep side effects minimal.
 - `zsh/functions/*.zsh`: utility functions (loaded unconditionally). Keep side effects minimal.
+- `zsh/styles/`: config files for tools (`.trippy.toml`, `eza_style.yaml`, `glow_style.json`).
+- `git/.gitconfig`, `git/.gitignore_global`, `git/.stCommitMsg`: git configs symlinked to `$XDG_CONFIG_HOME/git/`.
+- `git/personal/.gitconfig-personal`: personal git config symlinked to `$XDG_CONFIG_HOME/git/personal/`.
 - `ssh/configs/`, `ssh/keys/`: symlinked into `$HOME/.ssh/` by `install/links.zsh`.
+- `ssh/cloudflared.zsh`: proxy command script for cloudflared SSH tunnels.
+
+### 2.1. Zsh Startup File Order & Purposes
+Zsh sources files in this order for login interactive shells:
+1. `~/.zshenv` — Always sourced (login, non-login, interactive, non-interactive). Sets XDG vars, PATH additions, EDITOR. Must be minimal and safe for scripts.
+2. `~/.zprofile` — Login shells only. Evaluates `brew shellenv`, sets session-specific vars like SSH_AUTH_SOCK.
+3. `~/.zshrc` — Interactive shells. Loads plugins (Antigen), sources aliases/functions, sets prompts and history.
+4. `~/.zlogin` — Login shells after .zshrc (not currently used in this repo).
+5. `~/.zlogout` — Login shell exit. Cleanup and finalization (currently minimal).
+
+Key principles:
+- `.zshenv`: environment only, no interactive features, no plugin managers.
+- `.zprofile`: login-specific setup, Homebrew initialization.
+- `.zshrc`: interactive features only (plugins, aliases, functions, prompts).
+- `.zlogout`: cleanup on logout (history flush, temp file removal, credential locking).
 
 ### 3. Required Patterns & Conventions
 - Functions: filename ends in `.zsh`, no output unless invoked, safe if sourced multiple times.
@@ -37,14 +59,13 @@ All steps abort on first error (`set -e`).
 - Fresh install:
   `git clone https://github.com/jshvn/dotfiles.git && cd dotfiles && ./install.zsh`
 - Re-run only symlinks (after moving repo):
-  `bash install/links.zsh`
+  `zsh install/links.zsh`
 - Re-run Homebrew bundle:
   `brew bundle --file "$DOTFILEDIR"/install/Brewfile.rb`
 - Update everything interactively (inside a zsh session):
   `update`
 - Debug DOTFILEDIR resolution:
-  `echo $DOTFILEDIR`
-  `ZDOTDIR=$PWD/zsh zsh -i -c 'echo $DOTFILEDIR'`
+  `echo $DOTFILEDIR` (in an active zsh session)
 - Trace zsh startup:
   `zsh -x -i`
 - Homebrew only (manual):
@@ -67,7 +88,7 @@ All steps abort on first error (`set -e`).
 - Verify color support: `tput setaf 2 | cat -v` (should output non-printing escape sequences) and a green test echo.
 - Confirm installed formula: `brew list | grep <name>`.
 - Confirm a function loaded: `type <functionName>`.
-- SSH link correctness: `ls -l ~/.ssh | grep DOTFILEDIR`.
+- SSH link correctness: `ls -l ~/.ssh` (verify symlinks point to dotfiles repo).
 
 ### 8. Sourcing vs Executing (Important)
 - Sub-steps are sourced by `install.zsh` (e.g., `source "$DOTFILEDIR"/install/brew.zsh`). Keep sub-scripts safe to source: avoid `set -o nounset` pitfalls, prefer returning control to caller.
@@ -100,8 +121,9 @@ Use `tput` for portability; reset with `tput sgr0`.
 Example: `echo "$(tput setaf 2)Success$(tput sgr0)"`
 
 ### 13. Known Quirks & Accuracy Notes
-- `install.zsh` computes `INSTALLFILEDIR` and exports `DOTFILEDIR`, but ensure `DOTFILEDIR` is actually assigned to the repo root (e.g., `DOTFILEDIR="$INSTALLFILEDIR"; export DOTFILEDIR`). If not, subordinate `source "$DOTFILEDIR"/...` calls will fail. Ask to patch if this diverges.
+- `install.zsh` correctly computes `INSTALLFILEDIR` and exports `DOTFILEDIR="$INSTALLFILEDIR"` which points to the repo root. All subordinate scripts rely on this.
 - macOS is the primary target. Linux support is opportunistic; do not assume parity without checks.
+- The `update()` function in `zsh/functions/update.zsh` references `tldr --update`, but the installed package is `tlrc`. This may need investigation - tlrc might provide tldr as an alias/binary, or this may be a legacy reference that still works.
 
 ### 14. Security & Secrets
 - Never commit private keys. Files under `ssh/keys/` are public keys or placeholders only.
