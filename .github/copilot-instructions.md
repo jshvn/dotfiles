@@ -17,21 +17,24 @@ Fresh macOS install runs `./install.zsh` which:
 All steps abort on first error (`set -e`).
 
 ### 2. Core Layout & Key Files
-- `install.zsh`: orchestrator (entrypoint).
+- `install.zsh`: orchestrator (entrypoint); resolves `DOTFILEDIR` via `BASH_SOURCE` symlink traversal.
 - `install/*.zsh`: segmented install phases (idempotent expectation).
 - `install/xdg.zsh`: ensures XDG base directories exist early in the flow.
 - `install/Brewfile.rb`: declarative Homebrew bundle (CLI tools + apps).
 - `zsh/.zshenv`: sourced by every zsh invocation; sets XDG vars, EDITOR, BROWSER; minimal and non-interactive safe.
 - `zsh/.zprofile`: login shell initialization; evaluates Homebrew shellenv, sets SSH agent.
-- `zsh/.zshrc`: interactive startup; computes `DOTFILEDIR`; loads Antigen plugins; auto-sources `zsh/aliases/*` and `zsh/functions/*`.
+- `zsh/.zshrc`: interactive startup; computes `DOTFILEDIR` via `${(%):-%N}` symlink resolution; loads Antigen plugins; auto-sources `zsh/aliases/*` and `zsh/functions/*` via for-loops.
 - `zsh/.zlogout`: login shell logout hook (currently minimal cleanup/comments only).
 - `zsh/theme.zsh`: custom theme configuration sourced by `.zshrc`.
-- `zsh/aliases/*.zsh`: utility aliases (loaded unconditionally). Keep side effects minimal.
-- `zsh/functions/*.zsh`: utility functions (loaded unconditionally). Keep side effects minimal.
-- `zsh/styles/`: config files for tools (`.trippy.toml`, `eza_style.yaml`, `glow_style.json`).
-- `git/.gitconfig`, `git/.gitignore_global`, `git/.stCommitMsg`: git configs symlinked to `$XDG_CONFIG_HOME/git/`.
-- `git/personal/.gitconfig-personal`: personal git config symlinked to `$XDG_CONFIG_HOME/git/personal/`.
+- `zsh/aliases/*.zsh`: utility aliases (loaded lexicographically). Keep side effects minimal. Many use `$(which cmd)` for Homebrew tool paths.
+- `zsh/functions/*.zsh`: utility functions (loaded lexicographically). Keep side effects minimal.
+- `zsh/styles/`: config files for tools (`eza_style.yaml`, `glow_style.json`).
+- `zsh/configs/`: tool-specific configs (`.trippy.toml`, `tlrc.toml`).
+- `git/.gitconfig`: main git config with `includeIf` directive for personal subdirectory config.
+- `git/.gitignore_global`, `git/.stCommitMsg`: global ignore file and commit message template.
+- `git/personal/.gitconfig-personal`: personal git config (email, signing) included conditionally for `~/Git/personal/` repos.
 - `ssh/configs/`, `ssh/keys/`: symlinked into `$HOME/.ssh/` by `install/links.zsh`.
+- `ssh/configs/agent.toml`: 1Password SSH agent filtering config.
 - `ssh/cloudflared.zsh`: proxy command script for cloudflared SSH tunnels.
 
 ### 2.1. Zsh Startup File Order & Purposes
@@ -49,11 +52,12 @@ Key principles:
 - `.zlogout`: cleanup on logout (history flush, temp file removal, credential locking).
 
 ### 3. Required Patterns & Conventions
-- Functions: filename ends in `.zsh`, no output unless invoked, safe if sourced multiple times.
-- Aliases: group logically in separate files under `zsh/aliases/` (lexicographic load order).
-- Symlinks: follow `install/links.zsh` style: `ln -sf "${DOTFILEDIR}/path" "$HOME/target"`; respect `XDG_CONFIG_HOME` when appropriate.
-- Path resolution: reuse the existing `BASH_SOURCE` / script-location approach; avoid hardcoding repo paths.
-- Plugins: `zsh/.zshrc` uses Antigen at `$(brew --prefix)/share/antigen/antigen.zsh`; add bundles with `antigen bundle <repo>` lines near existing ones.
+- Functions: filename ends in `.zsh`, no output unless invoked, safe if sourced multiple times. Define function with `function name() { }` syntax.
+- Aliases: group logically in separate files under `zsh/aliases/` (lexicographic load order). Use `$(which cmd)` for Homebrew-installed tools to ensure correct path resolution.
+- Symlinks: follow `install/links.zsh` style: `ln -sf "${DOTFILEDIR}/path" "$HOME/target"`; respect `XDG_CONFIG_HOME` when appropriate. Create parent directories with `mkdir -p` before symlinking.
+- Path resolution: reuse the existing `BASH_SOURCE` / `${(%):-%N}` symlink traversal approach; avoid hardcoding repo paths.
+- Plugins: `zsh/.zshrc` uses Antigen at `$(brew --prefix)/share/antigen/antigen.zsh`; add bundles with `antigen bundle <repo>` lines near existing ones; run `antigen apply` after all bundles.
+- Colorization: use `highlight --syntax=<type>` for piped output; use `tput setaf <color>` for direct terminal output; always reset with `tput sgr0`.
 
 ### 4. Common Tasks (Copy/Paste)
 - Fresh install:
@@ -122,8 +126,11 @@ Example: `echo "$(tput setaf 2)Success$(tput sgr0)"`
 
 ### 13. Known Quirks & Accuracy Notes
 - `install.zsh` correctly computes `INSTALLFILEDIR` and exports `DOTFILEDIR="$INSTALLFILEDIR"` which points to the repo root. All subordinate scripts rely on this.
+- `.zshrc` also computes `DOTFILEDIR` dynamically using symlink resolution from `${(%):-%N}` to support interactive sessions.
 - macOS is the primary target. Linux support is opportunistic; do not assume parity without checks.
-- The `update()` function in `zsh/functions/update.zsh` references `tldr --update`, but the installed package is `tlrc`. This may need investigation - tlrc might provide tldr as an alias/binary, or this may be a legacy reference that still works.
+- The `update()` function in `zsh/functions/update.zsh` references `tldr --update`, but the installed package is `tlrc`. The command is likely an alias or binary provided by tlrc package.
+- Many aliases use `$(which <command>)` expansion for portability (e.g., `alias ls="$(which eza)"`). This resolves at shell initialization to Homebrew-installed tools.
+- Syntax highlighting is ubiquitous: `highlight` command is piped throughout aliases for colorized output (history, path, hardware info).
 
 ### 14. Security & Secrets
 - Never commit private keys. Files under `ssh/keys/` are public keys or placeholders only.
