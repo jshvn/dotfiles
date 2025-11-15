@@ -1,9 +1,12 @@
 #!/bin/zsh
 
+# When adding new symlinks, ensure any parent directories exist
+
 set -e
 
+echo "Setting up symbolic links for ZSH, gitconfig, sshconfig, other tool configs"
+
 # Set up symbolic links for ZSH
-echo "Setting up symbolic links for ZSH, gitconfig, sshconfig"
 ln -sf "$DOTFILEDIR"/zsh/.zshenv "$HOME"/.zshenv
 ln -sf "$DOTFILEDIR"/zsh/.zprofile "$HOME"/.zprofile
 ln -sf "$DOTFILEDIR"/zsh/.zshrc "$HOME"/.zshrc
