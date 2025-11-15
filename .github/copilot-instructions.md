@@ -12,13 +12,14 @@ Purpose: Give an AI contributor the fastest path to making safe, effective chang
 ### 1. Execution Flow (Install Pipeline)
 Fresh macOS install runs `./install.zsh` which:
 1. Resolves and exports `DOTFILEDIR`.
-2. Sources (in order): `install/links.zsh`, `install/brew.zsh`, `install/xcode.zsh`, `install/defaults.zsh`, `install/setshell.zsh`.
+2. Sources (in order): `install/xdg.zsh`, `install/links.zsh`, `install/brew.zsh`, `install/xcode.zsh`, `install/defaults.zsh`, `install/setshell.zsh`.
 3. Prints completion message with color (`tput setaf`).
-All steps assume Bash (`#!/usr/bin/env bash`) and abort on first error (`set -e`).
+All steps abort on first error (`set -e`).
 
 ### 2. Core Layout & Key Files
 - `install.zsh`: orchestrator (entrypoint).
 - `install/*.zsh`: segmented install phases (idempotent expectation).
+- `install/xdg.zsh`: ensures XDG base directories exist early in the flow.
 - `install/Brewfile.rb`: declarative Homebrew bundle (CLI tools + apps).
 - `zsh/.zshrc`: interactive startup; computes `DOTFILEDIR`; auto-sources `zsh/aliases/*` and `zsh/functions/*`.
 - `zsh/aliases/*.zsh`: utility aliases (loaded unconditionally). Keep side effects minimal.

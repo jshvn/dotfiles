@@ -27,13 +27,18 @@ export DOTFILEDIR
 set -e
 
 ####### Step 1
+####### Ensure XDG base directories exist
+
+# Create XDG directories early so later steps (links, configs, tools) can rely on them
+source "$DOTFILEDIR"/install/xdg.zsh
+
+####### Step 2
 ####### Setup links
 
 # Set up symbolic links for ZSH and Git pointing to this cloned repo
 source "$DOTFILEDIR"/install/links.zsh
 
-
-####### Step 2
+####### Step 3
 ####### Run macOS steps
 
 # run macOS specific install steps
@@ -41,8 +46,8 @@ source "$DOTFILEDIR"/install/brew.zsh
 source "$DOTFILEDIR"/install/xcode.zsh
 source "$DOTFILEDIR"/install/defaults.zsh
 
-####### Step 3
-####### Run macOS steps
+####### Step 4
+####### Shell setup
 
 # Ensure we're using the correct ZSH shell
 # We want to use the latest that is installed by Homebrew
