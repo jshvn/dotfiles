@@ -9,6 +9,7 @@ fi
 # Update Homebrew recipes
 echo "Updating homebrew..."
 brew update
+brew upgrade
 
 # Install all apps from the Brewfile
 echo "Installing all packages and applications from the Brewfile"
