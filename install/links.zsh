@@ -37,3 +37,7 @@ ln -sf "$DOTFILEDIR"/ssh/cloudflared.zsh "$HOME"/.ssh/cloudflared.zsh
 
 # setup trippy (traceroute visualizer) config file
 ln -sf "$DOTFILEDIR"/zsh/.trippy.toml "$XDG_CONFIG_HOME"/.trippy.toml
+
+# setup eza style config yaml file  
+mkdir -p "$XDG_CONFIG_HOME"/eza/
+ln -sf "$DOTFILEDIR"/zsh/styles/eza_style.yaml "$XDG_CONFIG_HOME"/eza/theme.yaml
