@@ -8,7 +8,7 @@
 
 ZSHBREWSHELL=""
 
-if [ "$(uname)" == "Darwin" ]; then
+if [[ "$(uname)" == "Darwin" ]]; then
     if [[ `uname -m` == "arm64" ]]; then
         ZSHBREWSHELL="/opt/homebrew/bin/zsh"
     else 
@@ -27,6 +27,6 @@ fi
 CURRENTSHELL=$(which $SHELL)
 
 # Finally, we change our shell if it is not ZSH
-if [ "$CURRENTSHELL" != "$ZSHBREWSHELL" ]; then
+if [[ "$CURRENTSHELL" != "$ZSHBREWSHELL" ]]; then
     chsh -s $ZSHBREWSHELL
 fi 
