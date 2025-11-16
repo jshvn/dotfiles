@@ -74,4 +74,7 @@ unload_agent /System/Library/LaunchAgents/com.apple.rcd.plist
 # Don't rearrange spaces based on recent use
 defaults write com.apple.dock mru-spaces -bool false
 
+# Hide the keyboard input menu from the menu bar
+defaults write com.apple.TextInputMenu visible -bool false
+
 echo "All done! Some of the defaults / preferences changes require a logout/restart to take effect."
