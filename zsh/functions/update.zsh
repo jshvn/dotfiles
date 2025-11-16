@@ -12,7 +12,7 @@ function update() {    # update() will update the current dotfiles installation 
 	git pull
 
 	# update oh-my-zsh
-	# Call upgrade.sh directly instead of 'omz update' to avoid exec-ing a new shell
+	# https://github.com/ohmyzsh/ohmyzsh/wiki/FAQ#how-do-i-update-oh-my-zsh
 	zsh "$ZSH/tools/upgrade.sh"
 
     # update tldr definitions
