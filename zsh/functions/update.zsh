@@ -12,12 +12,8 @@ function update() {    # update() will update the current dotfiles installation 
 	git pull
 
 	# update oh-my-zsh
-	# Run the updater in a child zsh so any `exec` performed by the updater
-	# replaces only the child process — not the current interactive shell
-	# (when `omz update` applies an update it may exec a new shell, which
-	# would otherwise replace the shell running this func and terminate
-	# the rest of the script).
-	zsh -ic 'omz update' || true
+	# Call upgrade.sh directly instead of 'omz update' to avoid exec-ing a new shell
+	zsh "$ZSH/tools/upgrade.sh"
 
     # update tldr definitions
     tldr --update
