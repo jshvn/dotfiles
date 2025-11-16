@@ -76,7 +76,7 @@ if [[ "$TERM" != dumb ]] && (( $+commands[grc] )) ; then
     df \
     diff \
     dig \
-    docker \x
+    docker \
     env \
     id \
     ifconfig \
