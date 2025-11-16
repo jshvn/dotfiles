@@ -1,15 +1,5 @@
 #!/bin/zsh
 
-# helper functions
-disable_agent() {
-    if [ -e "$1" ]; then
-	    mv "$1" "$1_DISABLED" >/dev/null 2>&1 || sudo mv "$1" "$1_DISABLED" >/dev/null 2>&1
-    fi 
-}
-unload_agent() {
-	launchctl unload -w "$1" >/dev/null 2>&1
-}
-
 # Quit System Preferences.app if open
 osascript -e 'tell application "System Preferences" to quit'
 
@@ -66,10 +56,6 @@ if grep -q "enabled" <<< "$(sysadminctl -guestAccount status 2>&1)"; then
     echo "Bummer its enabled. You're going to need to give your password to complete this step"
     sudo sysadminctl -guestAccount off
 fi
-
-# Disable iTunes
-disable_agent /Applications/iTunes.app/Contents/MacOS/iTunesHelper.app
-unload_agent /System/Library/LaunchAgents/com.apple.rcd.plist
 
 # Don't rearrange spaces based on recent use
 defaults write com.apple.dock mru-spaces -bool false
