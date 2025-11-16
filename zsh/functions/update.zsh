@@ -17,7 +17,7 @@ function update() {    # update() will update the current dotfiles installation 
 	# (when `omz update` applies an update it may exec a new shell, which
 	# would otherwise replace the shell running this func and terminate
 	# the rest of the script).
-	zsh -ic 'omz update'
+	zsh -ic 'omz update' || true
 
     # update tldr definitions
     tldr --update
