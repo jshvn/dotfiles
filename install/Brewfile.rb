@@ -83,7 +83,10 @@ brew "onefetch"
 # bottom is like htop
 brew "bottom"
 
+# coreutils for GNU utilities like gsha256sum
 brew "coreutils"
+
+# mas is a command line interface for the Mac App Store
 brew "mas" # https://github.com/mas-cli/mas 
 
 ###############################
