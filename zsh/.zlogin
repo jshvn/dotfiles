@@ -116,6 +116,59 @@ get_git_status() {
     fi
 }
 
+# Function to print system status section
+print_system_status() {
+    if [ $TERM_WIDTH -ge 70 ]; then
+        print_bordered "⚡ SYSTEM STATUS" "$TRON_CYAN"
+        print_bordered "" "$TRON_DARK"
+        
+        local ff_config="${DOTFILEDIR}/zsh/configs/motd_sysinfo.jsonc"
+        if [[ -f "$ff_config" ]]; then
+            fastfetch --config "$ff_config" 2>/dev/null | while IFS= read -r line; do
+                print_bordered "   $line" "$TRON_DARK"
+            done
+        fi
+        
+        print_bordered "" "$TRON_DARK"
+    fi
+}
+
+# Function to print dotfiles repository section
+print_dotfiles_repo() {
+    print_bordered "📦 DOTFILES REPOSITORY" "$TRON_CYAN"
+    local git_info=$(get_git_status)
+    
+    IFS='|' read -r branch_info changes_info ahead_info behind_info last_info commits_info <<< "$git_info"
+    
+    print_bordered "" "$TRON_DARK"
+    print_bordered "   Branch: ${branch_info#*:}" "$TRON_DARK"
+    print_bordered "   Total Commits: ${commits_info#*:}" "$TRON_DARK"
+    print_bordered "   Uncommitted Changes: ${changes_info#*:}" "$TRON_DARK"
+    
+    local ahead_count="${ahead_info#*:}"
+    local behind_count="${behind_info#*:}"
+    
+    if [ "$ahead_count" != "0" ] || [ "$behind_count" != "0" ]; then
+        print_bordered "   Sync Status: ↑${ahead_count} ↓${behind_count}" "$TRON_ORANGE"
+    fi
+    
+    print_bordered "   Last Commit: ${last_info#*:}" "$TRON_DARK"
+    print_bordered "" "$TRON_DARK"
+}
+
+# Function to print Tron quote section
+print_tron_quote() {
+    local quote=$(get_tron_quote)
+    print_bordered "💭 TRANSMISSION" "$TRON_CYAN"
+    print_bordered "" "$TRON_DARK"
+    
+    wrap_text "$quote" | while IFS= read -r line; do
+        print_bordered "   ${line}" "$TRON_DARK"
+    done
+    
+    echo
+}
+
 # Top border with Tron grid pattern
 echo -e "${TRON_CYAN}${TRON_BOLD}"
 print_line "━"
@@ -142,61 +195,12 @@ echo
 
 # Middle border
 print_line "─" "$TRON_DARK"
-
 echo
 
-# System statistics section
-if [ $TERM_WIDTH -ge 70 ]; then
-    print_bordered "⚡ SYSTEM STATUS" "$TRON_CYAN"
-
-    print_bordered "" "$TRON_DARK"
-    
-    # Run fastfetch with custom config
-    local ff_config="${DOTFILEDIR}/zsh/configs/motd_sysinfo.jsonc"
-    if [[ -f "$ff_config" ]]; then
-        fastfetch --config "$ff_config" 2>/dev/null | while IFS= read -r line; do
-            print_bordered "   $line" "$TRON_DARK"
-        done
-    fi
-    
-    print_bordered "" "$TRON_DARK"
-fi
-
-# Git repository status
-print_bordered "📦 DOTFILES REPOSITORY" "$TRON_CYAN"
-local git_info=$(get_git_status)
-
-IFS='|' read -r branch_info changes_info ahead_info behind_info last_info commits_info <<< "$git_info"
-
-print_bordered "" "$TRON_DARK"
-
-print_bordered "   Branch: ${branch_info#*:}" "$TRON_DARK"
-print_bordered "   Total Commits: ${commits_info#*:}" "$TRON_DARK"
-print_bordered "   Uncommitted Changes: ${changes_info#*:}" "$TRON_DARK"
-
-local ahead_count="${ahead_info#*:}"
-local behind_count="${behind_info#*:}"
-
-if [ "$ahead_count" != "0" ] || [ "$behind_count" != "0" ]; then
-    print_bordered "   Sync Status: ↑${ahead_count} ↓${behind_count}" "$TRON_ORANGE"
-fi
-
-print_bordered "   Last Commit: ${last_info#*:}" "$TRON_DARK"
-
-print_bordered "" "$TRON_DARK"
-
-# Tron quote section
-local quote=$(get_tron_quote)
-print_bordered "💭 TRANSMISSION" "$TRON_CYAN"
-
-print_bordered "" "$TRON_DARK"
-
-# Wrap and print quote
-wrap_text "$quote" | while IFS= read -r line; do
-    print_bordered "   ${line}" "$TRON_DARK"
-done
-
-echo
+# Display sections
+print_system_status
+print_dotfiles_repo
+print_tron_quote
 
 # Bottom border with grid effect
 print_line "▄" "$TRON_CYAN"
@@ -211,3 +215,4 @@ echo
 unset TRON_CYAN TRON_BLUE TRON_ORANGE TRON_DARK TRON_YELLOW TRON_RESET TRON_BOLD TRON_DIM
 unset TERM_WIDTH TERM_HEIGHT
 unset -f print_centered print_line print_bordered get_tron_quote wrap_text get_git_status
+unset -f print_system_status print_dotfiles_repo print_tron_quote
