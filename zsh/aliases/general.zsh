@@ -38,3 +38,6 @@ alias lastinstalled="ls -l /var/db/.AppleSetupDone"
 
 # color history output
 alias history="omz_history -t '%Y-%m-%d %I:%M:%S' | highlight --syntax=bash"
+
+# display JGRID MOTD
+alias motd="source $HOME/.zlogin"

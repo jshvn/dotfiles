@@ -10,6 +10,7 @@ echo "Setting up symbolic links for ZSH, gitconfig, sshconfig, other tool config
 ln -sf "$DOTFILEDIR"/zsh/.zshenv "$HOME"/.zshenv
 ln -sf "$DOTFILEDIR"/zsh/.zprofile "$HOME"/.zprofile
 ln -sf "$DOTFILEDIR"/zsh/.zshrc "$HOME"/.zshrc
+ln -sf "$DOTFILEDIR"/zsh/.zlogin "$HOME"/.zlogin
 ln -sf "$DOTFILEDIR"/zsh/.zlogout "$HOME"/.zlogout
 
 # setup git related links
