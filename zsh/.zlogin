@@ -1,6 +1,16 @@
-#!/usr/bin/env zsh
-# .zlogin - Tron-themed MOTD for JGRID
-# Executes on login shells after .zshrc
+#!/bin/zsh
+# -----------------------------------------------------------------------------
+# .zlogin - Zsh login shell post-initialization (Tron-themed MOTD for JGRID)
+#
+# Sourced by: login shells (after ~/.zshrc completes)
+# Zsh startup order (login interactive example):
+#   1) ~/.zshenv
+#   2) ~/.zprofile   (login shells)
+#   3) ~/.zshrc      (interactive shells)
+#   4) ~/.zlogin     (after .zshrc for login shells)
+#
+# Purpose: Display Tron-themed MOTD with system stats, git repo info, and quotes
+# -----------------------------------------------------------------------------
 
 # Tron color scheme
 TRON_CYAN="\033[38;5;51m"
@@ -196,3 +206,8 @@ print_line "━" "$TRON_CYAN"
 print_centered "━━━ END OF LINE ━━━" "$TRON_ORANGE$TRON_DIM"
 
 echo
+
+# Clean up all variables and functions to avoid polluting the shell environment
+unset TRON_CYAN TRON_BLUE TRON_ORANGE TRON_DARK TRON_YELLOW TRON_RESET TRON_BOLD TRON_DIM
+unset TERM_WIDTH TERM_HEIGHT
+unset -f print_centered print_line print_bordered get_tron_quote wrap_text get_git_status
