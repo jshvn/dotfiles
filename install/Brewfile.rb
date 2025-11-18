@@ -155,6 +155,5 @@ cask "cloudflare-warp"
 mas "Xcode", id: 497799835
 
 # Third Party
-mas "Day One", id: 1055511498
 mas "Magnet", id: 441258766
 mas "Things", id: 904280696
