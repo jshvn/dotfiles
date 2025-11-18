@@ -127,6 +127,7 @@ cask "cardhop"
 cask "microsoft-word"
 cask "microsoft-excel"
 cask "microsoft-powerpoint"
+cask "zoom"
 
 # games
 cask "nvidia-geforce-now"
