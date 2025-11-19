@@ -50,18 +50,19 @@ function motd() {    # motd() will display a Tron-themed message of the day with
     echo
     
     # System info via fastfetch
+    echo "${cyan}${bold}⚡ SYSTEM INFORMATION${reset}"
     local ff_config="${DOTFILEDIR}/zsh/configs/motd_sysinfo.jsonc"
     if [[ -f "$ff_config" ]]; then
-        fastfetch --config "$ff_config" 2>/dev/null
+        fastfetch --config "$ff_config" 2>/dev/null | sed 's/^/   /'
     else
-        fastfetch 2>/dev/null || echo "${orange}⚡ System Info: fastfetch not configured${reset}"
+        fastfetch 2>/dev/null | sed 's/^/   /' || echo "   ${orange}fastfetch not configured${reset}"
     fi
     
     echo
     
     # Dotfiles git status (if in repo)
     if [[ -d "${DOTFILEDIR}/.git" ]]; then
-        echo "${cyan}📦 DOTFILES${reset}"
+        echo "${cyan}${bold}📦 DOTFILES${reset}"
         (
             cd "${DOTFILEDIR}" 2>/dev/null || return
             local branch=$(git branch --show-current 2>/dev/null || echo "unknown")
@@ -77,7 +78,7 @@ function motd() {    # motd() will display a Tron-themed message of the day with
     local quotes_file="${DOTFILEDIR}/zsh/configs/motd_tron.txt"
     if [[ -f "$quotes_file" ]]; then
         local quote=$(shuf -n 1 "$quotes_file" 2>/dev/null || sort -R "$quotes_file" | head -1)
-        echo "${cyan}💭 TRANSMISSION${reset}"
+        echo "${cyan}${bold}💭 TRANSMISSION${reset}"
         echo "   ${dim}${quote}${reset}"
         echo
     fi
