@@ -45,38 +45,55 @@ print_line() {
     echo -e "${color}$(printf '%*s' $TERM_WIDTH | tr ' ' "$char")${TRON_RESET}"
 }
 
-# Function to print bordered line
+# Function to calculate display width accounting for emojis
+_calculate_display_width() {
+    local text="$1"
+    local width=0
+    local i
+    for (( i=0; i<${#text}; i++ )); do
+        [[ "${text:$i:1}" =~ [⚡📦💭🔥⚙️🌐🔋⬆️⬇️↑↓] ]] && ((width+=2)) || ((width++))
+    done
+    echo $width
+}
+
+# Function to print bordered line with two colors (label › value)
+print_bordered_two_color() {
+    local label="$1"
+    local value="$2"
+    local content_width=$((TERM_WIDTH - 4))
+    local text="${label} › ${value}"
+    local text_plain="${text//\x1b\[[0-9;]*m/}"
+    local display_width=$(_calculate_display_width "$text_plain")
+    
+    if [ $display_width -le $content_width ]; then
+        local colored_text="${TRON_CYAN}${label} ›${TRON_RESET}${TRON_ORANGE} ${value}${TRON_RESET}"
+        local padding=$((content_width - display_width))
+        printf "${TRON_DARK}▐${TRON_RESET} %b%*s ${TRON_DARK}▌${TRON_RESET}\n" "$colored_text" $padding ""
+    else
+        print_bordered "${text:0:$content_width}" "$TRON_CYAN"
+    fi
+}
+
+# Function to print bordered line (single color)
 print_bordered() {
     local text="$1"
     local color="${2:-$TRON_CYAN}"
     local content_width=$((TERM_WIDTH - 4))
     
-    # Strip ANSI codes to get actual text
-    local text_plain="${text//\x1b\[[0-9;]*m/}"
-    
-    # Calculate display width accounting for emojis and multi-byte chars
-    # Emojis typically take 2 columns, so we need to count them
-    local display_width=0
-    local i
-    for (( i=0; i<${#text_plain}; i++ )); do
-        local char="${text_plain:$i:1}"
-        # Check if character is an emoji or wide character (rough heuristic)
-        if [[ "$char" =~ [⚡📦💭🔥⚙️🌐🔋⬆️⬇️↑↓] ]]; then
-            display_width=$((display_width + 2))
-        else
-            display_width=$((display_width + 1))
-        fi
-    done
-    
-    if [ $display_width -gt $content_width ]; then
-        # Truncate if too long
-        text="${text:0:$content_width}"
-        display_width=$content_width
+    if [[ "$text" =~ › ]]; then
+        local label="${text%%›*}"
+        local value="${text#*›}"
+        # Remove trailing and leading spaces
+        label="${label% }"
+        value="${value# }"
+        print_bordered_two_color "$label" "$value"
+    else
+        local text_plain="${text//\x1b\[[0-9;]*m/}"
+        local display_width=$(_calculate_display_width "$text_plain")
+        [ $display_width -gt $content_width ] && text="${text:0:$content_width}" && display_width=$content_width
+        local padding=$((content_width - display_width))
+        printf "${color}▐${TRON_RESET} %s%*s ${color}▌${TRON_RESET}\n" "$text" $padding ""
     fi
-    
-    local padding=$((content_width - display_width))
-    local spaces=$(printf '%*s' $padding '')
-    printf "${color}▐${TRON_RESET} %s%s ${color}▌${TRON_RESET}\n" "$text" "$spaces"
 }
 
 # Function to get random Tron quote
@@ -141,18 +158,18 @@ print_dotfiles_repo() {
     IFS='|' read -r branch_info changes_info ahead_info behind_info last_info commits_info <<< "$git_info"
     
     print_bordered "" "$TRON_DARK"
-    print_bordered "   Branch: ${branch_info#*:}" "$TRON_DARK"
-    print_bordered "   Total Commits: ${commits_info#*:}" "$TRON_DARK"
-    print_bordered "   Uncommitted Changes: ${changes_info#*:}" "$TRON_DARK"
+    print_bordered_two_color "   Branch" "${branch_info#*:}"
+    print_bordered_two_color "   Total Commits" "${commits_info#*:}"
+    print_bordered_two_color "   Uncommitted Changes" "${changes_info#*:}"
     
     local ahead_count="${ahead_info#*:}"
     local behind_count="${behind_info#*:}"
     
     if [ "$ahead_count" != "0" ] || [ "$behind_count" != "0" ]; then
-        print_bordered "   Sync Status: ↑${ahead_count} ↓${behind_count}" "$TRON_ORANGE"
+        print_bordered_two_color "   Sync Status" "↑${ahead_count} ↓${behind_count}"
     fi
     
-    print_bordered "   Last Commit: ${last_info#*:}" "$TRON_DARK"
+    print_bordered_two_color "   Last Commit" "${last_info#*:}"
     print_bordered "" "$TRON_DARK"
 }
 
@@ -214,5 +231,5 @@ echo
 # Clean up all variables and functions to avoid polluting the shell environment
 unset TRON_CYAN TRON_BLUE TRON_ORANGE TRON_DARK TRON_YELLOW TRON_RESET TRON_BOLD TRON_DIM
 unset TERM_WIDTH TERM_HEIGHT
-unset -f print_centered print_line print_bordered get_tron_quote wrap_text get_git_status
+unset -f print_centered print_line print_bordered print_bordered_two_color _calculate_display_width get_tron_quote wrap_text get_git_status
 unset -f print_system_status print_dotfiles_repo print_tron_quote
