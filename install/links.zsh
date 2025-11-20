@@ -21,6 +21,10 @@ ln -sf "$DOTFILEDIR"/git/.gitignore_global "$XDG_CONFIG_HOME"/git/.gitignore_glo
 mkdir -p "$XDG_CONFIG_HOME"/git/personal/
 ln -sf "$DOTFILEDIR"/git/personal/.gitconfig-personal "$XDG_CONFIG_HOME"/git/personal/.gitconfig-personal
 
+# setup sourcetree related links
+ln -sf "$DOTFILEDIR"/git/.gitflow_export "$HOME"/.gitflow_export
+ln -sf "$DOTFILEDIR"/git/.hgignore_global "$HOME"/.hgignore_global
+
 # setup SSH related links
 mkdir -p "$HOME"/.ssh/
 ln -sf "$DOTFILEDIR"/ssh/configs/config "$HOME"/.ssh/config
