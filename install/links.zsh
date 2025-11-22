@@ -34,14 +34,10 @@ safe_link "$DOTFILEDIR"/zsh/.zlogin "$HOME"/.zlogin
 safe_link "$DOTFILEDIR"/zsh/.zlogout "$HOME"/.zlogout
 
 # setup git related links
-safe_link "$DOTFILEDIR"/git/.gitconfig "$XDG_CONFIG_HOME"/git/config
-safe_link "$DOTFILEDIR"/git/.stCommitMsg "$XDG_CONFIG_HOME"/git/.stCommitMsg
-safe_link "$DOTFILEDIR"/git/.gitignore_global "$XDG_CONFIG_HOME"/git/.gitignore_global
-safe_link "$DOTFILEDIR"/git/personal/.gitconfig-personal "$XDG_CONFIG_HOME"/git/personal/.gitconfig-personal
-
-# setup sourcetree related links
-safe_link "$DOTFILEDIR"/git/.gitflow_export "$HOME"/.gitflow_export
-safe_link "$DOTFILEDIR"/git/.hgignore_global "$HOME"/.hgignore_global
+safe_link "$DOTFILEDIR"/git/config "$XDG_CONFIG_HOME"/git/config
+safe_link "$DOTFILEDIR"/git/ignore "$XDG_CONFIG_HOME"/git/ignore
+safe_link "$DOTFILEDIR"/git/personal/config-personal "$XDG_CONFIG_HOME"/git/personal/config-personal
+safe_link "$DOTFILEDIR"/git/work/config-work "$XDG_CONFIG_HOME"/git/work/config-work
 
 # setup SSH related links
 safe_link "$DOTFILEDIR"/ssh/configs/config "$HOME"/.ssh/config
