@@ -14,11 +14,24 @@ echo "credentials one more time."
 defaults write com.apple.screensaver askForPassword -int 1
 defaults write com.apple.screensaver askForPasswordDelay -int 0
 
-# Automatically hide and show the dock
-defaults write com.apple.dock autohide -bool true
+# Dock Configuration
+# Set dock position (bottom, left, right)
+defaults write com.apple.dock orientation -string "bottom"
 
 # Set dock icon size to 45px
 defaults write com.apple.dock tilesize -int 45
+
+# Automatically hide and show the dock
+defaults write com.apple.dock autohide -bool true
+
+# Set minimize/maximize window effect (genie, scale, suck)
+defaults write com.apple.dock mineffect -string "genie"
+
+# Show recent applications in Dock
+defaults write com.apple.dock show-recents -bool true
+
+# Don't rearrange spaces based on recent use
+defaults write com.apple.dock mru-spaces -bool false
 
 # Set interface style to dark, set icon and widget appearance to dark
 defaults write NSGlobalDomain AppleInterfaceStyle -string Dark
@@ -57,10 +70,10 @@ if grep -q "enabled" <<< "$(sysadminctl -guestAccount status 2>&1)"; then
     sudo sysadminctl -guestAccount off
 fi
 
-# Don't rearrange spaces based on recent use
-defaults write com.apple.dock mru-spaces -bool false
-
 # Hide the keyboard input menu from the menu bar
 defaults write com.apple.TextInputMenu visible -bool false
+
+# Disable Siri menu bar item
+defaults write com.apple.Siri StatusMenuVisible -bool false
 
 echo "All done! Some of the defaults / preferences changes require a logout/restart to take effect."
