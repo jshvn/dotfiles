@@ -21,6 +21,9 @@ brew "eza"
 # install git since platform git is often old
 brew "git"
 
+# git-delta for better git diffs
+brew "git-delta"
+
 # glow for markdown rendering in the terminal 
 # https://github.com/charmbracelet/glow
 brew "glow"
