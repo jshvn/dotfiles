@@ -151,9 +151,6 @@ cask "cloudflare-warp"
 
 # to see existing macOS apps, run $ mas list
 
-# Apple
-#mas "Xcode", id: 497799835
-
 # Third Party
 mas "Magnet", id: 441258766
 mas "Things", id: 904280696
