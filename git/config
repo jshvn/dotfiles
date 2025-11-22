@@ -1,8 +1,8 @@
 [user]
 	name = Josh Vaughen
-[includeIf "gitdir:~/Git/personal/"]
+[includeIf "gitdir/i:~/Git/personal/"]
     path = personal/config-personal
-[includeIf "gitdir:~/Git/work/"]
+[includeIf "gitdir/i:~/Git/work/"]
     path = work/config-work
 [core]
 	editor = code
