@@ -60,4 +60,7 @@ safe_link "$DOTFILEDIR"/zsh/configs/tlrc.toml "$XDG_CONFIG_HOME"/tlrc/config.tom
 # setup eza style config yaml file  
 safe_link "$DOTFILEDIR"/zsh/styles/eza_style.yaml "$XDG_CONFIG_HOME"/eza/theme.yaml
 
+# setup conda condarc file
+safe_link "$DOTFILEDIR"/zsh/configs/condarc "$XDG_CONFIG_HOME"/conda/condarc
+
 unset -f safe_link
