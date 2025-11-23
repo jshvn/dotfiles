@@ -12,6 +12,9 @@
 # and not to use system as to keep it updated with latest
 brew "zsh"
 
+# better terminal emulator
+brew "ghostty"
+
 # wget for pulling web data
 brew "wget"
 

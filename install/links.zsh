@@ -63,4 +63,7 @@ safe_link "$DOTFILEDIR"/zsh/styles/eza_style.yaml "$XDG_CONFIG_HOME"/eza/theme.y
 # setup conda condarc file
 safe_link "$DOTFILEDIR"/zsh/configs/condarc "$XDG_CONFIG_HOME"/conda/condarc
 
+# setup ghostty config file
+safe_link "$DOTFILEDIR"/zsh/configs/ghostty "$XDG_CONFIG_HOME"/ghostty/config
+
 unset -f safe_link
