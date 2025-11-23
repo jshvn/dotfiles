@@ -52,7 +52,7 @@ safe_link "$DOTFILEDIR"/ssh/configs/agent.toml "$XDG_CONFIG_HOME"/1Password/ssh/
 safe_link "$DOTFILEDIR"/ssh/cloudflared.zsh "$HOME"/.ssh/cloudflared.zsh
 
 # setup trippy (traceroute visualizer) config file
-safe_link "$DOTFILEDIR"/zsh/configs/.trippy.toml "$XDG_CONFIG_HOME"/.trippy.toml
+safe_link "$DOTFILEDIR"/zsh/configs/trippy.toml "$XDG_CONFIG_HOME"/trippy/trippy.toml
 
 # setup tlrc (tldr client) config file
 safe_link "$DOTFILEDIR"/zsh/configs/tlrc.toml "$XDG_CONFIG_HOME"/tlrc/config.toml
