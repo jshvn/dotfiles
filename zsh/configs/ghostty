@@ -92,3 +92,14 @@ background-opacity = 0.95
 
 # Uses the profile's bold text color (Ghostty 1.2.0+)
 bold-color = #ededed
+
+# padding around text such that it isn't flush against window edges
+window-padding-x = 8,0
+window-padding-y = 8
+
+# Adjust cell size for better font appearance
+adjust-cell-width = -10%
+adjust-cell-height = -8%
+
+# and up font baseline a bit
+adjust-font-baseline = 1
