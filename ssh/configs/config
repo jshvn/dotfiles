@@ -3,10 +3,10 @@
 ##############################
 
 # Use the 1Password SSH agent instead of 
-# the build in SSH agent
+# the built in SSH agent
 Host *
  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 
-# Child config includes for content
+# Child config includes for personal and work settings
 
 Include ~/.ssh/config_personal
