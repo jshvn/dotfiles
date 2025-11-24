@@ -27,11 +27,11 @@ set -e
 echo "Setting up symbolic links for ZSH, gitconfig, sshconfig, other tool configs"
 
 # Set up symbolic links for ZSH
-safe_link "$DOTFILEDIR"/zsh/.zshenv "$HOME"/.zshenv
-safe_link "$DOTFILEDIR"/zsh/.zprofile "$HOME"/.zprofile
-safe_link "$DOTFILEDIR"/zsh/.zshrc "$HOME"/.zshrc
-safe_link "$DOTFILEDIR"/zsh/.zlogin "$HOME"/.zlogin
-safe_link "$DOTFILEDIR"/zsh/.zlogout "$HOME"/.zlogout
+safe_link "$DOTFILEDIR"/zsh/.zshenv "$ZDOTDIR"/.zshenv
+safe_link "$DOTFILEDIR"/zsh/.zprofile "$ZDOTDIR"/.zprofile
+safe_link "$DOTFILEDIR"/zsh/.zshrc "$ZDOTDIR"/.zshrc
+safe_link "$DOTFILEDIR"/zsh/.zlogin "$ZDOTDIR"/.zlogin
+safe_link "$DOTFILEDIR"/zsh/.zlogout "$ZDOTDIR"/.zlogout
 
 # setup git related links
 safe_link "$DOTFILEDIR"/git/config "$XDG_CONFIG_HOME"/git/config
@@ -44,12 +44,12 @@ safe_link "$DOTFILEDIR"/ssh/configs/config "$HOME"/.ssh/config
 safe_link "$DOTFILEDIR"/ssh/configs/personal/config_personal "$HOME"/.ssh/config_personal
 safe_link "$DOTFILEDIR"/ssh/keys/id_ed25519_personal.pub "$HOME"/.ssh/id_ed25519_personal.pub
 
+# setup SSH cloudflared proxy command script
+safe_link "$DOTFILEDIR"/ssh/cloudflared.zsh "$HOME"/.ssh/cloudflared.zsh
+
 # setup SSH 1Password agent config file filtering
 # https://developer.1password.com/docs/ssh/agent/config
 safe_link "$DOTFILEDIR"/ssh/configs/agent.toml "$XDG_CONFIG_HOME"/1Password/ssh/agent.toml
-
-# setup SSH cloudflared proxy command script
-safe_link "$DOTFILEDIR"/ssh/cloudflared.zsh "$HOME"/.ssh/cloudflared.zsh
 
 # setup trippy (traceroute visualizer) config file
 safe_link "$DOTFILEDIR"/zsh/configs/trippy.toml "$XDG_CONFIG_HOME"/trippy/trippy.toml

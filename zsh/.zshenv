@@ -37,6 +37,9 @@ export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 export XDG_DATA_DIRS="/usr/local/share:/usr/share"
 export XDG_CONFIG_DIRS="/etc/xdg"
 
+# setup ZSH directory
+export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
+
 # tool defaults (safe for non-interactive shells)
 export EDITOR="nano"
 export VEDITOR="code"
