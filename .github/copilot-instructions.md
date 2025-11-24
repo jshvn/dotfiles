@@ -19,42 +19,49 @@ All steps abort on first error (`set -e`).
 ### 2. Core Layout & Key Files
 - `install.zsh`: orchestrator (entrypoint); resolves `DOTFILEDIR` via `BASH_SOURCE` symlink traversal.
 - `install/*.zsh`: segmented install phases (idempotent expectation).
-- `install/xdg.zsh`: ensures XDG base directories exist early in the flow.
+- `install/xdg.zsh`: ensures XDG base directories exist early in the flow; sets up `ZDOTDIR` and manages `/etc/zshenv` for ZDOTDIR export.
 - `install/Brewfile.rb`: declarative Homebrew bundle (CLI tools + apps).
-- `zsh/.zshenv`: sourced by every zsh invocation; sets XDG vars, EDITOR, BROWSER; minimal and non-interactive safe.
-- `zsh/.zprofile`: login shell initialization; evaluates Homebrew shellenv, sets SSH agent.
-- `zsh/.zshrc`: interactive startup; computes `DOTFILEDIR` via `${(%):-%N}` symlink resolution; loads Antigen plugins; auto-sources `zsh/aliases/*` and `zsh/functions/*` via for-loops.
-- `zsh/.zlogout`: login shell logout hook (currently minimal cleanup/comments only).
+- `install/links.zsh`: symlink creation script; uses `safe_link()` helper function to create parent directories and force-symlink files.
+- `zsh/.zshenv`: sourced by every zsh invocation; sets XDG vars, EDITOR, VEDITOR, VISUAL, BROWSER, ZDOTDIR; minimal and non-interactive safe.
+- `zsh/.zprofile`: login shell initialization; evaluates Homebrew shellenv based on architecture (ARM vs Intel); sets SSH agent.
+- `zsh/.zshrc`: interactive startup; computes `DOTFILEDIR` via `${(%):-%N}` symlink resolution; loads Antigen plugins from oh-my-zsh; auto-sources `zsh/aliases/*` and `zsh/functions/*` via for-loops; includes lazy conda initialization.
+- `zsh/.zlogin`: login shell post-initialization; calls `motd()` function to display Tron-themed message of the day on login.
+- `zsh/.zlogout`: login shell logout hook with extensive documentation; provides cleanup framework but minimal actual cleanup code.
 - `zsh/theme.zsh`: custom theme configuration sourced by `.zshrc`.
 - `zsh/aliases/*.zsh`: utility aliases (loaded lexicographically). Keep side effects minimal. Many use `$(which cmd)` for Homebrew tool paths.
-- `zsh/functions/*.zsh`: utility functions (loaded lexicographically). Keep side effects minimal.
+- `zsh/functions/*.zsh`: utility functions (loaded lexicographically). Keep side effects minimal. Includes `motd.zsh` for Tron-themed system info display.
 - `zsh/styles/`: config files for tools (`eza_style.yaml`, `glow_style.json`).
-- `zsh/configs/`: tool-specific configs (`.trippy.toml`, `tlrc.toml`).
-- `git/.gitconfig`: main git config with `includeIf` directive for personal subdirectory config.
-- `git/.gitignore_global`, `git/.stCommitMsg`: global ignore file and commit message template.
-- `git/personal/.gitconfig-personal`: personal git config (email, signing) included conditionally for `~/Git/personal/` repos.
-- `ssh/configs/`, `ssh/keys/`: symlinked into `$HOME/.ssh/` by `install/links.zsh`.
-- `ssh/configs/agent.toml`: 1Password SSH agent filtering config.
+- `zsh/configs/`: tool-specific configs (`trippy.toml`, `tlrc.toml`, `condarc`, `ghostty`, `motd_sysinfo.jsonc`, `motd_tron.txt`).
+- `git/config`: main git config with `includeIf` directives for personal and work subdirectory configs; uses delta pager.
+- `git/ignore`: global git ignore file (symlinked as excludesfile).
+- `git/personal/config-personal`: personal git config (email, signing) included conditionally for `~/Git/personal/` repos.
+- `git/work/config-work`: work git config included conditionally for `~/Git/work/` repos.
+- `ssh/configs/config`: main SSH config file symlinked to `$HOME/.ssh/config`.
+- `ssh/configs/personal/config_personal`: personal SSH config included from main config.
+- `ssh/keys/id_ed25519_personal.pub`: public key symlinked to `$HOME/.ssh/`.
+- `ssh/configs/agent.toml`: 1Password SSH agent filtering config symlinked to `$XDG_CONFIG_HOME/1Password/ssh/agent.toml`.
 - `ssh/cloudflared.zsh`: proxy command script for cloudflared SSH tunnels.
 
 ### 2.1. Zsh Startup File Order & Purposes
 Zsh sources files in this order for login interactive shells:
-1. `~/.zshenv` — Always sourced (login, non-login, interactive, non-interactive). Sets XDG vars, PATH additions, EDITOR. Must be minimal and safe for scripts.
-2. `~/.zprofile` — Login shells only. Evaluates `brew shellenv`, sets session-specific vars like SSH_AUTH_SOCK.
-3. `~/.zshrc` — Interactive shells. Loads plugins (Antigen), sources aliases/functions, sets prompts and history.
-4. `~/.zlogin` — Login shells after .zshrc (not currently used in this repo).
-5. `~/.zlogout` — Login shell exit. Cleanup and finalization (currently minimal).
+1. `/etc/zshenv` — System-wide environment (exports ZDOTDIR in this setup).
+2. `$ZDOTDIR/.zshenv` (or `~/.zshenv`) — Always sourced (login, non-login, interactive, non-interactive). Sets XDG vars, ZDOTDIR, EDITOR, VEDITOR, VISUAL, BROWSER. Must be minimal and safe for scripts.
+3. `$ZDOTDIR/.zprofile` (or `~/.zprofile`) — Login shells only. Evaluates `brew shellenv` with architecture detection, sets session-specific vars like SSH_AUTH_SOCK.
+4. `$ZDOTDIR/.zshrc` (or `~/.zshrc`) — Interactive shells. Loads plugins (Antigen/oh-my-zsh), sources aliases/functions, sets prompts and history, lazy-loads conda.
+5. `$ZDOTDIR/.zlogin` (or `~/.zlogin`) — Login shells after .zshrc. Calls `motd()` to display Tron-themed message of the day.
+6. `$ZDOTDIR/.zlogout` (or `~/.zlogout`) — Login shell exit. Cleanup and finalization framework (currently minimal actual cleanup).
 
 Key principles:
-- `.zshenv`: environment only, no interactive features, no plugin managers.
-- `.zprofile`: login-specific setup, Homebrew initialization.
-- `.zshrc`: interactive features only (plugins, aliases, functions, prompts).
-- `.zlogout`: cleanup on logout (history flush, temp file removal, credential locking).
+- `.zshenv`: environment only, no interactive features, no plugin managers. Sets ZDOTDIR and XDG paths.
+- `.zprofile`: login-specific setup, Homebrew initialization with ARM/Intel detection.
+- `.zshrc`: interactive features only (plugins, aliases, functions, prompts, history). Computes DOTFILEDIR dynamically.
+- `.zlogin`: post-interactive login setup. Displays MOTD.
+- `.zlogout`: cleanup on logout (history flush, temp file removal, credential locking). Extensively documented but minimal implementation.
 
 ### 3. Required Patterns & Conventions
 - Functions: filename ends in `.zsh`, no output unless invoked, safe if sourced multiple times. Define function with `function name() { }` syntax.
 - Aliases: group logically in separate files under `zsh/aliases/` (lexicographic load order). Use `$(which cmd)` for Homebrew-installed tools to ensure correct path resolution.
-- Symlinks: follow `install/links.zsh` style: `ln -sf "${DOTFILEDIR}/path" "$HOME/target"`; respect `XDG_CONFIG_HOME` when appropriate. Create parent directories with `mkdir -p` before symlinking.
+- Symlinks: follow `install/links.zsh` style using `safe_link()` function: `safe_link "${DOTFILEDIR}/path" "$HOME/target"`; creates parent directories with `mkdir -p` before symlinking; respect `XDG_CONFIG_HOME` when appropriate.
 - Path resolution: reuse the existing `BASH_SOURCE` / `${(%):-%N}` symlink traversal approach; avoid hardcoding repo paths.
 - Plugins: `zsh/.zshrc` uses Antigen at `$(brew --prefix)/share/antigen/antigen.zsh`; add bundles with `antigen bundle <repo>` lines near existing ones; run `antigen apply` after all bundles.
 - Colorization: use `highlight --syntax=<type>` for piped output; use `tput setaf <color>` for direct terminal output; always reset with `tput sgr0`.
@@ -85,7 +92,8 @@ Key principles:
 - New function: create `zsh/functions/<name>.zsh`; ensure idempotent; no immediate execution beyond declarations; avoid global variable leakage.
 - New alias sets: add `zsh/aliases/<topic>.zsh`; keep each line simple; avoid redefining existing aliases silently.
 - New brew packages: append to `install/Brewfile.rb` in appropriate section (formula vs cask); run bundle to verify.
-- New symlinks: modify `install/links.zsh` following existing pattern; test by re-running links script.
+- New symlinks: modify `install/links.zsh` following existing pattern using `safe_link()` function; test by re-running links script.
+- New configs: add to `zsh/configs/` and create corresponding symlink in `install/links.zsh` using `safe_link()` to target appropriate XDG location.
 
 ### 7. Troubleshooting & Diagnostics
 - Check which shell: `echo $SHELL` or `ps -p $$ -o comm=`.
@@ -131,6 +139,9 @@ Example: `echo "$(tput setaf 2)Success$(tput sgr0)"`
 - The `update()` function in `zsh/functions/update.zsh` references `tldr --update`, but the installed package is `tlrc`. The command is likely an alias or binary provided by tlrc package.
 - Many aliases use `$(which <command>)` expansion for portability (e.g., `alias ls="$(which eza)"`). This resolves at shell initialization to Homebrew-installed tools.
 - Syntax highlighting is ubiquitous: `highlight` command is piped throughout aliases for colorized output (history, path, hardware info).
+- The `safe_link()` function in `install/links.zsh` creates parent directories automatically before creating symlinks, avoiding common path errors.
+- ZDOTDIR is managed via `/etc/zshenv` to ensure it's set system-wide before any user zsh files are sourced.
+- The MOTD system uses config files in `zsh/configs/` (`motd_sysinfo.jsonc`, `motd_tron.txt`) and is triggered by `.zlogin` calling the `motd()` function.
 
 ### 14. Security & Secrets
 - Never commit private keys. Files under `ssh/keys/` are public keys or placeholders only.
