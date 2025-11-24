@@ -103,3 +103,6 @@ adjust-cell-height = -8%
 
 # and up font baseline a bit
 adjust-font-baseline = 1
+
+# Disable quit confirmation dialog
+confirm-close-surface = false
