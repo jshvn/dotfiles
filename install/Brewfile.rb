@@ -18,6 +18,9 @@ brew "wget"
 # eza as ls replacement
 brew "eza"
 
+# openssh 
+brew "openssh"
+
 # install git since platform git is often old
 brew "git"
 
