@@ -106,3 +106,6 @@ adjust-font-baseline = 1
 
 # Disable quit confirmation dialog
 confirm-close-surface = false
+
+window-height = 50
+window-width = 150

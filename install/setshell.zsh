@@ -4,7 +4,7 @@
 
 # LINUX: /home/linuxbrew/.linuxbrew/bin/zsh
 # MAC (arm): /opt/homebrew/bin/zsh
-# MAC (intel): /user/local/bin/zsh
+# MAC (intel): /usr/local/bin/zsh
 
 ZSHBREWSHELL=""
 

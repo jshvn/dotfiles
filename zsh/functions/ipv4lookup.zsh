@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # list of public ipv4 providers to query (tried in order).
-public_ipv4_providers=(
+local public_ipv4_providers=(
     "https://simpip.com"
 	"https://ifconfig.co"
 	"https://icanhazip.com"

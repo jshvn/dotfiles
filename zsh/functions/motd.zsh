@@ -4,7 +4,6 @@
 # Usage: motd
 # -----------------------------------------------------------------------------
 
-# message of the day function
 function motd() {    # motd() will display a Tron-themed message of the day with system info. ex: $ motd
     # Tron color scheme using tput for portability
     local cyan=$(tput setaf 51)

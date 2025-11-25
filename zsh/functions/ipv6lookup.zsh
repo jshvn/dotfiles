@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # list of public ipv6 providers to query (tried in order)
-public_ipv6_providers=(
+local public_ipv6_providers=(
     "https://simpip.com"
 	"https://ifconfig.co"
 	"https://icanhazip.com"

@@ -8,6 +8,10 @@
 	editor = code
 	excludesfile = ignore
     pager = delta
+[init]
+    defaultBranch = main
+[fetch]
+    prune = true  # Auto-prune deleted remote branches
 [interactive]
     diffFilter = delta --color-only
 [delta]

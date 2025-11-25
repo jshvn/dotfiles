@@ -32,6 +32,8 @@ Installation generally sets up several aspects of the machine for use:
 
 If you change the location of this repo on the filesystem, you will need to re-run the `install.zsh` or `links.zsh` script again because the symlinks to the files within this repo will be broken.
 
+ZSH aliases are meant to access state whilst functions are meant to mutate state. However, this is not strictly enforced.
+
 ## ☁️ Cloudflare Warp
 
 Cloudflare WARP is used to enable connectivity between machines on the network `100.96.0.0/12`. The following guides were used:
