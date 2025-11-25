@@ -86,7 +86,6 @@ if [[ "$TERM" != dumb ]] && (( $+commands[grc] )) ; then
     ping6 \
     ps \
     uptime \
-    whois \
   );
 
   # Set alias for available commands.
