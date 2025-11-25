@@ -16,6 +16,9 @@ echo "Updating homebrew..."
 brew update
 brew upgrade
 
+# prune cached versions older than 30 days
+brew cleanup --prune=30
+
 # Install all apps from the Brewfile
 echo "Installing all packages and applications from the Brewfile"
 brew bundle --file "$DOTFILEDIR"/install/Brewfile.rb

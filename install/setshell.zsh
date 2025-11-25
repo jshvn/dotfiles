@@ -12,7 +12,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
     if [[ `uname -m` == "arm64" ]]; then
         ZSHBREWSHELL="/opt/homebrew/bin/zsh"
     else 
-        ZSHBREWSHELL="/user/local/bin/zsh"
+        ZSHBREWSHELL="/usr/local/bin/zsh"
     fi
 else 
     ZSHBREWSHELL="/home/linuxbrew/.linuxbrew/bin/zsh"

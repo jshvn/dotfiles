@@ -7,5 +7,5 @@ function timezsh() {    # timezsh() will time how long it takes to start an inte
     for i in $(seq 1 4); do /usr/bin/time $shell -i -c exit; done
 
     # now run with zprof to get detailed profiling info
-    $shell -i -c 'zmodload zsh/zprof; source $HOME/.zshrc; zprof'
+    $shell -i -c 'zmodload zsh/zprof; source $ZDOTDIR/.zshrc; zprof'
 }

@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # reload current configuration
-alias reload="source $HOME/.zshrc"
+alias reload="source $ZDOTDIR/.zshrc"
 
 # show current environment variables
 alias environment="env"
