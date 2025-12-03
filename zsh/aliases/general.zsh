@@ -23,9 +23,6 @@ alias perms='permissions'
 alias ls="$(which eza) --time-style long-iso"
 alias ll='ls -alh'
 
-# add formatting to glow command
-alias glow='glow --style "$DOTFILEDIR/zsh/styles/glow_style.json" -w 120'
-
 # open finder at current location
 alias finder="open -a Finder ./"
 

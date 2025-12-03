@@ -66,4 +66,8 @@ safe_link "$DOTFILEDIR"/zsh/configs/condarc "$XDG_CONFIG_HOME"/conda/condarc
 # setup ghostty config file
 safe_link "$DOTFILEDIR"/zsh/configs/ghostty "$XDG_CONFIG_HOME"/ghostty/config
 
+# setup glow config and style files
+safe_link "$DOTFILEDIR"/zsh/configs/glow.yml "$XDG_CONFIG_HOME"/glow/glow.yml
+safe_link "$DOTFILEDIR"/zsh/styles/glow_style.json "$XDG_CONFIG_HOME"/glow/glow_style.json
+
 unset -f safe_link

@@ -1,0 +1,22 @@
+# glow configuration file
+# https://github.com/charmbracelet/glow
+
+# style name or JSON path (default "auto")
+style: "auto"
+
+# there exists a bug where environment variables are not expanded
+# https://github.com/charmbracelet/glow/issues/776
+# until this is fixed, we use "auto" style as above
+# style: "${XDG_CONFIG_HOME}/glow/glow_style.json"
+
+# word-wrap at width
+width: 120
+
+# mouse support (TUI-mode only)
+mouse: false
+
+# use pager to display markdown
+pager: false
+
+# show all files, including hidden and ignored
+all: false
