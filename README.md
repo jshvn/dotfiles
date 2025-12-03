@@ -51,3 +51,7 @@ I'm packaging up what is here under the MIT license. Feel free to pick and pull 
 - https://github.com/jakejarvis/dotfiles
 - https://github.com/holman/dotfiles
 - https://github.com/sirugh/dotfiles/
+
+Arch XDG reference: 
+
+- https://wiki.archlinux.org/title/XDG_Base_Directory
