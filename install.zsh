@@ -27,10 +27,13 @@ export DOTFILEDIR
 set -e
 
 ####### Step 1
-####### Ensure XDG base directories exist
+####### Ensure XDG base directories exist and ZDOTDIR is set
 
 # Create XDG directories early so later steps (links, configs, tools) can rely on them
 source "$DOTFILEDIR"/install/xdg.zsh
+
+# Set ZDOTDIR so that zsh config files are XDG compliant
+source "$DOTFILEDIR"/install/zdotdir.zsh
 
 ####### Step 2
 ####### Setup links
