@@ -6,8 +6,15 @@ if ! command -v brew &> /dev/null; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     
     # Evaluate Homebrew shellenv to make brew available immediately
-    if [[ -f /opt/homebrew/bin/brew ]]; then
-        eval "$(/opt/homebrew/bin/brew shellenv)"
+    # this loads environment variables for brew without needing to restart the shell
+    if [[ "$(uname)" == "Darwin" ]]; then
+        if [[ `uname -m` == "arm64" ]]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        else 
+            eval "$(/usr/local/bin/brew shellenv)"
+        fi
+    else 
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
     fi
 fi
 
