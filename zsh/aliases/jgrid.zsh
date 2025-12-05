@@ -33,5 +33,5 @@ METALS=(
 
 for i in $METALS
 do
-    alias $i="ssh josh@ssh.$i.jgrid.net"
+    alias $i="ssh josh@$i-ssh.jgrid.net"
 done
