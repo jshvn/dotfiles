@@ -9,6 +9,7 @@ function whois() {    # whois() wraps whois with URL parsing and colored output.
 
     local input="$1"
     local target
+    local timeout_seconds=5
 
     # Strip protocol (http://, https://, etc.)
     target="${input#*://}"
@@ -32,6 +33,14 @@ function whois() {    # whois() wraps whois with URL parsing and colored output.
         fi
     fi
 
-    # Run whois through grc for colored output
-    grc --colour=auto $(whence -p whois) "$target"
+    # Run whois through grc for colored output, with timeout to avoid slow WHOIS servers
+    gtimeout "$timeout_seconds" grc --colour=auto $(whence -p whois) "$target"
+    local exit_code=$?
+
+    if [[ $exit_code -eq 124 ]]; then
+        echo "$(tput setaf 1)ERROR: WHOIS lookup timed out after ${timeout_seconds}s for '$target'$(tput sgr0)" >&2
+        return 1
+    fi
+
+    return $exit_code
 }
