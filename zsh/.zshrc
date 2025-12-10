@@ -56,7 +56,7 @@ export ADOTDIR=$XDG_CONFIG_HOME/antigen
 export TLRC_CONFIG="$XDG_CONFIG_HOME/tlrc"
 
 # load antigen for plugin management
-source $HOMEBREW_PREFIX/share/antigen/antigen.zsh
+source "$HOMEBREW_PREFIX/share/antigen/antigen.zsh"
 
 # load the oh-my-zsh's library.
 antigen use ohmyzsh/ohmyzsh

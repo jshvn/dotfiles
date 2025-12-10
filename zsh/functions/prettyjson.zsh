@@ -8,5 +8,5 @@ function prettyjson() {    # prettyjson() will print human readable json that ha
 	fi;
 
   local result=$(cat "${1}" | python3 -m json.tool)
-  echo $result | highlight --syntax=json
+  echo "$result" | highlight --syntax=json
 }

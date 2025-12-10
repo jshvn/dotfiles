@@ -10,5 +10,5 @@ function cheat() {    # cheat() will query a web service and return a human-read
 	fi;
     
     local result=$(curl "cheat.sh/${1}?style=xcode" -s)
-    echo $result
+    echo "$result"
 }

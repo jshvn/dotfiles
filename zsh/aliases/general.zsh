@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # reload current configuration
-alias reload="source $ZDOTDIR/.zshrc"
+alias reload='source "$ZDOTDIR"/.zshrc'
 
 # show current environment variables
 alias environment="env"
@@ -10,8 +10,8 @@ alias environment="env"
 alias path='echo -e ${PATH//:/\\n} | highlight --syntax=bash'
 
 # print the dotfile directory
-alias dotfile='cd $DOTFILEDIR'
-alias dotfiles='cd $DOTFILEDIR'
+alias dotfile='cd "$DOTFILEDIR"'
+alias dotfiles='cd "$DOTFILEDIR"'
 
 # enter ncdu
 alias fsa='ncdu'
