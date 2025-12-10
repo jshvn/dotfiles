@@ -2,7 +2,7 @@
 
 # Whois lookup utility that handles URLs, domains, and IPs
 function whois() {    # whois() wraps whois with URL parsing and colored output. ex: $ whois https://ijosh.com/
-    if [ -z "${1}" ]; then
+    if [[ -z "${1}" ]]; then
         echo "ERROR: No domain, IP, or URL specified";
         return 1;
     fi;

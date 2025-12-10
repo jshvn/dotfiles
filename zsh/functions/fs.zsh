@@ -7,13 +7,13 @@ function fs() {    # fs() will print a human readable size of given file or dire
 	else
 		local arg=-sh;
 	fi
-	if [[ -n "$@" ]]; then
+    if (( $# > 0 )); then
 		du $arg -- "$@";
 	else
         if [[ $(uname) == "Darwin" ]]; then
-            du $arg .[^.]* ./*;
+            du $arg .[^.]* ./* | highlight --syntax=bash
         else
-            find . -type f | du -ah -d1
+            find . -type f | du -ah -d1 | highlight --syntax=bash
         fi;
 	fi;
 }

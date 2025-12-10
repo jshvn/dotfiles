@@ -5,8 +5,8 @@
 CLOUDFLARED_BIN_PATH=""
 
 # MacOS 
-if [[ `uname` == "Darwin" ]]; then
-    if [[ `uname -m` == "arm64" ]]; then
+if [[ "$(uname)" == "Darwin" ]]; then
+    if [[ "$(uname -m)" == "arm64" ]]; then
         CLOUDFLARED_BIN_PATH="/opt/homebrew/bin/cloudflared"
     else 
         CLOUDFLARED_BIN_PATH="/usr/local/bin/cloudflared"
@@ -16,4 +16,4 @@ else
     CLOUDFLARED_BIN_PATH="/usr/local/bin/cloudflared"
 fi
 
-eval "$CLOUDFLARED_BIN_PATH $@"
+exec "$CLOUDFLARED_BIN_PATH" "$@"

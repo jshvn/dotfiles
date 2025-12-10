@@ -35,3 +35,5 @@ for i in $METALS
 do
     alias $i="ssh josh@$i-ssh.jgrid.net"
 done
+
+unset METALS

@@ -2,7 +2,7 @@
 
 # Grabs certificates for a given domain name
 function getcertnames() {    # getcertnames() will print SSL certificate information for a given domain. ex: $ getcertnames ijosh.com
-	if [ -z "${1}" ]; then
+	if [[ -z "${1}" ]]; then
 		echo "ERROR: No domain specified.";
 		return 1;
 	fi;

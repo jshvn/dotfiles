@@ -20,7 +20,7 @@ alias fsa='ncdu'
 alias perms='permissions'
 
 # shorthands for directory listing
-alias ls="$(which eza) --time-style long-iso"
+alias ls="$(command -v eza) --time-style long-iso"
 alias ll='ls -alh'
 
 # open finder at current location

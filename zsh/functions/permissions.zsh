@@ -8,8 +8,8 @@ function permissions() {    # permissions() will print human readable permission
 	fi;
 
     if [[ $(uname) == "Darwin" ]]; then
-        stat -f "%Sp %OLp %N" $1 | highlight --syntax=bash
+        stat -f "%Sp %OLp %N" "${1}" | highlight --syntax=bash
     else
-        stat -c '%A %a %n' $1 | highlight --syntax=bash
+        stat -c '%A %a %n' "${1}" | highlight --syntax=bash
     fi;
 }

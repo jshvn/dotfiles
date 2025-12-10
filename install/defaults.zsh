@@ -40,10 +40,6 @@ defaults write NSGlobalDomain AppleIconAppearanceTheme -string RegularDark
 # Set the default scroll direction to opposite of natural
 defaults write -g com.apple.swipescrolldirection -bool false
 
-# Require password immediately after sleep or screen saver begins
-defaults write com.apple.screensaver askForPassword -int 1
-defaults write com.apple.screensaver askForPasswordDelay -int 0
-
 # Finder: show all filename extensions
 defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 

@@ -20,11 +20,11 @@
 #   - Ensure history is flushed to disk:
 #       fc -W
 #   - Clear the visible terminal only for top-level login shells:
-#       if [ "$SHLVL" = 1 ]; then clear; fi
+#       if [[ "$SHLVL" = 1 ]]; then clear; fi
 #   - Remove a session tmp dir (only if it matches your pattern):
-#       [ -n "$DOTFILE_SESSION_TMP" ] && rm -rf "$DOTFILE_SESSION_TMP"
+#       [[ -n "$DOTFILE_SESSION_TMP" ]] && rm -rf "$DOTFILE_SESSION_TMP"
 #   - Guarded agent/tunnel shutdown (only if a PID file exists and matches):
-#       # if [ -f /tmp/cloudflared.$USER.pid ]; then kill "$(cat /tmp/cloudflared.$USER.pid)"; fi
+#       # if [[ -f /tmp/cloudflared.$USER.pid ]]; then kill "$(cat /tmp/cloudflared.$USER.pid)"; fi
 #   - Lock credential helper (example for rbw/bitwarden):
 #       # rbw lock
 #

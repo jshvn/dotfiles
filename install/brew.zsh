@@ -8,7 +8,7 @@ if ! command -v brew &> /dev/null; then
     # Evaluate Homebrew shellenv to make brew available immediately
     # this loads environment variables for brew without needing to restart the shell
     if [[ "$(uname)" == "Darwin" ]]; then
-        if [[ `uname -m` == "arm64" ]]; then
+        if [[ "$(uname -m)" == "arm64" ]]; then
             eval "$(/opt/homebrew/bin/brew shellenv)"
         else 
             eval "$(/usr/local/bin/brew shellenv)"

@@ -3,10 +3,10 @@
 # update the dotfiles completely
 function update() {    # update() will update the current dotfiles installation and dependencies. ex: $ update
 	# save the current directory
-	currentdir=$(pwd)
+	local currentdir=$(pwd)
 
 	# navigate to dotfile install directory
-	dotfiles
+	cd "$DOTFILEDIR"
 
 	# pull new version from origin
 	git pull
@@ -22,8 +22,8 @@ function update() {    # update() will update the current dotfiles installation 
     antigen update
 	
 	# execute the install script
-	zsh $DOTFILEDIR/install.zsh
+	zsh "$DOTFILEDIR/install.zsh"
 
 	# return user to previous directory
-	cd $currentdir
+	cd "$currentdir"
 }

@@ -24,7 +24,7 @@
 #   - Completion and shells helpers (interactive):
 #       autoload -Uz compinit && compinit
 #   - Plugin managers and interactive hooks (antigen, zinit, oh-my-zsh):
-#       source $(brew --prefix)/share/antigen/antigen.zsh
+#       source $HOMEBREW_PREFIX/share/antigen/antigen.zsh
 #       antigen bundle zsh-users/zsh-autosuggestions
 #       antigen apply
 #   - Aliases and functions (interactive conveniences):
@@ -56,7 +56,7 @@ export ADOTDIR=$XDG_CONFIG_HOME/antigen
 export TLRC_CONFIG="$XDG_CONFIG_HOME/tlrc"
 
 # load antigen for plugin management
-source $(brew --prefix)/share/antigen/antigen.zsh
+source $HOMEBREW_PREFIX/share/antigen/antigen.zsh
 
 # load the oh-my-zsh's library.
 antigen use ohmyzsh/ohmyzsh
@@ -100,20 +100,14 @@ fi
 # correct spots, and that causes errors in aliases and functions
 
 # load ZSH aliases
-for file in "$DOTFILEDIR/zsh/aliases/"*
-do
-    if [[ -f $file ]]; then
-        source $file
-    fi
+for file in "$DOTFILEDIR/zsh/aliases/"*.zsh(.N); do
+    source "$file"
 done
 
 # load common ZSH custom themes
 source $DOTFILEDIR/zsh/theme.zsh
 
 # load ZSH function and helper scripts
-for file in "$DOTFILEDIR/zsh/functions/"*
-do
-    if [[ -f $file ]]; then
-        source $file
-    fi
+for file in "$DOTFILEDIR/zsh/functions/"*.zsh(.N); do
+    source "$file"
 done

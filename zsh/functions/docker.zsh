@@ -8,7 +8,7 @@ function docker() { # docker() will customize the functionality of docker. ex: $
     elif [[ "$1" == "bash" || "$1" == "sh" || "$1" == "csh" || "$1" == "dash" || "$1" == "ksh" || "$1" == "tcsh" || "$1" == "zsh" ]]; then
         local shell="$1"
         shift
-        if [ -z "${1}" ]; then
+        if [[ -z "${1}" ]]; then
             echo "ERROR: No container specified"
             echo "Running containers:"
             docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"

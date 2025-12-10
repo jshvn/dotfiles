@@ -1,14 +1,14 @@
 #!/bin/zsh
 
-# list of public ipv4 providers to query (tried in order).
-local public_ipv4_providers=(
-    "https://simpip.com"
-	"https://ifconfig.co"
-	"https://icanhazip.com"
-)
-
 # lookup machine local and public ipv4 addresses
 function ipv4lookup() {    # ipv4lookup() will list local and public IPv4 addresses. ex: $ ipv4lookup
+    # list of public ipv4 providers to query (tried in order).
+    local public_ipv4_providers=(
+        "https://simpip.com"
+        "https://ifconfig.co"
+        "https://icanhazip.com"
+    )
+
 	if command -v ifconfig >/dev/null 2>&1; then
 		# macOS / BSD: parse ifconfig output, skip loopback
 		ifconfig | awk '/^[^[:space:]]+:/ { iface=$1; sub(/:$/,"",iface) } $1=="inet" && $2!="127.0.0.1" { print iface": "$2 }'

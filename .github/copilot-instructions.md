@@ -63,7 +63,7 @@ Key principles:
 - Aliases: group logically in separate files under `zsh/aliases/` (lexicographic load order). Use `$(which cmd)` for Homebrew-installed tools to ensure correct path resolution.
 - Symlinks: follow `install/links.zsh` style using `safe_link()` function: `safe_link "${DOTFILEDIR}/path" "$HOME/target"`; creates parent directories with `mkdir -p` before symlinking; respect `XDG_CONFIG_HOME` when appropriate.
 - Path resolution: reuse the existing `BASH_SOURCE` / `${(%):-%N}` symlink traversal approach; avoid hardcoding repo paths.
-- Plugins: `zsh/.zshrc` uses Antigen at `$(brew --prefix)/share/antigen/antigen.zsh`; add bundles with `antigen bundle <repo>` lines near existing ones; run `antigen apply` after all bundles.
+- Plugins: `zsh/.zshrc` uses Antigen at `$HOMEBREW_PREFIX/share/antigen/antigen.zsh`; add bundles with `antigen bundle <repo>` lines near existing ones; run `antigen apply` after all bundles.
 - Colorization: use `highlight --syntax=<type>` for piped output; use `tput setaf <color>` for direct terminal output; always reset with `tput sgr0`.
 
 ### 4. Common Tasks (Copy/Paste)
