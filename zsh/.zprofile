@@ -43,6 +43,8 @@ else
     DIRECTORY="/home/linuxbrew/.linuxbrew/bin/brew"
 fi
 
+# ensure Homebrew is inserted into $PATH, $MANPATH, $INFOPATH
+# and load $HOMEBREW_PREFIX, $HOMEBREW_CELLAR and $HOMEBREW_REPOSITORY into the environment
 eval "$($DIRECTORY shellenv)"
 
 # Set 1Password as SSH agent on macOS (per-login session)

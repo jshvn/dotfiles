@@ -2,31 +2,15 @@
 
 # This script exists to ensure we are using the ZSH shell that is installed by Homebrew
 
-# LINUX: /home/linuxbrew/.linuxbrew/bin/zsh
-# MAC (arm): /opt/homebrew/bin/zsh
-# MAC (intel): /usr/local/bin/zsh
+function ensure_zbrewshell_in_etc_shells() {
+  local zsh_brew_shell="$HOMEBREW_PREFIX/bin/zsh"
+  
+  if ! grep -qxF "$zsh_brew_shell" /etc/shells; then
+      echo "Homebrew-installed ZSH is not currently present in /etc/shells, adding it now..."
+      echo "$zsh_brew_shell" | sudo tee -a /etc/shells
+  else
+      echo "Homebrew-installed ZSH is already present in /etc/shells."
+  fi
+}
 
-ZSHBREWSHELL=""
-
-if [[ "$(uname)" == "Darwin" ]]; then
-    if [[ "$(uname -m)" == "arm64" ]]; then
-        ZSHBREWSHELL="/opt/homebrew/bin/zsh"
-    else 
-        ZSHBREWSHELL="/usr/local/bin/zsh"
-    fi
-else 
-    ZSHBREWSHELL="/home/linuxbrew/.linuxbrew/bin/zsh"
-fi
-
-# Check if ZSH (installed by Homebrew) is currently in /etc/shells
-if ! grep -qxF "$ZSHBREWSHELL" /etc/shells; then
-    echo "Homebrew ZSH is not currently present in /etc/shells, adding it now..."
-    echo "$ZSHBREWSHELL" | sudo tee -a /etc/shells
-fi
-
-CURRENTSHELL=$(which "$SHELL")
-
-# Finally, we change our shell if it is not ZSH
-if [[ "$CURRENTSHELL" != "$ZSHBREWSHELL" ]]; then
-    chsh -s "$ZSHBREWSHELL"
-fi 
+ensure_zbrewshell_in_etc_shells
