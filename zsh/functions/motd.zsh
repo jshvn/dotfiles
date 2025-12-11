@@ -64,11 +64,11 @@ function motd() {    # motd() will display a Tron-themed message of the day with
         echo "${cyan}${bold}📦 DOTFILES${reset}"
         (
             cd "${DOTFILEDIR}" 2>/dev/null || return
-            local branch=$(git branch --show-current 2>/dev/null || echo "unknown")
-            local changes=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
             local last_commit=$(git log -1 --format="%ar" 2>/dev/null || echo "unknown")
+            local changes=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
             
-            echo "   ${dim}Branch:${reset} ${branch}  ${dim}|${reset}  ${dim}Changes:${reset} ${changes}  ${dim}|${reset}  ${dim}Last commit:${reset} ${last_commit}"
+            echo "   ${reset}Last commit › ${orange}${last_commit}"
+            echo "   ${reset}Changes › ${orange}${changes}"
         )
         echo
     fi
