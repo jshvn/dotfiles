@@ -52,9 +52,9 @@ function motd() {    # motd() will display a Tron-themed message of the day with
     echo "${cyan}${bold}⚡ SYSTEM INFORMATION${reset}"
     local ff_config="${DOTFILEDIR}/zsh/configs/motd_sysinfo.jsonc"
     if [[ -f "$ff_config" ]]; then
-        fastfetch --config "$ff_config" 2>/dev/null | sed 's/^/   /'
+        fastfetch --config "$ff_config" 2>/dev/null | sed "s/^/   /; s/› /› ${orange}/; s/$/${reset}/"
     else
-        fastfetch 2>/dev/null | sed 's/^/   /' || echo "   ${orange}fastfetch not configured${reset}"
+        fastfetch 2>/dev/null | sed "s/^/   /; s/› /› ${orange}/; s/$/${reset}/" || echo "   ${orange}fastfetch not configured${reset}"
     fi
     
     echo
