@@ -12,23 +12,24 @@ Purpose: Give an AI contributor the fastest path to making safe, effective chang
 ### 1. Execution Flow (Install Pipeline)
 Fresh macOS install runs `./install.zsh` which:
 1. Resolves and exports `DOTFILEDIR`.
-2. Sources (in order): `install/xdg.zsh`, `install/links.zsh`, `install/brew.zsh`, `install/xcode.zsh`, `install/defaults.zsh`, `install/setshell.zsh`.
+2. Sources (in order): `install/xdg.zsh`, `install/zdotdir.zsh`, `install/links.zsh`, `install/brew.zsh`, `install/xcode.zsh`, `install/defaults.zsh`, `install/setshell.zsh`.
 3. Prints completion message with color (`tput setaf`).
 All steps abort on first error (`set -e`).
 
 ### 2. Core Layout & Key Files
 - `install.zsh`: orchestrator (entrypoint); resolves `DOTFILEDIR` via `BASH_SOURCE` symlink traversal.
 - `install/*.zsh`: segmented install phases (idempotent expectation).
-- `install/xdg.zsh`: ensures XDG base directories exist early in the flow; sets up `ZDOTDIR` and manages `/etc/zshenv` for ZDOTDIR export.
+- `install/xdg.zsh`: ensures XDG base directories exist early in the flow; creates XDG_CONFIG_HOME, XDG_DATA_HOME, XDG_STATE_HOME, and XDG_CACHE_HOME directories.
+- `install/zdotdir.zsh`: sets up `ZDOTDIR` and manages `/etc/zshenv` for system-wide ZDOTDIR export; ensures ZDOTDIR is available before any zsh config files are sourced.
 - `install/Brewfile.rb`: declarative Homebrew bundle (CLI tools + apps).
 - `install/links.zsh`: symlink creation script; uses `safe_link()` helper function to create parent directories and force-symlink files.
 - `zsh/.zshenv`: sourced by every zsh invocation; sets XDG vars, EDITOR, VEDITOR, VISUAL, BROWSER, ZDOTDIR; minimal and non-interactive safe.
 - `zsh/.zprofile`: login shell initialization; evaluates Homebrew shellenv based on architecture (ARM vs Intel); sets SSH agent.
 - `zsh/.zshrc`: interactive startup; computes `DOTFILEDIR` via `${(%):-%N}` symlink resolution; loads Antigen plugins from oh-my-zsh; auto-sources `zsh/aliases/*` and `zsh/functions/*` via for-loops; includes lazy conda initialization.
-- `zsh/.zlogin`: login shell post-initialization; calls `motd()` function to display Tron-themed message of the day on login.
+- `zsh/.zlogin`: login shell post-initialization; includes call to `motd()` function 
 - `zsh/.zlogout`: login shell logout hook with extensive documentation; provides cleanup framework but minimal actual cleanup code.
 - `zsh/theme.zsh`: custom theme configuration sourced by `.zshrc`.
-- `zsh/aliases/*.zsh`: utility aliases (loaded lexicographically). Keep side effects minimal. Many use `$(which cmd)` for Homebrew tool paths.
+- `zsh/aliases/*.zsh`: utility aliases (loaded lexicographically). Keep side effects minimal. Many use `$(command -v cmd)` for Homebrew tool paths. Files: `general.zsh`, `hardware.zsh`, `jgrid.zsh`, `networking.zsh`.
 - `zsh/functions/*.zsh`: utility functions (loaded lexicographically). Keep side effects minimal. Includes `motd.zsh` for Tron-themed system info display.
 - `zsh/styles/`: config files for tools (`eza_style.yaml`, `glow_style.json`).
 - `zsh/configs/`: tool-specific configs (`trippy.toml`, `tlrc.toml`, `condarc`, `ghostty`, `motd_sysinfo.jsonc`, `motd_tron.txt`).
@@ -60,7 +61,7 @@ Key principles:
 
 ### 3. Required Patterns & Conventions
 - Functions: filename ends in `.zsh`, no output unless invoked, safe if sourced multiple times. Define function with `function name() { }` syntax.
-- Aliases: group logically in separate files under `zsh/aliases/` (lexicographic load order). Use `$(which cmd)` for Homebrew-installed tools to ensure correct path resolution.
+- Aliases: group logically in separate files under `zsh/aliases/` (lexicographic load order). Use `$(command -v cmd)` for Homebrew-installed tools to ensure correct path resolution.
 - Symlinks: follow `install/links.zsh` style using `safe_link()` function: `safe_link "${DOTFILEDIR}/path" "$HOME/target"`; creates parent directories with `mkdir -p` before symlinking; respect `XDG_CONFIG_HOME` when appropriate.
 - Path resolution: reuse the existing `BASH_SOURCE` / `${(%):-%N}` symlink traversal approach; avoid hardcoding repo paths.
 - Plugins: `zsh/.zshrc` uses Antigen at `$HOMEBREW_PREFIX/share/antigen/antigen.zsh`; add bundles with `antigen bundle <repo>` lines near existing ones; run `antigen apply` after all bundles.
@@ -136,12 +137,12 @@ Example: `echo "$(tput setaf 2)Success$(tput sgr0)"`
 - `install.zsh` correctly computes `INSTALLFILEDIR` and exports `DOTFILEDIR="$INSTALLFILEDIR"` which points to the repo root. All subordinate scripts rely on this.
 - `.zshrc` also computes `DOTFILEDIR` dynamically using symlink resolution from `${(%):-%N}` to support interactive sessions.
 - macOS is the primary target. Linux support is opportunistic; do not assume parity without checks.
-- The `update()` function in `zsh/functions/update.zsh` references `tldr --update`, but the installed package is `tlrc`. The command is likely an alias or binary provided by tlrc package.
-- Many aliases use `$(which <command>)` expansion for portability (e.g., `alias ls="$(which eza)"`). This resolves at shell initialization to Homebrew-installed tools.
+- The `update()` function in `zsh/functions/update.zsh` references `tldr --update`; the installed package `tlrc` provides a `tldr` binary for compatibility.
+- Many aliases use `$(command -v <command>)` expansion for portability (e.g., `alias ls="$(command -v eza)"`). This resolves at shell initialization to Homebrew-installed tools.
 - Syntax highlighting is ubiquitous: `highlight` command is piped throughout aliases for colorized output (history, path, hardware info).
 - The `safe_link()` function in `install/links.zsh` creates parent directories automatically before creating symlinks, avoiding common path errors.
-- ZDOTDIR is managed via `/etc/zshenv` to ensure it's set system-wide before any user zsh files are sourced.
-- The MOTD system uses config files in `zsh/configs/` (`motd_sysinfo.jsonc`, `motd_tron.txt`) and is triggered by `.zlogin` calling the `motd()` function.
+- ZDOTDIR is managed via `/etc/zshenv` (configured by `install/zdotdir.zsh`) to ensure it's set system-wide before any user zsh files are sourced.
+- The MOTD system uses config files in `zsh/configs/` (`motd_sysinfo.jsonc`, `motd_tron.txt`) and can be triggered by uncommenting the `motd()` call in `.zlogin`.
 
 ### 14. Security & Secrets
 - Never commit private keys. Files under `ssh/keys/` are public keys or placeholders only.
