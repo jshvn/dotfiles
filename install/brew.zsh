@@ -12,7 +12,7 @@ if ! command -v brew &> /dev/null; then
             eval "$(/opt/homebrew/bin/brew shellenv)"
         else 
             eval "$(/usr/local/bin/brew shellenv)"
-        fi
+        fi 
     else 
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
     fi

@@ -6,12 +6,10 @@ Host *.jgrid.net
     IdentityFile ~/.ssh/id_ed25519_personal.pub
     IdentitiesOnly yes
     User josh
-    SetEnv TERM=xterm-256color
     ProxyCommand ~/.ssh/cloudflared.zsh access ssh --hostname %h
 
 Host *.plex.me
     IdentityFile ~/.ssh/id_ed25519_personal.pub
     IdentitiesOnly yes
     User josh
-    SetEnv TERM=xterm-256color
     ProxyCommand ~/.ssh/cloudflared.zsh access ssh --hostname %h

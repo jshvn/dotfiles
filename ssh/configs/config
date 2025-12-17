@@ -5,7 +5,10 @@
 # Use the 1Password SSH agent instead of 
 # the built in SSH agent
 Host *
- IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+    IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+    # Ghostty sets its own TERM=xterm-ghostty which is unfortunately not widely supported
+    # so we override it here for all connections for now, until more widespread support is available
+    SetEnv TERM=xterm-256color
 
 # Child config includes for personal and work settings
 
