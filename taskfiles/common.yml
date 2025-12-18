@@ -1,0 +1,106 @@
+version: '3'
+
+# =============================================================================
+# Include shared helper tasks
+# =============================================================================
+# The underscore (_) namespace provides access to reusable helper tasks defined
+# in helpers.yml. This avoids duplicating validation logic across taskfiles.
+# See helpers.yml for available tasks.
+# =============================================================================
+includes:
+  _: ./helpers.yml
+
+tasks:
+  # ============================================================================
+  # XDG Base Directories
+  # ============================================================================
+
+  xdg:
+    desc: "Create XDG base directories"
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        info "Ensuring XDG Base Directories exist..."
+      - mkdir -p "{{.XDG_CONFIG_HOME}}"
+      - mkdir -p "{{.XDG_DATA_HOME}}"
+      - mkdir -p "{{.XDG_STATE_HOME}}"
+      - mkdir -p "{{.XDG_CACHE_HOME}}"
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        success "XDG Base Directories created"
+    status:
+      - test -d "{{.XDG_CONFIG_HOME}}"
+      - test -d "{{.XDG_DATA_HOME}}"
+      - test -d "{{.XDG_STATE_HOME}}"
+      - test -d "{{.XDG_CACHE_HOME}}"
+
+  zdotdir:
+    desc: "Configure ZDOTDIR in /etc/zshenv"
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        ZDOTDIR_EXPORT='export ZDOTDIR="{{.ZDOTDIR}}"'
+        if [[ ! -f /etc/zshenv ]]; then
+          info "Creating /etc/zshenv with ZDOTDIR export..."
+          echo "$ZDOTDIR_EXPORT" | sudo tee /etc/zshenv > /dev/null
+          success "ZDOTDIR configured in /etc/zshenv"
+        elif ! grep -qF "$ZDOTDIR_EXPORT" /etc/zshenv; then
+          info "Adding ZDOTDIR export to /etc/zshenv..."
+          echo "$ZDOTDIR_EXPORT" | sudo tee -a /etc/zshenv > /dev/null
+          success "ZDOTDIR added to /etc/zshenv"
+        else
+          info "ZDOTDIR already configured in /etc/zshenv"
+        fi
+    status:
+      - |
+        ZDOTDIR_EXPORT='export ZDOTDIR="{{.ZDOTDIR}}"'
+        grep -qF "$ZDOTDIR_EXPORT" /etc/zshenv
+
+  antigen-update:
+    desc: "Update Antigen plugins"
+    silent: true
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        if [[ -n "$HOMEBREW_PREFIX" && -f "$HOMEBREW_PREFIX/share/antigen/antigen.zsh" ]]; then
+          zsh -c 'source "$HOMEBREW_PREFIX/share/antigen/antigen.zsh" && antigen update'
+          success "Antigen plugins updated"
+        else
+          warn "Antigen not installed, skipping update"
+        fi
+
+  # ============================================================================
+  # Validation
+  # ============================================================================
+
+  validate:
+    desc: "Validate common components (XDG, ZDOTDIR, Antigen)"
+    silent: true
+    cmds:
+      # XDG directories
+      - task: _:check-dir
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}", NAME: "XDG config home" }
+      - task: _:check-dir
+        vars: { TARGET: "{{.XDG_DATA_HOME}}", NAME: "XDG data home" }
+      - task: _:check-dir
+        vars: { TARGET: "{{.XDG_STATE_HOME}}", NAME: "XDG state home" }
+      - task: _:check-dir
+        vars: { TARGET: "{{.XDG_CACHE_HOME}}", NAME: "XDG cache home" }
+      
+      # ZDOTDIR
+      - task: _:check-dir
+        vars: { TARGET: "{{.ZDOTDIR}}", NAME: "ZDOTDIR" }
+      
+      # ZDOTDIR in /etc/zshenv
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        ZDOTDIR_EXPORT='export ZDOTDIR="{{.ZDOTDIR}}"'
+        if [[ -f /etc/zshenv ]] && grep -qF "$ZDOTDIR_EXPORT" /etc/zshenv; then
+          check "ZDOTDIR configured in /etc/zshenv"
+        else
+          cross "ZDOTDIR not configured in /etc/zshenv"
+        fi
+      
+      # Antigen
+      - task: _:check-file
+        vars: { TARGET: "{{.HOMEBREW_PREFIX}}/share/antigen/antigen.zsh", NAME: "Antigen" }

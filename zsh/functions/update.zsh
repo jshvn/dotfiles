@@ -1,29 +1,22 @@
 #!/bin/zsh
 
-# update the dotfiles completely
+# update() will update the current dotfiles installation and dependencies
 function update() {    # update() will update the current dotfiles installation and dependencies. ex: $ update
-	# save the current directory
-	local currentdir=$(pwd)
+    # Save current directory
+    local currentdir=$(pwd)
 
-	# navigate to dotfile install directory
-	cd "$DOTFILEDIR"
+    # Navigate to dotfile install directory
+    cd "$DOTFILEDIR"
 
-	# pull new version from origin
-	git pull
+    # Run task update (handles oh-my-zsh, tldr, antigen, profile-specific updates)
+    if command -v task &> /dev/null; then
+        task update
+    else
+        echo "Error: task not found. Run ./bootstrap.zsh to install."
+        cd "$currentdir"
+        return 1
+    fi
 
-	# update oh-my-zsh
-	# https://github.com/ohmyzsh/ohmyzsh/wiki/FAQ#how-do-i-update-oh-my-zsh
-	zsh "$ZSH/tools/upgrade.sh"
-
-    # update tldr definitions
-    tldr --update
-
-    # update antigen plugins
-    antigen update
-	
-	# execute the install script
-	zsh "$DOTFILEDIR/install.zsh"
-
-	# return user to previous directory
-	cd "$currentdir"
+    # Return to previous directory
+    cd "$currentdir"
 }

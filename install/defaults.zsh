@@ -1,12 +1,11 @@
 #!/bin/zsh
+source "${DOTFILEDIR}/install/messages.zsh"
 
 # Quit System Preferences.app if open
 osascript -e 'tell application "System Preferences" to quit'
 
-echo "We're setting our defaults and preferences now. Some of these may require us to use administrator credentials"
-echo "to do so, so we'll ask for your user password if you haven't already authenticated with sudo."
-echo "In some cases it takes awhile for changes to be made, so you may be asked for your adminstrator"
-echo "credentials one more time."
+info "Applying macOS defaults..."
+warn "Some settings require administrator credentials. You may be prompted for your password."
 
 # General
 
@@ -60,9 +59,8 @@ defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
 defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
 
 # Turn off the guest account
-echo "If the guest account is enabled, we will disable it now"
 if grep -q "enabled" <<< "$(sysadminctl -guestAccount status 2>&1)"; then
-    echo "Bummer its enabled. You're going to need to give your password to complete this step"
+    warn "Guest account is enabled. Disabling it now..."
     sudo sysadminctl -guestAccount off
 fi
 
@@ -72,4 +70,4 @@ defaults write com.apple.TextInputMenu visible -bool false
 # Disable Siri menu bar item
 defaults write com.apple.Siri StatusMenuVisible -bool false
 
-echo "All done! Some of the defaults / preferences changes require a logout/restart to take effect."
+success "Defaults applied. Some changes require logout/restart to take effect."

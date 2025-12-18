@@ -1,0 +1,66 @@
+version: '3'
+
+# =============================================================================
+# Include shared helper tasks
+# =============================================================================
+# The underscore (_) namespace provides access to reusable helper tasks defined
+# in helpers.yml. This avoids duplicating safe-link and check-link logic across
+# multiple taskfiles. See helpers.yml for available tasks.
+# =============================================================================
+includes:
+  _: ./helpers.yml
+
+tasks:
+  # ============================================================================
+  # Installation
+  # ============================================================================
+
+  install:
+    desc: "Install work profile configurations"
+    silent: true
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        info "Installing work profile..."
+      - task: links
+      - task: brew
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        success "Work profile configured"
+
+  links:
+    desc: "Create work-specific symlinks"
+    cmds:
+      # Git work config
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/git/work/config-work", TARGET: "{{.XDG_CONFIG_HOME}}/git/work/config-work" }
+      
+      # SSH work config if exists
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/configs/work/config_work", TARGET: "{{.HOME}}/.ssh/config_work" }
+    status:
+      - test -L "{{.XDG_CONFIG_HOME}}/git/work/config-work"
+      - test -L "{{.HOME}}/.ssh/config_work"
+
+  brew:
+    desc: "Install work-specific Homebrew packages"
+    silent: true
+    cmds:
+      - |
+        if [[ -f "{{.DOTFILEDIR}}/install/work/Brewfile.rb" ]]; then
+          eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
+          brew bundle --file "{{.DOTFILEDIR}}/install/work/Brewfile.rb"
+        fi
+
+  # ============================================================================
+  # Validation
+  # ============================================================================
+
+  validate:
+    desc: "Validate work profile symlinks"
+    silent: true
+    cmds:
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/git/work/config-work", NAME: "git config-work" }
+      - task: _:check-link
+        vars: { TARGET: "{{.HOME}}/.ssh/config_work", NAME: "ssh config_work" }

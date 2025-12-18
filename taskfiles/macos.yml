@@ -1,0 +1,98 @@
+version: '3'
+
+tasks:
+  xcode:
+    desc: "Install Xcode command line tools"
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        if xcode-select -p &>/dev/null; then
+          info "Xcode Command Line Tools already installed"
+        else
+          info "Installing Xcode Command Line Tools..."
+          xcode-select --install
+          # Wait for installation to complete
+          until xcode-select -p &>/dev/null; do
+            sleep 5
+          done
+          sudo xcodebuild -license accept
+          success "Xcode Command Line Tools installed"
+        fi
+    status:
+      - xcode-select -p &>/dev/null
+
+  defaults:
+    desc: "Apply macOS system defaults"
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - source "{{.DOTFILEDIR}}/install/defaults.zsh"
+
+  shell:
+    desc: "Set Homebrew zsh as default shell"
+    platforms: [darwin]
+    silent: true
+    vars:
+      BREW_ZSH: '{{.HOMEBREW_PREFIX}}/bin/zsh'
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        BREW_ZSH="{{.BREW_ZSH}}"
+        
+        # Ensure brew is available
+        eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
+        
+        # Add to /etc/shells if not present
+        if ! grep -qxF "$BREW_ZSH" /etc/shells; then
+          info "Adding Homebrew zsh to /etc/shells..."
+          echo "$BREW_ZSH" | sudo tee -a /etc/shells
+          success "Homebrew zsh added to /etc/shells"
+        else
+          info "Homebrew zsh already in /etc/shells"
+        fi
+        
+        info "To set as default shell: chsh -s $BREW_ZSH"
+    status:
+      - |
+        BREW_ZSH="{{.BREW_ZSH}}"
+        grep -qxF "$BREW_ZSH" /etc/shells
+
+  # ============================================================================
+  # Validation
+  # ============================================================================
+
+  validate:
+    desc: "Validate macOS-specific components"
+    platforms: [darwin]
+    silent: true
+    cmds:
+      # Xcode
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        xcode-select -p &>/dev/null && check "Xcode Command Line Tools installed" || cross "Xcode Command Line Tools missing"
+      
+      # Shell configuration
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        BREW_ZSH="{{.HOMEBREW_PREFIX}}/bin/zsh"
+        if grep -qxF "$BREW_ZSH" /etc/shells 2>/dev/null; then
+          check "Homebrew zsh in /etc/shells"
+        else
+          cross "Homebrew zsh not in /etc/shells"
+        fi
+        if [[ "$SHELL" == "$BREW_ZSH" ]]; then
+          check "Default shell is Homebrew zsh"
+        else
+          cross "Default shell is not Homebrew zsh (currently: $SHELL)"
+        fi
+      
+      # 1Password SSH agent
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        if [[ -S "$SSH_AUTH_SOCK" ]] && [[ "$SSH_AUTH_SOCK" == *"1password"* ]]; then
+          check "1Password SSH agent socket active"
+        else
+          cross "1Password SSH agent socket missing or SSH_AUTH_SOCK not set to 1Password"
+        fi

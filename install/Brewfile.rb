@@ -1,16 +1,13 @@
 ###############################
-#  Taps                       #
-###############################
-
-# none!
-
-###############################
 #  Utilities                  #
 ###############################
 
 # we want ZSH as our default shell on all environments
 # and not to use system as to keep it updated with latest
 brew "zsh"
+
+# install go-task for task management
+brew "go-task"
 
 # wget for pulling web data
 brew "wget"
@@ -104,7 +101,6 @@ brew "mas" # https://github.com/mas-cli/mas
 cask_args appdir: "/Applications"
 
 # social
-cask "discord"
 cask "slack"
 
 # music 
@@ -118,12 +114,7 @@ cask "ghostty"
 
 # utilities
 cask "appcleaner"
-cask "protonvpn"
-cask "proton-mail"
-cask "proton-drive"
-cask "dropbox"
 cask "1password"
-cask "cryptomator"
 cask "raycast"
 cask "alcove"
 
@@ -136,9 +127,6 @@ cask "microsoft-excel"
 cask "microsoft-powerpoint"
 cask "zoom"
 
-# games
-cask "nvidia-geforce-now"
-
 # browser
 cask "firefox"
 
@@ -149,8 +137,6 @@ cask "firefox"
 cask "1password-cli"
 cask "miniconda"
 cask "docker-desktop"
-# https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/private-net/warp-to-warp/
-cask "cloudflare-warp" 
 
 ###############################
 #  macOS Apps via App Store   #

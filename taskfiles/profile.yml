@@ -1,0 +1,118 @@
+version: '3'
+
+vars:
+  VALID_PROFILES: "personal work"
+
+tasks:
+  ensure:
+    silent: true
+    desc: "Ensure profile is set with a valid value, prompt if missing or invalid"
+    cmds:
+      - mkdir -p "$(dirname "{{.PROFILE_FILE}}")"
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        VALID_PROFILES=({{.VALID_PROFILES}})
+        CURRENT_PROFILE=""
+        if [[ -f "{{.PROFILE_FILE}}" ]]; then
+          CURRENT_PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null | tr -d '[:space:]')
+        fi
+        # Check if profile is missing, empty, or invalid
+        if [[ -z "$CURRENT_PROFILE" ]] || [[ ! " {{.VALID_PROFILES}} " =~ " $CURRENT_PROFILE " ]]; then
+          echo ""
+          if [[ -n "$CURRENT_PROFILE" ]]; then
+            warn "Invalid profile '$CURRENT_PROFILE'. Please select a valid one:"
+          else
+            warn "No profile configured. Please select one:"
+          fi
+          echo ""
+          for i in "${!VALID_PROFILES[@]}"; do
+            echo "  $((i+1))) ${VALID_PROFILES[$i]}"
+          done
+          echo ""
+          while true; do
+            read -p "Enter choice [1-${#VALID_PROFILES[@]}]: " choice
+            if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#VALID_PROFILES[@]} )); then
+              echo "${VALID_PROFILES[$((choice-1))]}" > "{{.PROFILE_FILE}}"
+              break
+            else
+              error "Invalid choice. Please enter a number between 1 and ${#VALID_PROFILES[@]}."
+            fi
+          done
+          echo ""
+          success "Profile set to: $(cat "{{.PROFILE_FILE}}")"
+        else
+          info "Profile: $CURRENT_PROFILE"
+        fi
+
+  require:
+    silent: true
+    desc: "Require profile to be set (fail if not)"
+    preconditions:
+      - sh: test -f "{{.PROFILE_FILE}}" && test -n "$(cat "{{.PROFILE_FILE}}")"
+        msg: "Profile not set. Run 'task install' or 'task profile:set PROFILE=personal'"
+
+  set:
+    silent: true
+    desc: "Set profile: $ task profile:set -- personal"
+    cmds:
+      - mkdir -p "$(dirname "{{.PROFILE_FILE}}")"
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        INPUT_PROFILE="{{.CLI_ARGS}}"
+        if [[ -z "$INPUT_PROFILE" ]]; then
+          error "Profile required. Use: task profile:set -- personal"
+          exit 1
+        fi
+        if [[ ! " {{.VALID_PROFILES}} " =~ " $INPUT_PROFILE " ]]; then
+          error "Invalid profile '$INPUT_PROFILE'. Must be one of: {{.VALID_PROFILES}}"
+          exit 1
+        fi
+        CURRENT_PROFILE=""
+        if [[ -f "{{.PROFILE_FILE}}" ]]; then
+          CURRENT_PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null | tr -d '[:space:]')
+        fi
+        echo "$INPUT_PROFILE" > "{{.PROFILE_FILE}}"
+        if [[ -n "$CURRENT_PROFILE" && "$CURRENT_PROFILE" != "$INPUT_PROFILE" ]]; then
+          info "Changed profile from '$CURRENT_PROFILE' to '$INPUT_PROFILE'"
+        fi
+        success "Profile set to: $INPUT_PROFILE"
+
+  show:
+    silent: true
+    desc: "Show current profile (ensures profile exists first)"
+    cmds:
+      - task: ensure
+
+  install:
+    silent: true
+    desc: "Run profile-specific installation (ensures profile exists first)"
+    deps:
+      - ensure
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        PROFILE=$(cat "{{.PROFILE_FILE}}")
+        info "Running installation for profile: $PROFILE"
+        task "${PROFILE}:install"
+
+  # ============================================================================
+  # Validation
+  # ============================================================================
+
+  validate:
+    desc: "Validate profile configuration"
+    silent: true
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        PROFILE_FILE="{{.PROFILE_FILE}}"
+        if [[ -f "$PROFILE_FILE" ]]; then
+          PROFILE_VALUE=$(cat "$PROFILE_FILE")
+          if [[ "$PROFILE_VALUE" == "personal" || "$PROFILE_VALUE" == "work" ]]; then
+            check "Profile set to '$PROFILE_VALUE'"
+          else
+            cross "Profile file contains invalid value: '$PROFILE_VALUE'"
+          fi
+        else
+          cross "Profile file missing ($PROFILE_FILE)"
+        fi

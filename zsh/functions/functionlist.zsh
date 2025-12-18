@@ -1,17 +1,25 @@
 #!/bin/zsh
 
-# this function allows you to easily list all of the available funcs
-function functionlist() {    # functionlist() will list all of the available functions. ex: $ functionlist
-    local funcslist=()
-
-    # grab all of the platform agnostic funcs
-    for file in "$DOTFILEDIR/zsh/functions/"*
+# List all custom functions defined in the dotfiles
+function functionlist() {    # functionlist() will list all available common and profile functions. ex: $ functionlist
+    # Common functions (at zsh/functions/*.zsh level)
+    echo "$(tput setaf 3)── Common ──$(tput sgr0)"
+    for file in "$DOTFILEDIR/zsh/functions/"*.zsh(.N)
     do
         if [[ -f $file && ${file:t} != "functionlist.zsh" ]]; then
-            funcslist+=$(grep 'function' "$file" | awk '{$1=$1};1' | highlight --syntax=bash)
-            funcslist+=$'\n'
+            grep 'function' "$file" | awk '{$1=$1};1' | highlight --syntax=bash
         fi
     done
-
-    echo "$funcslist" | awk '{ $1=$1; if (NR==1) { prev=$0; next } print prev; prev=$0 } END { if (NR>0) printf "%s", prev }'
+    
+    # Profile-specific functions (at zsh/functions/$profile/*.zsh)
+    local profile="${DOTFILES_PROFILE:-}"
+    if [[ -n "$profile" && -d "$DOTFILEDIR/zsh/functions/$profile" ]]; then
+        echo ""
+        echo "$(tput setaf 3)── Profile: $profile ──$(tput sgr0)"
+        for file in "$DOTFILEDIR/zsh/functions/$profile/"*.zsh(.N); do
+            if [[ -f $file && ${file:t} != "functionlist.zsh" ]]; then
+                grep 'function' "$file" | awk '{$1=$1};1' | highlight --syntax=bash
+            fi
+        done
+    fi
 }

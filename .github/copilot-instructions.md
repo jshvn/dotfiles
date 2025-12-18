@@ -3,47 +3,80 @@
 Purpose: Give an AI contributor the fastest path to making safe, effective changes in this dotfiles repo.
 
 ### 0. Quick Start
-- Install on macOS: `git clone https://github.com/jshvn/dotfiles.git && cd dotfiles && ./install.zsh`
-- Re-run links only: `zsh install/links.zsh`
-- Re-run Homebrew bundle: `brew bundle --file "$DOTFILEDIR"/install/Brewfile.rb`
-- Update in an interactive Zsh: `update`
+- Fresh install on macOS: `git clone https://github.com/jshvn/dotfiles.git && cd dotfiles && ./bootstrap.zsh`
+- Re-run install: `task install`
+- Update everything interactively: `update` (or `task update` from dotfiles dir)
+- Show all tasks: `task --list`
+- Set/change profile: `task profile:set PROFILE=personal` or `task profile:set PROFILE=work`
+- Validate install: `task validate`
 - Debug `DOTFILEDIR`: `echo $DOTFILEDIR` (in an active zsh session)
+- Show current profile: `echo $DOTFILES_PROFILE` or `task profile:show`
 
 ### 1. Execution Flow (Install Pipeline)
-Fresh macOS install runs `./install.zsh` which:
-1. Resolves and exports `DOTFILEDIR`.
-2. Sources (in order): `install/xdg.zsh`, `install/zdotdir.zsh`, `install/links.zsh`, `install/brew.zsh`, `install/xcode.zsh`, `install/defaults.zsh`, `install/setshell.zsh`.
-3. Prints completion message with color (`tput setaf`).
-All steps abort on first error (`set -e`).
+Fresh macOS install runs `./bootstrap.zsh` which:
+1. Installs go-task if not present (via official install script, not Homebrew).
+2. Runs `task install` which:
+   - Creates XDG directories
+   - Prompts for profile (personal/work) if not set
+   - Configures ZDOTDIR in `/etc/zshenv`
+   - Creates all symlinks
+   - Installs Homebrew and packages (common + profile-specific)
+   - Applies macOS defaults
+   - Runs profile-specific installation
+
+Profile is stored persistently at `${XDG_CONFIG_HOME}/dotfiles/profile`.
+
+**Legacy**: `./install.zsh` still works but shows deprecation warning.
 
 ### 2. Core Layout & Key Files
-- `install.zsh`: orchestrator (entrypoint); resolves `DOTFILEDIR` via `BASH_SOURCE` symlink traversal.
-- `install/*.zsh`: segmented install phases (idempotent expectation).
-- `install/xdg.zsh`: ensures XDG base directories exist early in the flow; creates XDG_CONFIG_HOME, XDG_DATA_HOME, XDG_STATE_HOME, and XDG_CACHE_HOME directories.
-- `install/zdotdir.zsh`: sets up `ZDOTDIR` and manages `/etc/zshenv` for system-wide ZDOTDIR export; ensures ZDOTDIR is available before any zsh config files are sourced.
-- `install/Brewfile.rb`: declarative Homebrew bundle (CLI tools + apps).
-- `install/links.zsh`: symlink creation script; uses `safe_link()` helper function to create parent directories and force-symlink files.
-- `zsh/.zshenv`: sourced by every zsh invocation; sets XDG vars, EDITOR, VEDITOR, VISUAL, BROWSER, ZDOTDIR; minimal and non-interactive safe.
-- `zsh/.zprofile`: login shell initialization; evaluates Homebrew shellenv based on architecture (ARM vs Intel); sets SSH agent.
-- `zsh/.zshrc`: interactive startup; computes `DOTFILEDIR` via `${(%):-%N}` symlink resolution; loads Antigen plugins from oh-my-zsh; auto-sources `zsh/aliases/*` and `zsh/functions/*` via for-loops; includes lazy conda initialization.
-- `zsh/.zlogin`: login shell post-initialization; includes call to `motd()` function 
-- `zsh/.zlogout`: login shell logout hook with extensive documentation; provides cleanup framework but minimal actual cleanup code.
-- `zsh/theme.zsh`: custom theme configuration sourced by `.zshrc`.
-- `zsh/aliases/*.zsh`: utility aliases (loaded lexicographically). Keep side effects minimal. Many use `$(command -v cmd)` for Homebrew tool paths. Files: `general.zsh`, `hardware.zsh`, `jgrid.zsh`, `networking.zsh`.
-- `zsh/functions/*.zsh`: utility functions (loaded lexicographically). Keep side effects minimal. Includes `motd.zsh` for Tron-themed system info display.
+- `bootstrap.zsh`: new entrypoint; installs go-task, runs `task install`.
+- `Taskfile.yml`: main task definitions with global variables.
+- `taskfiles/*.yml`: split taskfiles for modularity:
+  - `common.yml`: XDG, ZDOTDIR, shared utilities
+  - `profile.yml`: profile detection, prompting, persistence
+  - `links.yml`: all symlink tasks with `safe-link` helper
+  - `brew.yml`: Homebrew install and bundle
+  - `macos.yml`: macOS-specific (defaults, xcode, shell)
+  - `personal.yml`: personal profile tasks
+  - `work.yml`: work profile tasks
+- `install.zsh`: deprecated orchestrator (kept for reference).
+- `install/*.zsh`: legacy segmented install phases.
+- `install/Brewfile.rb`: common Homebrew packages (all profiles).
+- `install/personal/Brewfile.rb`: personal-only packages.
+- `install/work/Brewfile.rb`: work-only packages.
+- `zsh/.zshenv`: sourced by every zsh invocation; sets XDG vars, EDITOR, VEDITOR, VISUAL, BROWSER, ZDOTDIR.
+- `zsh/.zprofile`: login shell initialization; evaluates Homebrew shellenv based on architecture.
+- `zsh/.zshrc`: interactive startup; loads profile-aware aliases and functions; includes Antigen guard.
+- `zsh/.zlogin`: login shell post-initialization; calls `motd()` if function exists.
+- `zsh/.zlogout`: login shell logout hook.
+- `zsh/theme.zsh`: custom theme configuration.
+- `zsh/aliases/common/*.zsh`: aliases loaded for all profiles.
+- `zsh/aliases/personal/*.zsh`: personal-only aliases (e.g., jgrid.zsh).
+- `zsh/aliases/work/*.zsh`: work-only aliases.
+- `zsh/functions/*.zsh`: common utility functions.
+- `zsh/functions/personal/*.zsh`: personal-only functions.
+- `zsh/functions/work/*.zsh`: work-only functions.
 - `zsh/styles/`: config files for tools (`eza_style.yaml`, `glow_style.json`).
-- `zsh/configs/`: tool-specific configs (`trippy.toml`, `tlrc.toml`, `condarc`, `ghostty`, `motd_sysinfo.jsonc`, `motd_tron.txt`).
-- `git/config`: main git config with `includeIf` directives for personal and work subdirectory configs; uses delta pager.
-- `git/ignore`: global git ignore file (symlinked as excludesfile).
-- `git/personal/config-personal`: personal git config (email, signing) included conditionally for `~/Git/personal/` repos.
-- `git/work/config-work`: work git config included conditionally for `~/Git/work/` repos.
-- `ssh/configs/config`: main SSH config file symlinked to `$HOME/.ssh/config`.
-- `ssh/configs/personal/config_personal`: personal SSH config included from main config.
-- `ssh/keys/id_ed25519_personal.pub`: public key symlinked to `$HOME/.ssh/`.
-- `ssh/configs/agent.toml`: 1Password SSH agent filtering config symlinked to `$XDG_CONFIG_HOME/1Password/ssh/agent.toml`.
-- `ssh/cloudflared.zsh`: proxy command script for cloudflared SSH tunnels.
+- `zsh/configs/`: tool-specific configs.
+- `git/config`: main git config with `includeIf` directives.
+- `git/personal/config-personal`: personal git config.
+- `git/work/config-work`: work git config.
+- `ssh/configs/config`: main SSH config.
+- `ssh/configs/personal/config_personal`: personal SSH config.
+- `ssh/configs/agent.toml`: 1Password SSH agent config.
 
-### 2.1. Zsh Startup File Order & Purposes
+### 2.1. Profile System
+The dotfiles support two profiles: `personal` and `work`. Profile is stored at `${XDG_CONFIG_HOME}/dotfiles/profile`.
+
+At runtime, `.zshrc` reads the profile and loads:
+- Common aliases from `zsh/aliases/common/`
+- Profile-specific aliases from `zsh/aliases/$DOTFILES_PROFILE/`
+- Common functions from `zsh/functions/*.zsh`
+- Profile-specific functions from `zsh/functions/$DOTFILES_PROFILE/`
+
+The `DOTFILES_PROFILE` environment variable is exported for use in scripts.
+
+### 2.2. Zsh Startup File Order & Purposes
 Zsh sources files in this order for login interactive shells:
 1. `/etc/zshenv` — System-wide environment (exports ZDOTDIR in this setup).
 2. `$ZDOTDIR/.zshenv` (or `~/.zshenv`) — Always sourced (login, non-login, interactive, non-interactive). Sets XDG vars, ZDOTDIR, EDITOR, VEDITOR, VISUAL, BROWSER. Must be minimal and safe for scripts.
@@ -69,19 +102,27 @@ Key principles:
 
 ### 4. Common Tasks (Copy/Paste)
 - Fresh install:
-  `git clone https://github.com/jshvn/dotfiles.git && cd dotfiles && ./install.zsh`
-- Re-run only symlinks (after moving repo):
-  `zsh install/links.zsh`
+  `git clone https://github.com/jshvn/dotfiles.git && cd dotfiles && ./bootstrap.zsh`
+- Re-run full install:
+  `task install`
+- Re-run only symlinks:
+  `task links:all`
 - Re-run Homebrew bundle:
-  `brew bundle --file "$DOTFILEDIR"/install/Brewfile.rb`
+  `task brew:bundle`
 - Update everything interactively (inside a zsh session):
   `update`
+- Set profile:
+  `task profile:set PROFILE=personal` or `task profile:set PROFILE=work`
+- Show current profile:
+  `task profile:show`
+- Validate installation:
+  `task validate`
 - Debug DOTFILEDIR resolution:
   `echo $DOTFILEDIR` (in an active zsh session)
 - Trace zsh startup:
   `zsh -x -i`
-- Homebrew only (manual):
-  `brew update && brew bundle --file "$PWD/install/Brewfile.rb"`
+- Show all available tasks:
+  `task --list`
 
 ### 5. macOS Specifics & Safety
 - Many defaults in `install/defaults.zsh` require `sudo` and affect system behavior (login, UI tweaks). Announce any modifications with rationale before changing.
@@ -90,11 +131,11 @@ Key principles:
 - Shell change logic: only modify `install/setshell.zsh` if adjusting how Zsh is registered; follow existing flow (`/etc/shells`, `chsh -s`).
 
 ### 6. Adding New Capabilities
-- New function: create `zsh/functions/<name>.zsh`; ensure idempotent; no immediate execution beyond declarations; avoid global variable leakage.
-- New alias sets: add `zsh/aliases/<topic>.zsh`; keep each line simple; avoid redefining existing aliases silently.
-- New brew packages: append to `install/Brewfile.rb` in appropriate section (formula vs cask); run bundle to verify.
-- New symlinks: modify `install/links.zsh` following existing pattern using `safe_link()` function; test by re-running links script.
-- New configs: add to `zsh/configs/` and create corresponding symlink in `install/links.zsh` using `safe_link()` to target appropriate XDG location.
+- New function: create `zsh/functions/<name>.zsh` for common, or `zsh/functions/<profile>/<name>.zsh` for profile-specific; ensure idempotent; no immediate execution beyond declarations; avoid global variable leakage.
+- New alias sets: add to `zsh/aliases/common/<topic>.zsh` for all profiles, or `zsh/aliases/<profile>/<topic>.zsh` for profile-specific; keep each line simple; avoid redefining existing aliases silently.
+- New brew packages: append to `install/Brewfile.rb` for common packages, or `install/<profile>/Brewfile.rb` for profile-specific; run `task brew:bundle` to verify.
+- New symlinks: add to `taskfiles/links.yml` using `safe-link` helper task, or to profile-specific taskfiles; test with `task links:all`.
+- New configs: add to `zsh/configs/` and create corresponding symlink entry in `taskfiles/links.yml` targeting appropriate XDG location.
 
 ### 7. Troubleshooting & Diagnostics
 - Check which shell: `echo $SHELL` or `ps -p $$ -o comm=`.
@@ -104,7 +145,8 @@ Key principles:
 - SSH link correctness: `ls -l ~/.ssh` (verify symlinks point to dotfiles repo).
 
 ### 8. Sourcing vs Executing (Important)
-- Sub-steps are sourced by `install.zsh` (e.g., `source "$DOTFILEDIR"/install/brew.zsh`). Keep sub-scripts safe to source: avoid `set -o nounset` pitfalls, prefer returning control to caller.
+- Task-based approach: tasks run as separate shell invocations. Environment changes in one command don't persist to the next unless chained.
+- Sub-steps in legacy `install.zsh` are sourced (e.g., `source "$DOTFILEDIR"/install/brew.zsh`). Keep sub-scripts safe to source: avoid `set -o nounset` pitfalls, prefer returning control to caller.
 - Do not rely on being executed as standalone processes; avoid `exit` in sourced scripts unless you intend to abort the whole install.
 - Maintain idempotency: allow re-runs without breaking links or duplicating config.
 
@@ -122,8 +164,8 @@ DO NOT:
 ### 10. Quick Reference Checklist (Before Merging)
 1. Script passes `shellcheck` (where reasonable) or manual review for obvious issues.
 2. No unintended side effects on load (functions/aliases just define, not execute logic).
-3. Symlink changes tested by running `zsh install/links.zsh`.
-4. Brew additions run cleanly: `brew bundle --file "$DOTFILEDIR"/install/Brewfile.rb`.
+3. Symlink changes tested by running `task links:all`.
+4. Brew additions run cleanly: `task brew:bundle`.
 5. Zsh plugin additions don't break startup (`zsh -x -i` shows successful antigen load).
 
 ### 11. Requesting More Detail

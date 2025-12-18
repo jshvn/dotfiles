@@ -1,0 +1,145 @@
+version: '3'
+
+# =============================================================================
+# Include shared helper tasks
+# =============================================================================
+# The underscore (_) namespace provides access to reusable helper tasks defined
+# in helpers.yml. This avoids duplicating safe-link and check-link logic across
+# multiple taskfiles. See helpers.yml for available tasks.
+# =============================================================================
+includes:
+  _: ./helpers.yml
+
+tasks:
+  # ============================================================================
+  # Symlink Creation
+  # ============================================================================
+
+  all:
+    desc: "Create all symlinks"
+    cmds:
+      - task: zsh
+      - task: git
+      - task: ssh
+      - task: tools
+
+  zsh:
+    desc: "Link zsh configuration files"
+    cmds:
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zshenv", TARGET: "{{.ZDOTDIR}}/.zshenv" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zprofile", TARGET: "{{.ZDOTDIR}}/.zprofile" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zshrc", TARGET: "{{.ZDOTDIR}}/.zshrc" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zlogin", TARGET: "{{.ZDOTDIR}}/.zlogin" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zlogout", TARGET: "{{.ZDOTDIR}}/.zlogout" }
+    status:
+      - test -L "{{.ZDOTDIR}}/.zshenv"
+      - test -L "{{.ZDOTDIR}}/.zprofile"
+      - test -L "{{.ZDOTDIR}}/.zshrc"
+      - test -L "{{.ZDOTDIR}}/.zlogin"
+      - test -L "{{.ZDOTDIR}}/.zlogout"
+
+  git:
+    desc: "Link git configuration files (common)"
+    cmds:
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/git/config", TARGET: "{{.XDG_CONFIG_HOME}}/git/config" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/git/ignore", TARGET: "{{.XDG_CONFIG_HOME}}/git/ignore" }
+    status:
+      - test -L "{{.XDG_CONFIG_HOME}}/git/config"
+      - test -L "{{.XDG_CONFIG_HOME}}/git/ignore"
+
+  ssh:
+    desc: "Link SSH configuration files (common)"
+    cmds:
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/configs/config", TARGET: "{{.HOME}}/.ssh/config" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/cloudflared.zsh", TARGET: "{{.HOME}}/.ssh/cloudflared.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/configs/agent.toml", TARGET: "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml" }
+    status:
+      - test -L "{{.HOME}}/.ssh/config"
+      - test -L "{{.HOME}}/.ssh/cloudflared.zsh"
+      - test -L "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"
+
+  tools:
+    desc: "Link tool configuration files"
+    cmds:
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/trippy.toml", TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/tlrc.toml", TARGET: "{{.XDG_CONFIG_HOME}}/tlrc/config.toml" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/styles/eza_style.yaml", TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/condarc", TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/ghostty", TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/glow.yml", TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow.yml" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/styles/glow_style.json", TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow_style.json" }
+    status:
+      - test -L "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"
+      - test -L "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"
+      - test -L "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"
+      - test -L "{{.XDG_CONFIG_HOME}}/conda/condarc"
+      - test -L "{{.XDG_CONFIG_HOME}}/ghostty/config"
+      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow.yml"
+      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow_style.json"
+
+  # ============================================================================
+  # Validation
+  # ============================================================================
+
+  validate:
+    desc: "Validate all common symlinks"
+    silent: true
+    cmds:
+      # ZSH
+      - task: _:check-link
+        vars: { TARGET: "{{.ZDOTDIR}}/.zshenv", NAME: "zshenv" }
+      - task: _:check-link
+        vars: { TARGET: "{{.ZDOTDIR}}/.zprofile", NAME: "zprofile" }
+      - task: _:check-link
+        vars: { TARGET: "{{.ZDOTDIR}}/.zshrc", NAME: "zshrc" }
+      - task: _:check-link
+        vars: { TARGET: "{{.ZDOTDIR}}/.zlogin", NAME: "zlogin" }
+      - task: _:check-link
+        vars: { TARGET: "{{.ZDOTDIR}}/.zlogout", NAME: "zlogout" }
+      
+      # Git
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/git/config", NAME: "git config" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/git/ignore", NAME: "git ignore" }
+      
+      # SSH
+      - task: _:check-link
+        vars: { TARGET: "{{.HOME}}/.ssh/config", NAME: "ssh config" }
+      - task: _:check-link
+        vars: { TARGET: "{{.HOME}}/.ssh/cloudflared.zsh", NAME: "cloudflared.zsh" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml", NAME: "1Password ssh agent config" }
+      
+      # Tools
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml", NAME: "trippy config" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/tlrc/config.toml", NAME: "tlrc config" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml", NAME: "eza theme" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc", NAME: "conda config" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config", NAME: "ghostty config" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow.yml", NAME: "glow config" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow_style.json", NAME: "glow style" }

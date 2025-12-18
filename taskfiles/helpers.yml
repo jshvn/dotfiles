@@ -1,0 +1,94 @@
+version: '3'
+
+# =============================================================================
+# Shared Helper Tasks
+# =============================================================================
+#
+# This file contains reusable helper tasks that are included by other taskfiles.
+# It provides a single source of truth for common operations like:
+#   - Creating symlinks with parent directory creation
+#   - Validating symlinks, directories, files, and commands
+#
+# Usage in other taskfiles:
+#   includes:
+#     _: ./helpers.yml
+#
+#   tasks:
+#     my-task:
+#       cmds:
+#         - task: _:safe-link
+#           vars: { SOURCE: "...", TARGET: "..." }
+#
+# The underscore (_) namespace is a convention indicating internal/helper tasks.
+# =============================================================================
+
+tasks:
+  # ---------------------------------------------------------------------------
+  # Symlink Creation
+  # ---------------------------------------------------------------------------
+
+  safe-link:
+    desc: "Create a symlink with automatic parent directory creation"
+    internal: true
+    silent: true
+    requires:
+      vars: [SOURCE, TARGET]
+    cmds:
+      - mkdir -p "$(dirname "{{.TARGET}}")"
+      - ln -sf "{{.SOURCE}}" "{{.TARGET}}"
+
+  # ---------------------------------------------------------------------------
+  # Validation Helpers
+  # ---------------------------------------------------------------------------
+
+  check-link:
+    desc: "Validate a symlink exists and points to a valid target"
+    internal: true
+    silent: true
+    requires:
+      vars: [TARGET, NAME]
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        if [[ -L "{{.TARGET}}" ]]; then
+          if [[ -e "{{.TARGET}}" ]]; then
+            check "{{.NAME}} linked"
+          else
+            cross "{{.NAME}} broken (target missing)"
+          fi
+        else
+          cross "{{.NAME}} missing"
+        fi
+
+  check-dir:
+    desc: "Validate a directory exists"
+    internal: true
+    silent: true
+    requires:
+      vars: [TARGET, NAME]
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        test -d "{{.TARGET}}" && check "{{.NAME}} exists" || cross "{{.NAME}} missing"
+
+  check-file:
+    desc: "Validate a file exists"
+    internal: true
+    silent: true
+    requires:
+      vars: [TARGET, NAME]
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        test -f "{{.TARGET}}" && check "{{.NAME}} exists" || cross "{{.NAME}} missing"
+
+  check-command:
+    desc: "Validate a command is available in PATH"
+    internal: true
+    silent: true
+    requires:
+      vars: [CMD, NAME]
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        command -v "{{.CMD}}" &>/dev/null && check "{{.NAME}} installed" || cross "{{.NAME}} missing"

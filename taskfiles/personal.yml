@@ -1,0 +1,71 @@
+version: '3'
+
+# =============================================================================
+# Include shared helper tasks
+# =============================================================================
+# The underscore (_) namespace provides access to reusable helper tasks defined
+# in helpers.yml. This avoids duplicating safe-link and check-link logic across
+# multiple taskfiles. See helpers.yml for available tasks.
+# =============================================================================
+includes:
+  _: ./helpers.yml
+
+tasks:
+  # ============================================================================
+  # Installation
+  # ============================================================================
+
+  install:
+    desc: "Install personal profile configurations"
+    silent: true
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        info "Installing personal profile..."
+      - task: links
+      - task: brew
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        success "Personal profile configured"
+
+  links:
+    desc: "Create personal-specific symlinks"
+    cmds:
+      # Git personal config
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/git/personal/config-personal", TARGET: "{{.XDG_CONFIG_HOME}}/git/personal/config-personal" }
+      
+      # SSH personal config and keys
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/configs/personal/config_personal", TARGET: "{{.HOME}}/.ssh/config_personal" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/keys/id_ed25519_personal.pub", TARGET: "{{.HOME}}/.ssh/id_ed25519_personal.pub" }
+    status:
+      - test -L "{{.XDG_CONFIG_HOME}}/git/personal/config-personal"
+      - test -L "{{.HOME}}/.ssh/config_personal"
+      - test -L "{{.HOME}}/.ssh/id_ed25519_personal.pub"
+
+  brew:
+    desc: "Install personal-specific Homebrew packages"
+    silent: true
+    cmds:
+      - |
+        if [[ -f "{{.DOTFILEDIR}}/install/personal/Brewfile.rb" ]]; then
+          eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
+          brew bundle --file "{{.DOTFILEDIR}}/install/personal/Brewfile.rb"
+        fi
+
+  # ============================================================================
+  # Validation
+  # ============================================================================
+
+  validate:
+    desc: "Validate personal profile symlinks"
+    silent: true
+    cmds:
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/git/personal/config-personal", NAME: "git config-personal" }
+      - task: _:check-link
+        vars: { TARGET: "{{.HOME}}/.ssh/config_personal", NAME: "ssh config_personal" }
+      - task: _:check-link
+        vars: { TARGET: "{{.HOME}}/.ssh/id_ed25519_personal.pub", NAME: "ssh personal public key" }
