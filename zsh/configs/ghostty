@@ -104,6 +104,10 @@ adjust-cell-height = -8%
 # and up font baseline a bit
 adjust-font-baseline = 1
 
+# Use legacy width calculation to match zsh's wcswidth() behavior
+# This prevents cursor/prompt width misalignment with Unicode characters
+grapheme-width-method = legacy
+
 # Disable quit confirmation dialog
 confirm-close-surface = false
 

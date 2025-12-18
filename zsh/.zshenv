@@ -45,6 +45,11 @@ export EDITOR="nano"
 export VEDITOR="code"
 export VISUAL="code"
 
+# Ensure UTF-8 locale for consistent Unicode character width calculation
+# This is critical for prompt width calculation in zsh
+export LANG="${LANG:-en_US.UTF-8}"
+export LC_ALL="${LC_ALL:-en_US.UTF-8}"
+
 # set browser to Firefox (some tools use $BROWSER)
 export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
 

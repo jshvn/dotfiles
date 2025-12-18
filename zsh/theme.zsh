@@ -12,30 +12,31 @@
 # https://github.com/ohmyzsh/ohmyzsh/blob/master/themes/alanpeabody.zsh-theme
 
 # set eza config directory and unset any LS_COLORS that may interfere
-export EZA_CONFIG_DIR="$XDG_CONFIG_HOME/eza"
+export EZA_CONFIG_HOME="$XDG_CONFIG_HOME/eza"
 unset LS_COLORS
 
-local user='%{$fg[green]%}%n@%{$fg[green]%}%m%{$reset_color%}'
-local pwd='%{$fg[blue]%}%~%{$reset_color%}'
-local return_code='%(?..%{$fg[red]%}%? ↵%{$reset_color%})'
-local git_branch='$(git_prompt_status)%{$reset_color%}$(git_prompt_info)%{$reset_color%}'
-local time='%{$fg[cyan]%}%T%{$reset_color%}'
+# Use native zsh prompt escapes (%F{color}...%f) for reliable width calculation
+local user='%F{green}%n@%m%f'
+local pwd='%F{blue}%~%f'
+local return_code='%(?..%F{red}%? ↵%f)'
+local git_branch='$(git_prompt_status)%f$(git_prompt_info)%f'
+local time='%F{cyan}%T%f'
 
-ZSH_THEME_GIT_PROMPT_PREFIX="%{$fg[green]%}"
-ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color%}"
+ZSH_THEME_GIT_PROMPT_PREFIX="%F{green}"
+ZSH_THEME_GIT_PROMPT_SUFFIX="%f"
 ZSH_THEME_GIT_PROMPT_DIRTY=""
 ZSH_THEME_GIT_PROMPT_CLEAN=""
 
-ZSH_THEME_GIT_PROMPT_UNTRACKED="%{$fg[cyan]%} ✭"
-ZSH_THEME_GIT_PROMPT_ADDED="%{$fg[green]%} ✚"
-ZSH_THEME_GIT_PROMPT_MODIFIED="%{$fg[blue]%} ✹"
-ZSH_THEME_GIT_PROMPT_RENAMED="%{$fg[magenta]%} ➜"
-ZSH_THEME_GIT_PROMPT_DELETED="%{$fg[red]%} ✖"
-ZSH_THEME_GIT_PROMPT_UNMERGED="%{$fg[yellow]%} ═"
-ZSH_THEME_GIT_PROMPT_AHEAD="%{$fg[green]%} ↑"
-ZSH_THEME_GIT_PROMPT_BEHIND="%{$fg[red]%} ↓"
-ZSH_THEME_GIT_PROMPT_DIVERGED="%{$fg[yellow]%} ↕"
-ZSH_THEME_GIT_PROMPT_STASHED="%{$fg[blue]%} ⚑"
+ZSH_THEME_GIT_PROMPT_UNTRACKED="%F{cyan} ✭"
+ZSH_THEME_GIT_PROMPT_ADDED="%F{green} ✚"
+ZSH_THEME_GIT_PROMPT_MODIFIED="%F{blue} ✹"
+ZSH_THEME_GIT_PROMPT_RENAMED="%F{magenta} ➜"
+ZSH_THEME_GIT_PROMPT_DELETED="%F{red} ✖"
+ZSH_THEME_GIT_PROMPT_UNMERGED="%F{yellow} ═"
+ZSH_THEME_GIT_PROMPT_AHEAD="%F{green} ↑"
+ZSH_THEME_GIT_PROMPT_BEHIND="%F{red} ↓"
+ZSH_THEME_GIT_PROMPT_DIVERGED="%F{yellow} ↕"
+ZSH_THEME_GIT_PROMPT_STASHED="%F{blue} ⚑"
 
 PROMPT="${user}:${pwd}$ "
 RPROMPT="${return_code} ${git_branch} ${time}"
