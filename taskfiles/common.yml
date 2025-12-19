@@ -17,6 +17,7 @@ tasks:
 
   xdg:
     desc: "Create XDG base directories"
+    run: once
     cmds:
       - |
         source "{{.DOTFILEDIR}}/install/messages.zsh"
