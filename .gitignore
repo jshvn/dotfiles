@@ -134,3 +134,6 @@ Brewfile.rb.lock.json
 
 # macOS DS_Store
 .DS_Store
+
+# Task (go-task) checksum cache
+.task/
