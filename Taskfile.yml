@@ -77,6 +77,7 @@ tasks:
       - |
         source "{{.DOTFILEDIR}}/install/messages.zsh"
         success "Installation complete for profile $(cat {{.PROFILE_FILE}})"
+        success "If this is a brand new install, please restart your system to ensure all settings take effect."
 
   update:
     desc: "Update dotfiles and all dependencies"

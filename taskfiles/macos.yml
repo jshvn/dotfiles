@@ -53,11 +53,29 @@ tasks:
           info "Homebrew zsh already in /etc/shells"
         fi
         
-        info "To set as default shell: chsh -s $BREW_ZSH"
+        # Check current default shell via Directory Services (more reliable than $SHELL)
+        CURRENT_SHELL=$(dscl . -read /Users/$USER UserShell 2>/dev/null | awk '{print $2}')
+        
+        if [[ "$CURRENT_SHELL" == "$BREW_ZSH" ]]; then
+          info "Default shell already set to Homebrew zsh"
+        else
+          info "Changing default shell from $CURRENT_SHELL to $BREW_ZSH..."
+          info "You may be prompted for your password."
+          if chsh -s "$BREW_ZSH"; then
+            success "Default shell changed to Homebrew zsh (effective on next login)"
+          else
+            error "Failed to change default shell. Try running: chsh -s $BREW_ZSH"
+            exit 1
+          fi
+        fi
     status:
       - |
         BREW_ZSH="{{.BREW_ZSH}}"
         grep -qxF "$BREW_ZSH" /etc/shells
+      - |
+        BREW_ZSH="{{.BREW_ZSH}}"
+        CURRENT_SHELL=$(dscl . -read /Users/$USER UserShell 2>/dev/null | awk '{print $2}')
+        [[ "$CURRENT_SHELL" == "$BREW_ZSH" ]]
 
   # ============================================================================
   # Validation
