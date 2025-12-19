@@ -143,3 +143,56 @@ tasks:
         vars: { TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow.yml", NAME: "glow config" }
       - task: _:check-link
         vars: { TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow_style.json", NAME: "glow style" }
+
+  # ============================================================================
+  # Symlink Removal (Unlink)
+  # ============================================================================
+
+  unlink-all:
+    desc: "Remove all symlinks created by dotfiles"
+    prompt: "This will remove all dotfiles symlinks. Continue?"
+    cmds:
+      - task: unlink-zsh
+      - task: unlink-git
+      - task: unlink-ssh
+      - task: unlink-tools
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        success "All symlinks removed"
+
+  unlink-zsh:
+    desc: "Remove zsh symlinks"
+    internal: true
+    cmds:
+      - rm -f "{{.ZDOTDIR}}/.zshenv"
+      - rm -f "{{.ZDOTDIR}}/.zprofile"
+      - rm -f "{{.ZDOTDIR}}/.zshrc"
+      - rm -f "{{.ZDOTDIR}}/.zlogin"
+      - rm -f "{{.ZDOTDIR}}/.zlogout"
+
+  unlink-git:
+    desc: "Remove git symlinks"
+    internal: true
+    cmds:
+      - rm -f "{{.XDG_CONFIG_HOME}}/git/config"
+      - rm -f "{{.XDG_CONFIG_HOME}}/git/ignore"
+
+  unlink-ssh:
+    desc: "Remove SSH symlinks"
+    internal: true
+    cmds:
+      - rm -f "{{.HOME}}/.ssh/config"
+      - rm -f "{{.HOME}}/.ssh/cloudflared.zsh"
+      - rm -f "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"
+
+  unlink-tools:
+    desc: "Remove tool configuration symlinks"
+    internal: true
+    cmds:
+      - rm -f "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"
+      - rm -f "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"
+      - rm -f "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"
+      - rm -f "{{.XDG_CONFIG_HOME}}/conda/condarc"
+      - rm -f "{{.XDG_CONFIG_HOME}}/ghostty/config"
+      - rm -f "{{.XDG_CONFIG_HOME}}/glow/glow.yml"
+      - rm -f "{{.XDG_CONFIG_HOME}}/glow/glow_style.json"
