@@ -7,74 +7,85 @@ Purpose: Give an AI contributor the fastest path to making safe, effective chang
 - Re-run install: `task install`
 - Update everything interactively: `update` (or `task update` from dotfiles dir)
 - Show all tasks: `task --list`
-- Set/change profile: `task profile:set PROFILE=personal` or `task profile:set PROFILE=work`
+- Set/change profile: `task profile:set -- personal` or `task profile:set -- work`
 - Validate install: `task validate`
+- Clean caches: `task clean`
 - Debug `DOTFILEDIR`: `echo $DOTFILEDIR` (in an active zsh session)
 - Show current profile: `echo $DOTFILES_PROFILE` or `task profile:show`
 
 ### 1. Execution Flow (Install Pipeline)
 Fresh macOS install runs `./bootstrap.zsh` which:
-1. Installs go-task if not present (via official install script, not Homebrew).
-2. Runs `task install` which:
-   - Creates XDG directories
-   - Prompts for profile (personal/work) if not set
-   - Configures ZDOTDIR in `/etc/zshenv`
-   - Creates all symlinks
-   - Installs Homebrew and packages (common + profile-specific)
-   - Applies macOS defaults
-   - Runs profile-specific installation
+1. Resolves `DOTFILEDIR` and sources `install/messages.zsh` for colored output.
+2. Installs go-task if not present (via official install script to `/usr/local/bin` or `~/.local/bin`).
+3. Runs `task install` which:
+   - Creates XDG directories (`common:xdg`)
+   - Prompts for profile (personal/work) if not set (`profile:ensure`)
+   - Configures ZDOTDIR in `/etc/zshenv` (`common:zdotdir`)
+   - Creates all symlinks (`links:all`)
+   - Installs Homebrew and packages (`brew:install`)
+   - Applies macOS defaults (`macos:defaults`)
+   - Sets Homebrew zsh as default shell (`macos:shell`)
+   - Runs profile-specific installation (`profile:install`)
 
 Profile is stored persistently at `${XDG_CONFIG_HOME}/dotfiles/profile`.
 
-**Legacy**: `./install.zsh` still works but shows deprecation warning.
-
 ### 2. Core Layout & Key Files
-- `bootstrap.zsh`: new entrypoint; installs go-task, runs `task install`.
-- `Taskfile.yml`: main task definitions with global variables.
-- `taskfiles/*.yml`: split taskfiles for modularity:
-  - `common.yml`: XDG, ZDOTDIR, shared utilities
-  - `profile.yml`: profile detection, prompting, persistence
-  - `links.yml`: all symlink tasks with `safe-link` helper
-  - `brew.yml`: Homebrew install and bundle
-  - `macos.yml`: macOS-specific (defaults, xcode, shell)
-  - `personal.yml`: personal profile tasks
-  - `work.yml`: work profile tasks
-- `install.zsh`: deprecated orchestrator (kept for reference).
-- `install/*.zsh`: legacy segmented install phases.
+- `bootstrap.zsh`: entrypoint; resolves DOTFILEDIR, sources messages.zsh, installs go-task, runs `task install`.
+- `Taskfile.yml`: main task definitions with global variables (HOME, XDG paths, DOTFILEDIR, PROFILE, HOMEBREW_PREFIX).
+- `taskfiles/*.yml`: modular taskfiles:
+  - `helpers.yml`: reusable internal tasks (`safe-link`, `check-link`, `check-dir`, `check-file`, `check-command`). Included via `_:` namespace.
+  - `common.yml`: XDG directory creation, ZDOTDIR configuration, Antigen updates, validation.
+  - `profile.yml`: profile detection, prompting, persistence, and profile-specific installation dispatch.
+  - `links.yml`: all symlink creation and removal tasks (`all`, `zsh`, `git`, `ssh`, `tools`, `unlink-*`).
+  - `brew.yml`: Homebrew installation and bundle management.
+  - `macos.yml`: macOS-specific defaults (dock, appearance, finder, security) and shell configuration.
+  - `personal.yml`: personal profile symlinks and Brewfile.
+  - `work.yml`: work profile symlinks and Brewfile.
+- `install/messages.zsh`: messaging library with `info`, `success`, `warn`, `error`, `debug`, `header`, `step`, `check`, `cross` functions.
 - `install/Brewfile.rb`: common Homebrew packages (all profiles).
 - `install/personal/Brewfile.rb`: personal-only packages.
 - `install/work/Brewfile.rb`: work-only packages.
-- `zsh/.zshenv`: sourced by every zsh invocation; sets XDG vars, EDITOR, VEDITOR, VISUAL, BROWSER, ZDOTDIR.
-- `zsh/.zprofile`: login shell initialization; evaluates Homebrew shellenv based on architecture.
-- `zsh/.zshrc`: interactive startup; loads profile-aware aliases and functions; includes Antigen guard.
+- `zsh/.zshenv`: sourced by every zsh invocation; sets XDG vars, ZDOTDIR, EDITOR, VEDITOR, VISUAL, BROWSER, LANG, LC_ALL, DOTFILES_PROFILE.
+- `zsh/.zprofile`: login shell initialization; evaluates Homebrew shellenv based on architecture; sets SSH_AUTH_SOCK for 1Password.
+- `zsh/.zshrc`: interactive startup; configures history, loads Antigen/oh-my-zsh, sources profile-aware aliases and functions, lazy-loads conda.
 - `zsh/.zlogin`: login shell post-initialization; calls `motd()` if function exists.
-- `zsh/.zlogout`: login shell logout hook.
+- `zsh/.zlogout`: login shell logout hook; flushes history with `fc -W`.
 - `zsh/theme.zsh`: custom theme configuration.
-- `zsh/aliases/common/*.zsh`: aliases loaded for all profiles.
-- `zsh/aliases/personal/*.zsh`: personal-only aliases (e.g., jgrid.zsh).
-- `zsh/aliases/work/*.zsh`: work-only aliases.
-- `zsh/functions/*.zsh`: common utility functions.
-- `zsh/functions/personal/*.zsh`: personal-only functions.
-- `zsh/functions/work/*.zsh`: work-only functions.
-- `zsh/styles/`: config files for tools (`eza_style.yaml`, `glow_style.json`).
-- `zsh/configs/`: tool-specific configs.
+- `zsh/aliases/common/*.zsh`: aliases loaded for all profiles (general.zsh, hardware.zsh, networking.zsh).
+- `zsh/aliases/personal/*.zsh`: personal-only aliases (jgrid.zsh).
+- `zsh/aliases/work/*.zsh`: work-only aliases (directory created as needed).
+- `zsh/functions/*.zsh`: common utility functions (24 files including update.zsh, motd.zsh, etc.).
+- `zsh/functions/personal/*.zsh`: personal-only functions (directory created as needed).
+- `zsh/functions/work/*.zsh`: work-only functions (directory created as needed).
+- `zsh/styles/`: style configs (`eza_style.yaml`, `glow_style.json`).
+- `zsh/configs/`: tool-specific configs (`condarc`, `ghostty`, `glow.yml`, `motd_sysinfo.jsonc`, `motd_tron.txt`, `tlrc.toml`, `trippy.toml`).
 - `git/config`: main git config with `includeIf` directives.
+- `git/ignore`: global gitignore.
 - `git/personal/config-personal`: personal git config.
 - `git/work/config-work`: work git config.
 - `ssh/configs/config`: main SSH config.
 - `ssh/configs/personal/config_personal`: personal SSH config.
+- `ssh/configs/work/`: work SSH config directory (empty, config_work added as needed).
 - `ssh/configs/agent.toml`: 1Password SSH agent config.
+- `ssh/cloudflared.zsh`: Cloudflare tunnel helper script.
+- `ssh/keys/id_ed25519_personal.pub`: personal public key.
 
 ### 2.1. Profile System
 The dotfiles support two profiles: `personal` and `work`. Profile is stored at `${XDG_CONFIG_HOME}/dotfiles/profile`.
 
-At runtime, `.zshrc` reads the profile and loads:
-- Common aliases from `zsh/aliases/common/`
-- Profile-specific aliases from `zsh/aliases/$DOTFILES_PROFILE/`
-- Common functions from `zsh/functions/*.zsh`
-- Profile-specific functions from `zsh/functions/$DOTFILES_PROFILE/`
+At runtime:
+- `.zshenv` reads the profile file and exports `DOTFILES_PROFILE` (defaults to "personal" if not set).
+- `.zshrc` loads profile-aware aliases and functions:
+  - Common aliases from `zsh/aliases/common/`
+  - Profile-specific aliases from `zsh/aliases/$DOTFILES_PROFILE/`
+  - Common functions from `zsh/functions/*.zsh` (excluding subdirectories)
+  - Profile-specific functions from `zsh/functions/$DOTFILES_PROFILE/`
 
-The `DOTFILES_PROFILE` environment variable is exported for use in scripts.
+Profile tasks:
+- `task profile:ensure` - prompts interactively if profile not set or invalid.
+- `task profile:set -- <profile>` - set profile directly (e.g., `task profile:set -- personal`).
+- `task profile:show` - display current profile.
+- `task profile:install` - run profile-specific installation (links + brew).
 
 ### 2.2. Zsh Startup File Order & Purposes
 Zsh sources files in this order for login interactive shells:
@@ -95,10 +106,15 @@ Key principles:
 ### 3. Required Patterns & Conventions
 - Functions: filename ends in `.zsh`, no output unless invoked, safe if sourced multiple times. Define function with `function name() { }` syntax.
 - Aliases: group logically in separate files under `zsh/aliases/` (lexicographic load order). Use `$(command -v cmd)` for Homebrew-installed tools to ensure correct path resolution.
-- Symlinks: follow `install/links.zsh` style using `safe_link()` function: `safe_link "${DOTFILEDIR}/path" "$HOME/target"`; creates parent directories with `mkdir -p` before symlinking; respect `XDG_CONFIG_HOME` when appropriate.
+- Symlinks: use task-based approach with `_:safe-link` helper in taskfiles. Example:
+  ```yaml
+  - task: _:safe-link
+    vars: { SOURCE: "{{.DOTFILEDIR}}/path", TARGET: "{{.XDG_CONFIG_HOME}}/target" }
+  ```
+  The helper creates parent directories automatically with `mkdir -p` before symlinking.
 - Path resolution: reuse the existing `BASH_SOURCE` / `${(%):-%N}` symlink traversal approach; avoid hardcoding repo paths.
-- Plugins: `zsh/.zshrc` uses Antigen at `$HOMEBREW_PREFIX/share/antigen/antigen.zsh`; add bundles with `antigen bundle <repo>` lines near existing ones; run `antigen apply` after all bundles.
-- Colorization: use `highlight --syntax=<type>` for piped output; use `tput setaf <color>` for direct terminal output; always reset with `tput sgr0`.
+- Plugins: `zsh/.zshrc` uses Antigen at `$HOMEBREW_PREFIX/share/antigen/antigen.zsh`; add bundles with `antigen bundle <repo>` lines near existing ones; run `antigen apply` after all bundles. Includes a guard for partial installs.
+- Colorization: use `tput setaf <color>` for direct terminal output; always reset with `tput sgr0`. For install scripts, use `install/messages.zsh` functions.
 
 ### 4. Common Tasks (Copy/Paste)
 - Fresh install:
@@ -112,11 +128,13 @@ Key principles:
 - Update everything interactively (inside a zsh session):
   `update`
 - Set profile:
-  `task profile:set PROFILE=personal` or `task profile:set PROFILE=work`
+  `task profile:set -- personal` or `task profile:set -- work`
 - Show current profile:
   `task profile:show`
 - Validate installation:
   `task validate`
+- Clean caches:
+  `task clean`
 - Debug DOTFILEDIR resolution:
   `echo $DOTFILEDIR` (in an active zsh session)
 - Trace zsh startup:
@@ -125,10 +143,10 @@ Key principles:
   `task --list`
 
 ### 5. macOS Specifics & Safety
-- Many defaults in `install/defaults.zsh` require `sudo` and affect system behavior (login, UI tweaks). Announce any modifications with rationale before changing.
+- macOS defaults are split into subtasks in `macos.yml`: `defaults-general`, `defaults-dock`, `defaults-appearance`, `defaults-finder`, `defaults-misc`. Each includes status checks to avoid redundant writes.
 - Preserve `set -e` in all orchestrated scripts—do not mask failing commands unless explicitly handled.
-- Detect Homebrew prefix (`/opt/homebrew` ARM vs `/usr/local` Intel) exactly as in existing scripts; do not hardcode.
-- Shell change logic: only modify `install/setshell.zsh` if adjusting how Zsh is registered; follow existing flow (`/etc/shells`, `chsh -s`).
+- Detect Homebrew prefix (`/opt/homebrew` ARM vs `/usr/local` Intel vs `/home/linuxbrew/.linuxbrew` Linux) exactly as in existing scripts; do not hardcode.
+- Shell change logic: `macos:shell` task adds Homebrew zsh to `/etc/shells` and uses `chsh -s` to set default; uses Directory Services (`dscl`) to verify current shell.
 
 ### 6. Adding New Capabilities
 - New function: create `zsh/functions/<name>.zsh` for common, or `zsh/functions/<profile>/<name>.zsh` for profile-specific; ensure idempotent; no immediate execution beyond declarations; avoid global variable leakage.
@@ -145,10 +163,10 @@ Key principles:
 - SSH link correctness: `ls -l ~/.ssh` (verify symlinks point to dotfiles repo).
 
 ### 8. Sourcing vs Executing (Important)
-- Task-based approach: tasks run as separate shell invocations. Environment changes in one command don't persist to the next unless chained.
-- Sub-steps in legacy `install.zsh` are sourced (e.g., `source "$DOTFILEDIR"/install/brew.zsh`). Keep sub-scripts safe to source: avoid `set -o nounset` pitfalls, prefer returning control to caller.
+- Task-based approach: tasks run as separate shell invocations. Environment changes in one command don't persist to the next unless chained with `&&` or heredocs.
+- Tasks source `install/messages.zsh` at the start of commands that need messaging functions.
 - Do not rely on being executed as standalone processes; avoid `exit` in sourced scripts unless you intend to abort the whole install.
-- Maintain idempotency: allow re-runs without breaking links or duplicating config.
+- Maintain idempotency: allow re-runs without breaking links or duplicating config. Tasks use `status:` checks to skip already-completed work.
 
 ### 9. Do / Do Not
 DO:
@@ -156,7 +174,7 @@ DO:
 - Maintain portability (avoid hardcoding absolute user paths).
 - Document any system-level change in commit message / PR description.
 DO NOT:
-- Rewrite `install/defaults.zsh` wholesale.
+- Rewrite macOS defaults in `macos.yml` wholesale without understanding each setting.
 - Introduce interactive prompts in non-interactive scripts.
 - Assume Linux parity for macOS-specific defaults.
 - Hardcode Homebrew prefix or shell paths.
@@ -176,15 +194,17 @@ Use `tput` for portability; reset with `tput sgr0`.
 Example: `echo "$(tput setaf 2)Success$(tput sgr0)"`
 
 ### 13. Known Quirks & Accuracy Notes
-- `install.zsh` correctly computes `INSTALLFILEDIR` and exports `DOTFILEDIR="$INSTALLFILEDIR"` which points to the repo root. All subordinate scripts rely on this.
+- `bootstrap.zsh` resolves `DOTFILEDIR` using symlink traversal before sourcing any other files.
 - `.zshrc` also computes `DOTFILEDIR` dynamically using symlink resolution from `${(%):-%N}` to support interactive sessions.
+- `.zshenv` reads the profile file and exports `DOTFILES_PROFILE` for use throughout the shell session.
 - macOS is the primary target. Linux support is opportunistic; do not assume parity without checks.
-- The `update()` function in `zsh/functions/update.zsh` references `tldr --update`; the installed package `tlrc` provides a `tldr` binary for compatibility.
+- The `update()` function in `zsh/functions/update.zsh` calls `task update` which handles oh-my-zsh, tldr, and antigen updates.
 - Many aliases use `$(command -v <command>)` expansion for portability (e.g., `alias ls="$(command -v eza)"`). This resolves at shell initialization to Homebrew-installed tools.
-- Syntax highlighting is ubiquitous: `highlight` command is piped throughout aliases for colorized output (history, path, hardware info).
-- The `safe_link()` function in `install/links.zsh` creates parent directories automatically before creating symlinks, avoiding common path errors.
-- ZDOTDIR is managed via `/etc/zshenv` (configured by `install/zdotdir.zsh`) to ensure it's set system-wide before any user zsh files are sourced.
-- The MOTD system uses config files in `zsh/configs/` (`motd_sysinfo.jsonc`, `motd_tron.txt`) and can be triggered by uncommenting the `motd()` call in `.zlogin`.
+- The `_:safe-link` helper in `taskfiles/helpers.yml` creates parent directories automatically before creating symlinks.
+- ZDOTDIR is managed via `/etc/zshenv` (configured by `common:zdotdir` task) to ensure it's set system-wide before any user zsh files are sourced.
+- The MOTD system uses config files in `zsh/configs/` (`motd_sysinfo.jsonc`, `motd_tron.txt`) and is displayed via `.zlogin` calling `motd()` if the function exists.
+- SSH agent is set to 1Password in `.zprofile` via `SSH_AUTH_SOCK` export.
+- Antigen has a guard in `.zshrc` that shows a warning if not installed, allowing partial installs to proceed.
 
 ### 14. Security & Secrets
 - Never commit private keys. Files under `ssh/keys/` are public keys or placeholders only.
