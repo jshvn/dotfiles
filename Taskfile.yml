@@ -114,10 +114,8 @@ tasks:
       - |
         source "{{.DOTFILEDIR}}/install/messages.zsh"
         PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null)
-        if [[ "$PROFILE" == "personal" ]]; then
-          task personal:validate
-        elif [[ "$PROFILE" == "work" ]]; then
-          task work:validate
+        if [[ -n "$PROFILE" ]]; then
+          task "${PROFILE}:validate"
         fi
 
       - |

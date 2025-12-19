@@ -74,7 +74,7 @@ Profile is stored persistently at `${XDG_CONFIG_HOME}/dotfiles/profile`.
 The dotfiles support two profiles: `personal` and `work`. Profile is stored at `${XDG_CONFIG_HOME}/dotfiles/profile`.
 
 At runtime:
-- `.zshenv` reads the profile file and exports `DOTFILES_PROFILE` (defaults to "personal" if not set).
+- `.zshenv` reads the profile file and exports `DOTFILES_PROFILE`.
 - `.zshrc` loads profile-aware aliases and functions:
   - Common aliases from `zsh/aliases/common/`
   - Profile-specific aliases from `zsh/aliases/$DOTFILES_PROFILE/`

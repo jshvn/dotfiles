@@ -106,12 +106,13 @@ tasks:
       - |
         source "{{.DOTFILEDIR}}/install/messages.zsh"
         PROFILE_FILE="{{.PROFILE_FILE}}"
+        VALID_PROFILES=({{.VALID_PROFILES}})
         if [[ -f "$PROFILE_FILE" ]]; then
           PROFILE_VALUE=$(cat "$PROFILE_FILE")
-          if [[ "$PROFILE_VALUE" == "personal" || "$PROFILE_VALUE" == "work" ]]; then
+          if [[ " {{.VALID_PROFILES}} " =~ " $PROFILE_VALUE " ]]; then
             check "Profile set to '$PROFILE_VALUE'"
           else
-            cross "Profile file contains invalid value: '$PROFILE_VALUE'"
+            cross "Profile file contains invalid value: '$PROFILE_VALUE' (valid: ${VALID_PROFILES[*]})"
           fi
         else
           cross "Profile file missing ($PROFILE_FILE)"
