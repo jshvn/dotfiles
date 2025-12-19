@@ -70,7 +70,6 @@ tasks:
       - task: common:zdotdir
       - task: links:all
       - task: brew:install
-      - task: macos:xcode
       - task: macos:defaults
       - task: macos:shell
       - task: profile:install

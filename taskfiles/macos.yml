@@ -1,34 +1,108 @@
 version: '3'
 
 tasks:
-  xcode:
-    desc: "Install Xcode command line tools"
-    platforms: [darwin]
-    silent: true
-    cmds:
-      - |
-        source "{{.DOTFILEDIR}}/install/messages.zsh"
-        if xcode-select -p &>/dev/null; then
-          info "Xcode Command Line Tools already installed"
-        else
-          info "Installing Xcode Command Line Tools..."
-          xcode-select --install
-          # Wait for installation to complete
-          until xcode-select -p &>/dev/null; do
-            sleep 5
-          done
-          sudo xcodebuild -license accept
-          success "Xcode Command Line Tools installed"
-        fi
-    status:
-      - xcode-select -p &>/dev/null
-
   defaults:
     desc: "Apply macOS system defaults"
     platforms: [darwin]
     silent: true
     cmds:
-      - source "{{.DOTFILEDIR}}/install/defaults.zsh"
+      - task: defaults-init
+      - task: defaults-general
+      - task: defaults-dock
+      - task: defaults-appearance
+      - task: defaults-finder
+      - task: defaults-misc
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        success "Defaults applied. Some changes require logout/restart to take effect."
+
+  defaults-init:
+    desc: "Prepare for defaults application"
+    internal: true
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - osascript -e 'tell application "System Preferences" to quit' 2>/dev/null || true
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        info "Applying macOS defaults..."
+        warn "Some settings require administrator credentials. You may be prompted for your password."
+
+  defaults-general:
+    desc: "Apply general security defaults"
+    internal: true
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - defaults write com.apple.screensaver askForPassword -int 1
+      - defaults write com.apple.screensaver askForPasswordDelay -int 0
+    status:
+      - '[[ $(defaults read com.apple.screensaver askForPassword 2>/dev/null) == "1" ]]'
+      - '[[ $(defaults read com.apple.screensaver askForPasswordDelay 2>/dev/null) == "0" ]]'
+
+  defaults-dock:
+    desc: "Apply Dock configuration defaults"
+    internal: true
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - defaults write com.apple.dock orientation -string "bottom"
+      - defaults write com.apple.dock tilesize -int 45
+      - defaults write com.apple.dock autohide -bool true
+      - defaults write com.apple.dock mineffect -string "genie"
+      - defaults write com.apple.dock show-recents -bool true
+      - defaults write com.apple.dock mru-spaces -bool false
+    status:
+      - '[[ $(defaults read com.apple.dock orientation 2>/dev/null) == "bottom" ]]'
+      - '[[ $(defaults read com.apple.dock tilesize 2>/dev/null) == "45" ]]'
+      - '[[ $(defaults read com.apple.dock autohide 2>/dev/null) == "1" ]]'
+
+  defaults-appearance:
+    desc: "Apply appearance defaults (dark mode, scroll direction)"
+    internal: true
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - defaults write NSGlobalDomain AppleInterfaceStyle -string Dark
+      - defaults write NSGlobalDomain AppleIconAppearanceTheme -string RegularDark
+      - defaults write -g com.apple.swipescrolldirection -bool false
+    status:
+      - '[[ $(defaults read NSGlobalDomain AppleInterfaceStyle 2>/dev/null) == "Dark" ]]'
+      - '[[ $(defaults read -g com.apple.swipescrolldirection 2>/dev/null) == "0" ]]'
+
+  defaults-finder:
+    desc: "Apply Finder defaults"
+    internal: true
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+      - defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+      - defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
+      - /usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
+      - /usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
+      - /usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
+    status:
+      - '[[ $(defaults read NSGlobalDomain AppleShowAllExtensions 2>/dev/null) == "1" ]]'
+      - '[[ $(defaults read com.apple.finder FXPreferredViewStyle 2>/dev/null) == "clmv" ]]'
+
+  defaults-misc:
+    desc: "Apply miscellaneous defaults"
+    internal: true
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
+      - defaults write com.apple.TextInputMenu visible -bool false
+      - defaults write com.apple.Siri StatusMenuVisible -bool false
+      - |
+        if sysadminctl -guestAccount status 2>&1 | grep -q "enabled"; then
+          source "{{.DOTFILEDIR}}/install/messages.zsh"
+          warn "Guest account is enabled. Disabling it now..."
+          sudo sysadminctl -guestAccount off
+        else
+          : # Guest account already disabled, nothing to do
+        fi
 
   shell:
     desc: "Set Homebrew zsh as default shell"
@@ -86,11 +160,6 @@ tasks:
     platforms: [darwin]
     silent: true
     cmds:
-      # Xcode
-      - |
-        source "{{.DOTFILEDIR}}/install/messages.zsh"
-        xcode-select -p &>/dev/null && check "Xcode Command Line Tools installed" || cross "Xcode Command Line Tools missing"
-      
       # Shell configuration
       - |
         source "{{.DOTFILEDIR}}/install/messages.zsh"
