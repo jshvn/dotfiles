@@ -16,7 +16,7 @@ function sshlist() {    #  sshlist() will list all configured SSH hosts for the 
     fi
     
     # Profile-specific SSH config
-    local profile_config="$DOTFILEDIR/ssh/configs/$profile/config_$profile"
+    local profile_config="$DOTFILEDIR/ssh/configs/config-$profile"
     if [[ -f "$profile_config" ]]; then
         echo ""
         echo "$(tput setaf 3)── Profile: $profile ──$(tput sgr0)"
@@ -26,5 +26,5 @@ function sshlist() {    #  sshlist() will list all configured SSH hosts for the 
     fi
     
     echo ""
-    echo "$(tput setaf 8)Config files: ~/.ssh/config, ~/.ssh/config_$profile$(tput sgr0)"
+    echo "$(tput setaf 8)Config files: ~/.ssh/config, ~/.ssh/config-$profile$(tput sgr0)"
 }

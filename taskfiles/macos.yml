@@ -178,10 +178,13 @@ tasks:
       # 1Password SSH agent (skipped on machines named "server" which use system ssh-agent)
       - |
         source "{{.DOTFILEDIR}}/install/messages.zsh"
-        if [[ "$(hostname -s)" == "server" ]]; then
+        CURRENT_PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null | tr -d '[:space:]')
+        if [[ "$CURRENT_PROFILE" == "server" ]]; then
           check "Server profile: using system ssh-agent (1Password check skipped)"
-        elif [[ -S "$SSH_AUTH_SOCK" ]] && [[ "$SSH_AUTH_SOCK" == *"1password"* ]]; then
-          check "1Password SSH agent socket active"
-        else
-          cross "1Password SSH agent socket missing or SSH_AUTH_SOCK not set to 1Password"
+        else 
+          if [[ -S "$SSH_AUTH_SOCK" ]] && [[ "$SSH_AUTH_SOCK" == *"1password"* ]]; then
+            check "1Password SSH agent socket active"
+          else
+            cross "1Password SSH agent socket missing or SSH_AUTH_SOCK not set to 1Password"
+          fi
         fi
