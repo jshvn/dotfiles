@@ -13,5 +13,7 @@
 # Note: MOTD is now available as a function - call 'motd' to display
 # -----------------------------------------------------------------------------
 
-# Uncomment to auto-display MOTD on login:
-motd
+# Display MOTD on login if function exists (may be profile-specific)
+if (( $+functions[motd] )); then
+    motd
+fi

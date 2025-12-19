@@ -1,9 +1,11 @@
 [user]
 	name = Josh Vaughen
 [includeIf "gitdir/i:~/git/personal/"]
-    path = personal/config-personal
+    path = config-personal
+[includeIf "gitdir/i:~/git/server/"]
+    path = config-server
 [includeIf "gitdir/i:~/git/work/"]
-    path = work/config-work
+    path = config-work
 [core]
 	editor = code
 	excludesfile = ignore

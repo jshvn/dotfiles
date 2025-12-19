@@ -1,0 +1,67 @@
+version: '3'
+
+# =============================================================================
+# Include shared helper tasks
+# =============================================================================
+# The underscore (_) namespace provides access to reusable helper tasks defined
+# in helpers.yml. This avoids duplicating validation logic across taskfiles.
+# See helpers.yml for available tasks.
+# =============================================================================
+includes:
+  _: ./helpers.yml
+
+tasks:
+  install:
+    desc: "Install Homebrew and packages"
+    cmds:
+      - task: ensure-homebrew
+      - task: bundle
+
+  ensure-homebrew:
+    desc: "Install Homebrew if not present"
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        if ! command -v brew &> /dev/null; then
+          info "Installing Homebrew..."
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          
+          # Load Homebrew into current environment
+          eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
+          success "Homebrew installed"
+        else
+          info "Homebrew already installed"
+        fi
+    status:
+      - command -v brew
+
+  bundle:
+    desc: "Install packages from Brewfile"
+    silent: true
+    deps: [ensure-homebrew]
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        # Ensure brew is in PATH for this command
+        eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
+        
+        info "Updating Homebrew..."
+        brew update
+        brew upgrade
+        brew cleanup --prune=30
+        success "Homebrew updated"
+        
+        info "Installing packages from Brewfile..."
+        brew bundle --file "{{.DOTFILEDIR}}/install/Brewfile.rb"
+        success "Brewfile packages installed"
+
+  # ============================================================================
+  # Validation
+  # ============================================================================
+
+  validate:
+    desc: "Validate Homebrew installation"
+    silent: true
+    cmds:
+      - task: _:check-command
+        vars: { CMD: "brew", NAME: "Homebrew" }

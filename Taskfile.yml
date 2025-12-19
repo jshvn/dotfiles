@@ -1,0 +1,137 @@
+version: '3'
+
+vars:
+  # Debug
+  DEBUG_OUTPUT: false
+
+  # Core paths
+  HOME: '{{.HOME}}'
+  XDG_CONFIG_HOME: '{{.HOME}}/.config'
+  XDG_DATA_HOME: '{{.HOME}}/.local/share'
+  XDG_STATE_HOME: '{{.HOME}}/.local/state'
+  XDG_CACHE_HOME: '{{.HOME}}/.cache'
+  ZDOTDIR: '{{.XDG_CONFIG_HOME}}/zsh'
+  
+  # Dotfiles paths
+  DOTFILEDIR:
+    sh: cd "$(dirname "$(realpath "${BASH_SOURCE[0]:-$0}")")" 2>/dev/null && pwd || pwd
+  PROFILE_FILE: '{{.XDG_CONFIG_HOME}}/dotfiles/profile'
+  
+  # Profile - read from file, empty if not set (evaluated at parse time)
+  PROFILE:
+    sh: cat "{{.XDG_CONFIG_HOME}}/dotfiles/profile" 2>/dev/null || echo ""
+  
+  # Homebrew prefix - defined here so all taskfiles can access it
+  HOMEBREW_PREFIX:
+    sh: |
+      if [[ "$(uname)" == "Darwin" ]]; then
+        if [[ "$(uname -m)" == "arm64" ]]; then
+          echo "/opt/homebrew"
+        else
+          echo "/usr/local"
+        fi
+      else
+        echo "/home/linuxbrew/.linuxbrew"
+      fi
+
+includes:
+  common: ./taskfiles/common.yml
+  profile: ./taskfiles/profile.yml
+  links: ./taskfiles/links.yml
+  brew: ./taskfiles/brew.yml
+  macos: ./taskfiles/macos.yml
+  personal:
+    taskfile: ./taskfiles/profile-tasks.yml
+    vars:
+      TARGET_PROFILE: personal
+  work:
+    taskfile: ./taskfiles/profile-tasks.yml
+    vars:
+      TARGET_PROFILE: work
+  server:
+    taskfile: ./taskfiles/profile-tasks.yml
+    vars:
+      TARGET_PROFILE: server
+
+tasks:
+  default:
+    desc: "Show available tasks"
+    silent: true
+    cmds:
+      - task --list
+
+  install:
+    desc: "Full dotfiles installation"
+    silent: true
+    summary: |
+      Installs all dotfiles components for the configured profile.
+      
+      Usage:
+        ./bootstrap.zsh              # Fresh install (prompts for profile)
+        task install                 # Re-install with saved profile (also prompts for profile if missing)
+    cmds:
+      - task: common:xdg
+      - task: profile:ensure
+      - task: common:zdotdir
+      - task: links:all
+      - task: brew:install
+      - task: macos:defaults
+      - task: macos:shell
+      - task: profile:install
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        success "Installation complete for profile $(cat {{.PROFILE_FILE}})"
+        success "If this is a brand new install, please restart your system to ensure all settings take effect."
+
+  update:
+    desc: "Update dotfiles and all dependencies"
+    summary: |
+      Updates the dotfiles installation:
+        - Pulls latest from git
+        - Updates Homebrew packages
+        - Updates oh-my-zsh
+        - Updates tldr definitions
+        - Updates antigen plugins
+        - Re-runs profile installation
+    cmds:
+      - cmd: 'git pull'
+      - cmd: 'zsh "$ZSH/tools/upgrade.sh"'
+      - cmd: 'tldr --update'
+      - task: common:antigen-update
+      - task: install
+
+  validate:
+    desc: "Validate dotfiles installation"
+    silent: true
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        info "Validating installation for profile: $(cat {{.PROFILE_FILE}} 2>/dev/null || echo 'not set')"
+      
+      # Validate each component via its own taskfile
+      - task: common:validate
+      - task: profile:validate
+      - task: links:validate
+      - task: brew:validate
+      - task: macos:validate
+      
+      # Profile-specific validation (conditional)
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null)
+        if [[ -n "$PROFILE" ]]; then
+          task "${PROFILE}:validate"
+        fi
+
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        success "Validation complete"
+
+  clean:
+    desc: "Remove caches and generated files"
+    cmds:
+      - rm -rf {{.XDG_CACHE_HOME}}/antigen
+      - rm -rf {{.XDG_CACHE_HOME}}/zsh
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        success "Caches cleaned"

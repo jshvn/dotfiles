@@ -1,0 +1,187 @@
+version: '3'
+
+tasks:
+  defaults:
+    desc: "Apply macOS system defaults"
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - task: defaults-init
+      - task: defaults-general
+      - task: defaults-dock
+      - task: defaults-appearance
+      - task: defaults-finder
+      - task: defaults-misc
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        success "Defaults applied. Some changes require logout/restart to take effect."
+
+  defaults-init:
+    desc: "Prepare for defaults application"
+    internal: true
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - osascript -e 'tell application "System Preferences" to quit' 2>/dev/null || true
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        info "Applying macOS defaults..."
+        warn "Some settings require administrator credentials. You may be prompted for your password."
+
+  defaults-general:
+    desc: "Apply general security defaults"
+    internal: true
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - defaults write com.apple.screensaver askForPassword -int 1
+      - defaults write com.apple.screensaver askForPasswordDelay -int 0
+    status:
+      - '[[ $(defaults read com.apple.screensaver askForPassword 2>/dev/null) == "1" ]]'
+      - '[[ $(defaults read com.apple.screensaver askForPasswordDelay 2>/dev/null) == "0" ]]'
+
+  defaults-dock:
+    desc: "Apply Dock configuration defaults"
+    internal: true
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - defaults write com.apple.dock orientation -string "bottom"
+      - defaults write com.apple.dock tilesize -int 45
+      - defaults write com.apple.dock autohide -bool true
+      - defaults write com.apple.dock mineffect -string "genie"
+      - defaults write com.apple.dock show-recents -bool true
+      - defaults write com.apple.dock mru-spaces -bool false
+    status:
+      - '[[ $(defaults read com.apple.dock orientation 2>/dev/null) == "bottom" ]]'
+      - '[[ $(defaults read com.apple.dock tilesize 2>/dev/null) == "45" ]]'
+      - '[[ $(defaults read com.apple.dock autohide 2>/dev/null) == "1" ]]'
+
+  defaults-appearance:
+    desc: "Apply appearance defaults (dark mode, scroll direction)"
+    internal: true
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - defaults write NSGlobalDomain AppleInterfaceStyle -string Dark
+      - defaults write NSGlobalDomain AppleIconAppearanceTheme -string RegularDark
+      - defaults write -g com.apple.swipescrolldirection -bool false
+    status:
+      - '[[ $(defaults read NSGlobalDomain AppleInterfaceStyle 2>/dev/null) == "Dark" ]]'
+      - '[[ $(defaults read -g com.apple.swipescrolldirection 2>/dev/null) == "0" ]]'
+
+  defaults-finder:
+    desc: "Apply Finder defaults"
+    internal: true
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+      - defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+      - defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
+      - /usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
+      - /usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
+      - /usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
+    status:
+      - '[[ $(defaults read NSGlobalDomain AppleShowAllExtensions 2>/dev/null) == "1" ]]'
+      - '[[ $(defaults read com.apple.finder FXPreferredViewStyle 2>/dev/null) == "clmv" ]]'
+
+  defaults-misc:
+    desc: "Apply miscellaneous defaults"
+    internal: true
+    platforms: [darwin]
+    silent: true
+    cmds:
+      - defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
+      - defaults write com.apple.TextInputMenu visible -bool false
+      - defaults write com.apple.Siri StatusMenuVisible -bool false
+      - |
+        if sysadminctl -guestAccount status 2>&1 | grep -q "enabled"; then
+          source "{{.DOTFILEDIR}}/install/messages.zsh"
+          warn "Guest account is enabled. Disabling it now..."
+          sudo sysadminctl -guestAccount off
+        else
+          : # Guest account already disabled, nothing to do
+        fi
+
+  shell:
+    desc: "Set Homebrew zsh as default shell"
+    platforms: [darwin]
+    silent: true
+    vars:
+      BREW_ZSH: '{{.HOMEBREW_PREFIX}}/bin/zsh'
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        BREW_ZSH="{{.BREW_ZSH}}"
+        
+        # Ensure brew is available
+        eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
+        
+        # Add to /etc/shells if not present
+        if ! grep -qxF "$BREW_ZSH" /etc/shells; then
+          info "Adding Homebrew zsh to /etc/shells..."
+          echo "$BREW_ZSH" | sudo tee -a /etc/shells
+          success "Homebrew zsh added to /etc/shells"
+        else
+          info "Homebrew zsh already in /etc/shells"
+        fi
+        
+        # Check current default shell via Directory Services (more reliable than $SHELL)
+        CURRENT_SHELL=$(dscl . -read /Users/$USER UserShell 2>/dev/null | awk '{print $2}')
+        
+        if [[ "$CURRENT_SHELL" == "$BREW_ZSH" ]]; then
+          info "Default shell already set to Homebrew zsh"
+        else
+          info "Changing default shell from $CURRENT_SHELL to $BREW_ZSH..."
+          info "You may be prompted for your password."
+          if chsh -s "$BREW_ZSH"; then
+            success "Default shell changed to Homebrew zsh (effective on next login)"
+          else
+            error "Failed to change default shell. Try running: chsh -s $BREW_ZSH"
+            exit 1
+          fi
+        fi
+    status:
+      - |
+        BREW_ZSH="{{.BREW_ZSH}}"
+        grep -qxF "$BREW_ZSH" /etc/shells
+      - |
+        BREW_ZSH="{{.BREW_ZSH}}"
+        CURRENT_SHELL=$(dscl . -read /Users/$USER UserShell 2>/dev/null | awk '{print $2}')
+        [[ "$CURRENT_SHELL" == "$BREW_ZSH" ]]
+
+  # ============================================================================
+  # Validation
+  # ============================================================================
+
+  validate:
+    desc: "Validate macOS-specific components"
+    platforms: [darwin]
+    silent: true
+    cmds:
+      # Shell configuration
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        BREW_ZSH="{{.HOMEBREW_PREFIX}}/bin/zsh"
+        if grep -qxF "$BREW_ZSH" /etc/shells 2>/dev/null; then
+          check "Homebrew zsh in /etc/shells"
+        else
+          cross "Homebrew zsh not in /etc/shells"
+        fi
+        if [[ "$SHELL" == "$BREW_ZSH" ]]; then
+          check "Default shell is Homebrew zsh"
+        else
+          cross "Default shell is not Homebrew zsh (currently: $SHELL)"
+        fi
+      
+      # 1Password SSH agent (skipped on machines named "server" which use system ssh-agent)
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        if [[ "$(hostname -s)" == "server" ]]; then
+          check "Server profile: using system ssh-agent (1Password check skipped)"
+        elif [[ -S "$SSH_AUTH_SOCK" ]] && [[ "$SSH_AUTH_SOCK" == *"1password"* ]]; then
+          check "1Password SSH agent socket active"
+        else
+          cross "1Password SSH agent socket missing or SSH_AUTH_SOCK not set to 1Password"
+        fi

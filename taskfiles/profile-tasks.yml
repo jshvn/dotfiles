@@ -1,0 +1,106 @@
+version: '3'
+
+# =============================================================================
+# Unified Profile Tasks
+# =============================================================================
+# This file is included once per profile with the
+# TARGET_PROFILE variable set. Tasks are parameterized to work with any profile.
+#
+# Usage in Taskfile.yml:
+#   includes:
+#     personal:
+#       taskfile: ./taskfiles/profile-tasks.yml
+#       vars:
+#         TARGET_PROFILE: personal
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+tasks:
+  # ============================================================================
+  # Installation
+  # ============================================================================
+
+  install:
+    desc: "Install {{.TARGET_PROFILE}} profile configurations"
+    silent: true
+    cmds:
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        info "Installing {{.TARGET_PROFILE}} profile..."
+      - task: links
+      - task: brew
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        # Capitalize first letter for display
+        PROFILE_DISPLAY="$(echo '{{.TARGET_PROFILE}}' | awk '{print toupper(substr($0,1,1)) substr($0,2)}')"
+        success "$PROFILE_DISPLAY profile configured"
+
+  links:
+    desc: "Create {{.TARGET_PROFILE}}-specific symlinks"
+    cmds:
+      # Git profile config
+      - task: _:safe-link
+        vars:
+          SOURCE: "{{.DOTFILEDIR}}/git/config-{{.TARGET_PROFILE}}"
+          TARGET: "{{.XDG_CONFIG_HOME}}/git/config-{{.TARGET_PROFILE}}"
+      
+      # SSH profile config
+      - task: _:safe-link
+        vars:
+          SOURCE: "{{.DOTFILEDIR}}/ssh/configs/config-{{.TARGET_PROFILE}}"
+          TARGET: "{{.HOME}}/.ssh/config-{{.TARGET_PROFILE}}"
+      
+      # SSH public key (if it exists for this profile)
+      - cmd: |
+          KEY_FILE="{{.DOTFILEDIR}}/ssh/keys/id_ed25519_{{.TARGET_PROFILE}}.pub"
+          if [[ -f "$KEY_FILE" ]]; then
+            mkdir -p "{{.HOME}}/.ssh"
+            ln -sf "$KEY_FILE" "{{.HOME}}/.ssh/id_ed25519_{{.TARGET_PROFILE}}.pub"
+          fi
+        silent: true
+    status:
+      - test -L "{{.XDG_CONFIG_HOME}}/git/config-{{.TARGET_PROFILE}}"
+      - test -L "{{.HOME}}/.ssh/config-{{.TARGET_PROFILE}}"
+
+  brew:
+    desc: "Install {{.TARGET_PROFILE}}-specific Homebrew packages"
+    silent: true
+    cmds:
+      - |
+        BREWFILE="{{.DOTFILEDIR}}/install/Brewfile-{{.TARGET_PROFILE}}.rb"
+        if [[ -f "$BREWFILE" ]]; then
+          eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
+          brew bundle --file "$BREWFILE"
+        fi
+
+  # ============================================================================
+  # Validation
+  # ============================================================================
+
+  validate:
+    desc: "Validate {{.TARGET_PROFILE}} profile symlinks"
+    silent: true
+    cmds:
+      - task: _:check-link
+        vars:
+          TARGET: "{{.XDG_CONFIG_HOME}}/git/config-{{.TARGET_PROFILE}}"
+          NAME: "git config-{{.TARGET_PROFILE}}"
+      - task: _:check-link
+        vars:
+          TARGET: "{{.HOME}}/.ssh/config-{{.TARGET_PROFILE}}"
+          NAME: "ssh config-{{.TARGET_PROFILE}}"
+      # Check SSH key only if it exists in source
+      - cmd: |
+          KEY_SOURCE="{{.DOTFILEDIR}}/ssh/keys/id_ed25519_{{.TARGET_PROFILE}}.pub"
+          KEY_TARGET="{{.HOME}}/.ssh/id_ed25519_{{.TARGET_PROFILE}}.pub"
+          if [[ -f "$KEY_SOURCE" ]]; then
+            source "{{.DOTFILEDIR}}/install/messages.zsh"
+            if [[ -L "$KEY_TARGET" ]]; then
+              check "ssh {{.TARGET_PROFILE}} public key"
+            else
+              cross "ssh {{.TARGET_PROFILE}} public key"
+            fi
+          fi
+        silent: true

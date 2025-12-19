@@ -8,7 +8,7 @@ This repository is a working copy of my machine configuration, settings, and sof
 ```
     $ git clone https://github.com/jshvn/dotfiles.git
     $ cd dotfiles
-    $ zsh install.zsh
+    $ zsh bootstrap.zsh
 ```
 
 **Update software:**
@@ -28,9 +28,28 @@ Installation generally sets up several aspects of the machine for use:
 4. [applications](install/Brewfile.rb)
 5. [zsh](zsh/)
 
+
+### 📦 Task runner
+
+The [task](https://formulae.brew.sh/formula/go-task) runner is used to manage the dotfiles and the install process.
+
+**List available tasks**
+```
+    $ cd dotfiles
+    $ task
+```
+
+**Validate dotfiles install**
+```
+    $ cd dotfiles
+    $ task validate
+```
+
+Tasks can be run independently of each other and in various orders. See main [Taskfile.yml](Taskfile.yml) for more details.
+
 ## 📘 Notes
 
-If you change the location of this repo on the filesystem, you will need to re-run the `install.zsh` or `links.zsh` script again because the symlinks to the files within this repo will be broken.
+If you change the location of this repo on the filesystem, you will need to re-run the `bootstrap.zsh` script again because the symlinks to the files within this repo will be broken.
 
 ZSH aliases are meant to access state whilst functions are meant to mutate state. However, this is not strictly enforced.
 

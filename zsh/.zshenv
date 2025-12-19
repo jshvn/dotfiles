@@ -58,3 +58,7 @@ export SHELL_SESSIONS_DISABLE=1
 
 # set CF_USER_TEXT_ENCODING to avoid locale warnings in some macOS terminal apps
 export __CF_USER_TEXT_ENCODING=0x0:0:0
+
+# Read current profile (set via task profile:ensure during install)
+DOTFILES_PROFILE=$(cat "${XDG_CONFIG_HOME}/dotfiles/profile" 2>/dev/null)
+export DOTFILES_PROFILE

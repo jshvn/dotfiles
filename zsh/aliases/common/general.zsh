@@ -38,3 +38,6 @@ alias history="omz_history -t '%Y-%m-%d %I:%M:%S' | highlight --syntax=bash"
 
 # ghostty alias
 alias g="/Applications/Ghostty.app/Contents/MacOS/ghostty"
+
+# task alias
+alias t='task'

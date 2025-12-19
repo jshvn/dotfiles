@@ -15,12 +15,11 @@
 # Purpose:
 #   - Configure per-login environment and perform one-time login tasks.
 #   - Source cross-shell files (e.g., ~/.profile) for bash/zsh compatibility.
+#   - Set up SSH agent (1Password on workstations, system agent on servers).
 #
-# Typical contents / examples:
-#   - export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
-#   - export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
-#   - [[ -f ~/.profile ]] && source ~/.profile
-#   - Commands that should run once per login (not on every shell spawn)
+# SSH Agent Configuration:
+#   - Workstations (hostname != "server"): Uses 1Password SSH agent
+#   - Servers (hostname == "server"): Uses system ssh-agent
 #
 # Notes:
 #   - Avoid interactive-only plugin initialization here; put those in ~/.zshrc.
@@ -47,5 +46,12 @@ fi
 # and load $HOMEBREW_PREFIX, $HOMEBREW_CELLAR and $HOMEBREW_REPOSITORY into the environment
 eval "$($DIRECTORY shellenv)"
 
-# Set 1Password as SSH agent on macOS (per-login session)
-export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
+# SSH Agent Configuration
+# - On machines named "server": use the system default ssh-agent (no override)
+# - On all other machines: use 1Password SSH agent for key management
+#
+# The 1Password agent provides secure key storage and biometric authentication.
+# Servers typically use traditional key files managed by the system ssh-agent.
+if [[ "$(hostname -s)" != "server" ]]; then
+    export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
+fi

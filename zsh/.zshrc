@@ -55,23 +55,27 @@ export ADOTDIR=$XDG_CONFIG_HOME/antigen
 # set tlrc (tldr client) config and cache location
 export TLRC_CONFIG="$XDG_CONFIG_HOME/tlrc"
 
-# load antigen for plugin management
-source "$HOMEBREW_PREFIX/share/antigen/antigen.zsh"
+# load antigen for plugin management (with guard for partial installs)
+if [[ -n "$HOMEBREW_PREFIX" && -f "$HOMEBREW_PREFIX/share/antigen/antigen.zsh" ]]; then
+    source "$HOMEBREW_PREFIX/share/antigen/antigen.zsh"
 
-# load the oh-my-zsh's library.
-antigen use ohmyzsh/ohmyzsh
+    # load the oh-my-zsh's library.
+    antigen use ohmyzsh/ohmyzsh
 
-# load plugins for oh-my-zsh
-antigen bundle ohmyzsh/ohmyzsh git
-antigen bundle ohmyzsh/ohmyzsh colorize
-antigen bundle ohmyzsh/ohmyzsh kubectl
-antigen bundle ohmyzsh/ohmyzsh plugins/extract
-antigen bundle zsh-users/zsh-syntax-highlighting
-antigen bundle zsh-users/zsh-completions
-antigen bundle zsh-users/zsh-autosuggestions
+    # load plugins for oh-my-zsh
+    antigen bundle ohmyzsh/ohmyzsh git
+    antigen bundle ohmyzsh/ohmyzsh colorize
+    antigen bundle ohmyzsh/ohmyzsh kubectl
+    antigen bundle ohmyzsh/ohmyzsh plugins/extract
+    antigen bundle zsh-users/zsh-syntax-highlighting
+    antigen bundle zsh-users/zsh-completions
+    antigen bundle zsh-users/zsh-autosuggestions
 
-# apply antigen plugin settings
-antigen apply
+    # apply antigen plugin settings
+    antigen apply
+else
+    echo "$(tput setaf 3)Warning: antigen not found. Run './bootstrap.zsh' or 'task install' to complete setup.$(tput sgr0)"
+fi
 
 #  Find dotfile repo directory on this system, set $DOTFILEDIR to contain absolute path
 SOURCE="${(%):-%N}"
@@ -99,15 +103,29 @@ fi
 # otherwise some functions/scripts like 'which' will not be found in the 
 # correct spots, and that causes errors in aliases and functions
 
-# load ZSH aliases
-for file in "$DOTFILEDIR/zsh/aliases/"*.zsh(.N); do
+# Load common aliases (from zsh/aliases/common/)
+for file in "$DOTFILEDIR/zsh/aliases/common/"*.zsh(.N); do
     source "$file"
 done
 
-# load common ZSH custom themes
-source $DOTFILEDIR/zsh/theme.zsh
+# Load profile-specific aliases (from zsh/aliases/$PROFILE/)
+if [[ -d "$DOTFILEDIR/zsh/aliases/$DOTFILES_PROFILE" ]]; then
+    for file in "$DOTFILEDIR/zsh/aliases/$DOTFILES_PROFILE/"*.zsh(.N); do
+        source "$file"
+    done
+fi
 
-# load ZSH function and helper scripts
+# load common ZSH custom themes
+source "$DOTFILEDIR/zsh/theme.zsh"
+
+# Load common functions (from zsh/functions/*.zsh, excluding subdirectories)
 for file in "$DOTFILEDIR/zsh/functions/"*.zsh(.N); do
     source "$file"
 done
+
+# Load profile-specific functions (from zsh/functions/$PROFILE/)
+if [[ -d "$DOTFILEDIR/zsh/functions/$DOTFILES_PROFILE" ]]; then
+    for file in "$DOTFILEDIR/zsh/functions/$DOTFILES_PROFILE/"*.zsh(.N); do
+        source "$file"
+    done
+fi
