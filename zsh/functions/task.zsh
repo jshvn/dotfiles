@@ -22,8 +22,6 @@ function task() {    # task() wraps go-task and filters profile-specific tasks f
             # Parse VALID_PROFILES line, extract quoted value, replace spaces with |
             profiles_pattern=$(grep -E '^\s*VALID_PROFILES:' "$profile_yml" | sed -E 's/.*"([^"]+)".*/\1/' | tr ' ' '|')
         fi
-        # Fallback if parsing fails
-        [[ -z "$profiles_pattern" ]] && profiles_pattern="personal|work|server"
         
         # Run task with PTY preserved via script to maintain color output
         # Then filter out profile-specific tasks
