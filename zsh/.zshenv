@@ -50,13 +50,8 @@ export VISUAL="code"
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
-# Set browser (some tools use $BROWSER)
-# macOS: Firefox app bundle, Linux: firefox from PATH
-if [[ "$(uname)" == "Darwin" ]]; then
-    export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
-else
-    export BROWSER="firefox"
-fi
+# set browser to Firefox (some tools use $BROWSER)
+export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
 
 # disable shell sessions to avoid creating .zsh/sessions/ directories and files
 export SHELL_SESSIONS_DISABLE=1
