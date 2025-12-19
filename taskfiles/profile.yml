@@ -95,6 +95,26 @@ tasks:
         info "Running installation for profile: $PROFILE"
         task "${PROFILE}:install"
 
+  brew:
+    silent: true
+    desc: "Install profile-specific Homebrew packages"
+    deps:
+      - ensure
+    cmds:
+      - |
+        PROFILE=$(cat "{{.PROFILE_FILE}}")
+        task "${PROFILE}:brew"
+
+  links:
+    silent: true
+    desc: "Create profile-specific symlinks"
+    deps:
+      - ensure
+    cmds:
+      - |
+        PROFILE=$(cat "{{.PROFILE_FILE}}")
+        task "${PROFILE}:links"
+
   # ============================================================================
   # Validation
   # ============================================================================
