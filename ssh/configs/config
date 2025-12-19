@@ -11,10 +11,10 @@ Host *
 # The profile is determined by the contents of ${XDG_CONFIG_HOME}/dotfiles/profile
 
 Match exec "test \"$(cat ${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/profile 2>/dev/null)\" = 'personal'"
-    Include ~/.ssh/config_personal
+    Include ~/.ssh/config-personal
 
 Match exec "test \"$(cat ${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/profile 2>/dev/null)\" = 'server'"
-    Include ~/.ssh/config_server
+    Include ~/.ssh/config-server
 
 Match exec "test \"$(cat ${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/profile 2>/dev/null)\" = 'work'"
-    Include ~/.ssh/config_work
+    Include ~/.ssh/config-work

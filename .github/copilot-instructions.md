@@ -36,17 +36,15 @@ Profile is stored persistently at `${XDG_CONFIG_HOME}/dotfiles/profile`.
   - `helpers.yml`: reusable internal tasks (`safe-link`, `check-link`, `check-dir`, `check-file`, `check-command`). Included via `_:` namespace.
   - `common.yml`: XDG directory creation, ZDOTDIR configuration, Antigen updates, validation.
   - `profile.yml`: profile detection, prompting, persistence, and profile-specific installation dispatch.
+  - `profile-tasks.yml`: unified parameterized tasks for all profiles (personal, work, server). Included with `internal: true` so tasks are hidden from `task --list` but callable via `task <profile>:install`.
   - `links.yml`: all symlink creation and removal tasks (`all`, `zsh`, `git`, `ssh`, `tools`, `unlink-*`).
   - `brew.yml`: Homebrew installation and bundle management.
   - `macos.yml`: macOS-specific defaults (dock, appearance, finder, security) and shell configuration.
-  - `personal.yml`: personal profile symlinks and Brewfile.
-  - `work.yml`: work profile symlinks and Brewfile.
-  - `server.yml`: server profile symlinks and Brewfile.
 - `install/messages.zsh`: messaging library with `info`, `success`, `warn`, `error`, `debug`, `header`, `step`, `check`, `cross` functions.
 - `install/Brewfile.rb`: common Homebrew packages (all profiles).
-- `install/personal/Brewfile.rb`: personal-only packages.
-- `install/work/Brewfile.rb`: work-only packages.
-- `install/server/Brewfile.rb`: server-only packages.
+- `install/Brewfile-personal.rb`: personal-only packages.
+- `install/Brewfile-work.rb`: work-only packages.
+- `install/Brewfile-server.rb`: server-only packages.
 - `zsh/.zshenv`: sourced by every zsh invocation; sets XDG vars, ZDOTDIR, EDITOR, VEDITOR, VISUAL, BROWSER, LANG, LC_ALL, DOTFILES_PROFILE.
 - `zsh/.zprofile`: login shell initialization; evaluates Homebrew shellenv based on architecture; sets SSH_AUTH_SOCK for 1Password.
 - `zsh/.zshrc`: interactive startup; configures history, loads Antigen/oh-my-zsh, sources profile-aware aliases and functions, lazy-loads conda.
@@ -63,13 +61,13 @@ Profile is stored persistently at `${XDG_CONFIG_HOME}/dotfiles/profile`.
 - `zsh/configs/`: tool-specific configs (`condarc`, `ghostty`, `glow.yml`, `motd_sysinfo.jsonc`, `motd_tron.txt`, `tlrc.toml`, `trippy.toml`).
 - `git/config`: main git config with `includeIf` directives for profile-specific configs.
 - `git/ignore`: global gitignore.
-- `git/personal/config-personal`: personal git config (uses 1Password for signing).
-- `git/work/config-work`: work git config.
-- `git/server/config-server`: server git config (no GPG signing, uses deploy keys).
+- `git/config-personal`: personal git config (uses 1Password for signing).
+- `git/config-work`: work git config.
+- `git/config-server`: server git config (no GPG signing, uses deploy keys).
 - `ssh/configs/config`: main SSH config with conditional profile-based includes.
-- `ssh/configs/personal/config_personal`: personal SSH config (uses 1Password IdentityAgent).
-- `ssh/configs/work/config_work`: work SSH config (uses 1Password IdentityAgent).
-- `ssh/configs/server/config_server`: server SSH config (uses system ssh-agent with deploy keys).
+- `ssh/configs/config-personal`: personal SSH config (uses 1Password IdentityAgent).
+- `ssh/configs/config-work`: work SSH config (uses 1Password IdentityAgent).
+- `ssh/configs/config-server`: server SSH config (uses system ssh-agent with deploy keys).
 - `ssh/configs/agent.toml`: 1Password SSH agent config.
 - `ssh/cloudflared.zsh`: Cloudflare tunnel helper script.
 - `ssh/keys/id_ed25519_personal.pub`: personal public key.
@@ -160,8 +158,8 @@ Key principles:
 ### 6. Adding New Capabilities
 - New function: create `zsh/functions/<name>.zsh` for common, or `zsh/functions/<profile>/<name>.zsh` for profile-specific; ensure idempotent; no immediate execution beyond declarations; avoid global variable leakage.
 - New alias sets: add to `zsh/aliases/common/<topic>.zsh` for all profiles, or `zsh/aliases/<profile>/<topic>.zsh` for profile-specific; keep each line simple; avoid redefining existing aliases silently.
-- New brew packages: append to `install/Brewfile.rb` for common packages, or `install/<profile>/Brewfile.rb` for profile-specific; run `task brew:bundle` to verify.
-- New symlinks: add to `taskfiles/links.yml` using `safe-link` helper task, or to profile-specific taskfiles; test with `task links:all`.
+- New brew packages: append to `install/Brewfile.rb` for common packages, or `install/Brewfile-<profile>.rb` for profile-specific; run `task brew:bundle` to verify.
+- New symlinks: add to `taskfiles/links.yml` using `safe-link` helper task; profile-specific links are handled automatically by `profile-tasks.yml`; test with `task links:all`.
 - New configs: add to `zsh/configs/` and create corresponding symlink entry in `taskfiles/links.yml` targeting appropriate XDG location.
 
 ### 7. Troubleshooting & Diagnostics

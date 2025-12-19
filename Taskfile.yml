@@ -41,14 +41,17 @@ includes:
   brew: ./taskfiles/brew.yml
   macos: ./taskfiles/macos.yml
   personal:
-    taskfile: ./taskfiles/personal.yml
-    optional: true
+    taskfile: ./taskfiles/profile-tasks.yml
+    vars:
+      TARGET_PROFILE: personal
   work:
-    taskfile: ./taskfiles/work.yml
-    optional: true
+    taskfile: ./taskfiles/profile-tasks.yml
+    vars:
+      TARGET_PROFILE: work
   server:
-    taskfile: ./taskfiles/server.yml
-    optional: true
+    taskfile: ./taskfiles/profile-tasks.yml
+    vars:
+      TARGET_PROFILE: server
 
 tasks:
   default:
