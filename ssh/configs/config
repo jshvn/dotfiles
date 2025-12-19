@@ -2,14 +2,19 @@
 ######## General ########
 ##############################
 
-# Use the 1Password SSH agent instead of 
-# the built in SSH agent
+# Ghostty sets its own TERM=xterm-ghostty which is unfortunately not widely supported
+# so we override it here for all connections for now, until more widespread support is available
 Host *
-    IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-    # Ghostty sets its own TERM=xterm-ghostty which is unfortunately not widely supported
-    # so we override it here for all connections for now, until more widespread support is available
     SetEnv TERM=xterm-256color
 
-# Child config includes for personal and work settings
+# Profile-specific child config includes
+# The profile is determined by the contents of ${XDG_CONFIG_HOME}/dotfiles/profile
 
-Include ~/.ssh/config_personal
+Match exec "test \"$(cat ${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/profile 2>/dev/null)\" = 'personal'"
+    Include ~/.ssh/config_personal
+
+Match exec "test \"$(cat ${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/profile 2>/dev/null)\" = 'server'"
+    Include ~/.ssh/config_server
+
+Match exec "test \"$(cat ${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/profile 2>/dev/null)\" = 'work'"
+    Include ~/.ssh/config_work

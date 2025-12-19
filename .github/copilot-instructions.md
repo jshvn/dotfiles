@@ -7,7 +7,7 @@ Purpose: Give an AI contributor the fastest path to making safe, effective chang
 - Re-run install: `task install`
 - Update everything interactively: `update` (or `task update` from dotfiles dir)
 - Show all tasks: `task --list`
-- Set/change profile: `task profile:set -- personal` or `task profile:set -- work`
+- Set/change profile: `task profile:set -- personal` or `task profile:set -- work` or `task profile:set -- server`
 - Validate install: `task validate`
 - Clean caches: `task clean`
 - Debug `DOTFILEDIR`: `echo $DOTFILEDIR` (in an active zsh session)
@@ -19,7 +19,7 @@ Fresh macOS install runs `./bootstrap.zsh` which:
 2. Installs go-task if not present (via official install script to `/usr/local/bin` or `~/.local/bin`).
 3. Runs `task install` which:
    - Creates XDG directories (`common:xdg`)
-   - Prompts for profile (personal/work) if not set (`profile:ensure`)
+   - Prompts for profile (personal/work/server) if not set (`profile:ensure`)
    - Configures ZDOTDIR in `/etc/zshenv` (`common:zdotdir`)
    - Creates all symlinks (`links:all`)
    - Installs Homebrew and packages (`brew:install`)
@@ -41,10 +41,12 @@ Profile is stored persistently at `${XDG_CONFIG_HOME}/dotfiles/profile`.
   - `macos.yml`: macOS-specific defaults (dock, appearance, finder, security) and shell configuration.
   - `personal.yml`: personal profile symlinks and Brewfile.
   - `work.yml`: work profile symlinks and Brewfile.
+  - `server.yml`: server profile symlinks and Brewfile.
 - `install/messages.zsh`: messaging library with `info`, `success`, `warn`, `error`, `debug`, `header`, `step`, `check`, `cross` functions.
 - `install/Brewfile.rb`: common Homebrew packages (all profiles).
 - `install/personal/Brewfile.rb`: personal-only packages.
 - `install/work/Brewfile.rb`: work-only packages.
+- `install/server/Brewfile.rb`: server-only packages.
 - `zsh/.zshenv`: sourced by every zsh invocation; sets XDG vars, ZDOTDIR, EDITOR, VEDITOR, VISUAL, BROWSER, LANG, LC_ALL, DOTFILES_PROFILE.
 - `zsh/.zprofile`: login shell initialization; evaluates Homebrew shellenv based on architecture; sets SSH_AUTH_SOCK for 1Password.
 - `zsh/.zshrc`: interactive startup; configures history, loads Antigen/oh-my-zsh, sources profile-aware aliases and functions, lazy-loads conda.
@@ -59,22 +61,29 @@ Profile is stored persistently at `${XDG_CONFIG_HOME}/dotfiles/profile`.
 - `zsh/functions/work/*.zsh`: work-only functions (directory created as needed).
 - `zsh/styles/`: style configs (`eza_style.yaml`, `glow_style.json`).
 - `zsh/configs/`: tool-specific configs (`condarc`, `ghostty`, `glow.yml`, `motd_sysinfo.jsonc`, `motd_tron.txt`, `tlrc.toml`, `trippy.toml`).
-- `git/config`: main git config with `includeIf` directives.
+- `git/config`: main git config with `includeIf` directives for profile-specific configs.
 - `git/ignore`: global gitignore.
-- `git/personal/config-personal`: personal git config.
+- `git/personal/config-personal`: personal git config (uses 1Password for signing).
 - `git/work/config-work`: work git config.
-- `ssh/configs/config`: main SSH config.
-- `ssh/configs/personal/config_personal`: personal SSH config.
-- `ssh/configs/work/`: work SSH config directory (empty, config_work added as needed).
+- `git/server/config-server`: server git config (no GPG signing, uses deploy keys).
+- `ssh/configs/config`: main SSH config with conditional profile-based includes.
+- `ssh/configs/personal/config_personal`: personal SSH config (uses 1Password IdentityAgent).
+- `ssh/configs/work/config_work`: work SSH config (uses 1Password IdentityAgent).
+- `ssh/configs/server/config_server`: server SSH config (uses system ssh-agent with deploy keys).
 - `ssh/configs/agent.toml`: 1Password SSH agent config.
 - `ssh/cloudflared.zsh`: Cloudflare tunnel helper script.
 - `ssh/keys/id_ed25519_personal.pub`: personal public key.
 
 ### 2.1. Profile System
-The dotfiles support two profiles: `personal` and `work`. Profile is stored at `${XDG_CONFIG_HOME}/dotfiles/profile`.
+The dotfiles support three profiles: `personal`, `work`, and `server`. Profile is stored at `${XDG_CONFIG_HOME}/dotfiles/profile`.
+
+**Profile differences:**
+- `personal` and `work`: Use 1Password SSH agent for key management, full desktop setup
+- `server`: Uses system ssh-agent with deploy keys, minimal setup, no 1Password integration
 
 At runtime:
 - `.zshenv` reads the profile file and exports `DOTFILES_PROFILE`.
+- `.zprofile` conditionally sets `SSH_AUTH_SOCK` to 1Password (skipped for server profile).
 - `.zshrc` loads profile-aware aliases and functions:
   - Common aliases from `zsh/aliases/common/`
   - Profile-specific aliases from `zsh/aliases/$DOTFILES_PROFILE/`
@@ -83,7 +92,7 @@ At runtime:
 
 Profile tasks:
 - `task profile:ensure` - prompts interactively if profile not set or invalid.
-- `task profile:set -- <profile>` - set profile directly (e.g., `task profile:set -- personal`).
+- `task profile:set -- <profile>` - set profile directly (e.g., `task profile:set -- server`).
 - `task profile:show` - display current profile.
 - `task profile:install` - run profile-specific installation (links + brew).
 
@@ -128,7 +137,7 @@ Key principles:
 - Update everything interactively (inside a zsh session):
   `update`
 - Set profile:
-  `task profile:set -- personal` or `task profile:set -- work`
+  `task profile:set -- personal` or `task profile:set -- work` or `task profile:set -- server`
 - Show current profile:
   `task profile:show`
 - Validate installation:
@@ -203,8 +212,9 @@ Example: `echo "$(tput setaf 2)Success$(tput sgr0)"`
 - The `_:safe-link` helper in `taskfiles/helpers.yml` creates parent directories automatically before creating symlinks.
 - ZDOTDIR is managed via `/etc/zshenv` (configured by `common:zdotdir` task) to ensure it's set system-wide before any user zsh files are sourced.
 - The MOTD system uses config files in `zsh/configs/` (`motd_sysinfo.jsonc`, `motd_tron.txt`) and is displayed via `.zlogin` calling `motd()` if the function exists.
-- SSH agent is set to 1Password in `.zprofile` via `SSH_AUTH_SOCK` export.
+- SSH agent is conditionally set in `.zprofile`: 1Password for workstations (hostname != "server"), system ssh-agent for servers.
 - Antigen has a guard in `.zshrc` that shows a warning if not installed, allowing partial installs to proceed.
+- 1Password agent.toml symlink is only created for non-server profiles.
 
 ### 14. Security & Secrets
 - Never commit private keys. Files under `ssh/keys/` are public keys or placeholders only.

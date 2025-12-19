@@ -46,6 +46,9 @@ includes:
   work:
     taskfile: ./taskfiles/work.yml
     optional: true
+  server:
+    taskfile: ./taskfiles/server.yml
+    optional: true
 
 tasks:
   default:
@@ -62,8 +65,7 @@ tasks:
       
       Usage:
         ./bootstrap.zsh              # Fresh install (prompts for profile)
-        task install                 # Re-install with saved profile
-        task install PROFILE=work    # Override profile for this run
+        task install                 # Re-install with saved profile (also prompts for profile if missing)
     cmds:
       - task: common:xdg
       - task: profile:ensure

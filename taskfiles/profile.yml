@@ -1,7 +1,7 @@
 version: '3'
 
 vars:
-  VALID_PROFILES: "personal work"
+  VALID_PROFILES: "personal server work"
 
 tasks:
   ensure:

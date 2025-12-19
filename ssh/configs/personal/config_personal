@@ -2,6 +2,10 @@
 ######## Personal ########
 ##############################
 
+# Use 1Password SSH agent for all personal connections
+Host *
+    IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+
 Host *.jgrid.net
     IdentityFile ~/.ssh/id_ed25519_personal.pub
     IdentitiesOnly yes

@@ -175,10 +175,12 @@ tasks:
           cross "Default shell is not Homebrew zsh (currently: $SHELL)"
         fi
       
-      # 1Password SSH agent
+      # 1Password SSH agent (skipped on machines named "server" which use system ssh-agent)
       - |
         source "{{.DOTFILEDIR}}/install/messages.zsh"
-        if [[ -S "$SSH_AUTH_SOCK" ]] && [[ "$SSH_AUTH_SOCK" == *"1password"* ]]; then
+        if [[ "$(hostname -s)" == "server" ]]; then
+          check "Server profile: using system ssh-agent (1Password check skipped)"
+        elif [[ -S "$SSH_AUTH_SOCK" ]] && [[ "$SSH_AUTH_SOCK" == *"1password"* ]]; then
           check "1Password SSH agent socket active"
         else
           cross "1Password SSH agent socket missing or SSH_AUTH_SOCK not set to 1Password"

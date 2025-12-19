@@ -1,0 +1,7 @@
+[user]
+    name = Server
+    email = server@jgrid.net
+[github]
+    user = jshvn
+[commit]
+    gpgsign = false

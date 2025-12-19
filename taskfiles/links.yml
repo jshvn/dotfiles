@@ -61,12 +61,19 @@ tasks:
         vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/configs/config", TARGET: "{{.HOME}}/.ssh/config" }
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/cloudflared.zsh", TARGET: "{{.HOME}}/.ssh/cloudflared.zsh" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/configs/agent.toml", TARGET: "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml" }
+      # 1Password agent config (only for non-server profiles)
+      - |
+        PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null)
+        if [[ "$PROFILE" != "server" ]]; then
+          mkdir -p "{{.XDG_CONFIG_HOME}}/1Password/ssh"
+          ln -sf "{{.DOTFILEDIR}}/ssh/configs/agent.toml" "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"
+        fi
     status:
       - test -L "{{.HOME}}/.ssh/config"
       - test -L "{{.HOME}}/.ssh/cloudflared.zsh"
-      - test -L "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"
+      - |
+        PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null)
+        [[ "$PROFILE" == "server" ]] || test -L "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"
 
   tools:
     desc: "Link tool configuration files"
@@ -125,8 +132,18 @@ tasks:
         vars: { TARGET: "{{.HOME}}/.ssh/config", NAME: "ssh config" }
       - task: _:check-link
         vars: { TARGET: "{{.HOME}}/.ssh/cloudflared.zsh", NAME: "cloudflared.zsh" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml", NAME: "1Password ssh agent config" }
+      
+      # 1Password agent config (skipped on server profile)
+      - |
+        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null)
+        if [[ "$PROFILE" == "server" ]]; then
+          check "1Password ssh agent config (skipped for server profile)"
+        elif [[ -L "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml" ]]; then
+          check "1Password ssh agent config"
+        else
+          cross "1Password ssh agent config"
+        fi
       
       # Tools
       - task: _:check-link

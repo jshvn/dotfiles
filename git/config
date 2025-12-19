@@ -2,6 +2,8 @@
 	name = Josh Vaughen
 [includeIf "gitdir/i:~/git/personal/"]
     path = personal/config-personal
+[includeIf "gitdir/i:~/git/server/"]
+    path = server/config-server
 [includeIf "gitdir/i:~/git/work/"]
     path = work/config-work
 [core]

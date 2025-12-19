@@ -1,0 +1,11 @@
+##############################
+######## Server ########
+##############################
+
+# Server profile uses the system ssh-agent (not 1Password)
+# Deploy key for dotfiles repo is managed locally and loaded into ssh-agent
+
+Host github.com
+    IdentityFile ~/.ssh/id_ed25519_server
+    IdentitiesOnly yes
+    AddKeysToAgent yes
