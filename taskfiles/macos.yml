@@ -48,14 +48,27 @@ tasks:
     cmds:
       - defaults write com.apple.dock orientation -string "bottom"
       - defaults write com.apple.dock tilesize -int 45
-      - defaults write com.apple.dock autohide -bool true
+      - |
+        CURRENT_PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null | tr -d '[:space:]')
+        if [[ "$CURRENT_PROFILE" == "server" ]]; then
+          defaults write com.apple.dock autohide -bool false
+        else
+          defaults write com.apple.dock autohide -bool true
+        fi
       - defaults write com.apple.dock mineffect -string "genie"
       - defaults write com.apple.dock show-recents -bool true
       - defaults write com.apple.dock mru-spaces -bool false
     status:
       - '[[ $(defaults read com.apple.dock orientation 2>/dev/null) == "bottom" ]]'
       - '[[ $(defaults read com.apple.dock tilesize 2>/dev/null) == "45" ]]'
-      - '[[ $(defaults read com.apple.dock autohide 2>/dev/null) == "1" ]]'
+      - |
+        CURRENT_PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null | tr -d '[:space:]')
+        AUTOHIDE=$(defaults read com.apple.dock autohide 2>/dev/null)
+        if [[ "$CURRENT_PROFILE" == "server" ]]; then
+          [[ "$AUTOHIDE" == "0" ]]
+        else
+          [[ "$AUTOHIDE" == "1" ]]
+        fi
 
   defaults-appearance:
     desc: "Apply appearance defaults (dark mode, scroll direction)"
