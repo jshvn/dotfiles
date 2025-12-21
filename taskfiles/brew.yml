@@ -21,7 +21,7 @@ tasks:
     desc: "Install Homebrew if not present"
     cmds:
       - |
-        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        source "$DOTFILES_MESSAGES"
         if ! command -v brew &> /dev/null; then
           info "Installing Homebrew..."
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -41,7 +41,7 @@ tasks:
     deps: [ensure-homebrew]
     cmds:
       - |
-        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        source "$DOTFILES_MESSAGES"
         # Ensure brew is in PATH for this command
         eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
         

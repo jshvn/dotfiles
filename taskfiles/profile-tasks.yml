@@ -27,12 +27,12 @@ tasks:
     silent: true
     cmds:
       - |
-        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        source "$DOTFILES_MESSAGES"
         info "Installing {{.TARGET_PROFILE}} profile..."
       - task: links
       - task: brew
       - |
-        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        source "$DOTFILES_MESSAGES"
         # Capitalize first letter for display
         PROFILE_DISPLAY="$(echo '{{.TARGET_PROFILE}}' | awk '{print toupper(substr($0,1,1)) substr($0,2)}')"
         success "$PROFILE_DISPLAY profile configured"
@@ -96,7 +96,7 @@ tasks:
           KEY_SOURCE="{{.DOTFILEDIR}}/ssh/keys/id_ed25519_{{.TARGET_PROFILE}}.pub"
           KEY_TARGET="{{.HOME}}/.ssh/id_ed25519_{{.TARGET_PROFILE}}.pub"
           if [[ -f "$KEY_SOURCE" ]]; then
-            source "{{.DOTFILEDIR}}/install/messages.zsh"
+            source "$DOTFILES_MESSAGES"
             if [[ -L "$KEY_TARGET" ]]; then
               check "ssh {{.TARGET_PROFILE}} public key"
             else

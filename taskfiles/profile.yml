@@ -10,7 +10,7 @@ tasks:
     cmds:
       - mkdir -p "$(dirname "{{.PROFILE_FILE}}")"
       - |
-        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        source "$DOTFILES_MESSAGES"
         VALID_PROFILES=({{.VALID_PROFILES}})
         CURRENT_PROFILE=""
         if [[ -f "{{.PROFILE_FILE}}" ]]; then
@@ -57,7 +57,7 @@ tasks:
     cmds:
       - mkdir -p "$(dirname "{{.PROFILE_FILE}}")"
       - |
-        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        source "$DOTFILES_MESSAGES"
         INPUT_PROFILE="{{.CLI_ARGS}}"
         if [[ -z "$INPUT_PROFILE" ]]; then
           error "Profile required. Use: task profile:set -- personal"
@@ -90,7 +90,7 @@ tasks:
       - ensure
     cmds:
       - |
-        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        source "$DOTFILES_MESSAGES"
         PROFILE=$(cat "{{.PROFILE_FILE}}")
         info "Running installation for profile: $PROFILE"
         task "${PROFILE}:install"
@@ -124,7 +124,7 @@ tasks:
     silent: true
     cmds:
       - |
-        source "{{.DOTFILEDIR}}/install/messages.zsh"
+        source "$DOTFILES_MESSAGES"
         PROFILE_FILE="{{.PROFILE_FILE}}"
         VALID_PROFILES=({{.VALID_PROFILES}})
         if [[ -f "$PROFILE_FILE" ]]; then
