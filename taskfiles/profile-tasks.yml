@@ -24,7 +24,6 @@ tasks:
 
   install:
     desc: "Install {{.TARGET_PROFILE}} profile configurations"
-    silent: true
     cmds:
       - |
         source "$DOTFILES_MESSAGES"
@@ -59,14 +58,12 @@ tasks:
             mkdir -p "{{.HOME}}/.ssh"
             ln -sf "$KEY_FILE" "{{.HOME}}/.ssh/id_ed25519_{{.TARGET_PROFILE}}.pub"
           fi
-        silent: true
     status:
       - test -L "{{.XDG_CONFIG_HOME}}/git/config-{{.TARGET_PROFILE}}"
       - test -L "{{.HOME}}/.ssh/config-{{.TARGET_PROFILE}}"
 
   brew:
     desc: "Install {{.TARGET_PROFILE}}-specific Homebrew packages"
-    silent: true
     cmds:
       - |
         BREWFILE="{{.DOTFILEDIR}}/install/Brewfile-{{.TARGET_PROFILE}}.rb"
@@ -81,7 +78,6 @@ tasks:
 
   validate:
     desc: "Validate {{.TARGET_PROFILE}} profile symlinks"
-    silent: true
     cmds:
       - task: _:check-link
         vars:
@@ -103,4 +99,3 @@ tasks:
               cross "ssh {{.TARGET_PROFILE}} public key"
             fi
           fi
-        silent: true

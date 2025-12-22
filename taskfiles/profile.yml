@@ -5,7 +5,6 @@ vars:
 
 tasks:
   ensure:
-    silent: true
     desc: "Ensure profile is set with a valid value, prompt if missing or invalid"
     cmds:
       - mkdir -p "$(dirname "{{.PROFILE_FILE}}")"
@@ -45,14 +44,12 @@ tasks:
         fi
 
   require:
-    silent: true
     desc: "Require profile to be set (fail if not)"
     preconditions:
       - sh: test -f "{{.PROFILE_FILE}}" && test -n "$(cat "{{.PROFILE_FILE}}")"
         msg: "Profile not set. Run 'task install' or 'task profile:set PROFILE=personal'"
 
   set:
-    silent: true
     desc: "Set profile: $ task profile:set -- personal"
     cmds:
       - mkdir -p "$(dirname "{{.PROFILE_FILE}}")"
@@ -78,13 +75,11 @@ tasks:
         success "Profile set to: $INPUT_PROFILE"
 
   show:
-    silent: true
     desc: "Show current profile (ensures profile exists first)"
     cmds:
       - task: ensure
 
   install:
-    silent: true
     desc: "Run profile-specific installation (ensures profile exists first)"
     deps:
       - ensure
@@ -96,7 +91,6 @@ tasks:
         task "${PROFILE}:install"
 
   brew:
-    silent: true
     desc: "Install profile-specific Homebrew packages"
     deps:
       - ensure
@@ -106,7 +100,6 @@ tasks:
         task "${PROFILE}:brew"
 
   links:
-    silent: true
     desc: "Create profile-specific symlinks"
     deps:
       - ensure
@@ -121,7 +114,6 @@ tasks:
 
   validate:
     desc: "Validate profile configuration"
-    silent: true
     cmds:
       - |
         source "$DOTFILES_MESSAGES"

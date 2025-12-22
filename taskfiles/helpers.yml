@@ -30,7 +30,6 @@ tasks:
   safe-link:
     desc: "Create a symlink with automatic parent directory creation"
     internal: true
-    silent: true
     requires:
       vars: [SOURCE, TARGET]
     cmds:
@@ -44,7 +43,6 @@ tasks:
   check-link:
     desc: "Validate a symlink exists and points to a valid target"
     internal: true
-    silent: true
     requires:
       vars: [TARGET, NAME]
     cmds:
@@ -63,7 +61,6 @@ tasks:
   check-dir:
     desc: "Validate a directory exists"
     internal: true
-    silent: true
     requires:
       vars: [TARGET, NAME]
     cmds:
@@ -74,7 +71,6 @@ tasks:
   check-file:
     desc: "Validate a file exists"
     internal: true
-    silent: true
     requires:
       vars: [TARGET, NAME]
     cmds:
@@ -85,7 +81,6 @@ tasks:
   check-command:
     desc: "Validate a command is available in PATH"
     internal: true
-    silent: true
     requires:
       vars: [CMD, NAME]
     cmds:

@@ -17,7 +17,6 @@ tasks:
 
   all:
     desc: "Create all symlinks"
-    silent: true
     cmds:
       - task: zsh
       - task: git
@@ -26,7 +25,6 @@ tasks:
 
   zsh:
     desc: "Link zsh configuration files"
-    silent: true
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zshenv", TARGET: "{{.ZDOTDIR}}/.zshenv" }
@@ -47,7 +45,6 @@ tasks:
 
   git:
     desc: "Link git configuration files (common)"
-    silent: true
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/git/config", TARGET: "{{.XDG_CONFIG_HOME}}/git/config" }
@@ -59,7 +56,6 @@ tasks:
 
   ssh:
     desc: "Link SSH configuration files (common)"
-    silent: true
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/configs/config", TARGET: "{{.HOME}}/.ssh/config" }
@@ -81,7 +77,6 @@ tasks:
 
   tools:
     desc: "Link tool configuration files"
-    silent: true
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/trippy.toml", TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml" }
@@ -112,7 +107,6 @@ tasks:
 
   validate:
     desc: "Validate all common symlinks"
-    silent: true
     cmds:
       # ZSH
       - task: _:check-link

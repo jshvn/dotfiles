@@ -2,12 +2,12 @@ version: '3'
 
 set: [errexit, pipefail]
 
+silent: true
+
 env:
   DOTFILES_MESSAGES: "{{.DOTFILEDIR}}/install/messages.zsh"
 
 vars:
-  # Debug
-  DEBUG_OUTPUT: false
 
   # Core paths
   HOME: '{{.HOME}}'
@@ -60,13 +60,11 @@ includes:
 tasks:
   default:
     desc: "Show available tasks"
-    silent: true
     cmds:
       - task --list
 
   install:
     desc: "Full dotfiles installation"
-    silent: true
     summary: |
       Installs all dotfiles components for the configured profile.
       
@@ -106,7 +104,6 @@ tasks:
 
   validate:
     desc: "Validate dotfiles installation"
-    silent: true
     cmds:
       - |
         source "$DOTFILES_MESSAGES"

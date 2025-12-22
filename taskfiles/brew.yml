@@ -19,6 +19,7 @@ tasks:
 
   ensure-homebrew:
     desc: "Install Homebrew if not present"
+    run: once
     cmds:
       - |
         source "$DOTFILES_MESSAGES"
@@ -37,7 +38,6 @@ tasks:
 
   bundle:
     desc: "Install packages from Brewfile"
-    silent: true
     deps: [ensure-homebrew]
     cmds:
       - |
@@ -61,7 +61,6 @@ tasks:
 
   validate:
     desc: "Validate Homebrew installation"
-    silent: true
     cmds:
       - task: _:check-command
         vars: { CMD: "brew", NAME: "Homebrew" }

@@ -4,7 +4,6 @@ tasks:
   defaults:
     desc: "Apply macOS system defaults"
     platforms: [darwin]
-    silent: true
     cmds:
       - task: defaults-init
       - task: defaults-general
@@ -20,7 +19,6 @@ tasks:
     desc: "Prepare for defaults application"
     internal: true
     platforms: [darwin]
-    silent: true
     cmds:
       - osascript -e 'tell application "System Preferences" to quit' 2>/dev/null || true
       - |
@@ -32,7 +30,6 @@ tasks:
     desc: "Apply general security defaults"
     internal: true
     platforms: [darwin]
-    silent: true
     cmds:
       - defaults write com.apple.screensaver askForPassword -int 1
       - defaults write com.apple.screensaver askForPasswordDelay -int 0
@@ -44,7 +41,6 @@ tasks:
     desc: "Apply Dock configuration defaults"
     internal: true
     platforms: [darwin]
-    silent: true
     cmds:
       - defaults write com.apple.dock orientation -string "bottom"
       - defaults write com.apple.dock tilesize -int 45
@@ -69,25 +65,27 @@ tasks:
         else
           [[ "$AUTOHIDE" == "1" ]]
         fi
+      - '[[ $(defaults read com.apple.dock mineffect 2>/dev/null) == "genie" ]]'
+      - '[[ $(defaults read com.apple.dock show-recents 2>/dev/null) == "1" ]]'
+      - '[[ $(defaults read com.apple.dock mru-spaces 2>/dev/null) == "0" ]]'
 
   defaults-appearance:
     desc: "Apply appearance defaults (dark mode, scroll direction)"
     internal: true
     platforms: [darwin]
-    silent: true
     cmds:
       - defaults write NSGlobalDomain AppleInterfaceStyle -string Dark
       - defaults write NSGlobalDomain AppleIconAppearanceTheme -string RegularDark
       - defaults write -g com.apple.swipescrolldirection -bool false
     status:
       - '[[ $(defaults read NSGlobalDomain AppleInterfaceStyle 2>/dev/null) == "Dark" ]]'
+      - '[[ $(defaults read NSGlobalDomain AppleIconAppearanceTheme 2>/dev/null) == "RegularDark" ]]'
       - '[[ $(defaults read -g com.apple.swipescrolldirection 2>/dev/null) == "0" ]]'
 
   defaults-finder:
     desc: "Apply Finder defaults"
     internal: true
     platforms: [darwin]
-    silent: true
     cmds:
       - defaults write NSGlobalDomain AppleShowAllExtensions -bool true
       - defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
@@ -97,13 +95,13 @@ tasks:
       - /usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
     status:
       - '[[ $(defaults read NSGlobalDomain AppleShowAllExtensions 2>/dev/null) == "1" ]]'
+      - '[[ $(defaults read com.apple.finder FXEnableExtensionChangeWarning 2>/dev/null) == "0" ]]'
       - '[[ $(defaults read com.apple.finder FXPreferredViewStyle 2>/dev/null) == "clmv" ]]'
 
   defaults-misc:
     desc: "Apply miscellaneous defaults"
     internal: true
     platforms: [darwin]
-    silent: true
     cmds:
       - defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
       - defaults write com.apple.TextInputMenu visible -bool false
@@ -116,11 +114,14 @@ tasks:
         else
           : # Guest account already disabled, nothing to do
         fi
+    status:
+      - '[[ $(defaults -currentHost read com.apple.ImageCapture disableHotPlug 2>/dev/null) == "1" ]]'
+      - '[[ $(defaults read com.apple.TextInputMenu visible 2>/dev/null) == "0" ]]'
+      - '[[ $(defaults read com.apple.Siri StatusMenuVisible 2>/dev/null) == "0" ]]'
 
   shell:
     desc: "Set Homebrew zsh as default shell"
     platforms: [darwin]
-    silent: true
     vars:
       BREW_ZSH: '{{.HOMEBREW_PREFIX}}/bin/zsh'
     cmds:
@@ -171,7 +172,6 @@ tasks:
   validate:
     desc: "Validate macOS-specific components"
     platforms: [darwin]
-    silent: true
     cmds:
       # Shell configuration
       - |

@@ -60,7 +60,6 @@ tasks:
 
   antigen-update:
     desc: "Update Antigen plugins"
-    silent: true
     cmds:
       - |
         source "$DOTFILES_MESSAGES"
@@ -77,7 +76,6 @@ tasks:
 
   validate:
     desc: "Validate common components (XDG, ZDOTDIR, Antigen)"
-    silent: true
     cmds:
       # XDG directories
       - task: _:check-dir
