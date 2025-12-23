@@ -15,6 +15,7 @@ tasks:
     desc: "Install Homebrew and packages"
     cmds:
       - task: ensure-homebrew
+      - task: update
       - task: bundle
 
   ensure-homebrew:
@@ -36,21 +37,26 @@ tasks:
     status:
       - command -v brew
 
-  bundle:
-    desc: "Install packages from Brewfile"
+  update:
+    desc: "Update Homebrew and installed packages"
     deps: [ensure-homebrew]
     cmds:
       - |
         source "$DOTFILES_MESSAGES"
-        # Ensure brew is in PATH for this command
-        eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
         
         info "Updating Homebrew..."
         brew update
         brew upgrade
         brew cleanup --prune=30
-        success "Homebrew updated"
-        
+        success "Homebrew and packages updated"
+
+  bundle:
+    desc: "Install packages from Brewfile"
+    deps: [ensure-homebrew, update]
+    cmds:
+      - |
+        source "$DOTFILES_MESSAGES"
+
         info "Installing packages from Brewfile..."
         brew bundle --file "{{.DOTFILEDIR}}/install/Brewfile.rb"
         success "Brewfile packages installed"
