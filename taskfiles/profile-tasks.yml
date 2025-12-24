@@ -32,9 +32,7 @@ tasks:
       - task: brew
       - |
         source "$DOTFILES_MESSAGES"
-        # Capitalize first letter for display
-        PROFILE_DISPLAY="$(echo '{{.TARGET_PROFILE}}' | awk '{print toupper(substr($0,1,1)) substr($0,2)}')"
-        success "$PROFILE_DISPLAY profile configured"
+        success "{{.TARGET_PROFILE}} profile configured"
 
   links:
     desc: "Create {{.TARGET_PROFILE}}-specific symlinks"
