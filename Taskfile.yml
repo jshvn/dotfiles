@@ -8,7 +8,6 @@ env:
   DOTFILES_MESSAGES: "{{.DOTFILEDIR}}/install/messages.zsh"
 
 vars:
-
   # Core paths
   HOME: '{{.HOME}}'
   XDG_CONFIG_HOME: '{{.HOME}}/.config'
@@ -61,7 +60,24 @@ tasks:
   default:
     desc: "Show available tasks"
     cmds:
-      - task --list
+      - |
+        # Filter out profile-specific tasks from the list
+        # Profile names are sourced from taskfiles/profile.yml VALID_PROFILES
+        PROFILE_YML="{{.DOTFILEDIR}}/taskfiles/profile.yml"
+        PROFILES_PATTERN=""
+        if [[ -f "$PROFILE_YML" ]]; then
+          PROFILES_PATTERN=$(grep -E '^\s*VALID_PROFILES:' "$PROFILE_YML" | sed -E 's/.*"([^"]+)".*/\1/' | tr ' ' '|')
+        fi
+        
+        # Use sed to strip ANSI codes, then filter, preserving the original colored output via process substitution
+        task --list --color | while IFS= read -r line; do
+          # Strip ANSI codes for pattern matching
+          stripped=$(echo "$line" | sed 's/\x1b\[[0-9;]*m//g')
+          # Check if it matches a profile task pattern
+          if ! echo "$stripped" | grep -qE "^\* ($PROFILES_PATTERN):"; then
+            echo "$line"
+          fi
+        done
 
   install:
     desc: "Full dotfiles installation"
