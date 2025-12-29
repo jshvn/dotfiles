@@ -1,8 +1,5 @@
 version: '3'
 
-vars:
-  VALID_PROFILES: "personal server work"
-
 tasks:
   ensure:
     desc: "Ensure profile is set with a valid value, prompt if missing or invalid"

@@ -19,11 +19,10 @@ vars:
   # Dotfiles paths
   DOTFILEDIR:
     sh: cd "$(dirname "$(realpath "${BASH_SOURCE[0]:-$0}")")" 2>/dev/null && pwd || pwd
-  PROFILE_FILE: '{{.XDG_CONFIG_HOME}}/dotfiles/profile'
   
-  # Profile - read from file, empty if not set (evaluated at parse time)
-  PROFILE:
-    sh: cat "{{.XDG_CONFIG_HOME}}/dotfiles/profile" 2>/dev/null || echo ""
+  # Profile configuration
+  PROFILE_FILE: '{{.XDG_CONFIG_HOME}}/dotfiles/profile'
+  VALID_PROFILES: "personal server work"
   
   # Homebrew prefix - defined here so all taskfiles can access it
   HOMEBREW_PREFIX:
@@ -62,12 +61,7 @@ tasks:
     cmds:
       - |
         # Filter out profile-specific tasks from the list
-        # Profile names are sourced from taskfiles/profile.yml VALID_PROFILES
-        PROFILE_YML="{{.DOTFILEDIR}}/taskfiles/profile.yml"
-        PROFILES_PATTERN=""
-        if [[ -f "$PROFILE_YML" ]]; then
-          PROFILES_PATTERN=$(grep -E '^\s*VALID_PROFILES:' "$PROFILE_YML" | sed -E 's/.*"([^"]+)".*/\1/' | tr ' ' '|')
-        fi
+        PROFILES_PATTERN=$(echo "{{.VALID_PROFILES}}" | tr ' ' '|')
         
         # Use sed to strip ANSI codes, then filter, preserving the original colored output via process substitution
         task --list --color | while IFS= read -r line; do
