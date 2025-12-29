@@ -99,6 +99,11 @@ if command -v conda >/dev/null 2>&1; then
     }
 fi
 
+# Source VSCode shell integration if running inside VSCode
+if [[ "$TERM_PROGRAM" == "vscode" ]]; then
+    source "$(code --locate-shell-integration-path zsh)"
+fi
+
 # the below sources need to happen after the above shell initializations
 # otherwise some functions/scripts like 'which' will not be found in the 
 # correct spots, and that causes errors in aliases and functions
