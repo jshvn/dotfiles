@@ -115,6 +115,7 @@ tasks:
       - cmd: 'git pull'
       - cmd: 'zsh "$ZSH/tools/upgrade.sh"'
       - cmd: 'tldr --update'
+      - cmd: 'mas update'
       - task: common:antigen-update
       - task: install
 
