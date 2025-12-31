@@ -63,6 +63,7 @@ tasks:
     cmds:
       - |
         source "$DOTFILES_MESSAGES"
+        {{.BREW_SHELLENV}}
         if [[ -n "$HOMEBREW_PREFIX" && -f "$HOMEBREW_PREFIX/share/antigen/antigen.zsh" ]]; then
           zsh -c 'source "$HOMEBREW_PREFIX/share/antigen/antigen.zsh" && antigen update'
           success "Antigen plugins updated"

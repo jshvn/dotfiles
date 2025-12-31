@@ -64,9 +64,9 @@ tasks:
     desc: "Install {{.TARGET_PROFILE}}-specific Homebrew packages"
     cmds:
       - |
+        {{.BREW_SHELLENV}}
         BREWFILE="{{.DOTFILEDIR}}/install/Brewfile-{{.TARGET_PROFILE}}.rb"
         if [[ -f "$BREWFILE" ]]; then
-          eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
           brew bundle --file "$BREWFILE"
         fi
 

@@ -27,9 +27,6 @@ tasks:
         if ! command -v brew &> /dev/null; then
           info "Installing Homebrew..."
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          
-          # Load Homebrew into current environment
-          eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
           success "Homebrew installed"
         else
           info "Homebrew already installed"
@@ -44,6 +41,7 @@ tasks:
     cmds:
       - |
         source "$DOTFILES_MESSAGES"
+        {{.BREW_SHELLENV}}
         
         info "Updating Homebrew..."
         brew update
@@ -57,6 +55,7 @@ tasks:
     cmds:
       - |
         source "$DOTFILES_MESSAGES"
+        {{.BREW_SHELLENV}}
 
         info "Installing packages from Brewfile..."
         brew bundle --file "{{.DOTFILEDIR}}/install/Brewfile.rb"

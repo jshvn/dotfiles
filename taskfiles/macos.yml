@@ -127,10 +127,8 @@ tasks:
     cmds:
       - |
         source "$DOTFILES_MESSAGES"
+        {{.BREW_SHELLENV}}
         BREW_ZSH="{{.BREW_ZSH}}"
-        
-        # Ensure brew is available
-        eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
         
         # Add to /etc/shells if not present
         if ! grep -qxF "$BREW_ZSH" /etc/shells; then

@@ -35,6 +35,12 @@ vars:
       else
         echo "/home/linuxbrew/.linuxbrew"
       fi
+  
+  # Homebrew shellenv setup - ensures brew is available in each shell context
+  BREW_SHELLENV: |
+    if [[ -x "{{.HOMEBREW_PREFIX}}/bin/brew" ]]; then
+      eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
+    fi
 
 includes:
   common: ./taskfiles/common.yml
