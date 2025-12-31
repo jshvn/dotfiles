@@ -47,7 +47,7 @@ tasks:
       vars: [TARGET, NAME]
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         if [[ -L "{{.TARGET}}" ]]; then
           if [[ -e "{{.TARGET}}" ]]; then
             check "{{.NAME}} linked"
@@ -65,7 +65,7 @@ tasks:
       vars: [TARGET, NAME]
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         test -d "{{.TARGET}}" && check "{{.NAME}} exists" || cross "{{.NAME}} missing"
 
   check-file:
@@ -75,7 +75,7 @@ tasks:
       vars: [TARGET, NAME]
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         test -f "{{.TARGET}}" && check "{{.NAME}} exists" || cross "{{.NAME}} missing"
 
   check-command:
@@ -85,5 +85,5 @@ tasks:
       vars: [CMD, NAME]
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         command -v "{{.CMD}}" &>/dev/null && check "{{.NAME}} installed" || cross "{{.NAME}} missing"

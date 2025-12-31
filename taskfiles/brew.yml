@@ -23,7 +23,7 @@ tasks:
     run: once
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         if ! command -v brew &> /dev/null; then
           info "Installing Homebrew..."
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -40,7 +40,7 @@ tasks:
     run: once
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         {{.BREW_SHELLENV}}
         
         info "Updating Homebrew..."
@@ -54,7 +54,7 @@ tasks:
     deps: [ensure-homebrew, update]
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         {{.BREW_SHELLENV}}
 
         info "Installing packages from Brewfile..."

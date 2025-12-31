@@ -12,7 +12,7 @@ tasks:
       - task: defaults-finder
       - task: defaults-misc
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         success "Defaults applied. Some changes require logout/restart to take effect."
 
   defaults-init:
@@ -22,7 +22,7 @@ tasks:
     cmds:
       - osascript -e 'tell application "System Preferences" to quit' 2>/dev/null || true
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         info "Applying macOS defaults..."
         warn "Some settings require administrator credentials. You may be prompted for your password."
 
@@ -45,8 +45,7 @@ tasks:
       - defaults write com.apple.dock orientation -string "bottom"
       - defaults write com.apple.dock tilesize -int 45
       - |
-        CURRENT_PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null | tr -d '[:space:]')
-        if [[ "$CURRENT_PROFILE" == "server" ]]; then
+        if [[ "{{.PROFILE}}" == "server" ]]; then
           defaults write com.apple.dock autohide -bool false
         else
           defaults write com.apple.dock autohide -bool true
@@ -58,9 +57,8 @@ tasks:
       - '[[ $(defaults read com.apple.dock orientation 2>/dev/null) == "bottom" ]]'
       - '[[ $(defaults read com.apple.dock tilesize 2>/dev/null) == "45" ]]'
       - |
-        CURRENT_PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null | tr -d '[:space:]')
         AUTOHIDE=$(defaults read com.apple.dock autohide 2>/dev/null)
-        if [[ "$CURRENT_PROFILE" == "server" ]]; then
+        if [[ "{{.PROFILE}}" == "server" ]]; then
           [[ "$AUTOHIDE" == "0" ]]
         else
           [[ "$AUTOHIDE" == "1" ]]
@@ -108,7 +106,7 @@ tasks:
       - defaults write com.apple.Siri StatusMenuVisible -bool false
       - |
         if sysadminctl -guestAccount status 2>&1 | grep -q "enabled"; then
-          source "$DOTFILES_MESSAGES"
+          {{.DOTFILES_MESSAGES}}
           warn "Guest account is enabled. Disabling it now..."
           sudo sysadminctl -guestAccount off
         else
@@ -126,7 +124,7 @@ tasks:
       BREW_ZSH: '{{.HOMEBREW_PREFIX}}/bin/zsh'
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         {{.BREW_SHELLENV}}
         BREW_ZSH="{{.BREW_ZSH}}"
         
@@ -173,7 +171,7 @@ tasks:
     cmds:
       # Shell configuration
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         BREW_ZSH="{{.HOMEBREW_PREFIX}}/bin/zsh"
         if grep -qxF "$BREW_ZSH" /etc/shells 2>/dev/null; then
           check "Homebrew zsh in /etc/shells"
@@ -188,9 +186,8 @@ tasks:
       
       # 1Password SSH agent (skipped on machines named "server" which use system ssh-agent)
       - |
-        source "$DOTFILES_MESSAGES"
-        CURRENT_PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null | tr -d '[:space:]')
-        if [[ "$CURRENT_PROFILE" == "server" ]]; then
+        {{.DOTFILES_MESSAGES}}
+        if [[ "{{.PROFILE}}" == "server" ]]; then
           check "Server profile: using system ssh-agent (1Password check skipped)"
         else 
           if [[ -S "$SSH_AUTH_SOCK" ]] && [[ "$SSH_AUTH_SOCK" == *"1password"* ]]; then

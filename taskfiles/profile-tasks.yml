@@ -26,12 +26,12 @@ tasks:
     desc: "Install {{.TARGET_PROFILE}} profile configurations"
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         info "Installing {{.TARGET_PROFILE}} profile..."
       - task: links
       - task: brew
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         success "{{.TARGET_PROFILE}} profile configured"
 
   links:
@@ -90,7 +90,7 @@ tasks:
           KEY_SOURCE="{{.DOTFILEDIR}}/ssh/keys/id_ed25519_{{.TARGET_PROFILE}}.pub"
           KEY_TARGET="{{.HOME}}/.ssh/id_ed25519_{{.TARGET_PROFILE}}.pub"
           if [[ -f "$KEY_SOURCE" ]]; then
-            source "$DOTFILES_MESSAGES"
+            {{.DOTFILES_MESSAGES}}
             if [[ -L "$KEY_TARGET" ]]; then
               check "ssh {{.TARGET_PROFILE}} public key"
             else

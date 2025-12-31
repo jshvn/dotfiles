@@ -4,9 +4,6 @@ set: [errexit, pipefail]
 
 silent: true
 
-env:
-  DOTFILES_MESSAGES: "{{.DOTFILEDIR}}/install/messages.zsh"
-
 vars:
   # Core paths
   HOME: '{{.HOME}}'
@@ -21,8 +18,13 @@ vars:
     sh: cd "$(dirname "$(realpath "${BASH_SOURCE[0]:-$0}")")" 2>/dev/null && pwd || pwd
   
   # Profile configuration
+  VALID_PROFILES: "personal server work test"
   PROFILE_FILE: '{{.XDG_CONFIG_HOME}}/dotfiles/profile'
-  VALID_PROFILES: "personal server work"
+  PROFILE: 
+    sh: |
+      if [[ -f "{{.PROFILE_FILE}}" ]]; then
+        cat "{{.PROFILE_FILE}}" 2>/dev/null | tr -d '[:space:]'
+      fi
   
   # Homebrew prefix - defined here so all taskfiles can access it
   HOMEBREW_PREFIX:
@@ -41,6 +43,10 @@ vars:
     if [[ -x "{{.HOMEBREW_PREFIX}}/bin/brew" ]]; then
       eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
     fi
+
+  # Consistent messages sourcing for all taskfiles
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
 
 includes:
   common: ./taskfiles/common.yml
@@ -88,6 +94,9 @@ tasks:
         ./bootstrap.zsh              # Fresh install (prompts for profile)
         task install                 # Re-install with saved profile (also prompts for profile if missing)
     cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "Starting installation..."
       - task: common:xdg
       - task: profile:ensure
       - task: common:zdotdir
@@ -97,8 +106,8 @@ tasks:
       - task: macos:shell
       - task: profile:install
       - |
-        source "$DOTFILES_MESSAGES"
-        success "Installation complete for profile $(cat {{.PROFILE_FILE}})"
+        {{.DOTFILES_MESSAGES}}
+        success "Installation complete for profile {{.PROFILE}}"
         success "If this is a brand new install, please restart your system to ensure all settings take effect."
 
   update:
@@ -112,6 +121,9 @@ tasks:
         - Updates antigen plugins
         - Re-runs profile installation
     cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "Updating dotfiles..."
       - cmd: 'git pull'
       - cmd: 'zsh "$ZSH/tools/upgrade.sh"'
       - cmd: 'tldr --update'
@@ -122,8 +134,8 @@ tasks:
     desc: "Validate dotfiles installation"
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
-        info "Validating installation for profile: $(cat {{.PROFILE_FILE}} 2>/dev/null || echo 'not set')"
+        {{.DOTFILES_MESSAGES}}
+        info "Validating installation for profile: {{.PROFILE}}"
       
       # Validate each component via its own taskfile
       - task: common:validate
@@ -134,14 +146,8 @@ tasks:
       
       # Profile-specific validation (conditional)
       - |
-        source "$DOTFILES_MESSAGES"
-        PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null)
-        if [[ -n "$PROFILE" ]]; then
-          task "${PROFILE}:validate"
-        fi
-
-      - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
+        task "{{.PROFILE}}:validate"
         success "Validation complete"
 
   clean:
@@ -150,5 +156,5 @@ tasks:
       - rm -rf {{.XDG_CACHE_HOME}}/antigen
       - rm -rf {{.XDG_CACHE_HOME}}/zsh
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         success "Caches cleaned"

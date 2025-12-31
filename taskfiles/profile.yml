@@ -6,12 +6,9 @@ tasks:
     cmds:
       - mkdir -p "$(dirname "{{.PROFILE_FILE}}")"
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         VALID_PROFILES=({{.VALID_PROFILES}})
-        CURRENT_PROFILE=""
-        if [[ -f "{{.PROFILE_FILE}}" ]]; then
-          CURRENT_PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null | tr -d '[:space:]')
-        fi
+        CURRENT_PROFILE="{{.PROFILE}}"
         # Check if profile is missing, empty, or invalid
         if [[ -z "$CURRENT_PROFILE" ]] || [[ ! " {{.VALID_PROFILES}} " =~ " $CURRENT_PROFILE " ]]; then
           echo ""
@@ -43,7 +40,7 @@ tasks:
   require:
     desc: "Require profile to be set (fail if not)"
     preconditions:
-      - sh: test -f "{{.PROFILE_FILE}}" && test -n "$(cat "{{.PROFILE_FILE}}")"
+      - sh: test -f "{{.PROFILE_FILE}}" && test -n "{{.PROFILE}}"
         msg: "Profile not set. Run 'task install' or 'task profile:set PROFILE=personal'"
 
   set:
@@ -51,7 +48,7 @@ tasks:
     cmds:
       - mkdir -p "$(dirname "{{.PROFILE_FILE}}")"
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         INPUT_PROFILE="{{.CLI_ARGS}}"
         if [[ -z "$INPUT_PROFILE" ]]; then
           error "Profile required. Use: task profile:set -- personal"
@@ -61,14 +58,7 @@ tasks:
           error "Invalid profile '$INPUT_PROFILE'. Must be one of: {{.VALID_PROFILES}}"
           exit 1
         fi
-        CURRENT_PROFILE=""
-        if [[ -f "{{.PROFILE_FILE}}" ]]; then
-          CURRENT_PROFILE=$(cat "{{.PROFILE_FILE}}" 2>/dev/null | tr -d '[:space:]')
-        fi
         echo "$INPUT_PROFILE" > "{{.PROFILE_FILE}}"
-        if [[ -n "$CURRENT_PROFILE" && "$CURRENT_PROFILE" != "$INPUT_PROFILE" ]]; then
-          info "Changed profile from '$CURRENT_PROFILE' to '$INPUT_PROFILE'"
-        fi
         success "Profile set to: $INPUT_PROFILE"
 
   show:
@@ -82,28 +72,23 @@ tasks:
       - ensure
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
-        PROFILE=$(cat "{{.PROFILE_FILE}}")
-        info "Running installation for profile: $PROFILE"
-        task "${PROFILE}:install"
+        {{.DOTFILES_MESSAGES}}
+        info "Running installation for profile: {{.PROFILE}}"
+        task "{{.PROFILE}}:install"
 
   brew:
     desc: "Install profile-specific Homebrew packages"
     deps:
       - ensure
     cmds:
-      - |
-        PROFILE=$(cat "{{.PROFILE_FILE}}")
-        task "${PROFILE}:brew"
+      - task "{{.PROFILE}}:brew"
 
   links:
     desc: "Create profile-specific symlinks"
     deps:
       - ensure
     cmds:
-      - |
-        PROFILE=$(cat "{{.PROFILE_FILE}}")
-        task "${PROFILE}:links"
+      - task "{{.PROFILE}}:links"
 
   # ============================================================================
   # Validation
@@ -113,16 +98,13 @@ tasks:
     desc: "Validate profile configuration"
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
-        PROFILE_FILE="{{.PROFILE_FILE}}"
-        VALID_PROFILES=({{.VALID_PROFILES}})
-        if [[ -f "$PROFILE_FILE" ]]; then
-          PROFILE_VALUE=$(cat "$PROFILE_FILE")
-          if [[ " {{.VALID_PROFILES}} " =~ " $PROFILE_VALUE " ]]; then
-            check "Profile set to '$PROFILE_VALUE'"
+        {{.DOTFILES_MESSAGES}}
+        if [[ -f "{{.PROFILE_FILE}}" ]]; then
+          if [[ " {{.VALID_PROFILES}} " =~ " {{.PROFILE}} " ]]; then
+            check "Profile set to '{{.PROFILE}}'"
           else
-            cross "Profile file contains invalid value: '$PROFILE_VALUE' (valid: ${VALID_PROFILES[*]})"
+            cross "Profile file contains invalid value: '{{.PROFILE}}' (valid: {{.VALID_PROFILES}})"
           fi
         else
-          cross "Profile file missing ($PROFILE_FILE)"
+          cross "Profile file missing ({{.PROFILE_FILE}})"
         fi

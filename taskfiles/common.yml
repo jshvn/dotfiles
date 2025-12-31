@@ -20,14 +20,12 @@ tasks:
     run: once
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         info "Ensuring XDG Base Directories exist..."
-      - mkdir -p "{{.XDG_CONFIG_HOME}}"
-      - mkdir -p "{{.XDG_DATA_HOME}}"
-      - mkdir -p "{{.XDG_STATE_HOME}}"
-      - mkdir -p "{{.XDG_CACHE_HOME}}"
-      - |
-        source "$DOTFILES_MESSAGES"
+        mkdir -p "{{.XDG_CONFIG_HOME}}"
+        mkdir -p "{{.XDG_DATA_HOME}}"
+        mkdir -p "{{.XDG_STATE_HOME}}"
+        mkdir -p "{{.XDG_CACHE_HOME}}"
         success "XDG Base Directories created"
     status:
       - test -d "{{.XDG_CONFIG_HOME}}"
@@ -40,7 +38,7 @@ tasks:
     run: once
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         ZDOTDIR_EXPORT='export ZDOTDIR="{{.ZDOTDIR}}"'
         if [[ ! -f /etc/zshenv ]]; then
           info "Creating /etc/zshenv with ZDOTDIR export..."
@@ -62,7 +60,7 @@ tasks:
     desc: "Update Antigen plugins"
     cmds:
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         {{.BREW_SHELLENV}}
         if [[ -n "$HOMEBREW_PREFIX" && -f "$HOMEBREW_PREFIX/share/antigen/antigen.zsh" ]]; then
           zsh -c 'source "$HOMEBREW_PREFIX/share/antigen/antigen.zsh" && antigen update'
@@ -94,7 +92,7 @@ tasks:
       
       # ZDOTDIR in /etc/zshenv
       - |
-        source "$DOTFILES_MESSAGES"
+        {{.DOTFILES_MESSAGES}}
         ZDOTDIR_EXPORT='export ZDOTDIR="{{.ZDOTDIR}}"'
         if [[ -f /etc/zshenv ]] && grep -qF "$ZDOTDIR_EXPORT" /etc/zshenv; then
           check "ZDOTDIR configured in /etc/zshenv"
