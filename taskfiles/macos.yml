@@ -143,7 +143,7 @@ tasks:
         fi
     status:
       - grep -qxF "$BREW_ZSH" /etc/shells
-      - '[ "$(dscl . -read /Users/$USER UserShell 2>/dev/null | awk "{print \$2}")" = "{{.BREW_ZSH}}" ]'
+      - '[[ "$(dscl . -read /Users/$USER UserShell 2>/dev/null | awk "{print \$2}")" = "{{.BREW_ZSH}}" ]]'
 
   # ============================================================================
   # Validation
