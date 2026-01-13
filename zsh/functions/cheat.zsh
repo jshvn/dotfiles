@@ -7,7 +7,7 @@ function cheat() {    # cheat() will query a web service and return a human-read
         local result=$(curl "cheat.sh" -s)
         echo $result
 		return 1;
-	fi;
+	fi
     
     local result=$(curl "cheat.sh/${1}?style=xcode" -s)
     echo "$result"

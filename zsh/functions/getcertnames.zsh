@@ -5,7 +5,7 @@ function getcertnames() {    # getcertnames() will print SSL certificate informa
 	if [[ -z "${1}" ]]; then
 		echo "ERROR: No domain specified.";
 		return 1;
-	fi;
+	fi
 
 	local domain="${1}";
 	echo "Testing ${domain}…";
@@ -30,5 +30,5 @@ function getcertnames() {    # getcertnames() will print SSL certificate informa
 	else
 		echo "ERROR: Certificate not found.";
 		return 1;
-	fi;
+	fi
 }

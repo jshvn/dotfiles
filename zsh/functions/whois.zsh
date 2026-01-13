@@ -5,7 +5,7 @@ function whois() {    # whois() wraps whois with URL parsing and colored output.
     if [[ -z "${1}" ]]; then
         echo "ERROR: No domain, IP, or URL specified";
         return 1;
-    fi;
+    fi
 
     local input="$1"
     local target

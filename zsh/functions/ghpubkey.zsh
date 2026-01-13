@@ -5,7 +5,7 @@ function ghpubkey() {    # ghpubkey() will print public key information for a gi
     if [[ -z "${1}" ]]; then
 		echo "ERROR: No GitHub username specified";
 		return 1;
-	fi;
+	fi
 
     local response=$(curl -sL --request GET --url "https://github.com/${1}.keys")
     echo "$response" | highlight --syntax=bash

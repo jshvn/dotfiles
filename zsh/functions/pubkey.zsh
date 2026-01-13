@@ -7,7 +7,7 @@ function pubkey() {    # pubkey() will copy a public key to the clipboard. ex: $
         local keylist=$(ls ~/.ssh/*.pub);
         echo "$keylist" | highlight --syntax=bash
         return 1;
-    fi;
+    fi
     more ~/.ssh/"${1}" | pbcopy 
     echo '=> Public key copied to clipboard.'
 }

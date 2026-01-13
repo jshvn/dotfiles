@@ -5,6 +5,6 @@ function vnc() {    # vnc() will open a VNC connection to a given host. ex: $ vn
     if [[ -z "${1}" ]]; then
         echo "ERROR: No domain specified.";
         return 1;
-    fi;
+    fi
     open "vnc://${1}"
 }

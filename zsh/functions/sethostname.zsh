@@ -5,7 +5,7 @@ function sethostname() {    # sethostname() will set the machine's hostname to t
     if [[ -z "${1}" ]]; then
         echo "ERROR: No hostname specified.";
         return 1;
-    fi;
+    fi
     sudo scutil --set ComputerName "$1"
     sudo scutil --set HostName "$1"
     sudo scutil --set LocalHostName "$1"

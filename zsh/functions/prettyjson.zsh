@@ -5,8 +5,7 @@ function prettyjson() {    # prettyjson() will print human readable json that ha
 	if [[ -z "${1}" ]]; then
 		echo "ERROR: No file specified";
 		return 1;
-	fi;
+	fi
 
-  local result=$(cat "${1}" | python3 -m json.tool)
-  echo "$result" | highlight --syntax=json
+    jq '.' "${1}" | highlight --syntax=json
 }

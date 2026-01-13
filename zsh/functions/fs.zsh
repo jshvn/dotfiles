@@ -14,6 +14,6 @@ function fs() {    # fs() will print a human readable size of given file or dire
             du $arg .[^.]* ./* | highlight --syntax=bash
         else
             find . -type f | du -ah -d1 | highlight --syntax=bash
-        fi;
-	fi;
+        fi
+	fi
 }
