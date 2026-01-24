@@ -13,6 +13,7 @@ cask_args appdir: "/Applications"
 # social
 cask "discord"
 cask "slack"
+cask "whatsapp"
 
 # music 
 cask "spotify"
