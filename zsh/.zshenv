@@ -40,6 +40,16 @@ export XDG_CONFIG_DIRS="/etc/xdg"
 # setup ZSH directory
 export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
 
+# zsh history file (set here, not .zshrc, so it's defined before
+# VS Code shell integration or other wrappers can write to the default path)
+export HISTFILE="$XDG_DATA_HOME/zsh/history"
+export HIST_STAMPS="%Y-%m-%d %I:%M:%S"
+mkdir -p "${HISTFILE%/*}"
+setopt SHARE_HISTORY
+
+# Claude Code: use XDG-compliant config directory instead of ~/.claude
+export CLAUDE_CONFIG_DIR="${XDG_CONFIG_HOME}/claude"
+
 # tool defaults (safe for non-interactive shells)
 export EDITOR="nano"
 export VEDITOR="code"

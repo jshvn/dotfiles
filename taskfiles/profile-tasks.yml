@@ -71,6 +71,17 @@ tasks:
         fi
 
   # ============================================================================
+  # Symlink Removal (Unlink)
+  # ============================================================================
+
+  unlink:
+    desc: "Remove {{.TARGET_PROFILE}}-specific symlinks"
+    cmds:
+      - rm -f "{{.XDG_CONFIG_HOME}}/git/config-{{.TARGET_PROFILE}}"
+      - rm -f "{{.HOME}}/.ssh/config-{{.TARGET_PROFILE}}"
+      - rm -f "{{.HOME}}/.ssh/id_ed25519_{{.TARGET_PROFILE}}.pub"
+
+  # ============================================================================
   # Validation
   # ============================================================================
 

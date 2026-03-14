@@ -40,12 +40,6 @@
 #   http://zsh.sourceforge.net/Doc/Release/Files.html
 # -----------------------------------------------------------------------------
 
-# setup zsh history file in XDG data home, turn on history sharing
-export HISTFILE="$XDG_DATA_HOME/zsh/history"
-export HIST_STAMPS="%Y-%m-%d %I:%M:%S"
-mkdir -p "${HISTFILE%/*}"
-setopt SHARE_HISTORY
-
 export ZSH_COMPDUMP="$XDG_CACHE_HOME/zsh/zcompcache"
 mkdir -p "${ZSH_COMPDUMP%/*}"
 
