@@ -34,7 +34,7 @@ tasks:
       vars: [SOURCE, TARGET]
     cmds:
       - mkdir -p "$(dirname "{{.TARGET}}")"
-      - ln -sf "{{.SOURCE}}" "{{.TARGET}}"
+      - ln -sfn "{{.SOURCE}}" "{{.TARGET}}"
 
   # ---------------------------------------------------------------------------
   # Validation Helpers
