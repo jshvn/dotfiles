@@ -47,6 +47,9 @@ vars:
   # Consistent messages sourcing for all taskfiles
   DOTFILES_MESSAGES: |
     source '{{.DOTFILEDIR}}/install/messages.zsh'
+  
+  # Claude Code configuration path
+  CLAUDE_CONFIG_HOME: '{{.XDG_CONFIG_HOME}}/claude'
 
 includes:
   common: ./taskfiles/common.yml
@@ -119,6 +122,7 @@ tasks:
         - Updates oh-my-zsh
         - Updates tldr definitions
         - Updates antigen plugins
+        - Updates everything-claude-code plugin
         - Re-runs profile installation
     cmds:
       - |
@@ -128,6 +132,7 @@ tasks:
       - cmd: 'zsh "$ZSH/tools/upgrade.sh"'
       - cmd: 'tldr --update'
       - task: common:antigen-update
+      - cmd: 'claude plugin update everything-claude-code@everything-claude-code'
       - task: install
 
   validate:

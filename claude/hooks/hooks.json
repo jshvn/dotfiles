@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/post-compact.zsh\""
+          }
+        ],
+        "description": "Re-inject git context (branch, recent commits, status) after compaction"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/secret-scan.zsh\""
+          }
+        ],
+        "description": "Block writes containing potential secrets (API keys, tokens, private keys)"
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/block-destructive.zsh\""
+          }
+        ],
+        "description": "Block destructive commands (force push, rm -rf, DROP TABLE, --no-verify)"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/no-ai-comments.zsh\""
+          }
+        ],
+        "description": "Warn if AI attribution detected (source code or commit messages)"
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/no-emojis.zsh\""
+          }
+        ],
+        "description": "Warn if emojis were written to code files"
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/notify.zsh\""
+          }
+        ],
+        "description": "Show macOS desktop notification when Claude needs attention"
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Review whether the task was actually completed. Check for: (1) claiming issues are pre-existing rather than fixing them, (2) deferring work to follow-ups or TODOs instead of doing it now, (3) skipping failing tests or ignoring errors, (4) declaring success without verifying the result. If any of these are true, respond with 'STOP: <reason>' to force continuation. If the work is genuinely complete, respond with 'OK'."
+          }
+        ],
+        "description": "Catch premature task completion and rationalized incomplete work"
+      }
+    ]
+  }
+}

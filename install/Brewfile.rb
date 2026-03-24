@@ -73,6 +73,9 @@ brew "antigen"
 # jq is a command line json parser
 brew "jq"
 
+# GNU grep for PCRE support (grep -P)
+brew "grep"
+
 # cloudflared client
 brew "cloudflared"
 

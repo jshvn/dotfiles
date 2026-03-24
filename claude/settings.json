@@ -1,0 +1,72 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "WebFetch",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(find *)",
+      "Bash(file *)",
+      "Bash(stat *)",
+      "Bash(diff *)",
+      "Bash(which *)",
+      "Bash(command -v *)",
+      "Bash(type *)",
+      "Bash(env *)",
+      "Bash(printenv*)",
+      "Bash(echo *)",
+      "Bash(pwd*)",
+      "Bash(whoami*)",
+      "Bash(uname *)",
+      "Bash(date *)",
+      "Bash(jq *)",
+      "Bash(yq *)",
+      "Bash(tree *)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(git remote*)",
+      "Bash(git rev-parse*)",
+      "Bash(git tag*)",
+      "Bash(git stash list*)",
+      "Bash(git blame*)",
+      "Bash(gh pr *)",
+      "Bash(gh issue *)",
+      "Bash(gh repo view*)",
+      "Bash(gh run *)",
+      "Bash(task *)",
+      "Bash(python3 -m json.tool*)",
+      "Bash(python3 -c *)",
+      "Bash(shellcheck *)",
+      "Bash(ruff check*)",
+      "Bash(ruff format --check*)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/secrets/*)",
+      "Read(**/*credential*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)"
+    ]
+  },
+  "extraKnownMarketplaces": {
+    "everything-claude-code": {
+      "source": {
+        "source": "github",
+        "repo": "affaan-m/everything-claude-code"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "everything-claude-code@everything-claude-code": true
+  }
+}

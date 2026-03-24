@@ -22,6 +22,7 @@ tasks:
       - task: git
       - task: ssh
       - task: tools
+      - task: claude
 
   zsh:
     desc: "Link zsh configuration files"
@@ -99,6 +100,29 @@ tasks:
       - test -L "{{.XDG_CONFIG_HOME}}/glow/glow.yml"
       - test -L "{{.XDG_CONFIG_HOME}}/glow/glow_style.json"
 
+  claude:
+    desc: "Link Claude Code configuration"
+    cmds:
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/CLAUDE.md", TARGET: "{{.CLAUDE_CONFIG_HOME}}/CLAUDE.md" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/agents", TARGET: "{{.CLAUDE_CONFIG_HOME}}/agents" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/commands", TARGET: "{{.CLAUDE_CONFIG_HOME}}/commands" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks", TARGET: "{{.CLAUDE_CONFIG_HOME}}/hooks" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/skills", TARGET: "{{.CLAUDE_CONFIG_HOME}}/skills" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/settings.json", TARGET: "{{.CLAUDE_CONFIG_HOME}}/settings.json" }
+    status:
+      - test -L "{{.CLAUDE_CONFIG_HOME}}/CLAUDE.md"
+      - test -L "{{.CLAUDE_CONFIG_HOME}}/agents"
+      - test -L "{{.CLAUDE_CONFIG_HOME}}/commands"
+      - test -L "{{.CLAUDE_CONFIG_HOME}}/hooks"
+      - test -L "{{.CLAUDE_CONFIG_HOME}}/skills"
+      - test -L "{{.CLAUDE_CONFIG_HOME}}/settings.json"
+
   # ============================================================================
   # Validation
   # ============================================================================
@@ -117,19 +141,19 @@ tasks:
         vars: { TARGET: "{{.ZDOTDIR}}/.zlogin", NAME: "zlogin" }
       - task: _:check-link
         vars: { TARGET: "{{.ZDOTDIR}}/.zlogout", NAME: "zlogout" }
-      
+
       # Git
       - task: _:check-link
         vars: { TARGET: "{{.XDG_CONFIG_HOME}}/git/config", NAME: "git config" }
       - task: _:check-link
         vars: { TARGET: "{{.XDG_CONFIG_HOME}}/git/ignore", NAME: "git ignore" }
-      
+
       # SSH
       - task: _:check-link
         vars: { TARGET: "{{.HOME}}/.ssh/config", NAME: "ssh config" }
       - task: _:check-link
         vars: { TARGET: "{{.HOME}}/.ssh/cloudflared.zsh", NAME: "cloudflared.zsh" }
-      
+
       # 1Password agent config (skipped on server profile)
       - |
         {{.DOTFILES_MESSAGES}}
@@ -140,7 +164,35 @@ tasks:
         else
           cross "1Password ssh agent config"
         fi
-      
+
+      # Claude Code
+      - task: _:check-link
+        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/CLAUDE.md", NAME: "claude CLAUDE.md" }
+      - task: _:check-link
+        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/agents", NAME: "claude agents" }
+      - task: _:check-link
+        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/commands", NAME: "claude commands" }
+      - task: _:check-link
+        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/hooks", NAME: "claude hooks" }
+      - task: _:check-link
+        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/skills", NAME: "claude skills" }
+      - task: _:check-link
+        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/settings.json", NAME: "claude settings.json" }
+      # Validate hook scripts are executable
+      - |
+        {{.DOTFILES_MESSAGES}}
+        all_exec=true
+        for hook in "{{.DOTFILEDIR}}/claude/hooks/"*.zsh; do
+          [[ -f "$hook" ]] || continue
+          # Skip lib.zsh -- sourced by other hooks, not executed directly
+          [[ "$(basename "$hook")" == "lib.zsh" ]] && continue
+          if [[ ! -x "$hook" ]]; then
+            cross "$(basename "$hook") not executable"
+            all_exec=false
+          fi
+        done
+        $all_exec && check "hook scripts executable"
+
       # Tools
       - task: _:check-link
         vars: { TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml", NAME: "trippy config" }
@@ -169,6 +221,7 @@ tasks:
       - task: unlink-git
       - task: unlink-ssh
       - task: unlink-tools
+      - task: unlink-claude
       - |
         {{.DOTFILES_MESSAGES}}
         success "All symlinks removed"
@@ -209,3 +262,14 @@ tasks:
       - rm -f "{{.XDG_CONFIG_HOME}}/ghostty/config"
       - rm -f "{{.XDG_CONFIG_HOME}}/glow/glow.yml"
       - rm -f "{{.XDG_CONFIG_HOME}}/glow/glow_style.json"
+
+  unlink-claude:
+    desc: "Remove Claude Code symlinks"
+    internal: true
+    cmds:
+      - rm -f "{{.CLAUDE_CONFIG_HOME}}/CLAUDE.md"
+      - rm -f "{{.CLAUDE_CONFIG_HOME}}/agents"
+      - rm -f "{{.CLAUDE_CONFIG_HOME}}/commands"
+      - rm -f "{{.CLAUDE_CONFIG_HOME}}/hooks"
+      - rm -f "{{.CLAUDE_CONFIG_HOME}}/skills"
+      - rm -f "{{.CLAUDE_CONFIG_HOME}}/settings.json"
