@@ -123,6 +123,7 @@ tasks:
         - Updates tldr definitions
         - Updates antigen plugins
         - Updates everything-claude-code plugin
+        - Updates get-shit-done plugin
         - Re-runs profile installation
     cmds:
       - |
@@ -133,6 +134,7 @@ tasks:
       - cmd: 'tldr --update'
       - task: common:antigen-update
       - cmd: 'claude plugin update everything-claude-code@everything-claude-code'
+      - cmd: 'npx -y get-shit-done-cc@latest --claude --global'
       - task: install
 
   validate:
