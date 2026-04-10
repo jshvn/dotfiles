@@ -15,6 +15,16 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/agent-transparency.zsh\""
+          }
+        ],
+        "description": "Log which subagent type and task is being delegated"
+      },
+      {
         "matcher": "Write|Edit",
         "hooks": [
           {

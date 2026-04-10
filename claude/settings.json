@@ -19,35 +19,36 @@
       "Bash(command -v *)",
       "Bash(type *)",
       "Bash(env *)",
-      "Bash(printenv*)",
+      "Bash(printenv *)",
       "Bash(echo *)",
-      "Bash(pwd*)",
-      "Bash(whoami*)",
+      "Bash(pwd *)",
+      "Bash(whoami *)",
       "Bash(uname *)",
       "Bash(date *)",
       "Bash(jq *)",
       "Bash(yq *)",
       "Bash(tree *)",
-      "Bash(git status*)",
-      "Bash(git log*)",
-      "Bash(git diff*)",
-      "Bash(git branch*)",
-      "Bash(git show*)",
-      "Bash(git remote*)",
-      "Bash(git rev-parse*)",
-      "Bash(git tag*)",
-      "Bash(git stash list*)",
-      "Bash(git blame*)",
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git branch *)",
+      "Bash(git show *)",
+      "Bash(git remote *)",
+      "Bash(git rev-parse *)",
+      "Bash(git tag *)",
+      "Bash(git stash list *)",
+      "Bash(git blame *)",
       "Bash(gh pr *)",
       "Bash(gh issue *)",
-      "Bash(gh repo view*)",
+      "Bash(gh repo view *)",
       "Bash(gh run *)",
       "Bash(task *)",
-      "Bash(python3 -m json.tool*)",
+      "Bash(python3 -m json.tool *)",
       "Bash(python3 -c *)",
       "Bash(shellcheck *)",
-      "Bash(ruff check*)",
-      "Bash(ruff format --check*)"
+      "Bash(ruff check *)",
+      "Bash(ruff format --check *)",
+      "Bash(whois *)"
     ],
     "deny": [
       "Read(.env)",
@@ -58,6 +59,97 @@
       "Read(**/*.key)"
     ]
   },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/josh/.config/claude/hooks/gsd-check-update.js\""
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/josh/.config/claude/hooks/gsd-session-state.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/josh/.config/claude/hooks/gsd-context-monitor.js\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/josh/.config/claude/hooks/gsd-phase-boundary.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/josh/.config/claude/hooks/gsd-prompt-guard.js\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/josh/.config/claude/hooks/gsd-read-guard.js\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/josh/.config/claude/hooks/gsd-workflow-guard.js\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/josh/.config/claude/hooks/gsd-validate-commit.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "node \"/Users/josh/.config/claude/hooks/gsd-statusline.js\""
+  },
+  "enabledPlugins": {
+    "everything-claude-code@everything-claude-code": true
+  },
   "extraKnownMarketplaces": {
     "everything-claude-code": {
       "source": {
@@ -65,8 +157,5 @@
         "repo": "affaan-m/everything-claude-code"
       }
     }
-  },
-  "enabledPlugins": {
-    "everything-claude-code@everything-claude-code": true
   }
 }
