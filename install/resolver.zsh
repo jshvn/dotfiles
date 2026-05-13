@@ -79,17 +79,25 @@ list_available_machines() {
 # validate_manifest <machine_file>
 # Hand-rolled D-03 required-field validator + D-01 os enum + identity enum.
 # Uses yq has() + tag predicates (RESEARCH section 3.3).
-# Returns the number of validation errors via stdout (caller captures and
-# compares to 0). On any error, an `error` line is written to stderr.
+#
+# WR-07 fix: previously this function returned the error count via stdout
+# and the caller did errcount=$(validate_manifest ...). That pattern is
+# brittle -- any future addition that writes to stdout (an unwrapped
+# command, a stray echo) would corrupt the captured count and confuse the
+# subsequent (( errcount > 0 )) test. Now: the count is returned via the
+# global VALIDATE_ERRORS, and the function exit status is 0 when valid /
+# 1 when invalid. On any error, an `error` line is written to stderr.
 # -----------------------------------------------------------------------------
+typeset -gi VALIDATE_ERRORS=0
 validate_manifest() {
   local machine_file="$1"
+  VALIDATE_ERRORS=0
   local errors=0
 
   if [[ ! -f "$machine_file" ]]; then
     error "machine manifest not found: ${machine_file}"
-    echo 1
-    return 0
+    VALIDATE_ERRORS=1
+    return 1
   fi
 
   # Required scalar string fields: each must be present (has() == true)
@@ -199,7 +207,11 @@ validate_manifest() {
     esac
   done
 
-  echo "$errors"
+  VALIDATE_ERRORS=$errors
+  if (( errors > 0 )); then
+    return 1
+  fi
+  return 0
 }
 
 # -----------------------------------------------------------------------------
@@ -410,11 +422,14 @@ USAGE
       error "machine manifest not found: ${machine_file}"
       return 1
     fi
-    local errcount
-    errcount=$(validate_manifest "$machine_file")
+    # WR-07 fix: validate_manifest now signals failure via exit status
+    # plus the global VALIDATE_ERRORS, not via stdout. The `|| true`
+    # keeps `set -e` from aborting on a non-zero return so we can read
+    # the error count and emit a summary message.
+    validate_manifest "$machine_file" || true
     emit_unknown_key_warnings "$machine_file"
-    if (( errcount > 0 )); then
-      error "validation failed for ${machine_arg}: ${errcount} error(s)"
+    if (( VALIDATE_ERRORS > 0 )); then
+      error "validation failed for ${machine_arg}: ${VALIDATE_ERRORS} error(s)"
       return 1
     fi
     return 0
