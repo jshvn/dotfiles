@@ -1,0 +1,24 @@
+# manifests/machines/server-1.toml -- Mac server-1.
+#
+# Headless ops machine, core packages only; no GUI feature flags.
+# See docs/MANIFEST.md for the schema reference and field semantics.
+
+schema_version = 1
+
+[meta]
+description = "Mac server-1 -- headless ops machine, core packages only"
+
+[platform]
+os = "darwin"
+
+[features]
+one-password-ssh = false
+motd = true
+claude-marketplace = false
+
+[packages.brew]
+bundles = ["core"]
+
+[identity]
+git = "none"
+ssh = "none"

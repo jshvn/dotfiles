@@ -1,0 +1,31 @@
+# manifests/machines/personal-laptop.toml -- Josh's personal MacBook.
+#
+# Daily driver: full GUI + dev + personal feature set; Apple Silicon.
+# See docs/MANIFEST.md for the schema reference and field semantics.
+
+schema_version = 1
+
+[meta]
+description = "Josh's personal MacBook -- Apple Silicon, primary dev machine"
+
+[platform]
+os = "darwin"
+arch = "arm64"
+
+[features]
+one-password-ssh = true
+macos-dock = true
+macos-finder = true
+macos-input = true
+macos-screenshots = true
+macos-security = true
+motd = true
+claude-marketplace = true
+
+[packages.brew]
+bundles = ["core", "gui", "dev", "personal"]
+extra_packages = ["docker-desktop"]
+
+[identity]
+git = "personal"
+ssh = "personal"
