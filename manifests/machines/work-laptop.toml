@@ -1,0 +1,29 @@
+# manifests/machines/work-laptop.toml -- Work MacBook.
+#
+# Work identity, GUI + dev environment; arch detected by the resolver.
+# See docs/MANIFEST.md for the schema reference and field semantics.
+
+schema_version = 1
+
+[meta]
+description = "Work MacBook -- work identity, GUI + dev environment"
+
+[platform]
+os = "darwin"
+
+[features]
+one-password-ssh = true
+macos-dock = true
+macos-finder = true
+macos-input = true
+macos-screenshots = true
+macos-security = true
+motd = true
+claude-marketplace = true
+
+[packages.brew]
+bundles = ["core", "gui", "dev"]
+
+[identity]
+git = "work"
+ssh = "work"

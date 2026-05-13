@@ -1,0 +1,41 @@
+# manifests/defaults.toml -- shared baseline inherited by every machine manifest.
+#
+# Schema reference: docs/MANIFEST.md
+# Merge semantics:  deep-merge maps; replace scalars/arrays; concat+dedupe
+#                   extra_packages. See research notes section 4 and 5.
+# Required fields:  every machine TOML in manifests/machines/<name>.toml MUST
+#                   explicitly declare meta.description, platform.os, features,
+#                   packages.brew.bundles, identity.git, identity.ssh. Defaults
+#                   supply shape so the resolver always produces a complete
+#                   resolved.json (D-05 hybrid pattern), but the validator
+#                   still requires the machine file to declare every required
+#                   field on its own (drift guard).
+
+schema_version = 1
+
+[meta]
+description = "default -- machine must override"
+
+[platform]
+# v1 accepts only "darwin"; v2 will open the rule up to "linux" as well.
+os = "darwin"
+
+[features]
+# Opt-in feature flags. Each is consumed by exactly one task or asset in
+# a later phase. Defaults are conservative (mostly off).
+one-password-ssh = false
+motd = true
+claude-marketplace = true
+
+[packages.brew]
+# Bundle names map to packages/<name>.rb in Phase 5.
+bundles = ["core"]
+# Additive escape hatch -- resolver computes the dedupe union of defaults
+# plus the active machine's extras at resolve time.
+extra_packages = []
+
+[identity]
+# Allowed values: "personal" | "work" | "none". Drives Phase 4 git+SSH
+# identity selection.
+git = "none"
+ssh = "none"
