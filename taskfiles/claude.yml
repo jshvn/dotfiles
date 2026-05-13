@@ -1,0 +1,222 @@
+version: '3'
+
+# =============================================================================
+# Claude Code Plugin Management
+# =============================================================================
+#
+# Centralizes install/update/validate for Claude Code plugins, marketplaces,
+# and the get-shit-done-cc global installer. All operations are idempotent
+# and safe to run on a fresh box (`claude plugin update` would otherwise
+# error on uninstalled plugins).
+#
+# Config symlinks for ~/.config/claude/{CLAUDE.md,settings.json,agents,
+# commands,hooks,skills} are owned by taskfiles/links.yml and not touched here.
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+vars:
+  # Marketplaces to keep registered. One per line: `<name> <source>`.
+  # Source can be a URL, GitHub repo (owner/repo), or filesystem path.
+  CLAUDE_MARKETPLACES: |
+    ecc https://github.com/affaan-m/everything-claude-code.git
+
+  # Plugins to keep installed. One per line: `<plugin-name>@<marketplace-name>`.
+  CLAUDE_PLUGINS: |
+    ecc@ecc
+
+tasks:
+  # ===========================================================================
+  # Public tasks
+  # ===========================================================================
+
+  install:
+    desc: "Install Claude Code marketplaces, plugins, and get-shit-done-cc"
+    cmds:
+      - task: ensure-cli
+      - task: cleanup-stale
+      - task: marketplaces-add
+      - task: plugins-install
+      - task: gsd-install
+      - |
+        {{.DOTFILES_MESSAGES}}
+        success "Claude plugins installed"
+
+  update:
+    desc: "Update Claude Code marketplaces, plugins, and get-shit-done-cc"
+    cmds:
+      - task: ensure-cli
+      - task: cleanup-stale
+      - task: marketplaces-update
+      - task: plugins-install
+      - task: plugins-update
+      - task: gsd-install
+      - |
+        {{.DOTFILES_MESSAGES}}
+        success "Claude plugins updated"
+
+  validate:
+    desc: "Validate Claude Code install state"
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{.BREW_SHELLENV}}
+        if command -v claude >/dev/null 2>&1; then
+          check "claude CLI installed"
+        else
+          cross "claude CLI missing (brew install claude)"
+          exit 0
+        fi
+        if command -v jq >/dev/null 2>&1; then
+          check "jq installed"
+        else
+          cross "jq missing (brew install jq)"
+        fi
+        # Marketplaces
+        marketplaces_json="$(claude plugin marketplace list --json 2>/dev/null || echo '[]')"
+        echo '{{.CLAUDE_MARKETPLACES}}' | while read -r name _source; do
+          [[ -z "$name" ]] && continue
+          if echo "$marketplaces_json" | jq -e --arg n "$name" '.[] | select(.name == $n)' >/dev/null; then
+            check "marketplace $name registered"
+          else
+            cross "marketplace $name missing"
+          fi
+        done
+        # Plugins
+        plugins_json="$(claude plugin list --json 2>/dev/null || echo '[]')"
+        echo '{{.CLAUDE_PLUGINS}}' | while read -r id; do
+          [[ -z "$id" ]] && continue
+          if echo "$plugins_json" | jq -e --arg i "$id" '.[] | select(.id == $i)' >/dev/null; then
+            check "plugin $id installed"
+          else
+            cross "plugin $id missing"
+          fi
+        done
+
+  status:
+    desc: "Show installed Claude plugins and registered marketplaces"
+    cmds:
+      - |
+        {{.BREW_SHELLENV}}
+        if ! command -v claude >/dev/null 2>&1; then
+          echo "claude CLI not installed" >&2
+          exit 1
+        fi
+        claude plugin marketplace list
+        echo
+        claude plugin list
+
+  # ===========================================================================
+  # Internal helpers
+  # ===========================================================================
+
+  ensure-cli:
+    desc: "Ensure claude and jq CLIs are available"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{.BREW_SHELLENV}}
+        missing=0
+        if ! command -v claude >/dev/null 2>&1; then
+          cross "claude CLI not found -- install via 'brew install claude'"
+          missing=1
+        fi
+        if ! command -v jq >/dev/null 2>&1; then
+          cross "jq not found -- install via 'brew install jq'"
+          missing=1
+        fi
+        [[ $missing -eq 0 ]]
+
+  cleanup-stale:
+    desc: "Remove dead everything-claude-code plugin and duplicate marketplace"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{.BREW_SHELLENV}}
+        plugins_json="$(claude plugin list --json 2>/dev/null || echo '[]')"
+        if echo "$plugins_json" | jq -e '.[] | select(.id == "everything-claude-code@everything-claude-code")' >/dev/null; then
+          info "removing stale plugin: everything-claude-code@everything-claude-code"
+          claude plugin uninstall everything-claude-code@everything-claude-code
+        fi
+        marketplaces_json="$(claude plugin marketplace list --json 2>/dev/null || echo '[]')"
+        if echo "$marketplaces_json" | jq -e '.[] | select(.name == "everything-claude-code")' >/dev/null; then
+          info "removing stale marketplace: everything-claude-code"
+          claude plugin marketplace remove everything-claude-code
+        fi
+
+  marketplaces-add:
+    desc: "Register every declared marketplace if not already present"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{.BREW_SHELLENV}}
+        marketplaces_json="$(claude plugin marketplace list --json 2>/dev/null || echo '[]')"
+        echo '{{.CLAUDE_MARKETPLACES}}' | while read -r name source; do
+          [[ -z "$name" ]] && continue
+          if echo "$marketplaces_json" | jq -e --arg n "$name" '.[] | select(.name == $n)' >/dev/null; then
+            check "marketplace $name already registered"
+          else
+            info "registering marketplace $name from $source"
+            claude plugin marketplace add "$source"
+          fi
+        done
+
+  marketplaces-update:
+    desc: "Update all registered marketplaces"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{.BREW_SHELLENV}}
+        info "updating all marketplaces"
+        claude plugin marketplace update
+
+  plugins-install:
+    desc: "Install every declared plugin if not already installed"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{.BREW_SHELLENV}}
+        plugins_json="$(claude plugin list --json 2>/dev/null || echo '[]')"
+        echo '{{.CLAUDE_PLUGINS}}' | while read -r id; do
+          [[ -z "$id" ]] && continue
+          if echo "$plugins_json" | jq -e --arg i "$id" '.[] | select(.id == $i)' >/dev/null; then
+            check "plugin $id already installed"
+          else
+            info "installing plugin $id"
+            claude plugin install "$id"
+          fi
+        done
+
+  plugins-update:
+    desc: "Update every installed declared plugin"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{.BREW_SHELLENV}}
+        plugins_json="$(claude plugin list --json 2>/dev/null || echo '[]')"
+        echo '{{.CLAUDE_PLUGINS}}' | while read -r id; do
+          [[ -z "$id" ]] && continue
+          if echo "$plugins_json" | jq -e --arg i "$id" '.[] | select(.id == $i)' >/dev/null; then
+            info "updating plugin $id"
+            claude plugin update "$id"
+          else
+            warn "plugin $id not installed -- skipping update"
+          fi
+        done
+
+  gsd-install:
+    desc: "Install/update get-shit-done-cc global"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{.BREW_SHELLENV}}
+        info "installing get-shit-done-cc (global)"
+        npx -y get-shit-done-cc@latest --claude --global

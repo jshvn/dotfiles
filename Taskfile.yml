@@ -57,6 +57,7 @@ includes:
   links: ./taskfiles/links.yml
   brew: ./taskfiles/brew.yml
   macos: ./taskfiles/macos.yml
+  claude: ./taskfiles/claude.yml
   personal:
     taskfile: ./taskfiles/profile-tasks.yml
     vars:
@@ -105,6 +106,7 @@ tasks:
       - task: common:zdotdir
       - task: links:all
       - task: brew:install
+      - task: claude:install
       - task: macos:defaults
       - task: macos:shell
       - task: profile:install
@@ -122,8 +124,8 @@ tasks:
         - Updates oh-my-zsh
         - Updates tldr definitions
         - Updates antigen plugins
-        - Updates everything-claude-code plugin
-        - Updates get-shit-done plugin
+        - Updates Claude Code marketplaces and plugins
+        - Updates get-shit-done-cc
         - Re-runs profile installation
     cmds:
       - |
@@ -133,8 +135,7 @@ tasks:
       - cmd: 'zsh "$ZSH/tools/upgrade.sh"'
       - cmd: 'tldr --update'
       - task: common:antigen-update
-      - cmd: 'claude plugin update everything-claude-code@everything-claude-code'
-      - cmd: 'npx -y get-shit-done-cc@latest --claude --global'
+      - task: claude:update
       - task: install
 
   validate:
@@ -149,6 +150,7 @@ tasks:
       - task: profile:validate
       - task: links:validate
       - task: brew:validate
+      - task: claude:validate
       - task: macos:validate
       
       # Profile-specific validation (conditional)
