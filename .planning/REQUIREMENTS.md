@@ -180,29 +180,108 @@ Explicit exclusions documented to prevent scope creep.
 
 ## Traceability
 
-Mapping from requirement to roadmap phase. Confirmed by roadmapper.
+Mapping from requirement to roadmap phase. Confirmed by roadmapper 2026-05-13.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MFST-01 through MFST-09 | Phase 1 (Manifest Engine + Skeleton) | Pending |
-| BTSP-01 through BTSP-07 | Phase 2 (Install Engine) | Pending |
-| LINT-01 through LINT-08 | Phase 2 (Install Engine) | Pending |
-| SHEL-01 through SHEL-12 | Phase 3 (Shell Layer) | Pending |
-| IDNT-01 through IDNT-08 | Phase 4 (Identity Layer) | Pending |
-| PKGS-01 through PKGS-07 | Phase 5 (Packages Layer) | Pending |
-| OSCF-01 through OSCF-06 | Phase 6 (OS Defaults) | Pending |
-| CLDE-01 through CLDE-04 | Phase 7 (Claude + Configs) | Pending |
-| TOOL-01 through TOOL-03 | Phase 7 (Claude + Configs) | Pending |
-| DOCS-01 through DOCS-07 | Phases 1, 2, 3, 8 (cross-cutting) | Pending |
-| CUTV-01 through CUTV-06 | Phase 8 (Validation + Cutover) | Pending |
+| MFST-01 | Phase 1 (Manifest Engine + Skeleton) | Pending |
+| MFST-02 | Phase 1 (Manifest Engine + Skeleton) | Pending |
+| MFST-03 | Phase 1 (Manifest Engine + Skeleton) | Pending |
+| MFST-04 | Phase 1 (Manifest Engine + Skeleton) | Pending |
+| MFST-05 | Phase 1 (Manifest Engine + Skeleton) | Pending |
+| MFST-06 | Phase 1 (Manifest Engine + Skeleton) | Pending |
+| MFST-07 | Phase 1 (Manifest Engine + Skeleton) | Pending |
+| MFST-08 | Phase 1 (Manifest Engine + Skeleton) | Pending |
+| MFST-09 | Phase 1 (Manifest Engine + Skeleton) | Pending |
+| BTSP-01 | Phase 2 (Install Engine) | Pending |
+| BTSP-02 | Phase 2 (Install Engine) | Pending |
+| BTSP-03 | Phase 2 (Install Engine) | Pending |
+| BTSP-04 | Phase 2 (Install Engine) | Pending |
+| BTSP-05 | Phase 2 (Install Engine) | Pending |
+| BTSP-06 | Phase 2 (Install Engine) | Pending |
+| BTSP-07 | Phase 2 (Install Engine) | Pending |
+| LINT-01 | Phase 2 (Install Engine) | Pending |
+| LINT-02 | Phase 2 (Install Engine) | Pending |
+| LINT-03 | Phase 2 (Install Engine) | Pending |
+| LINT-04 | Phase 2 (Install Engine) | Pending |
+| LINT-05 | Phase 2 (Install Engine) | Pending |
+| LINT-06 | Phase 2 (Install Engine) | Pending |
+| LINT-07 | Phase 2 (Install Engine) | Pending |
+| LINT-08 | Phase 2 (Install Engine) | Pending |
+| SHEL-01 | Phase 3 (Shell Layer) | Pending |
+| SHEL-02 | Phase 3 (Shell Layer) | Pending |
+| SHEL-03 | Phase 3 (Shell Layer) | Pending |
+| SHEL-04 | Phase 3 (Shell Layer) | Pending |
+| SHEL-05 | Phase 3 (Shell Layer) | Pending |
+| SHEL-06 | Phase 3 (Shell Layer) | Pending |
+| SHEL-07 | Phase 3 (Shell Layer) | Pending |
+| SHEL-08 | Phase 3 (Shell Layer) | Pending |
+| SHEL-09 | Phase 3 (Shell Layer) | Pending |
+| SHEL-10 | Phase 3 (Shell Layer) | Pending |
+| SHEL-11 | Phase 3 (Shell Layer) | Pending |
+| SHEL-12 | Phase 3 (Shell Layer) | Pending |
+| IDNT-01 | Phase 4 (Identity Layer) | Pending |
+| IDNT-02 | Phase 4 (Identity Layer) | Pending |
+| IDNT-03 | Phase 4 (Identity Layer) | Pending |
+| IDNT-04 | Phase 4 (Identity Layer) | Pending |
+| IDNT-05 | Phase 4 (Identity Layer) | Pending |
+| IDNT-06 | Phase 4 (Identity Layer) | Pending |
+| IDNT-07 | Phase 4 (Identity Layer) | Pending |
+| IDNT-08 | Phase 4 (Identity Layer) | Pending |
+| PKGS-01 | Phase 5 (Packages Layer) | Pending |
+| PKGS-02 | Phase 5 (Packages Layer) | Pending |
+| PKGS-03 | Phase 5 (Packages Layer) | Pending |
+| PKGS-04 | Phase 5 (Packages Layer) | Pending |
+| PKGS-05 | Phase 5 (Packages Layer) | Pending |
+| PKGS-06 | Phase 5 (Packages Layer) | Pending |
+| PKGS-07 | Phase 5 (Packages Layer) | Pending |
+| OSCF-01 | Phase 6 (OS Defaults) | Pending |
+| OSCF-02 | Phase 6 (OS Defaults) | Pending |
+| OSCF-03 | Phase 6 (OS Defaults) | Pending |
+| OSCF-04 | Phase 6 (OS Defaults) | Pending |
+| OSCF-05 | Phase 6 (OS Defaults) | Pending |
+| OSCF-06 | Phase 6 (OS Defaults) | Pending |
+| CLDE-01 | Phase 7 (Claude + Configs) | Pending |
+| CLDE-02 | Phase 7 (Claude + Configs) | Pending |
+| CLDE-03 | Phase 7 (Claude + Configs) | Pending |
+| CLDE-04 | Phase 7 (Claude + Configs) | Pending |
+| TOOL-01 | Phase 7 (Claude + Configs) | Pending |
+| TOOL-02 | Phase 7 (Claude + Configs) | Pending |
+| TOOL-03 | Phase 7 (Claude + Configs) | Pending |
+| DOCS-01 | Phase 8 (Validation + Cutover) | Pending |
+| DOCS-02 | Phase 3 (Shell Layer) | Pending |
+| DOCS-03 | Phase 1 (Manifest Engine + Skeleton) | Pending |
+| DOCS-04 | Phase 1 (Manifest Engine + Skeleton) | Pending |
+| DOCS-05 | Phase 8 (Validation + Cutover) | Pending |
+| DOCS-06 | Phase 8 (Validation + Cutover) | Pending |
+| DOCS-07 | Phase 2 (Install Engine) | Pending |
+| CUTV-01 | Phase 8 (Validation + Cutover) | Pending |
+| CUTV-02 | Phase 8 (Validation + Cutover) | Pending |
+| CUTV-03 | Phase 8 (Validation + Cutover) | Pending |
+| CUTV-04 | Phase 8 (Validation + Cutover) | Pending |
+| CUTV-05 | Phase 8 (Validation + Cutover) | Pending |
+| CUTV-06 | Phase 8 (Validation + Cutover) | Pending |
 
 **Coverage:**
 
-- v1 requirements: 71 total
-- Mapped to phases: 71 (preliminary mapping; roadmapper to confirm)
+- v1 requirements: 77 total (MFST: 9, BTSP: 7, LINT: 8, SHEL: 12, IDNT: 8, PKGS: 7, OSCF: 6, CLDE: 4, TOOL: 3, DOCS: 7, CUTV: 6)
+- Mapped to phases: 77
 - Unmapped: 0
+
+**Per-phase requirement counts:**
+
+| Phase | Count | Categories |
+|-------|-------|------------|
+| 1 — Manifest Engine + Skeleton | 11 | MFST-01..09, DOCS-03, DOCS-04 |
+| 2 — Install Engine | 16 | BTSP-01..07, LINT-01..08, DOCS-07 |
+| 3 — Shell Layer | 13 | SHEL-01..12, DOCS-02 |
+| 4 — Identity Layer | 8 | IDNT-01..08 |
+| 5 — Packages Layer | 7 | PKGS-01..07 |
+| 6 — OS Defaults | 6 | OSCF-01..06 |
+| 7 — Claude + Configs | 7 | CLDE-01..04, TOOL-01..03 |
+| 8 — Validation + Cutover | 9 | CUTV-01..06, DOCS-01, DOCS-05, DOCS-06 |
 
 ---
 
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-13 after initial definition*
+*Last updated: 2026-05-13 after roadmap traceability confirmation*
