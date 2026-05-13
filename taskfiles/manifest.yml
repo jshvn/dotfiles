@@ -368,13 +368,21 @@ tasks:
         machines_dir="{{.MACHINES_DIR}}"
         throwaway="${machines_dir}/_addmachine-test.toml"
 
-        # Save current state for restoration.
+        # Save current state for restoration. CR-02 fix: distinguish
+        # "no prior state existed" from "prior state was empty" so the
+        # cleanup function can DELETE the state file on a fresh machine
+        # instead of leaving _addmachine-test pointing at a manifest
+        # that no longer exists.
+        prior_machine_existed=0
         prior_machine=""
         if [[ -f "$state_file" ]]; then
-          prior_machine=$(cat "$state_file" 2>/dev/null | tr -d '[:space:]')
+          prior_machine_existed=1
+          prior_machine=$(tr -d '[:space:]' < "$state_file" 2>/dev/null)
         fi
+        prior_resolved_existed=0
         prior_resolved=""
         if [[ -f "$resolved_file" ]]; then
+          prior_resolved_existed=1
           prior_resolved=$(cat "$resolved_file" 2>/dev/null)
         fi
 
@@ -382,11 +390,15 @@ tasks:
         # Defined as a function so trap can reference it without complex quoting.
         do_cleanup() {
           rm -f "$throwaway"
-          if [[ -n "$prior_machine" ]]; then
+          if (( prior_machine_existed )); then
             printf '%s' "$prior_machine" > "$state_file"
+          else
+            rm -f "$state_file"
           fi
-          if [[ -n "$prior_resolved" ]]; then
+          if (( prior_resolved_existed )); then
             printf '%s' "$prior_resolved" > "$resolved_file"
+          else
+            rm -f "$resolved_file"
           fi
         }
         trap do_cleanup EXIT
