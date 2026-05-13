@@ -284,14 +284,23 @@ resolve_manifest() {
   mkdir -p "$out_dir"
 
   tmp=$(mktemp "${out_path}.XXXXXX")
-  # Always clean up the tmp file on failure.
+  # WR-01 fix: register a signal trap before the pipeline so Ctrl-C
+  # (SIGINT), SIGTERM, or any other unhandled exit cleans up the tmp
+  # file. The previous { ... } || { rm -f "$tmp"; ... } only handled
+  # ordinary command failures -- repeated Ctrl-Cs during iteration
+  # would otherwise accumulate resolved.json.aBcDeF-style siblings
+  # in $XDG_STATE_HOME/dotfiles/. Clear the trap after a successful
+  # mv so the (now-renamed) path is not subsequently rm'd.
+  trap 'rm -f "$tmp"' EXIT INT TERM
   {
     resolve_pipeline "$defaults_path" "$machine_path" > "$tmp"
     mv "$tmp" "$out_path"
   } || {
     rm -f "$tmp"
+    trap - EXIT INT TERM
     return 1
   }
+  trap - EXIT INT TERM
 }
 
 # -----------------------------------------------------------------------------
