@@ -40,8 +40,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
   - [x] 01-01-PLAN.md — Author six positive + two negative deep-merge test fixtures (the spec for Plan 02 resolver)
   - [x] 01-02-PLAN.md — Implement install/resolver.zsh + author defaults.toml + four machine manifests
-  - [ ] 01-03-PLAN.md — Build taskfiles/manifest.yml (setup, manifest:resolve, manifest:show, manifest:validate, manifest:test, manifest:test:add-machine)
-  - [ ] 01-04-PLAN.md — Replace repo-root CLAUDE.md (v2 conventions) + author docs/MANIFEST.md + five stub READMEs (shell/, identity/, packages/, configs/, os/)
+  - [x] 01-03-PLAN.md — Build taskfiles/manifest.yml (setup, manifest:resolve, manifest:show, manifest:validate, manifest:test, manifest:test:add-machine)
+  - [x] 01-04-PLAN.md — Replace repo-root CLAUDE.md (v2 conventions) + author docs/MANIFEST.md + five stub READMEs (shell/, identity/, packages/, configs/, os/)
 
 ### Phase 2: Install Engine — Bootstrap, Idempotency, Lint
 **Goal**: A hardened bootstrap and an enforced idempotency contract so every install task is a fast no-op on re-run, every shell file is linted before content lands, and `task install` is the single canonical entry point (no separate update pipeline that can drift)
