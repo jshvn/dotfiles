@@ -171,6 +171,20 @@ validate_manifest() {
     errors=$(( errors + 1 ))
   fi
 
+  # WR-04: schema_version must be present and equal 1. The entire v2
+  # forward-compat story depends on this field; without an explicit
+  # check, a v1 resolver running against a v2 manifest would silently
+  # produce wrong output. Treat both absent and non-1 values as errors.
+  local schema_value
+  schema_value=$(yq -r '.schema_version // ""' "$machine_file" 2>/dev/null || echo "")
+  if [[ -z "$schema_value" ]]; then
+    error "missing required field: schema_version (must equal 1)"
+    errors=$(( errors + 1 ))
+  elif [[ "$schema_value" != "1" ]]; then
+    error "schema_version must equal 1 in v1 resolver; got: ${schema_value}"
+    errors=$(( errors + 1 ))
+  fi
+
   # identity.git / identity.ssh enum: personal|work|none.
   local ident_key ident_val
   for ident_key in git ssh; do
