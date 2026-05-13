@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Greenfield rewrite of the personal dotfiles repo at `/Users/josh/Git/personal/dotfiles`, built in parallel to the current implementation. Replaces the named-profile system (`personal` / `work` / `server` suffixed files) with explicit per-machine TOML manifests inheriting from a shared `defaults.toml`. Designed for macOS-first laptops and first-class Linux servers, with go-task orchestration, zsh as the primary shell, and symlink-based deployment. Optimized for AI-assisted maintenance: one concept per file, explicit manifests over implicit suffixing, predictable templates.
+Greenfield rewrite of the personal dotfiles repo at `/Users/josh/Git/personal/dotfiles`, built in parallel to the current implementation. Replaces the named-profile system (`personal` / `work` / `server` suffixed files) with explicit per-machine TOML manifests inheriting from a shared `defaults.toml`. Designed for macOS exclusively in v1 (laptops and Mac servers); Linux server support is deferred to a future milestone. Built on go-task orchestration, zsh as the primary shell, and symlink-based deployment. Optimized for AI-assisted maintenance: one concept per file, explicit manifests over implicit suffixing, predictable templates.
 
 ## Core Value
 
@@ -40,9 +40,11 @@ A single declarative manifest per machine makes the complete install state legib
 
 - [ ] `.zshenv` exports XDG vars and the selected machine identifier (replaces `DOTFILES_PROFILE`)
 - [ ] `.zshrc` loads aliases and functions via glob (interactive only)
-- [ ] `.zprofile` sets Homebrew shellenv and SSH agent socket — guarded for Linux servers
-- [ ] One alias topic per file in `aliases/{common,darwin,linux,machine-specific}/`
-- [ ] One function per file in `functions/{common,darwin,linux,machine-specific}/`
+- [ ] `.zprofile` sets Homebrew shellenv and SSH agent socket — guarded so the file is safe on minimal Mac server installs
+- [ ] One alias topic per file in flat `aliases/<topic>.zsh` (no platform subdirectories in v1; macOS is the only platform)
+- [ ] One function per file in flat `functions/<name>.zsh`
+- [ ] v1 prompt (`theme.zsh`, alanpeabody-based) ported as-is; no Starship swap in v1
+- [ ] Antigen replaced by antidote (static bundle file) — the primary lever for the 200ms target
 - [ ] Cold interactive shell startup target: under 200ms (current ~500ms with antigen)
 
 **Git:**
@@ -61,14 +63,13 @@ A single declarative manifest per machine makes the complete install state legib
 **Packages:**
 
 - [ ] Brewfile composition via manifest bundles (replaces `Brewfile-<profile>.rb` suffixing)
-- [ ] Linux package manifest (apt/dnf bundle) for servers — first-class, not stripped-down
-- [ ] Per-machine package additions allowed without forking a bundle
+- [ ] Per-purpose bundles in `packages/brew/<purpose>.rb` (`core`, `gui`, `dev`, `ops`, `personal`) — named by role, not by profile
+- [ ] Per-machine package additions allowed via manifest `extra_packages` without forking a bundle
 
 **macOS defaults:**
 
 - [ ] Configurable via manifest features (each defaults group is opt-in)
 - [ ] Idempotent (no re-running on every install — current `macos:shell` bug fixed)
-- [ ] No-op on Linux machines
 
 **Claude Code integration:**
 
@@ -85,7 +86,7 @@ A single declarative manifest per machine makes the complete install state legib
 
 **Cutover:**
 
-- [ ] All four machine categories (`personal-laptop`, `work-laptop`, `server-1`, `server-2`) installable from the new repo
+- [ ] All four machines (`personal-laptop`, `work-laptop`, `server-1`, `server-2` — all running macOS, mixed roles) installable from the new repo
 - [ ] Feature parity confirmed via `task validate` per machine
 - [ ] Old repo archived (not deleted) after final cutover
 
@@ -93,13 +94,15 @@ A single declarative manifest per machine makes the complete install state legib
 
 <!-- Explicit boundaries with reasoning. -->
 
+- **Linux support in v1** — simplification; all four target machines are macOS (laptops + Mac servers). Linux returns as a real target only when a real Linux machine enters scope. Platform-aware directory split, apt/dnf manifests, and Linux bootstrap branch all deferred.
 - **Nix / home-manager** — evaluated; conflicts with go-task lock-in, slows AI iteration loop, Homebrew still needed for macOS GUI apps via `nix-darwin.homebrew` escape hatch. Declarative-manifest goal achieved via TOML at lower cost.
 - **chezmoi / stow / yadm** — adds a tool dependency that overlaps with go-task; doesn't solve the profile rethink.
-- **Cross-platform beyond macOS and Linux** — no Windows, no WSL.
+- **Windows / WSL** — out of platform scope.
+- **Starship prompt** — v1 keeps the existing alanpeabody-based `theme.zsh`. Starship would be a behavior change with no problem to solve (the current prompt is small, fast, and not on life support).
 - **Migrating away from zsh** — fish / nu / bash are out.
 - **Replacing go-task** — locked.
 - **Hostname-based machine detection** — burned us before (`.zprofile:55-56` bug). Explicit selection only.
-- **Inline profile branching in shared files** — replaced by platform-aware directory layout and manifest-driven feature gates.
+- **Inline profile branching in shared files** — replaced by manifest-driven feature gates.
 - **Auditing every existing zsh function/alias for keep-or-cut** — feature parity means port them all; audit-and-trim is a separate later milestone.
 - **A `test` profile** — currently declared but never implemented; drop entirely.
 - **Auto-detection of identity / capabilities** — manifest is the source of truth; no clever inference at runtime.
@@ -126,9 +129,9 @@ A single declarative manifest per machine makes the complete install state legib
 
 ## Constraints
 
-- **Tech stack** — macOS-first laptops, first-class Linux servers; zsh as primary shell; go-task as orchestrator; Homebrew on macOS, apt/dnf on Linux
-- **Platform support** — macOS (Apple Silicon and Intel) + Linux (Debian/Ubuntu, Fedora) for servers
-- **Build approach** — parallel rewrite; new structure built from scratch, cut over only when feature parity achieved on all four machine categories
+- **Tech stack** — macOS exclusively in v1 (all machines including servers); zsh as primary shell; go-task as orchestrator; Homebrew for packages
+- **Platform support** — macOS (Apple Silicon and Intel); Linux deferred to v2+
+- **Build approach** — parallel rewrite; new structure built from scratch, cut over only when feature parity achieved on all four target machines
 - **AI-collaboration fit** — structure must let an AI agent reach correctness by reading manifests and following templates, not by inferring intent from filename suffixes
 - **Security** — bootstrap must verify install integrity; no curl-to-shell without checksum; no secrets in repo; public SSH keys only
 - **Idempotency** — every install task has a working `status:` check; re-running `task install` is a fast no-op
@@ -140,10 +143,11 @@ A single declarative manifest per machine makes the complete install state legib
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Symlinks + TOML manifests over Nix | Nix conflicts with go-task lock-in, slows AI iteration; manifest layer captures the declarative win without language overhead | — Pending |
-| Per-machine manifest with shared `defaults.toml` | Picked clarity (per-machine) over DRY (tags); 4+ machines means defaults prevents pure duplication while machine files stay self-describing | — Pending |
+| Per-machine manifest with shared `defaults.toml` | Picked clarity (per-machine) over DRY (tags); 4 machines means defaults prevents pure duplication while machine files stay self-describing | — Pending |
 | Explicit machine selection at setup | Hostname-based detection has bitten us; explicit selection beats clever auto-detect | — Pending |
-| First-class Linux on servers | Server is a real platform now, not opportunistic; needs platform-aware directory structure and dedicated package manifest | — Pending |
-| Parallel rewrite with feature-parity cutover | All four machine categories must be installable with v1 before flipping; preserves a working setup throughout | — Pending |
+| macOS-only in v1 (Linux deferred) | All four target machines are macOS (laptops + Mac servers); avoids cross-platform complexity until a real Linux machine enters scope; platform-aware directory split, apt/dnf manifests, and Linux bootstrap are deferred to v2 | — Pending |
+| Keep v1 prompt; reject Starship | Existing alanpeabody-based `theme.zsh` is small, fast, and not on life support; Starship recommendation was based on a misread of the v1 prompt as Powerlevel10k | — Pending |
+| Parallel rewrite with feature-parity cutover | All four target machines must be installable with v1 before flipping; preserves a working setup throughout | — Pending |
 | Drop the `test` profile | Declared but never implemented; pure clutter | — Pending |
 | Bootstrap without curl-to-shell | Removes supply-chain risk on every fresh install | — Pending |
 | One concept per file; README per top-level directory | Reduces AI's inference burden; every directory teaches itself | — Pending |
