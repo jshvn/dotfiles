@@ -225,10 +225,27 @@ tasks:
         failures=0
         fix_dir="{{.FIXTURES_DIR}}"
 
+        # Cleanup tracker for negative-fixture copies in MACHINES_DIR.
+        # CR-01 fix: any failure between cp and rm -f (yq crash, SIGINT,
+        # validator coredump) would otherwise leak _invalid-* files into
+        # manifests/machines/, polluting AVAILABLE_MACHINES and breaking
+        # `task setup` autocomplete UX. go-task's mvdan/sh interpreter only
+        # supports EXIT in trap (not INT/TERM by name); go-task forwards
+        # received signals to its child shell, which then runs the EXIT
+        # trap on its way out, so EXIT alone covers Ctrl-C correctly.
+        neg_copies=()
+        cleanup_neg() {
+          local f
+          for f in "${neg_copies[@]}"; do
+            rm -f "$f"
+          done
+        }
+        trap cleanup_neg EXIT
+
         # ---------------------------------------------------------------
         # Positive fixtures 01-06: run inline merge pipeline + diff
         # ---------------------------------------------------------------
-        for fix in "${fix_dir}"/0[1-6]-*; do
+        for fix in "${fix_dir}"/[0-9][0-9]-*; do
           fix_name=$(basename "$fix")
 
           # Pass 1: deep-merge defaults + machine via yq (RESEARCH §4.2, D-07).
@@ -278,9 +295,15 @@ tasks:
         # ---------------------------------------------------------------
         # _invalid-missing-desc: validator must reject; stderr must contain
         # "meta.description".
+        # CR-01 fix: register copy in neg_copies BEFORE cp so the EXIT trap
+        # can clean it up even if cp itself fails or is interrupted. Drop
+        # the silenced `2>/dev/null || true` -- let cp errors fail loudly
+        # rather than silently running the test against stale or absent
+        # files (which would mask real bugs as "test passed").
         neg_dir="${fix_dir}/_invalid-missing-desc"
         tmp_neg="{{.MACHINES_DIR}}/_invalid-missing-desc.toml"
-        cp "$neg_dir/machine.toml" "$tmp_neg" 2>/dev/null || true
+        neg_copies+=("$tmp_neg")
+        cp "$neg_dir/machine.toml" "$tmp_neg"
         neg_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
           zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
           --validate-only --machine _invalid-missing-desc 2>&1 >/dev/null || true)
@@ -294,9 +317,11 @@ tasks:
         fi
 
         # _invalid-bad-os: validator must reject; stderr must contain "darwin".
+        # CR-01 fix: same pattern as _invalid-missing-desc above.
         neg_dir="${fix_dir}/_invalid-bad-os"
         tmp_neg="{{.MACHINES_DIR}}/_invalid-bad-os.toml"
-        cp "$neg_dir/machine.toml" "$tmp_neg" 2>/dev/null || true
+        neg_copies+=("$tmp_neg")
+        cp "$neg_dir/machine.toml" "$tmp_neg"
         neg_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
           zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
           --validate-only --machine _invalid-bad-os 2>&1 >/dev/null || true)
@@ -312,7 +337,14 @@ tasks:
         # ---------------------------------------------------------------
         # Summary
         # ---------------------------------------------------------------
-        total=8
+        # WR-05 fix: derive totals from actual fixture counts so adding a
+        # 7th positive fixture does not require editing this constant.
+        positive_count=0
+        for fix in "${fix_dir}"/[0-9][0-9]-*; do
+          positive_count=$(( positive_count + 1 ))
+        done
+        negative_count=2
+        total=$(( positive_count + negative_count ))
         passed=$(( total - failures ))
         if (( failures == 0 )); then
           info "fixtures: ${total} total, ${passed} passed, ${failures} failed"
