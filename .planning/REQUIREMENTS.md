@@ -1,7 +1,7 @@
 # Requirements: Dotfiles v2 Refactor
 
 **Defined:** 2026-05-13
-**Last updated:** 2026-05-13 after macOS-only simplification
+**Last updated:** 2026-05-13 after testing/verification expansion
 **Core Value:** A single declarative manifest per machine makes the complete install state legible to both humans and AI agents.
 
 ## v1 Requirements
@@ -9,6 +9,16 @@
 Requirements for the v2.0 cutover gate. Each maps to a roadmap phase. All requirements are hypotheses until shipped and validated on every target machine.
 
 **Scope note:** v1 is macOS-only across all four target machines (laptops + Mac servers). Linux support is deferred to v2+.
+
+**Testing tiers (covered by these requirements):**
+
+| Tier | Purpose | Where |
+|---|---|---|
+| 0. Static | Lint, syntax, shellcheck | LINT-01..08, CLDE-02 |
+| 1. Validate | Installed state matches manifest | MFST-08, IDNT-07, OSCF-05, VRFY-01..02, CUTV-01 |
+| 2. Reconcile | Detect/cleanup drift | VRFY-03, TOOL-04, CUTV-02, CUTV-07, CUTV-08 |
+| 3. Smoke | Component functional tests | MFST-05, LINT-08, TEST-01, TEST-02 |
+| 4. System | End-to-end on real machines | CUTV-04, CUTV-05, DOCS-08 |
 
 ### Manifest
 
@@ -33,6 +43,7 @@ Fresh-install entry point with hardened supply chain.
 - [ ] **BTSP-03**: Bootstrap is resumable — every step has a guard against re-running
 - [ ] **BTSP-04**: `task setup -- <machine-name>` persists explicit machine selection to `$XDG_STATE_HOME/dotfiles/machine`; no hostname inference
 - [ ] **BTSP-05**: `docs/SECURITY.md` documents the bootstrap trust chain (what is downloaded, from where, how verified)
+- [ ] **BTSP-06**: `task install` is the canonical idempotent entry; `task update` is an alias for the same task (`task: install`) — there is no separate update pipeline that could diverge from install and produce the "added-to-update-forgot-install" drift class
 
 ### Install Engine
 
@@ -87,6 +98,15 @@ Homebrew package management driven by manifest bundles (macOS-only v1).
 - [ ] **PKGS-04**: Manifest can declare per-machine `extra_packages` (additive, concatenates with bundle contents)
 - [ ] **PKGS-05**: GUI bundles (casks) are isolated so server machines without GUI can omit them via manifest
 
+### Package Verification
+
+Post-install checks that declared packages are actually usable. Closes the "brew bundle applied but binary missing or app didn't land" gap.
+
+- [ ] **VRFY-01**: `task packages:verify` confirms `command -v <bin>` resolves for every formula declared in the active manifest's bundles. Binary names declared as per-line comments in bundle files: `brew 'ripgrep' # verify: rg`. Default convention: if no comment, assume bin name == formula name.
+- [ ] **VRFY-02**: `task packages:verify` confirms `/Applications/<App>.app` exists for every cask declared in the active manifest's bundles. App names declared as per-line comments: `cask '1password' # verify: 1Password`. Default convention: if no comment, derive from cask name.
+- [ ] **VRFY-03**: `task packages:audit` lists currently-installed brew formulae/casks that are NOT declared in any manifest bundle for the active machine — surfaces "installed manually, forgot to declare" drift. Non-blocking by default; exits non-zero with `--strict`.
+- [ ] **VRFY-04**: `task install` includes `task packages:verify` in its final step so a successful install fails loudly when a declared package didn't actually land (silent install failures caught at the bundle layer)
+
 ### OS Defaults
 
 macOS defaults feature-flag-gated.
@@ -113,6 +133,14 @@ Per-tool configuration deployment via symlinks.
 - [ ] **TOOL-01**: Tool configs deployed via `taskfiles/links.yml` using the `_:safe-link` helper (no bare `ln`)
 - [ ] **TOOL-02**: Ghostty, glow, trippy, tlrc, conda, eza, motd configs ported to `configs/<tool>/`
 - [ ] **TOOL-03**: `_:safe-link` hardened to verify target type (catches broken symlinks pointing to wrong target type)
+- [ ] **TOOL-04**: `_:check-link` verifies the symlink (a) exists, (b) target is not broken, and (c) `readlink -f` equals the manifest-expected source path; mismatch is a failure not a warning (catches "symlink exists but points to stale path after refactor" class of bug)
+
+### Smoke Tests
+
+Component-level functional tests aggregated under `task test`.
+
+- [ ] **TEST-01**: `task test:hooks` pipes synthetic JSON input through each Claude hook (`secret-scan`, `no-emojis`, `no-ai-comments`, `agent-transparency`) and asserts expected exit code (0 for pass/warn, 2 for block) and stderr pattern. Catches runtime regressions that lint misses.
+- [ ] **TEST-02**: Root `task test` aggregates `task manifest:test` (existing MFST-05 fixtures) and `task test:hooks` so a single command runs all smoke tests; CI wires this in alongside `task lint`
 
 ### Documentation
 
@@ -125,17 +153,20 @@ README-per-directory + project-level docs for AI-collaboration fit.
 - [ ] **DOCS-05**: `docs/MIGRATION.md` records v1-to-v2 mapping and cutover plan
 - [ ] **DOCS-06**: `docs/MACHINES.md` documents each machine's purpose, identity, and special config
 - [ ] **DOCS-07**: `docs/SECURITY.md` documents bootstrap trust chain and SSH key handling
+- [ ] **DOCS-08**: `docs/CUTOVER.md` includes a per-machine fresh-install verification procedure (manual steps to verify on a clean Mac before declaring cutover complete)
 
 ### Cutover
 
 Per-machine cutover gates; v1 stays fully working throughout.
 
 - [ ] **CUTV-01**: `task validate` composes all per-component validate tasks with check/cross output
-- [ ] **CUTV-02**: `task links:reconcile` flags symlinks pointing into `$DOTFILEDIR` that are not in the manifest
+- [ ] **CUTV-02**: `task links:reconcile` (default mode) detects orphan symlinks — symlinks pointing into `$DOTFILEDIR` not declared in the manifest. Prints them and exits non-zero. CI-safe; no destructive action.
 - [ ] **CUTV-03**: `docs/CUTOVER.md` tracks per-machine cutover state with verification steps
 - [ ] **CUTV-04**: All four target machines (personal-laptop, work-laptop, server-1, server-2 — all macOS, mixed roles) installable from v2 with 100% `task validate` pass
 - [ ] **CUTV-05**: Each machine runs v2 for at least 7 days without falling back to v1 before being declared cut over
 - [ ] **CUTV-06**: Old repo archived (not deleted) after final per-machine cutover
+- [ ] **CUTV-07**: `task links:reconcile -- --remove` enters interactive cleanup mode: for each orphan, prompts y/N before deleting. Destructive operations are never silent.
+- [ ] **CUTV-08**: `task install` runs `task links:reconcile` in detect-only mode at the end and warns (non-fatal) if orphans exist — surfaces "you moved a link in the manifest, the old one is dangling" feedback at install time
 
 ## v2 Requirements
 
@@ -152,7 +183,7 @@ Deferred to a follow-up milestone after the v1 cutover is stable.
 
 ### Performance & UX
 
-- **PERF-01**: Drift detection in `task validate` (manifest-declared vs deployed state diff)
+- **PERF-01**: Drift detection in `task validate` (manifest-declared vs deployed state diff — broader than VRFY-03 audit)
 - **PERF-02**: `DRY_RUN=1 task install` shows planned actions without executing
 - **PERF-03**: Per-directory predictable templates (one example file per directory illustrating the pattern)
 - **PERF-04**: Brew bundle pre-install snapshot for rollback safety
@@ -161,8 +192,8 @@ Deferred to a follow-up milestone after the v1 cutover is stable.
 
 - **TOOL-V2-01**: Manifest JSON Schema for editor validation (taplo lint in CI)
 - **TOOL-V2-02**: Audit-and-trim pass over ported v1 functions and aliases (kept verbatim in v1 for feature parity)
-- **TOOL-V2-03**: `bats` or `zunit` unit tests for shell functions (Tier 2 — only if regression frequency justifies)
-- **TOOL-V2-04**: macOS CI runner for end-to-end validation of the install pipeline
+- **TOOL-V2-03**: `bats` or `zunit` unit tests for shell functions (Tier-2 expansion — only if regression frequency justifies)
+- **TOOL-V2-04**: macOS CI runner for end-to-end validation of the install pipeline (full fresh-install simulation)
 
 ## Out of Scope
 
@@ -172,6 +203,7 @@ Explicit exclusions documented to prevent scope creep.
 |---------|--------|
 | Linux support in v1 | All four target machines are macOS (laptops + Mac servers); avoids cross-platform complexity until a real Linux machine enters scope. Returns as v2 work item set. |
 | Starship prompt | v1 keeps the existing alanpeabody-based `theme.zsh`. Starship recommendation was based on a misread of the v1 prompt as Powerlevel10k. Existing prompt is small, fast, and not on life support. |
+| Separate `task update` pipeline | `task install` IS `task update` — single idempotent entry point. Prevents drift class where adding a package to update path silently misses the install path. |
 | Nix / home-manager | Conflicts with go-task lock-in; slows AI iteration loop; Homebrew still needed for macOS GUI apps; declarative-manifest goal achieved at lower cost with TOML |
 | chezmoi / stow / yadm | Adds a tool that overlaps with go-task; doesn't address the profile rethink that motivates this work |
 | Windows or WSL support | Out of platform scope |
@@ -187,6 +219,7 @@ Explicit exclusions documented to prevent scope creep.
 | dasel as a parser | Resolved during research — yq throughout; one query syntax |
 | Antigen, Powerlevel10k | Antigen archived since Jan 2018; replaced by antidote. p10k not in use; keep v1 alanpeabody-based theme. |
 | Encrypted secrets in repo | 1Password is the answer; no `git-crypt` / `transcrypt` / `sops` for secrets |
+| Automated fresh-install CI | Documented manual procedure in `docs/CUTOVER.md` (DOCS-08); full macOS CI runner is v2 (TOOL-V2-04) |
 
 ## Traceability
 
@@ -208,6 +241,7 @@ Per-REQ-ID mapping to roadmap phase.
 | BTSP-03 | Phase 2 (Install Engine) | Pending |
 | BTSP-04 | Phase 2 (Install Engine) | Pending |
 | BTSP-05 | Phase 2 (Install Engine) | Pending |
+| BTSP-06 | Phase 2 (Install Engine) | Pending |
 | LINT-01 | Phase 2 (Install Engine) | Pending |
 | LINT-02 | Phase 2 (Install Engine) | Pending |
 | LINT-03 | Phase 2 (Install Engine) | Pending |
@@ -241,6 +275,10 @@ Per-REQ-ID mapping to roadmap phase.
 | PKGS-03 | Phase 5 (Packages Layer) | Pending |
 | PKGS-04 | Phase 5 (Packages Layer) | Pending |
 | PKGS-05 | Phase 5 (Packages Layer) | Pending |
+| VRFY-01 | Phase 5 (Packages Layer) | Pending |
+| VRFY-02 | Phase 5 (Packages Layer) | Pending |
+| VRFY-03 | Phase 5 (Packages Layer) | Pending |
+| VRFY-04 | Phase 5 (Packages Layer) | Pending |
 | OSCF-01 | Phase 6 (OS Defaults) | Pending |
 | OSCF-02 | Phase 6 (OS Defaults) | Pending |
 | OSCF-03 | Phase 6 (OS Defaults) | Pending |
@@ -253,6 +291,9 @@ Per-REQ-ID mapping to roadmap phase.
 | TOOL-01 | Phase 7 (Claude + Configs) | Pending |
 | TOOL-02 | Phase 7 (Claude + Configs) | Pending |
 | TOOL-03 | Phase 7 (Claude + Configs) | Pending |
+| TOOL-04 | Phase 7 (Claude + Configs) | Pending |
+| TEST-01 | Phase 7 (Claude + Configs) | Pending |
+| TEST-02 | Phase 7 (Claude + Configs) | Pending |
 | DOCS-01 | Phase 8 (Validation + Cutover) | Pending |
 | DOCS-02 | Phase 3 (Shell Layer) | Pending |
 | DOCS-03 | Phase 1 (Manifest Engine + Skeleton) | Pending |
@@ -260,17 +301,20 @@ Per-REQ-ID mapping to roadmap phase.
 | DOCS-05 | Phase 8 (Validation + Cutover) | Pending |
 | DOCS-06 | Phase 8 (Validation + Cutover) | Pending |
 | DOCS-07 | Phase 2 (Install Engine) | Pending |
+| DOCS-08 | Phase 8 (Validation + Cutover) | Pending |
 | CUTV-01 | Phase 8 (Validation + Cutover) | Pending |
 | CUTV-02 | Phase 8 (Validation + Cutover) | Pending |
 | CUTV-03 | Phase 8 (Validation + Cutover) | Pending |
 | CUTV-04 | Phase 8 (Validation + Cutover) | Pending |
 | CUTV-05 | Phase 8 (Validation + Cutover) | Pending |
 | CUTV-06 | Phase 8 (Validation + Cutover) | Pending |
+| CUTV-07 | Phase 8 (Validation + Cutover) | Pending |
+| CUTV-08 | Phase 8 (Validation + Cutover) | Pending |
 
 **Coverage:**
 
-- v1 requirements: 68 total (MFST: 9, BTSP: 5, LINT: 8, SHEL: 12, IDNT: 8, PKGS: 5, OSCF: 5, CLDE: 4, TOOL: 3, DOCS: 7, CUTV: 6)
-- Mapped to phases: 68
+- v1 requirements: 83 total (MFST: 9, BTSP: 6, LINT: 8, SHEL: 12, IDNT: 8, PKGS: 5, VRFY: 4, OSCF: 5, CLDE: 4, TOOL: 4, TEST: 2, DOCS: 8, CUTV: 8)
+- Mapped to phases: 83
 - Unmapped: 0
 
 **Per-phase requirement counts:**
@@ -278,15 +322,15 @@ Per-REQ-ID mapping to roadmap phase.
 | Phase | Count | Categories |
 |-------|-------|------------|
 | 1 — Manifest Engine + Skeleton | 11 | MFST-01..09, DOCS-03, DOCS-04 |
-| 2 — Install Engine | 14 | BTSP-01..05, LINT-01..08, DOCS-07 |
+| 2 — Install Engine | 15 | BTSP-01..06, LINT-01..08, DOCS-07 |
 | 3 — Shell Layer | 13 | SHEL-01..12, DOCS-02 |
 | 4 — Identity Layer | 8 | IDNT-01..08 |
-| 5 — Packages Layer | 5 | PKGS-01..05 |
+| 5 — Packages Layer | 9 | PKGS-01..05, VRFY-01..04 |
 | 6 — OS Defaults | 5 | OSCF-01..05 |
-| 7 — Claude + Configs | 7 | CLDE-01..04, TOOL-01..03 |
-| 8 — Validation + Cutover | 9 | CUTV-01..06, DOCS-01, DOCS-05, DOCS-06 |
+| 7 — Claude + Configs | 10 | CLDE-01..04, TOOL-01..04, TEST-01..02 |
+| 8 — Validation + Cutover | 12 | CUTV-01..08, DOCS-01, DOCS-05, DOCS-06, DOCS-08 |
 
 ---
 
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-13 after macOS-only simplification (Linux deferred to v2; Starship rejected; flat shell tree)*
+*Last updated: 2026-05-13 after testing/verification expansion (VRFY, TOOL-04, BTSP-06, CUTV-07/08, TEST, DOCS-08)*

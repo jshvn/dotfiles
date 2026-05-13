@@ -26,7 +26,7 @@ A single declarative manifest per machine makes the complete install state legib
 - [ ] Explicit machine selection at setup time (`task setup -- <machine-name>`); no hostname guessing
 - [ ] Idempotent re-install — every install task has a working `status:` check
 - [ ] `task validate` reports per-component health using check/cross symbols
-- [ ] `task update` refreshes Homebrew, plugins, and AI tooling without re-running unchanged steps
+- [ ] `task install` is the canonical entry and is idempotent — `task update` is an alias for the same task, never a separate pipeline that can diverge
 
 **Manifest layer:**
 
@@ -83,6 +83,15 @@ A single declarative manifest per machine makes the complete install state legib
 - [ ] Each top-level directory has a `README.md` explaining purpose and how to add to it
 - [ ] `CLAUDE.md` captures conventions for AI-assisted maintenance
 - [ ] `docs/MIGRATION.md` records the cutover plan and old-to-new mapping
+
+**Verification and testing:**
+
+- [ ] `task packages:verify` confirms each declared formula's binary resolves on PATH and each declared cask's `/Applications/<App>.app` exists (binary/app names declared as per-line comments in `packages/brew/*.rb`)
+- [ ] `task packages:audit` lists currently-installed brew formulae/casks NOT declared in the active manifest — surfaces "installed manually, forgot to declare" drift
+- [ ] `task links:reconcile` detects orphan symlinks (default; CI-safe) and supports `--remove` for cleanup with interactive confirmation
+- [ ] `_:check-link` verifies the symlink exists AND its `readlink -f` matches the manifest-expected source — target mismatch is a failure
+- [ ] `task test` aggregates manifest deep-merge fixtures + Claude hook smoke tests (synthetic JSON input through every hook)
+- [ ] `docs/CUTOVER.md` documents a fresh-machine verification procedure per machine
 
 **Cutover:**
 
@@ -151,6 +160,8 @@ A single declarative manifest per machine makes the complete install state legib
 | Drop the `test` profile | Declared but never implemented; pure clutter | — Pending |
 | Bootstrap without curl-to-shell | Removes supply-chain risk on every fresh install | — Pending |
 | One concept per file; README per top-level directory | Reduces AI's inference burden; every directory teaches itself | — Pending |
+| `task install` is the canonical entry; `task update` is an alias for the same task | Prevents the "add a package to update path, forget install, fresh machine breaks" drift class — single source of truth, single pipeline | — Pending |
+| Five-tier testing: static lint, validate, reconcile, smoke, system | Each tier catches different drift; without verify+reconcile we'd ship "looks installed but isn't" or "symlink-soup-after-refactor" | — Pending |
 
 ## Evolution
 
