@@ -451,8 +451,15 @@ USAGE
       error "  available: ${available:-(none -- populate manifests/machines/)}"
       return 1
     fi
-    machine_name=$(< "$STATE_FILE")
-    machine_name="${machine_name//[[:space:]]/}"
+    # WR-08 fix: previously machine_name="${machine_name//[[:space:]]/}"
+    # stripped ALL whitespace (including any embedded), so a state file
+    # containing `bad name\n` would be silently rewritten to `badname`,
+    # which then either matched a real but unintended machine or failed
+    # the regex check confusingly. `read -r` trims only leading/trailing
+    # whitespace (and stops at the first newline), which is what the
+    # surrounding comments and single-line state-file contract expect.
+    machine_name=""
+    read -r machine_name < "$STATE_FILE" || true
     if [[ -z "$machine_name" ]]; then
       error "state file ${STATE_FILE} is empty"
       return 1

@@ -59,8 +59,14 @@ vars:
 
   # --- Active machine (read from state file) ---
   # RESEARCH §6.1: sh: block evaluated at task invocation time.
+  # WR-08 / IN-02 fix: previous `cat | tr -d '[:space:]'` would silently
+  # rewrite "bad name\n" -> "badname" by stripping ALL whitespace, not
+  # just edges. Read just the first line of the state file (it is
+  # single-line by contract) and trim leading/trailing whitespace via
+  # sed; this preserves any embedded whitespace so the downstream
+  # MACHINE_NAME_RE check rejects malformed values cleanly.
   MACHINE:
-    sh: cat '{{.STATE_FILE}}' 2>/dev/null | tr -d '[:space:]'
+    sh: head -n1 '{{.STATE_FILE}}' 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
 
   MACHINE_TOML: '{{.MACHINES_DIR}}/{{.MACHINE}}.toml'
 
@@ -193,8 +199,11 @@ tasks:
           fi
         fi
         if [[ -z "$machine_name" ]]; then
+          # WR-08 fix: read first line + trim edges only (do not strip
+          # embedded whitespace, which would silently mangle malformed
+          # state-file contents into a wrong-but-valid name).
           if [[ -f "{{.STATE_FILE}}" ]]; then
-            machine_name=$(tr -d '[:space:]' < "{{.STATE_FILE}}")
+            machine_name=$(head -n1 "{{.STATE_FILE}}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
           fi
         fi
         if [[ -z "$machine_name" ]]; then
@@ -232,8 +241,11 @@ tasks:
           fi
         fi
         if [[ -z "$machine_name" ]]; then
+          # WR-08 fix: read first line + trim edges only (do not strip
+          # embedded whitespace, which would silently mangle malformed
+          # state-file contents into a wrong-but-valid name).
           if [[ -f "{{.STATE_FILE}}" ]]; then
-            machine_name=$(tr -d '[:space:]' < "{{.STATE_FILE}}")
+            machine_name=$(head -n1 "{{.STATE_FILE}}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
           fi
         fi
         if [[ -z "$machine_name" ]]; then
@@ -423,7 +435,10 @@ tasks:
         prior_machine=""
         if [[ -f "$state_file" ]]; then
           prior_machine_existed=1
-          prior_machine=$(tr -d '[:space:]' < "$state_file" 2>/dev/null)
+          # WR-08 fix: trim only edges; embedded whitespace is preserved
+          # so an invalid prior state is not silently rewritten into a
+          # different (possibly valid) machine name on restore.
+          prior_machine=$(head -n1 "$state_file" 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
         fi
         prior_resolved_existed=0
         prior_resolved=""
