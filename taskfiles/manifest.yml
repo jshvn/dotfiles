@@ -65,10 +65,20 @@ vars:
   MACHINE_TOML: '{{.MACHINES_DIR}}/{{.MACHINE}}.toml'
 
   # --- Resolved manifest JSON (used for fromJson consumption, MFST-06) ---
-  # RESEARCH §6.1: cat resolves to '{}' when file is absent to avoid
-  # fromJson failing on empty input.
+  # WR-03 fix: emit a stderr warning when the resolved.json file is
+  # missing or empty so Phase 2+ tasks that rely on
+  # {{.MANIFEST.identity.git}} fail loudly instead of silently
+  # evaluating to <no value> against an empty {} fallback. The
+  # fromJson ref still needs valid JSON so the {} fallback is kept,
+  # but the warning surfaces the misconfiguration to the user.
   MANIFEST_JSON:
-    sh: cat '{{.RESOLVED_JSON_PATH}}' 2>/dev/null || echo '{}'
+    sh: |
+      if [[ -s '{{.RESOLVED_JSON_PATH}}' ]]; then
+        cat '{{.RESOLVED_JSON_PATH}}'
+      else
+        echo "warning: {{.RESOLVED_JSON_PATH}} missing or empty -- run 'task setup -- <machine>' first" >&2
+        echo '{}'
+      fi
 
   # fromJson ref: verified syntax (RESEARCH §6.1, PATTERNS Pattern 2).
   # Downstream: {{.MANIFEST.identity.git}}
