@@ -227,7 +227,17 @@ emit_unknown_key_warnings() {
     done
     if (( matched == 0 )); then
       leaf="${found##*.}"
-      line_no=$("$grep_cmd" -n "^${leaf}[[:space:]]*=" "$machine_file" 2>/dev/null | head -1 | cut -d: -f1 || true)
+      # WR-02 fix: only attempt the line-number heuristic when the leaf
+      # is a strict identifier (no quoted-key metacharacters). TOML
+      # permits keys like "a.b" or "a*b" which, if substituted into a
+      # regex, would be interpreted as metacharacters and yield a
+      # misleading line number. The warning still fires regardless;
+      # only the line: hint is omitted in the unsafe case.
+      if [[ "$leaf" =~ ^[A-Za-z0-9_-]+$ ]]; then
+        line_no=$("$grep_cmd" -n "^${leaf}[[:space:]]*=" "$machine_file" 2>/dev/null | head -1 | cut -d: -f1 || true)
+      else
+        line_no=""
+      fi
       warn "unknown key: ${found} at ${machine_file}:${line_no:-?}"
     fi
   done < <(yq -r '[paths(scalars) | join(".")] | .[]' "$machine_file" 2>/dev/null || true)
