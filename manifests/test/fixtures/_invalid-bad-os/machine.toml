@@ -1,0 +1,18 @@
+# negative fixture -- platform.os = "linux"; validator must reject in v1
+
+schema_version = 1
+
+[meta]
+description = "bad-os negative fixture"
+
+[platform]
+os = "linux"
+
+[features]
+
+[packages.brew]
+bundles = ["core"]
+
+[identity]
+git = "none"
+ssh = "none"
