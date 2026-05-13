@@ -38,7 +38,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Adding a fifth machine is exactly one new file under `manifests/machines/` plus `task setup -- <name>` (verified with a throwaway fixture machine)
   5. `docs/MANIFEST.md` and project-level `CLAUDE.md` (v2 conventions) are on disk; every top-level directory exists with a placeholder README
 **Plans**: 4 plans
-  - [ ] 01-01-PLAN.md — Author six positive + two negative deep-merge test fixtures (the spec for Plan 02 resolver)
+  - [x] 01-01-PLAN.md — Author six positive + two negative deep-merge test fixtures (the spec for Plan 02 resolver)
   - [ ] 01-02-PLAN.md — Implement install/resolver.zsh + author defaults.toml + four machine manifests
   - [ ] 01-03-PLAN.md — Build taskfiles/manifest.yml (setup, manifest:resolve, manifest:show, manifest:validate, manifest:test, manifest:test:add-machine)
   - [ ] 01-04-PLAN.md — Replace repo-root CLAUDE.md (v2 conventions) + author docs/MANIFEST.md + five stub READMEs (shell/, identity/, packages/, configs/, os/)
