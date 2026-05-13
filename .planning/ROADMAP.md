@@ -37,7 +37,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. `task manifest:test` runs deep-merge fixtures covering map-over-map, list-replace, scalar-override, nested table, missing-key, and `extra_packages` concatenation cases — all pass
   4. Adding a fifth machine is exactly one new file under `manifests/machines/` plus `task setup -- <name>` (verified with a throwaway fixture machine)
   5. `docs/MANIFEST.md` and project-level `CLAUDE.md` (v2 conventions) are on disk; every top-level directory exists with a placeholder README
-**Plans**: TBD
+**Plans**: 4 plans
+  - [ ] 01-01-PLAN.md — Author six positive + two negative deep-merge test fixtures (the spec for Plan 02 resolver)
+  - [ ] 01-02-PLAN.md — Implement install/resolver.zsh + author defaults.toml + four machine manifests
+  - [ ] 01-03-PLAN.md — Build taskfiles/manifest.yml (setup, manifest:resolve, manifest:show, manifest:validate, manifest:test, manifest:test:add-machine)
+  - [ ] 01-04-PLAN.md — Replace repo-root CLAUDE.md (v2 conventions) + author docs/MANIFEST.md + five stub READMEs (shell/, identity/, packages/, configs/, os/)
 
 ### Phase 2: Install Engine — Bootstrap, Idempotency, Lint
 **Goal**: A hardened bootstrap and an enforced idempotency contract so every install task is a fast no-op on re-run, every shell file is linted before content lands, and `task install` is the single canonical entry point (no separate update pipeline that can drift)
@@ -138,7 +142,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Manifest Engine + Repository Skeleton | 0/TBD | Not started | - |
+| 1. Manifest Engine + Repository Skeleton | 0/4 | Planned | - |
 | 2. Install Engine — Bootstrap, Idempotency, Lint | 0/TBD | Not started | - |
 | 3. Shell Layer — Flat Content Port | 0/TBD | Not started | - |
 | 4. Identity Layer — Git + SSH per Machine | 0/TBD | Not started | - |
