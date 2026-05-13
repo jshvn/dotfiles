@@ -35,7 +35,6 @@ tasks:
     desc: "Install Claude Code marketplaces, plugins, and get-shit-done-cc"
     cmds:
       - task: ensure-cli
-      - task: cleanup-stale
       - task: marketplaces-add
       - task: plugins-install
       - task: gsd-install
@@ -44,20 +43,23 @@ tasks:
         success "Claude plugins installed"
 
   update:
-    desc: "Update Claude Code marketplaces, plugins, and get-shit-done-cc"
+    desc: "Update Claude Code marketplaces and plugins"
     cmds:
       - task: ensure-cli
-      - task: cleanup-stale
       - task: marketplaces-update
       - task: plugins-install
       - task: plugins-update
-      - task: gsd-install
       - |
         {{.DOTFILES_MESSAGES}}
         success "Claude plugins updated"
 
   validate:
     desc: "Validate Claude Code install state"
+    vars:
+      MARKETPLACES_JSON:
+        sh: claude plugin marketplace list --json 2>/dev/null || echo '[]'
+      PLUGINS_JSON:
+        sh: claude plugin list --json 2>/dev/null || echo '[]'
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
@@ -73,26 +75,31 @@ tasks:
         else
           cross "jq missing (brew install jq)"
         fi
-        # Marketplaces
-        marketplaces_json="$(claude plugin marketplace list --json 2>/dev/null || echo '[]')"
-        echo '{{.CLAUDE_MARKETPLACES}}' | while read -r name _source; do
-          [[ -z "$name" ]] && continue
-          if echo "$marketplaces_json" | jq -e --arg n "$name" '.[] | select(.name == $n)' >/dev/null; then
+      - for:
+          var: CLAUDE_MARKETPLACES
+          split: "\n"
+          as: ENTRY
+        cmd: |
+          [[ -z "{{.ENTRY}}" ]] && exit 0
+          read -r name _source <<< "{{.ENTRY}}"
+          {{.DOTFILES_MESSAGES}}
+          if echo '{{.MARKETPLACES_JSON}}' | jq -e --arg n "$name" '.[] | select(.name == $n)' >/dev/null; then
             check "marketplace $name registered"
           else
             cross "marketplace $name missing"
           fi
-        done
-        # Plugins
-        plugins_json="$(claude plugin list --json 2>/dev/null || echo '[]')"
-        echo '{{.CLAUDE_PLUGINS}}' | while read -r id; do
-          [[ -z "$id" ]] && continue
-          if echo "$plugins_json" | jq -e --arg i "$id" '.[] | select(.id == $i)' >/dev/null; then
-            check "plugin $id installed"
+      - for:
+          var: CLAUDE_PLUGINS
+          split: "\n"
+          as: ID
+        cmd: |
+          [[ -z "{{.ID}}" ]] && exit 0
+          {{.DOTFILES_MESSAGES}}
+          if echo '{{.PLUGINS_JSON}}' | jq -e --arg i "{{.ID}}" '.[] | select(.id == $i)' >/dev/null; then
+            check "plugin {{.ID}} installed"
           else
-            cross "plugin $id missing"
+            cross "plugin {{.ID}} missing"
           fi
-        done
 
   status:
     desc: "Show installed Claude plugins and registered marketplaces"
@@ -112,7 +119,6 @@ tasks:
   # ===========================================================================
 
   ensure-cli:
-    desc: "Ensure claude and jq CLIs are available"
     internal: true
     cmds:
       - |
@@ -129,44 +135,29 @@ tasks:
         fi
         [[ $missing -eq 0 ]]
 
-  cleanup-stale:
-    desc: "Remove dead everything-claude-code plugin and duplicate marketplace"
-    internal: true
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        {{.BREW_SHELLENV}}
-        plugins_json="$(claude plugin list --json 2>/dev/null || echo '[]')"
-        if echo "$plugins_json" | jq -e '.[] | select(.id == "everything-claude-code@everything-claude-code")' >/dev/null; then
-          info "removing stale plugin: everything-claude-code@everything-claude-code"
-          claude plugin uninstall everything-claude-code@everything-claude-code
-        fi
-        marketplaces_json="$(claude plugin marketplace list --json 2>/dev/null || echo '[]')"
-        if echo "$marketplaces_json" | jq -e '.[] | select(.name == "everything-claude-code")' >/dev/null; then
-          info "removing stale marketplace: everything-claude-code"
-          claude plugin marketplace remove everything-claude-code
-        fi
-
   marketplaces-add:
-    desc: "Register every declared marketplace if not already present"
     internal: true
+    vars:
+      MARKETPLACES_JSON:
+        sh: claude plugin marketplace list --json 2>/dev/null || echo '[]'
     cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        {{.BREW_SHELLENV}}
-        marketplaces_json="$(claude plugin marketplace list --json 2>/dev/null || echo '[]')"
-        echo '{{.CLAUDE_MARKETPLACES}}' | while read -r name source; do
-          [[ -z "$name" ]] && continue
-          if echo "$marketplaces_json" | jq -e --arg n "$name" '.[] | select(.name == $n)' >/dev/null; then
+      - for:
+          var: CLAUDE_MARKETPLACES
+          split: "\n"
+          as: ENTRY
+        cmd: |
+          [[ -z "{{.ENTRY}}" ]] && exit 0
+          read -r name source <<< "{{.ENTRY}}"
+          {{.DOTFILES_MESSAGES}}
+          {{.BREW_SHELLENV}}
+          if echo '{{.MARKETPLACES_JSON}}' | jq -e --arg n "$name" '.[] | select(.name == $n)' >/dev/null; then
             check "marketplace $name already registered"
           else
             info "registering marketplace $name from $source"
             claude plugin marketplace add "$source"
           fi
-        done
 
   marketplaces-update:
-    desc: "Update all registered marketplaces"
     internal: true
     cmds:
       - |
@@ -176,40 +167,46 @@ tasks:
         claude plugin marketplace update
 
   plugins-install:
-    desc: "Install every declared plugin if not already installed"
     internal: true
+    vars:
+      PLUGINS_JSON:
+        sh: claude plugin list --json 2>/dev/null || echo '[]'
     cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        {{.BREW_SHELLENV}}
-        plugins_json="$(claude plugin list --json 2>/dev/null || echo '[]')"
-        echo '{{.CLAUDE_PLUGINS}}' | while read -r id; do
-          [[ -z "$id" ]] && continue
-          if echo "$plugins_json" | jq -e --arg i "$id" '.[] | select(.id == $i)' >/dev/null; then
-            check "plugin $id already installed"
+      - for:
+          var: CLAUDE_PLUGINS
+          split: "\n"
+          as: ID
+        cmd: |
+          [[ -z "{{.ID}}" ]] && exit 0
+          {{.DOTFILES_MESSAGES}}
+          {{.BREW_SHELLENV}}
+          if echo '{{.PLUGINS_JSON}}' | jq -e --arg i "{{.ID}}" '.[] | select(.id == $i)' >/dev/null; then
+            check "plugin {{.ID}} already installed"
           else
-            info "installing plugin $id"
-            claude plugin install "$id"
+            info "installing plugin {{.ID}}"
+            claude plugin install "{{.ID}}"
           fi
-        done
 
   plugins-update:
-    desc: "Update every installed declared plugin"
     internal: true
+    vars:
+      PLUGINS_JSON:
+        sh: claude plugin list --json 2>/dev/null || echo '[]'
     cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        {{.BREW_SHELLENV}}
-        plugins_json="$(claude plugin list --json 2>/dev/null || echo '[]')"
-        echo '{{.CLAUDE_PLUGINS}}' | while read -r id; do
-          [[ -z "$id" ]] && continue
-          if echo "$plugins_json" | jq -e --arg i "$id" '.[] | select(.id == $i)' >/dev/null; then
-            info "updating plugin $id"
-            claude plugin update "$id"
+      - for:
+          var: CLAUDE_PLUGINS
+          split: "\n"
+          as: ID
+        cmd: |
+          [[ -z "{{.ID}}" ]] && exit 0
+          {{.DOTFILES_MESSAGES}}
+          {{.BREW_SHELLENV}}
+          if echo '{{.PLUGINS_JSON}}' | jq -e --arg i "{{.ID}}" '.[] | select(.id == $i)' >/dev/null; then
+            info "updating plugin {{.ID}}"
+            claude plugin update "{{.ID}}"
           else
-            warn "plugin $id not installed -- skipping update"
+            warn "plugin {{.ID}} not installed -- skipping update"
           fi
-        done
 
   gsd-install:
     desc: "Install/update get-shit-done-cc global"
