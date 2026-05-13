@@ -91,6 +91,16 @@ tasks:
     # requires: is a hard-fail when the var is absent (no arg passed).
     requires:
       vars: [CLI_ARGS]
+    # CR-03 fix: pass CLI_ARGS via the environment instead of templating
+    # it into shell-quoted text. Go-task substitutes {{.CLI_ARGS}} into
+    # the rendered shell *before* the shell parses it, so any apostrophe
+    # in user input would unterminate the surrounding single-quoted
+    # string and produce a confusing parse error rather than the
+    # "invalid machine" precondition message. Reading $CLI_ARGS_ENV from
+    # the environment moves the value past the parser intact, where the
+    # regex check can reject it cleanly.
+    env:
+      CLI_ARGS_ENV: '{{.CLI_ARGS}}'
     # preconditions: enforces T-MAN-02 (path-traversal guard) and manifest
     # file existence. Both checks run before any state-file write.
     # RESEARCH §12 security hardening: kebab-case regex then file-existence.
@@ -99,7 +109,7 @@ tasks:
     # MACHINE_NAME_RE = '^[a-z0-9_][a-z0-9_-]*$'.
     preconditions:
       - sh: |
-          name="{{.CLI_ARGS}}"
+          name="${CLI_ARGS_ENV}"
           [[ "$name" =~ ^[a-z0-9_][a-z0-9_-]*$ ]] || exit 1
           test -f "{{.MACHINES_DIR}}/${name}.toml"
         msg: |
@@ -107,10 +117,10 @@ tasks:
             available: {{.AVAILABLE_MACHINES}}
     cmds:
       - mkdir -p "{{.STATE_DIR}}"
-      - printf '%s' "{{.CLI_ARGS}}" > "{{.STATE_FILE}}"
+      - printf '%s' "${CLI_ARGS_ENV}" > "{{.STATE_FILE}}"
       - |
         {{.DOTFILES_MESSAGES}}
-        success "Machine set to: {{.CLI_ARGS}}"
+        success "Machine set to: ${CLI_ARGS_ENV}"
       - task: manifest:validate
         vars: { CLI_ARGS: '' }
       - task: manifest:resolve
@@ -146,20 +156,35 @@ tasks:
 # =============================================================================
 
   manifest:show:
-    desc: "Print resolved manifest (default: active machine; -- --machine NAME for any machine)"
+    desc: "Print resolved manifest (default: active machine; -- [--machine] NAME for any machine)"
     # No preconditions -- resolver hard-fails with actionable error if no state.
     # No status -- this is a read/print task; always re-run.
+    # CR-03 fix: pass CLI_ARGS via env so apostrophes / shell metacharacters
+    # in user input cannot break the rendered shell parse.
+    env:
+      CLI_ARGS_ENV: '{{.CLI_ARGS}}'
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
         # Parse --machine NAME from CLI_ARGS if present (D-17).
         # Use sed for extraction -- portable across gosh/sh/zsh (no zsh match[]).
         machine_name=""
-        cli_args=$(printf '%s' '{{.CLI_ARGS}}' | tr -d "'")
+        cli_args="${CLI_ARGS_ENV}"
         machine_name=$(printf '%s' "$cli_args" | sed -n 's/.*--machine[[:space:]]\{1,\}\([a-z0-9_][a-z0-9_-]*\).*/\1/p')
+        # WR-06 fix: also accept a bare machine name (e.g.
+        # `task manifest:show -- personal-laptop`) so usage matches the
+        # `task setup -- <name>` form. Only accepted when --machine was
+        # not seen and the entire CLI_ARGS payload (whitespace-trimmed)
+        # is a valid machine name.
+        if [[ -z "$machine_name" ]]; then
+          candidate=$(printf '%s' "$cli_args" | tr -d '[:space:]')
+          if [[ "$candidate" =~ ^[a-z0-9_][a-z0-9_-]*$ ]]; then
+            machine_name="$candidate"
+          fi
+        fi
         if [[ -z "$machine_name" ]]; then
           if [[ -f "{{.STATE_FILE}}" ]]; then
-            machine_name=$(cat "{{.STATE_FILE}}" | tr -d '[:space:]')
+            machine_name=$(tr -d '[:space:]' < "{{.STATE_FILE}}")
           fi
         fi
         if [[ -z "$machine_name" ]]; then
@@ -176,18 +201,29 @@ tasks:
 # =============================================================================
 
   manifest:validate:
-    desc: "Validate active (or -- --machine NAME) manifest schema"
+    desc: "Validate active (or -- [--machine] NAME) manifest schema"
+    # CR-03 fix: pass CLI_ARGS via env so apostrophes / shell metacharacters
+    # in user input cannot break the rendered shell parse.
+    env:
+      CLI_ARGS_ENV: '{{.CLI_ARGS}}'
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
         # Parse --machine NAME from CLI_ARGS if present.
         # Use sed for extraction -- portable across gosh/sh/zsh (no zsh match[]).
         machine_name=""
-        cli_args=$(printf '%s' '{{.CLI_ARGS}}' | tr -d "'")
+        cli_args="${CLI_ARGS_ENV}"
         machine_name=$(printf '%s' "$cli_args" | sed -n 's/.*--machine[[:space:]]\{1,\}\([a-z0-9_][a-z0-9_-]*\).*/\1/p')
+        # WR-06 fix: accept bare machine name as a friendly alternative.
+        if [[ -z "$machine_name" ]]; then
+          candidate=$(printf '%s' "$cli_args" | tr -d '[:space:]')
+          if [[ "$candidate" =~ ^[a-z0-9_][a-z0-9_-]*$ ]]; then
+            machine_name="$candidate"
+          fi
+        fi
         if [[ -z "$machine_name" ]]; then
           if [[ -f "{{.STATE_FILE}}" ]]; then
-            machine_name=$(cat "{{.STATE_FILE}}" | tr -d '[:space:]')
+            machine_name=$(tr -d '[:space:]' < "{{.STATE_FILE}}")
           fi
         fi
         if [[ -z "$machine_name" ]]; then
