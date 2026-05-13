@@ -1,0 +1,7 @@
+{
+  "packages": {
+    "brew": {
+      "bundles": ["core", "gui", "dev", "personal"]
+    }
+  }
+}

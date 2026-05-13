@@ -1,0 +1,8 @@
+{
+  "features": {
+    "motd": true,
+    "claude-marketplace": true,
+    "one-password-ssh": true,
+    "macos-dock": true
+  }
+}

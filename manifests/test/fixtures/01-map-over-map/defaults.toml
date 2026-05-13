@@ -1,0 +1,5 @@
+# fixture 01 -- map-over-map (defaults side)
+
+[features]
+motd = true
+claude-marketplace = true
