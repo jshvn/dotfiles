@@ -26,6 +26,9 @@ os = "darwin"
 one-password-ssh = false
 motd = true
 claude-marketplace = true
+macos-finder = false  # gates shell/aliases/finder.zsh
+ghostty = false       # gates shell/aliases/ghostty.zsh
+jgrid-net = false     # gates shell/aliases/jgrid.zsh
 
 [packages.brew]
 # Bundle names map to packages/<name>.rb in Phase 5.
