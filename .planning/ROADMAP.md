@@ -61,7 +61,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   - [x] 02-03-PLAN.md — Bootstrap rewrite (set -euo pipefail, brew/go-task/yq trust anchors with audit + 3s window — BTSP-01..03)
   - [x] 02-04-PLAN.md — Cutover-gate helper + Taskfile.yml rewrite (drop update:, add cutover-gate preconditions — BTSP-04, BTSP-06, LINT-08[deprecated per D-11])
   - [x] 02-05-PLAN.md — Lint fixtures (11 positive+negative cases) + lint:test-fixtures self-test runner
-  - [ ] 02-06-PLAN.md — docs/SECURITY.md bootstrap trust chain documentation (BTSP-05, DOCS-07)
+  - [x] 02-06-PLAN.md — docs/SECURITY.md bootstrap trust chain documentation (BTSP-05, DOCS-07)
 
 ### Phase 3: Shell Layer — Flat Content Port
 **Goal**: A `shell/` tree with flat alias/function layout (macOS-only v1), v1 prompt ported as-is, antidote replacing antigen, and v1 shell content fully ported under a 200ms cold-start budget
