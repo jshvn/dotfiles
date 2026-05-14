@@ -79,7 +79,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   - [x] 03-02-PLAN.md — Port 5 startup files (.zshenv/.zprofile/.zshrc/.zlogin/.zlogout) + shell/theme.zsh (antidote swap, compinit cache, hostname-bug fix)
   - [x] 03-03-PLAN.md — Port 23 function files (_dotfiles_feature helper + 22 v1 ports incl. cached motd for SHEL-11)
   - [x] 03-04-PLAN.md — Port 7 alias files (general/hardware/networking/dotfiles + gated finder/ghostty/jgrid)
-  - [ ] 03-05-PLAN.md — Wire taskfiles/links.yml + taskfiles/shell.yml (task perf:shell SHEL-12) + Taskfile.yml update + shell/README.md DOCS-02 anchor
+  - [x] 03-05-PLAN.md — Wire taskfiles/links.yml + taskfiles/shell.yml (task perf:shell SHEL-12) + Taskfile.yml update + shell/README.md DOCS-02 anchor
 **UI hint**: yes
 
 ### Phase 4: Identity Layer — Git + SSH per Machine
