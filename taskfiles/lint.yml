@@ -1,0 +1,259 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/lint.yml -- lint suite for v2 dotfiles conventions
+#
+# Enforces structural correctness rules that prevent recurring v1 bug classes.
+#
+# - LINT-02: $VAR in status: blocks (the macos:shell:145 $BREW_ZSH bug class)
+# - LINT-03a: cmds: without status: (the gsd-install re-run-on-every-install bug class)
+# - LINT-03b: bare ln -s outside helpers.yml (the links.yml:69 bug class)
+# - LINT-04: executable .zsh missing set -euo pipefail (the bootstrap.zsh:2 bug class)
+# - LINT-05: portability hints for future-Linux v2 (warn-only, always exit 0)
+# - LINT-07: zsh -n parse errors + task --list-all --json YAML parse baseline
+#
+# LINT-08 is DEPRECATED per decision D-11 (5s timing test removed; structural
+# status: checks via LINT-01/LINT-03a are the idempotency guarantee). No
+# implementation.
+#
+# Self-exemption: taskfiles/lint.yml tasks intentionally omit status: blocks
+# (lint is always-re-run by design). Each task body is marked with
+# "# lint-allow: cmds-without-status" so LINT-03a skips this file.
+#
+# Read-only: no manifest dependency, no resolved.json dependency, no
+# cutover-ack gate (per D-09). Runs without task setup -- <machine>.
+#
+# Callable as:
+#   task lint                     # run all checks (default aggregator)
+#   task lint:syntax              # YAML parse + zsh -n
+#   task lint:taskfile            # LINT-02 + LINT-03a + LINT-03b
+#   task lint:shell-headers       # LINT-04
+#   task lint:portability         # LINT-05 (warn-only)
+#   task lint:test-fixtures       # self-test against fixtures (Plan 02-05)
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+# =============================================================================
+# Vars
+# =============================================================================
+
+vars:
+  TASKFILE_GLOB: 'taskfiles/*.yml'
+  # ZSH_FIND uses DOTFILEDIR so it works regardless of cwd when task is invoked.
+  # Excludes .git, .planning, taskfiles/test fixtures, and .claude worktree copies.
+  ZSH_FIND: >-
+    find {{.DOTFILEDIR}} -name '*.zsh'
+    -not -path '{{.DOTFILEDIR}}/.git/*'
+    -not -path '{{.DOTFILEDIR}}/.planning/*'
+    -not -path '{{.DOTFILEDIR}}/taskfiles/test/*'
+    -not -path '{{.DOTFILEDIR}}/.claude/*'
+  # Resolve DOTFILEDIR from this taskfile's parent directory.
+  # $TASKFILE is the absolute path of the invoked taskfile (go-task 3.x).
+  # dirname twice: taskfiles/lint.yml -> taskfiles/ -> repo root.
+  DOTFILEDIR:
+    sh: dirname "$(dirname "$(realpath "${TASKFILE:-$0}")")"
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+# =============================================================================
+# Tasks
+# =============================================================================
+
+tasks:
+
+  # ---------------------------------------------------------------------------
+  # Default aggregator (LINT-06)
+  # NOTE: lint tasks intentionally have no status: block -- they are always
+  # re-run. This is by design; do not add status: here.
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  default:
+    desc: "Run all lint checks (LINT-06 aggregator)"
+    cmds:
+      - task: syntax
+      - task: taskfile
+      - task: shell-headers
+      - task: portability
+
+  # ---------------------------------------------------------------------------
+  # LINT-07: zsh -n parse errors + task --list-all --json YAML parse baseline
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  syntax:
+    desc: "YAML parse + zsh -n syntax checks (LINT-07)"
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # YAML parse check: task --list-all --json exits non-zero on parse errors.
+        # Exit-1 with empty task list (all internal: true) is NOT a parse error;
+        # we detect real failures by checking stderr for "Failed to parse".
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        while IFS= read -r f; do
+          err=$(task --list-all --json -t "$f" 2>&1 >/dev/null || true)
+          if echo "$err" | ggrep -q 'Failed to parse'; then
+            cross "yaml-parse: $f -- task --list-all failed"
+            echo "$err" >&2
+            failures=$(( failures + 1 ))
+          else
+            check "yaml-parse: $f"
+          fi
+        done < <(find {{.DOTFILEDIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
+        exit "$failures"
+      - |
+        # lint-allow: cmds-without-status
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        while IFS= read -r f; do
+          if zsh -n "$f" 2>&1; then
+            check "zsh -n: $f"
+          else
+            cross "zsh -n: $f"
+            failures=$(( failures + 1 ))
+          fi
+        done < <({{.ZSH_FIND}})
+        exit "$failures"
+
+  # ---------------------------------------------------------------------------
+  # LINT-02 + LINT-03a + LINT-03b
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  taskfile:
+    desc: 'Taskfile convention checks: $VAR in status:, cmds: without status:, bare symlink outside helpers (LINT-02 + LINT-03a + LINT-03b)'
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # All three checks run in a single block so all produce output even when
+        # one fails. The failures counter accumulates across LINT-02, LINT-03b,
+        # and LINT-03a; the final exit reports the total count.
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+
+        # --- LINT-02: $VAR-style shell variables inside status: blocks ---
+        # The macos:shell:145 bug class: $BREW_ZSH is unset in status eval context
+        # so the check always fails and the task always re-runs.
+        while IFS= read -r f; do
+          out=$(yq '.tasks[] | select(.status) | .status' "$f" 2>/dev/null \
+                | ggrep -nE '\$[A-Za-z_][A-Za-z0-9_]*' \
+                | ggrep -vE '\$\(' \
+                | ggrep -vE '\{\{' || true)
+          if [[ -n "$out" ]]; then
+            cross "LINT-02: \$VAR in status: block -- $f"
+            echo "$out" >&2
+            failures=$(( failures + 1 ))
+          else
+            check "LINT-02: $f"
+          fi
+        done < <(find {{.DOTFILEDIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
+
+        # --- LINT-03b: bare ln -s outside taskfiles/helpers.yml ---
+        # Allowlist: helpers.yml is the only sanctioned location for bare ln.
+        # Comment lines (preceded only by whitespace + #) are excluded.
+        violations=$(ggrep -rn -E '\bln[[:space:]]+-s' "{{.DOTFILEDIR}}/taskfiles/" \
+                      | ggrep -v 'helpers.yml' \
+                      | ggrep -v ':[[:space:]]*#' || true)
+        if [[ -n "$violations" ]]; then
+          cross "LINT-03b: bare 'ln -s' outside helpers.yml"
+          echo "$violations" >&2
+          failures=$(( failures + 1 ))
+        else
+          check "LINT-03b: no bare ln -s outside helpers.yml"
+        fi
+
+        # --- LINT-03a: tasks with cmds: but no status: block ---
+        # Exemptions:
+        #   - internal: true tasks (sub-tasks; orchestrator's status governs)
+        #   - tasks whose cmds: are ALL task: delegations (orchestration only)
+        #   - taskfiles/lint.yml itself (lint tasks intentionally always-re-run)
+        while IFS= read -r f; do
+          # Self-exemption: lint.yml tasks are intentionally always-re-run.
+          [[ "$f" == *"lint.yml" ]] && continue
+          # Also skip commit-task1.yml if present (temporary executor helper)
+          [[ "$f" == *"commit-task"* ]] && continue
+          while IFS= read -r task_name; do
+            [[ -z "$task_name" ]] && continue
+            # Skip internal: true tasks
+            is_internal=$(yq ".tasks.\"$task_name\".internal // false" "$f" 2>/dev/null || echo false)
+            [[ "$is_internal" == "true" ]] && continue
+            # Skip tasks whose cmds are ALL task: delegations
+            all_delegations=$(yq ".tasks.\"$task_name\".cmds | all(has(\"task\"))" "$f" 2>/dev/null || echo false)
+            [[ "$all_delegations" == "true" ]] && continue
+            cross "LINT-03a: '$task_name' in $f has cmds: but no status:"
+            failures=$(( failures + 1 ))
+          done < <(yq '.tasks | to_entries | .[] | select(.value | has("cmds")) | select(.value | has("status") | not) | .key' "$f" 2>/dev/null || true)
+        done < <(find {{.DOTFILEDIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
+
+        exit "$failures"
+
+  # ---------------------------------------------------------------------------
+  # LINT-04: executable .zsh files missing set -euo pipefail
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  shell-headers:
+    desc: "Executable .zsh files have set -euo pipefail (LINT-04)"
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        while IFS= read -r f; do
+          if head -30 "$f" | ggrep -qE '^set -euo pipefail$'; then
+            check "LINT-04: $f"
+          else
+            cross "LINT-04: $f missing 'set -euo pipefail' in first 30 lines"
+            failures=$(( failures + 1 ))
+          fi
+        done < <(find {{.DOTFILEDIR}} -name '*.zsh' -perm +111 \
+                   -not -path '{{.DOTFILEDIR}}/.git/*' \
+                   -not -path '{{.DOTFILEDIR}}/.planning/*' \
+                   -not -path '{{.DOTFILEDIR}}/taskfiles/test/*' \
+                   -not -path '{{.DOTFILEDIR}}/.claude/*' \
+                   2>/dev/null)
+        exit "$failures"
+
+  # =============================================================================
+
+  # ---------------------------------------------------------------------------
+  # LINT-05: portability hints (warn-only, always exit 0)
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  portability:
+    desc: "Portability hints for future-Linux v2 (warn-only, exit 0; LINT-05)"
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # Scans shell/ and os/ directories for macOS-only commands.
+        # These directories do not exist in P2 (Phase 3 ships shell/,
+        # Phase 6 ships os/). The ggrep invocations tolerate missing
+        # directories via 2>/dev/null and || true.
+        {{.DOTFILES_MESSAGES}}
+        patterns=(pbcopy pbpaste osascript 'defaults read' 'defaults write' sw_vers dscl PlistBuddy)
+        warnings=0
+        for pat in "${patterns[@]}"; do
+          hits=$(ggrep -rnE "\b${pat}\b" shell/ os/ 2>/dev/null \
+                 | ggrep -v ':[[:space:]]*#' || true)
+          if [[ -n "$hits" ]]; then
+            warn "LINT-05: portability hint -- '${pat}' found:"
+            echo "$hits" >&2
+            warnings=$(( warnings + 1 ))
+          fi
+        done
+        [[ $warnings -gt 0 ]] && warn "LINT-05: $warnings portability hint(s) found (non-blocking; exit 0)"
+        exit 0
+
+  # ---------------------------------------------------------------------------
+  # Self-test runner (Plan 02-05 will replace this body)
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  test-fixtures:
+    desc: "Self-test the lint suite against fixtures (see Plan 02-05)"
+    cmds:
+      - echo 'test-fixtures runner ships in Plan 02-05' >&2
