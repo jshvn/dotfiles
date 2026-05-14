@@ -50,10 +50,13 @@ vars:
     -not -path '{{.DOTFILEDIR}}/taskfiles/test/*'
     -not -path '{{.DOTFILEDIR}}/.claude/*'
   # Resolve DOTFILEDIR from this taskfile's parent directory.
-  # $TASKFILE is the absolute path of the invoked taskfile (go-task 3.x).
-  # dirname twice: taskfiles/lint.yml -> taskfiles/ -> repo root.
+  # go-task 3.37+ provides {{.TASKFILE_DIR}} as the directory containing the
+  # invoked taskfile. dirname once goes from taskfiles/ to repo root.
+  # NOTE: when this file is loaded as an include from the root Taskfile.yml,
+  # the root's DOTFILEDIR var wins; this sh: expression is the fallback
+  # for direct `task -t taskfiles/lint.yml` invocation.
   DOTFILEDIR:
-    sh: dirname "$(dirname "$(realpath "${TASKFILE:-$0}")")"
+    sh: dirname "{{.TASKFILE_DIR}}"
   DOTFILES_MESSAGES: |
     source '{{.DOTFILEDIR}}/install/messages.zsh'
 
