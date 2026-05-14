@@ -43,7 +43,11 @@ cutover_gate_check() {
     return 1
   fi
 
-  read -r ack_machine ack_ts < "$ack_file"
+  # `|| true`: tolerate `read` returning non-zero on empty/EOF so a caller
+  # running under `set -e` (bootstrap.zsh) reaches the `[[ -z ]]` check
+  # below and emits the actionable "malformed" error per D-09. Without it,
+  # an empty ack file silently aborts the function (REVIEW.md C-01).
+  read -r ack_machine ack_ts < "$ack_file" || true
   if [[ -z "$ack_machine" || -z "$ack_ts" ]]; then
     _cutover_gate_emit_error "$active_machine" "malformed"
     return 1
