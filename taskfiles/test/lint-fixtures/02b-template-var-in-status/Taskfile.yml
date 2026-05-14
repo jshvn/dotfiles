@@ -1,0 +1,22 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/02b-template-var-in-status/Taskfile.yml
+#
+# Negative fixture for LINT-02: status: block uses {{.X}} template variable.
+# Template vars are resolved at task-graph build time and are the correct form.
+# LINT-02 must NOT flag this file.
+#
+# Expected outcome: LINT-02 does not fire (expect: pass)
+# =============================================================================
+
+vars:
+  XDG_CONFIG_HOME: '{{.HOME}}/.config'
+
+tasks:
+  fixture-task:
+    desc: "fixture: template var in status (correct form -- LINT-02 must not fire)"
+    status:
+      - test -f "{{.XDG_CONFIG_HOME}}/dotfiles/marker"
+    cmds:
+      - echo run

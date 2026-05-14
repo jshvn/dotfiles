@@ -1,0 +1,26 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/03a-internal-no-status-ok/Taskfile.yml
+#
+# Negative fixture for LINT-03a: internal: true task with cmds: and no status:.
+# Internal tasks are sub-tasks called by orchestrators that own the status:
+# check. LINT-03a must NOT flag internal: true tasks.
+#
+# Expected outcome: LINT-03a does not fire (expect: pass)
+# =============================================================================
+
+tasks:
+  fixture-task:
+    desc: "fixture: internal task without status (exempt from LINT-03a)"
+    internal: true
+    cmds:
+      - echo internal tasks are exempt from the status check
+
+  # Visible stub so task --list-all --json exits 0 (non-zero on empty list).
+  # The lint check operates on fixture-task above; this task is lint-compliant.
+  visible-noop:
+    desc: "visible task to satisfy task --list-all --json exit code"
+    status: [true]
+    cmds:
+      - echo noop

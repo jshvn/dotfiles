@@ -1,0 +1,20 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/02c-command-substitution-in-status/Taskfile.yml
+#
+# Negative fixture for LINT-02: status: block uses $(cmd) command substitution.
+# Command substitutions are legitimate in status blocks -- they execute at
+# status-eval time. The LINT-02 regex explicitly excludes patterns matching \$\(
+# so this file must NOT be flagged.
+#
+# Expected outcome: LINT-02 does not fire (expect: pass)
+# =============================================================================
+
+tasks:
+  fixture-task:
+    desc: "fixture: $(cmd) in status (legitimate -- LINT-02 regex excludes this)"
+    status:
+      - '[[ "$(defaults read NSGlobalDomain AppleInterfaceStyle 2>/dev/null)" == "Dark" ]]'
+    cmds:
+      - echo run

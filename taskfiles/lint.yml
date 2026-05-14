@@ -254,6 +254,88 @@ tasks:
 
   # lint-allow: cmds-without-status
   test-fixtures:
-    desc: "Self-test the lint suite against fixtures (see Plan 02-05)"
+    desc: "Self-test the lint suite against fixtures (positive + negative cases)"
     cmds:
-      - echo 'test-fixtures runner ships in Plan 02-05' >&2
+      - |
+        # lint-allow: cmds-without-status
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        fixtures_dir="{{.DOTFILEDIR}}/taskfiles/test/lint-fixtures"
+        for fix in "$fixtures_dir"/[0-9]*-*/; do
+          name=$(basename "$fix")
+          expect=$(head -n1 "$fix/expect" | tr -d '[:space:]')
+          actual=unknown
+          case "$name" in
+            02*|03a-*)
+              # LINT-02 / LINT-03a: scope to fixture's Taskfile.yml
+              lint02_hit=$( (cd "$fix" && yq '.tasks[] | select(.status) | .status' Taskfile.yml 2>/dev/null \
+                  | ggrep -nE '\$[A-Za-z_][A-Za-z0-9_]*' \
+                  | ggrep -vE '\$\(' \
+                  | ggrep -vE '\{\{') || true)
+              lint03a_hit=""
+              while IFS= read -r task_name; do
+                [[ -z "$task_name" ]] && continue
+                is_internal=$(cd "$fix" && yq ".tasks.\"$task_name\".internal // false" Taskfile.yml 2>/dev/null || echo false)
+                [[ "$is_internal" == "true" ]] && continue
+                all_delegations=$(cd "$fix" && yq ".tasks.\"$task_name\".cmds | all(has(\"task\"))" Taskfile.yml 2>/dev/null || echo false)
+                [[ "$all_delegations" == "true" ]] && continue
+                lint03a_hit="${lint03a_hit}${task_name} "
+              done < <(cd "$fix" && yq '.tasks | to_entries | .[] | select(.value | has("cmds")) | select(.value | has("status") | not) | .key' Taskfile.yml 2>/dev/null || true)
+              if [[ -n "$lint02_hit" ]] || [[ -n "$lint03a_hit" ]]; then
+                actual=fail
+              else
+                actual=pass
+              fi
+              ;;
+            03b-*)
+              # LINT-03b: bare ln -s outside helpers.yml
+              file=$(ls "$fix"/*.yml 2>/dev/null | head -1)
+              base=$(basename "$file")
+              if ggrep -qE '\bln[[:space:]]+-s' "$file" && [[ "$base" != "helpers.yml" ]]; then
+                actual=fail
+              else
+                actual=pass
+              fi
+              ;;
+            04*)
+              # LINT-04: executable .zsh missing set -euo pipefail
+              file=$(ls "$fix"/*.zsh 2>/dev/null | head -1)
+              if [[ -x "$file" ]] && ! head -30 "$file" | ggrep -qE '^set -euo pipefail$'; then
+                actual=fail
+              else
+                actual=pass
+              fi
+              ;;
+            05*)
+              # LINT-05: portability pattern (warn-only). actual="warn" if pattern found.
+              file=$(ls "$fix"/*.zsh 2>/dev/null | head -1)
+              if ggrep -qE '\b(pbcopy|pbpaste|osascript|sw_vers|dscl|PlistBuddy)\b|defaults (read|write)' "$file"; then
+                actual=warn
+              else
+                actual=pass
+              fi
+              ;;
+            07*)
+              # LINT-07: zsh -n parse error
+              file=$(ls "$fix"/*.zsh 2>/dev/null | head -1)
+              if zsh -n "$file" 2>/dev/null; then
+                actual=pass
+              else
+                actual=fail
+              fi
+              ;;
+            *) actual=unknown ;;
+          esac
+          if [[ "$actual" == "$expect" ]]; then
+            check "${name}: expect=${expect} actual=${actual}"
+          else
+            cross "${name}: expect=${expect} actual=${actual}"
+            failures=$((failures + 1))
+          fi
+        done
+        if [[ $failures -gt 0 ]]; then
+          error "lint:test-fixtures: $failures fixture(s) failed expected behavior"
+        else
+          success "lint:test-fixtures: all $(ls -d "$fixtures_dir"/[0-9]*-*/ | wc -l | tr -d ' ') fixtures behaved as expected"
+        fi
+        exit "$failures"

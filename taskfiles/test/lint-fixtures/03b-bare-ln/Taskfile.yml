@@ -1,0 +1,19 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/03b-bare-ln/Taskfile.yml
+#
+# Positive fixture for LINT-03b: bare ln -sf outside helpers.yml.
+# This is the links.yml:69 bug class -- bare ln bypasses the _:safe-link
+# helper which creates parent directories and uses ln -sfn for idempotence.
+#
+# Expected outcome: LINT-03b fires (expect: fail)
+# =============================================================================
+
+tasks:
+  fixture-task:
+    desc: "fixture: bare ln -sf outside helpers.yml"
+    status:
+      - test -L /tmp/fixture-link
+    cmds:
+      - ln -sf /tmp/source /tmp/fixture-link
