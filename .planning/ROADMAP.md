@@ -55,7 +55,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. `zsh -n` runs as Tier-0 syntax test over every `.zsh` file in CI and exits non-zero on any parse error
   6. `task install` on a converged machine completes in under 5 seconds, measured by a CI timing test
   7. `docs/SECURITY.md` documents the bootstrap trust chain (what is downloaded, from where, how verified, and who is trusted)
-**Plans**: TBD
+**Plans**: 6 plans
+  - [ ] 02-01-PLAN.md — Lint suite (taskfiles/lint.yml: syntax, taskfile, shell-headers, portability — LINT-01..07)
+  - [ ] 02-02-PLAN.md — Stub taskfiles (links/brew/claude/macos) for Phase 3/5/6/7 placeholders
+  - [ ] 02-03-PLAN.md — Bootstrap rewrite (set -euo pipefail, brew/go-task/yq trust anchors with audit + 3s window — BTSP-01..03)
+  - [ ] 02-04-PLAN.md — Cutover-gate helper + Taskfile.yml rewrite (drop update:, add cutover-gate preconditions — BTSP-04, BTSP-06, LINT-08[deprecated per D-11])
+  - [ ] 02-05-PLAN.md — Lint fixtures (11 positive+negative cases) + lint:test-fixtures self-test runner
+  - [ ] 02-06-PLAN.md — docs/SECURITY.md bootstrap trust chain documentation (BTSP-05, DOCS-07)
 
 ### Phase 3: Shell Layer — Flat Content Port
 **Goal**: A `shell/` tree with flat alias/function layout (macOS-only v1), v1 prompt ported as-is, antidote replacing antigen, and v1 shell content fully ported under a 200ms cold-start budget
