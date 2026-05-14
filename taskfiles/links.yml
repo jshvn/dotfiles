@@ -1,42 +1,97 @@
 version: '3'
 
 # =============================================================================
-# Include shared helper tasks
+# taskfiles/links.yml -- Phase 3 link orchestration (real implementation)
+#
+# Purpose:
+#   Replaces taskfiles/links-stub.yml as the real implementation of links:all.
+#   Phase 3 scope: shell startup files + the antidote plugin bundle source.
+#   Later phases extend the `all:` aggregator with their own subtasks:
+#     - P4 adds git/ssh/identity
+#     - P5 adds packages/brew (none in links.yml; package install lives in brew.yml)
+#     - P6 adds macos (none in links.yml; defaults live in macos.yml)
+#     - P7 adds tools/claude
+#
+# Dependencies:
+#   - taskfiles/helpers.yml provides `_:safe-link` (mkdir -p + ln -sfn) and
+#     `_:check-link` (verifies -L and -e on the target symlink).
+#
+# Status-block convention (LINT-02 enforcement):
+#   Every install-style task has a `status:` block. Status blocks use
+#   `{{.X}}` template vars ONLY -- never `$X` shell vars. Shell vars are
+#   not in scope during status evaluation; using `$X` causes the task to
+#   re-run on every invocation (the v1 macos:shell:145 bug class).
+#
+# Symlink-creation convention (LINT-03b enforcement):
+#   No bare `ln -s` lives here -- every symlink goes through `_:safe-link`
+#   in taskfiles/helpers.yml. Direct `ln` calls bypass the parent-directory
+#   guarantee and idempotent `ln -sfn` semantics.
+#
+# When the root Taskfile.yml includes this module, its vars (DOTFILEDIR,
+# ZDOTDIR, DOTFILES_MESSAGES) take precedence over any local fallbacks.
 # =============================================================================
-# The underscore (_) namespace provides access to reusable helper tasks defined
-# in helpers.yml. This avoids duplicating safe-link and check-link logic across
-# multiple taskfiles. See helpers.yml for available tasks.
-# =============================================================================
+
 includes:
   _: ./helpers.yml
 
+# =============================================================================
+# Vars block -- self-contained so `task -t taskfiles/links.yml ...` works
+# without the root Taskfile.yml being loaded. When invoked via the root,
+# the root's vars take precedence via go-task vars-merge.
+# =============================================================================
+
+vars:
+  HOME: '{{.HOME}}'
+
+  XDG_CONFIG_HOME:
+    sh: echo "${XDG_CONFIG_HOME:-$HOME/.config}"
+
+  ZDOTDIR: '{{.XDG_CONFIG_HOME}}/zsh'
+
+  # Resolve DOTFILEDIR from this taskfile's parent directory.
+  # dirname once: taskfiles/links.yml -> taskfiles/ -> ../taskfiles/ -> repo root.
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+# =============================================================================
+# Tasks
+# =============================================================================
+
 tasks:
-  # ============================================================================
-  # Symlink Creation
-  # ============================================================================
+
+  # ---------------------------------------------------------------------------
+  # Aggregator -- P3 ships shell-only; later phases extend this list.
+  # ---------------------------------------------------------------------------
 
   all:
-    desc: "Create all symlinks"
+    desc: "Create all symlinks (P3: shell only; later phases extend)"
     cmds:
       - task: zsh
-      - task: git
-      - task: ssh
-      - task: tools
-      - task: claude
+      - task: antidote
+    status:
+      - test -L "{{.ZDOTDIR}}/.zshenv"
+      - test -L "{{.ZDOTDIR}}/.zsh_plugins.txt"
+
+  # ---------------------------------------------------------------------------
+  # Shell startup files (SHEL-03) -- five files in zsh's documented order.
+  # ---------------------------------------------------------------------------
 
   zsh:
     desc: "Link zsh configuration files"
     cmds:
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zshenv", TARGET: "{{.ZDOTDIR}}/.zshenv" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zshenv", TARGET: "{{.ZDOTDIR}}/.zshenv" }
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zprofile", TARGET: "{{.ZDOTDIR}}/.zprofile" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zprofile", TARGET: "{{.ZDOTDIR}}/.zprofile" }
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zshrc", TARGET: "{{.ZDOTDIR}}/.zshrc" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zshrc", TARGET: "{{.ZDOTDIR}}/.zshrc" }
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zlogin", TARGET: "{{.ZDOTDIR}}/.zlogin" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zlogin", TARGET: "{{.ZDOTDIR}}/.zlogin" }
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zlogout", TARGET: "{{.ZDOTDIR}}/.zlogout" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zlogout", TARGET: "{{.ZDOTDIR}}/.zlogout" }
     status:
       - test -L "{{.ZDOTDIR}}/.zshenv"
       - test -L "{{.ZDOTDIR}}/.zprofile"
@@ -44,93 +99,26 @@ tasks:
       - test -L "{{.ZDOTDIR}}/.zlogin"
       - test -L "{{.ZDOTDIR}}/.zlogout"
 
-  git:
-    desc: "Link git configuration files (common)"
+  # ---------------------------------------------------------------------------
+  # Antidote plugin manifest -- static bundle file (SHEL-09 / -11 dependency).
+  # ---------------------------------------------------------------------------
+
+  antidote:
+    desc: "Link antidote plugin manifest"
     cmds:
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/git/config", TARGET: "{{.XDG_CONFIG_HOME}}/git/config" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/git/ignore", TARGET: "{{.XDG_CONFIG_HOME}}/git/ignore" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/antidote/zsh_plugins.txt", TARGET: "{{.ZDOTDIR}}/.zsh_plugins.txt" }
     status:
-      - test -L "{{.XDG_CONFIG_HOME}}/git/config"
-      - test -L "{{.XDG_CONFIG_HOME}}/git/ignore"
+      - test -L "{{.ZDOTDIR}}/.zsh_plugins.txt"
 
-  ssh:
-    desc: "Link SSH configuration files (common)"
-    cmds:
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/configs/config", TARGET: "{{.HOME}}/.ssh/config" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/cloudflared.zsh", TARGET: "{{.HOME}}/.ssh/cloudflared.zsh" }
-      # 1Password agent config (only for non-server profiles)
-      - |
-        if [[ "{{.PROFILE}}" != "server" ]]; then
-          mkdir -p "{{.XDG_CONFIG_HOME}}/1Password/ssh"
-          ln -sf "{{.DOTFILEDIR}}/ssh/configs/agent.toml" "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"
-        fi
-    status:
-      - test -L "{{.HOME}}/.ssh/config"
-      - test -L "{{.HOME}}/.ssh/cloudflared.zsh"
-      - |
-        [[ "{{.PROFILE}}" == "server" ]] || test -L "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"
+  # ---------------------------------------------------------------------------
+  # Validation -- always-re-run diagnostic output; no status: by design.
+  # ---------------------------------------------------------------------------
 
-  tools:
-    desc: "Link tool configuration files"
-    cmds:
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/trippy.toml", TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/tlrc.toml", TARGET: "{{.XDG_CONFIG_HOME}}/tlrc/config.toml" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/styles/eza_style.yaml", TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/condarc", TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/ghostty", TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/glow.yml", TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow.yml" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/styles/glow_style.json", TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow_style.json" }
-    status:
-      - test -L "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"
-      - test -L "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"
-      - test -L "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"
-      - test -L "{{.XDG_CONFIG_HOME}}/conda/condarc"
-      - test -L "{{.XDG_CONFIG_HOME}}/ghostty/config"
-      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow.yml"
-      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow_style.json"
-
-  claude:
-    desc: "Link Claude Code configuration"
-    cmds:
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/CLAUDE.md", TARGET: "{{.CLAUDE_CONFIG_HOME}}/CLAUDE.md" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/agents", TARGET: "{{.CLAUDE_CONFIG_HOME}}/agents" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/commands", TARGET: "{{.CLAUDE_CONFIG_HOME}}/commands" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks", TARGET: "{{.CLAUDE_CONFIG_HOME}}/hooks" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/skills", TARGET: "{{.CLAUDE_CONFIG_HOME}}/skills" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/settings.json", TARGET: "{{.CLAUDE_CONFIG_HOME}}/settings.json" }
-    status:
-      - test -L "{{.CLAUDE_CONFIG_HOME}}/CLAUDE.md"
-      - test -L "{{.CLAUDE_CONFIG_HOME}}/agents"
-      - test -L "{{.CLAUDE_CONFIG_HOME}}/commands"
-      - test -L "{{.CLAUDE_CONFIG_HOME}}/hooks"
-      - test -L "{{.CLAUDE_CONFIG_HOME}}/skills"
-      - test -L "{{.CLAUDE_CONFIG_HOME}}/settings.json"
-
-  # ============================================================================
-  # Validation
-  # ============================================================================
-
+  # lint-allow: cmds-without-status
   validate:
-    desc: "Validate all common symlinks"
+    desc: "Validate all P3 symlinks"
     cmds:
-      # ZSH
       - task: _:check-link
         vars: { TARGET: "{{.ZDOTDIR}}/.zshenv", NAME: "zshenv" }
       - task: _:check-link
@@ -141,135 +129,5 @@ tasks:
         vars: { TARGET: "{{.ZDOTDIR}}/.zlogin", NAME: "zlogin" }
       - task: _:check-link
         vars: { TARGET: "{{.ZDOTDIR}}/.zlogout", NAME: "zlogout" }
-
-      # Git
       - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/git/config", NAME: "git config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/git/ignore", NAME: "git ignore" }
-
-      # SSH
-      - task: _:check-link
-        vars: { TARGET: "{{.HOME}}/.ssh/config", NAME: "ssh config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.HOME}}/.ssh/cloudflared.zsh", NAME: "cloudflared.zsh" }
-
-      # 1Password agent config (skipped on server profile)
-      - |
-        {{.DOTFILES_MESSAGES}}
-        if [[ "{{.PROFILE}}" == "server" ]]; then
-          check "1Password ssh agent config (skipped for server profile)"
-        elif [[ -L "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml" ]]; then
-          check "1Password ssh agent config"
-        else
-          cross "1Password ssh agent config"
-        fi
-
-      # Claude Code
-      - task: _:check-link
-        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/CLAUDE.md", NAME: "claude CLAUDE.md" }
-      - task: _:check-link
-        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/agents", NAME: "claude agents" }
-      - task: _:check-link
-        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/commands", NAME: "claude commands" }
-      - task: _:check-link
-        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/hooks", NAME: "claude hooks" }
-      - task: _:check-link
-        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/skills", NAME: "claude skills" }
-      - task: _:check-link
-        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/settings.json", NAME: "claude settings.json" }
-      # Validate hook scripts are executable
-      - |
-        {{.DOTFILES_MESSAGES}}
-        all_exec=true
-        for hook in "{{.DOTFILEDIR}}/claude/hooks/"*.zsh; do
-          [[ -f "$hook" ]] || continue
-          # Skip lib.zsh -- sourced by other hooks, not executed directly
-          [[ "$(basename "$hook")" == "lib.zsh" ]] && continue
-          if [[ ! -x "$hook" ]]; then
-            cross "$(basename "$hook") not executable"
-            all_exec=false
-          fi
-        done
-        $all_exec && check "hook scripts executable"
-
-      # Tools
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml", NAME: "trippy config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/tlrc/config.toml", NAME: "tlrc config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml", NAME: "eza theme" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc", NAME: "conda config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config", NAME: "ghostty config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow.yml", NAME: "glow config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow_style.json", NAME: "glow style" }
-
-  # ============================================================================
-  # Symlink Removal (Unlink)
-  # ============================================================================
-
-  unlink-all:
-    desc: "Remove all symlinks created by dotfiles"
-    prompt: "This will remove all dotfiles symlinks. Continue?"
-    cmds:
-      - task: unlink-zsh
-      - task: unlink-git
-      - task: unlink-ssh
-      - task: unlink-tools
-      - task: unlink-claude
-      - |
-        {{.DOTFILES_MESSAGES}}
-        success "All symlinks removed"
-
-  unlink-zsh:
-    desc: "Remove zsh symlinks"
-    internal: true
-    cmds:
-      - rm -f "{{.ZDOTDIR}}/.zshenv"
-      - rm -f "{{.ZDOTDIR}}/.zprofile"
-      - rm -f "{{.ZDOTDIR}}/.zshrc"
-      - rm -f "{{.ZDOTDIR}}/.zlogin"
-      - rm -f "{{.ZDOTDIR}}/.zlogout"
-
-  unlink-git:
-    desc: "Remove git symlinks"
-    internal: true
-    cmds:
-      - rm -f "{{.XDG_CONFIG_HOME}}/git/config"
-      - rm -f "{{.XDG_CONFIG_HOME}}/git/ignore"
-
-  unlink-ssh:
-    desc: "Remove SSH symlinks"
-    internal: true
-    cmds:
-      - rm -f "{{.HOME}}/.ssh/config"
-      - rm -f "{{.HOME}}/.ssh/cloudflared.zsh"
-      - rm -f "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"
-
-  unlink-tools:
-    desc: "Remove tool configuration symlinks"
-    internal: true
-    cmds:
-      - rm -f "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"
-      - rm -f "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"
-      - rm -f "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"
-      - rm -f "{{.XDG_CONFIG_HOME}}/conda/condarc"
-      - rm -f "{{.XDG_CONFIG_HOME}}/ghostty/config"
-      - rm -f "{{.XDG_CONFIG_HOME}}/glow/glow.yml"
-      - rm -f "{{.XDG_CONFIG_HOME}}/glow/glow_style.json"
-
-  unlink-claude:
-    desc: "Remove Claude Code symlinks"
-    internal: true
-    cmds:
-      - rm -f "{{.CLAUDE_CONFIG_HOME}}/CLAUDE.md"
-      - rm -f "{{.CLAUDE_CONFIG_HOME}}/agents"
-      - rm -f "{{.CLAUDE_CONFIG_HOME}}/commands"
-      - rm -f "{{.CLAUDE_CONFIG_HOME}}/hooks"
-      - rm -f "{{.CLAUDE_CONFIG_HOME}}/skills"
-      - rm -f "{{.CLAUDE_CONFIG_HOME}}/settings.json"
+        vars: { TARGET: "{{.ZDOTDIR}}/.zsh_plugins.txt", NAME: "antidote plugin manifest" }
