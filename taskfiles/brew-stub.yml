@@ -1,0 +1,22 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/brew-stub.yml -- Phase 5 placeholder
+#
+# This file is loaded by the root Taskfile.yml via:
+#   includes:
+#     brew: ./taskfiles/brew-stub.yml
+#
+# Phase 5 (PKGS-01..05, VRFY-01..04) replaces this file with the real
+# taskfiles/brew.yml. The stub exists so `task install` has a complete call
+# graph in Phase 2 and the lint suite can self-test against a fully wired
+# manifest.
+# =============================================================================
+
+tasks:
+  install:
+    desc: "STUB (Phase 5 will implement PKGS-01..05, VRFY-01..04)"
+    status: [true]
+    cmds:
+      - |
+        echo "brew:install -- stub (Phase 5 will implement)" >&2
