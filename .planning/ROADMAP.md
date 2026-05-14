@@ -59,8 +59,8 @@ Decimal phases appear between their surrounding integers in numeric order.
   - [x] 02-01-PLAN.md — Lint suite (taskfiles/lint.yml: syntax, taskfile, shell-headers, portability — LINT-01..07)
   - [x] 02-02-PLAN.md — Stub taskfiles (links/brew/claude/macos) for Phase 3/5/6/7 placeholders
   - [x] 02-03-PLAN.md — Bootstrap rewrite (set -euo pipefail, brew/go-task/yq trust anchors with audit + 3s window — BTSP-01..03)
-  - [ ] 02-04-PLAN.md — Cutover-gate helper + Taskfile.yml rewrite (drop update:, add cutover-gate preconditions — BTSP-04, BTSP-06, LINT-08[deprecated per D-11])
-  - [ ] 02-05-PLAN.md — Lint fixtures (11 positive+negative cases) + lint:test-fixtures self-test runner
+  - [x] 02-04-PLAN.md — Cutover-gate helper + Taskfile.yml rewrite (drop update:, add cutover-gate preconditions — BTSP-04, BTSP-06, LINT-08[deprecated per D-11])
+  - [x] 02-05-PLAN.md — Lint fixtures (11 positive+negative cases) + lint:test-fixtures self-test runner
   - [ ] 02-06-PLAN.md — docs/SECURITY.md bootstrap trust chain documentation (BTSP-05, DOCS-07)
 
 ### Phase 3: Shell Layer — Flat Content Port
