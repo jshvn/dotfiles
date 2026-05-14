@@ -14,19 +14,22 @@ A single declarative manifest per machine makes the complete install state legib
 
 <!-- Shipped and confirmed valuable. -->
 
-(None yet — parallel rewrite, nothing shipped against the new structure)
+**Bootstrap and install (Phase 1 + 2):**
+
+- [x] One-shot fresh-install entry point — `bootstrap.zsh` installs Homebrew + go-task + yq with HTTPS-only AUDIT line + 3s abort window. No curl-to-shell into other targets. Validated in Phase 2. (BTSP-01/02/03)
+- [x] Explicit machine selection at setup time — `task setup -- <machine-name>` writes `$XDG_STATE_HOME/dotfiles/machine`; no hostname guessing. Validated in Phase 1; re-confirmed in Phase 2. (BTSP-04)
+- [x] Idempotent re-install — `lint:taskfile` enforces "cmds: requires status:" structurally (LINT-01 contract via LINT-03a). Every install task in `task install`'s call graph has a `status:` block. Validated in Phase 2. (LINT-01..LINT-07)
+- [x] `task install` is the canonical entry — `task update` is dropped per D-10. Phase 3 ships shell alias `update='task install'` for muscle memory. Validated in Phase 2. (BTSP-06)
+- [x] Cutover-ack gate — `install/cutover-gate.zsh` + Taskfile.yml preconditions + bootstrap.zsh defense-in-depth per D-07/D-09. Validated in Phase 2.
+- [x] Bootstrap trust chain documented — `docs/SECURITY.md` (7 H2 sections covering trust anchors, threat model, audit commands). Validated in Phase 2. (BTSP-05/DOCS-07)
 
 ### Active
 
 <!-- v1 feature-parity targets, organized by capability. All requirements are hypotheses until shipped. -->
 
-**Bootstrap and install:**
+**Bootstrap and install (remaining):**
 
-- [ ] One-shot fresh-install entry point (no curl-to-shell; go-task installed via Homebrew or verified checksum)
-- [ ] Explicit machine selection at setup time (`task setup -- <machine-name>`); no hostname guessing
-- [ ] Idempotent re-install — every install task has a working `status:` check
-- [ ] `task validate` reports per-component health using check/cross symbols
-- [ ] `task install` is the canonical entry and is idempotent — `task update` is an alias for the same task, never a separate pipeline that can diverge
+- [ ] `task validate` reports per-component health using check/cross symbols (deferred to Phase 8 per CONTEXT)
 
 **Manifest layer:**
 
@@ -184,4 +187,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-05-13 after initialization*
+*Last updated: 2026-05-14 after Phase 2 (install-engine-bootstrap-idempotency-lint) completion*
