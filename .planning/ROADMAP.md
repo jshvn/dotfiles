@@ -75,7 +75,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. MOTD output is cached to disk with a 24h TTL (no synchronous fastfetch on shell startup) and compinit uses a daily-rebuilt cache
   6. Every top-level directory has a `README.md` (purpose, key files, how-to-add-pattern) — pattern established by the `shell/` README and replicated across all sibling directories
 **Plans**: 5 plans
-  - [ ] 03-01-PLAN.md — Manifest feature flags (ghostty/jgrid-net/macos-finder) + configs/antidote/zsh_plugins.txt
+  - [x] 03-01-PLAN.md — Manifest feature flags (ghostty/jgrid-net/macos-finder) + configs/antidote/zsh_plugins.txt
   - [ ] 03-02-PLAN.md — Port 5 startup files (.zshenv/.zprofile/.zshrc/.zlogin/.zlogout) + shell/theme.zsh (antidote swap, compinit cache, hostname-bug fix)
   - [ ] 03-03-PLAN.md — Port 23 function files (_dotfiles_feature helper + 22 v1 ports incl. cached motd for SHEL-11)
   - [ ] 03-04-PLAN.md — Port 7 alias files (general/hardware/networking/dotfiles + gated finder/ghostty/jgrid)
