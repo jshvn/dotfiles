@@ -102,11 +102,14 @@ else
   fi
 fi
 
-# --- Step 4: cutover-ack gate (D-07, per Plan 02-04 contract)
-# Plan 02-04 ships install/cutover-gate.zsh and replaces this comment with the
-# live invocation.  The gate enforces that a per-machine sentinel exists in
-# $XDG_STATE_HOME/dotfiles/cutover-ack before any destructive v2 install step.
-# TODO(Plan 02-04): source ${DOTFILEDIR}/install/cutover-gate.zsh && cutover_gate_check || exit 1
+# --- Step 4: cutover-ack gate (D-07 / D-09)
+# Enforces that a per-machine sentinel exists in $XDG_STATE_HOME/dotfiles/cutover-ack
+# before any destructive v2 install step. The gate fires AFTER the three tool
+# installs above (so brew/task/yq are present even on a not-yet-cut-over machine)
+# and BEFORE the next-step hint (so a not-yet-cut-over user gets the actionable
+# error from this script instead of a confusing failure inside task install).
+source "${DOTFILEDIR}/install/cutover-gate.zsh"
+cutover_gate_check || exit 1
 
 # --- Step 5: next-step hint (D-03)
 # Bootstrap is tools-only: no task setup, no task install invocation.
