@@ -21,6 +21,8 @@ macos-screenshots = true
 macos-security = true
 motd = true
 claude-marketplace = true
+ghostty = true
+jgrid-net = true
 
 [packages.brew]
 bundles = ["core", "gui", "dev", "personal"]
