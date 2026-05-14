@@ -20,6 +20,7 @@ macos-screenshots = true
 macos-security = true
 motd = true
 claude-marketplace = true
+ghostty = true
 
 [packages.brew]
 bundles = ["core", "gui", "dev"]
