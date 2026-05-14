@@ -1,0 +1,82 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/shell.yml -- shell-layer measurement tasks for the v2 shell stack
+#
+# Purpose:
+#   Hosts measurement / observability tasks that apply to the shell layer.
+#   Currently a single-task file; future plans may extend.
+#
+# Tasks:
+#   - shell -- SHEL-12 cold interactive startup gate via hyperfine
+#     (invoked as `task perf:shell` from the root Taskfile.yml via the
+#     `perf: ./taskfiles/shell.yml` include).
+#
+# Self-exemption (LINT-03a):
+#   `shell` is a measurement task; always-re-run is correct -- the cold-start
+#   number changes every invocation. The task is marked with
+#   `# lint-allow: cmds-without-status` so LINT-03a skips it.
+#
+# Dependencies:
+#   - hyperfine (Phase 5 core Brewfile). Existence check provides an actionable
+#     error when hyperfine is absent (useful before Phase 5 brews land).
+#   - jq (Phase 1 tool stack) -- parses hyperfine's JSON export.
+#   - bc, awk -- macOS-native; convert seconds to integer milliseconds.
+#
+# When the root Taskfile.yml includes this module, its DOTFILEDIR and
+# DOTFILES_MESSAGES vars take precedence over the local fallbacks.
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+# =============================================================================
+# Vars block -- self-contained so direct invocation
+#   task -t taskfiles/shell.yml shell
+# works without the root Taskfile.yml being loaded.
+# =============================================================================
+
+vars:
+  HOME: '{{.HOME}}'
+
+  # Resolve DOTFILEDIR from this taskfile's parent directory.
+  # dirname once: taskfiles/shell.yml -> taskfiles/ -> ../ -> repo root.
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+# =============================================================================
+# Tasks
+# =============================================================================
+
+tasks:
+
+  # ---------------------------------------------------------------------------
+  # SHEL-12: cold interactive shell start gate (≤ 200ms target).
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  shell:
+    desc: "Measure cold interactive zsh startup time (fails if > 200ms -- SHEL-12)"
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        if ! command -v hyperfine >/dev/null 2>&1; then
+            error "hyperfine not installed (brew install hyperfine)"
+            exit 1
+        fi
+        # Cold-start: each run is a fresh login interactive shell that exits
+        # immediately. --warmup 1 discards the first run (filesystem cache
+        # warm-up); --runs 5 averages five subsequent measurements.
+        result=$(hyperfine --warmup 1 --runs 5 --export-json /dev/stdout \
+            "zsh -lic exit" 2>/dev/null \
+            | jq -r '.results[0].mean')
+        ms=$(echo "$result * 1000" | bc | awk '{printf "%d\n", $0}')
+        info "cold shell start: ${ms}ms (target: <= 200ms)"
+        if (( ms > 200 )); then
+            error "shell start exceeds 200ms target (SHEL-12)"
+            exit 1
+        fi
+        check "shell start within budget"
