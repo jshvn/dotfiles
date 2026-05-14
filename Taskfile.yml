@@ -13,7 +13,8 @@
 # Includes:
 #   - manifest (P1, real)
 #   - lint     (P2, real)
-#   - links    (stub; P3 wires real bodies)
+#   - links    (P3, real)
+#   - perf     (P3, real)
 #   - brew     (stub; P5 wires real bodies)
 #   - claude   (stub; P7 wires real bodies)
 #   - macos    (stub; P6 wires real bodies)
@@ -80,7 +81,8 @@ includes:
       XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   lint:     ./taskfiles/lint.yml
-  links:    ./taskfiles/links-stub.yml      # P3 wires real bodies
+  links:    ./taskfiles/links.yml
+  perf:     ./taskfiles/shell.yml
   brew:     ./taskfiles/brew-stub.yml       # P5 wires real bodies
   claude:   ./taskfiles/claude-stub.yml     # P7 wires real bodies
   macos:    ./taskfiles/macos-stub.yml      # P6 wires real bodies
