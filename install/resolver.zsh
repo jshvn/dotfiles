@@ -260,6 +260,9 @@ emit_unknown_key_warnings() {
     "features"
     "packages.brew.bundles"
     "packages.brew.extra_packages"
+    "packages.brew.extra_packages.formulae"
+    "packages.brew.extra_packages.casks"
+    "packages.brew.extra_packages.mas"
     "identity.git"
     "identity.ssh"
   )
@@ -303,6 +306,36 @@ emit_unknown_key_warnings() {
 # resolve_pipeline <defaults_path> <machine_path>
 # Run the three-pass merge pipeline (RESEARCH section 4.2 + section 5) and
 # emit the final JSON to stdout. Used by both atomic-file and stdout modes.
+#
+# Pass 2 supports TWO `extra_packages` shapes (dual-shape; D-03 typed-bucket
+# migration preserves backward-compat with the Phase 1 flat-array fixture 06):
+#
+#   Typed-bucket (D-03; current canonical shape):
+#     [packages.brew.extra_packages]
+#     formulae = [ "hugo" | { name, verify } ... ]
+#     casks    = [ { name, verify } ... ]   # D-04 verify MANDATORY
+#     mas      = [ { id, name } ... ]       # D-06 name doubles as verify
+#
+#     Each sub-array gets an independent union+dedupe with the active machine's
+#     entries, keyed as follows:
+#       formulae -- string-value for bare strings; .name for objects; if a
+#                   bare and an object share the same name, the object wins
+#                   (carries verify metadata).
+#       casks    -- .name. Machine wins on conflict (last-write-wins).
+#       mas      -- .id (numeric Apple App Store ID). Machine wins on conflict.
+#
+#   Legacy flat-array (Phase 1 fixture 06; preserved for backward-compat):
+#     [packages.brew]
+#     extra_packages = ["jq", "yq"]
+#
+#     Single `jq -s 'add | unique'` over the concatenated flat array.
+#
+# Detection: probe the tag of `.packages.brew.extra_packages` on either side.
+# If either side is `!!seq`, treat the merged shape as the legacy flat array
+# (since `yq . * .` REPLACES arrays, a one-sided seq plus a one-sided map
+# would mean the typed-bucket shape was bulldozed; we honor whichever side
+# the machine declares). If both sides are `!!map` (or one is `!!map` and
+# the other is absent), use the typed-bucket per-sub-array union.
 # -----------------------------------------------------------------------------
 resolve_pipeline() {
   local defaults_path="$1"
@@ -313,11 +346,74 @@ resolve_pipeline() {
   merged=$(yq eval-all '. as $i ireduce ({}; . * $i)' "$defaults_path" "$machine_path" -o json)
 
   # Pass 2: union + dedupe extra_packages from both sides.
-  # `jq -s 'add | unique'` produces sorted output, matching fixture 06.
-  local def_extras mach_extras union_extras
-  def_extras=$(yq -o=json '.packages.brew.extra_packages // []' "$defaults_path")
-  mach_extras=$(yq -o=json '.packages.brew.extra_packages // []' "$machine_path")
-  union_extras=$(printf '%s %s' "$def_extras" "$mach_extras" | jq -s 'add | unique')
+  # Detect the canonical shape: typed-bucket (!!map) vs legacy flat (!!seq).
+  local def_tag mach_tag shape
+  def_tag=$(yq '.packages.brew.extra_packages | tag' "$defaults_path" 2>/dev/null || echo "")
+  mach_tag=$(yq '.packages.brew.extra_packages | tag' "$machine_path" 2>/dev/null || echo "")
+  shape="typed"
+  if [[ "$def_tag" == "!!seq" ]] || [[ "$mach_tag" == "!!seq" ]]; then
+    shape="flat"
+  fi
+
+  if [[ "$shape" == "flat" ]]; then
+    # Legacy flat-array path (Phase 1 fixture 06 + any future plain-list
+    # `extra_packages = [...]` shape). `jq -s 'add | unique'` produces sorted
+    # output, matching fixture 06's expected.json.
+    local def_extras mach_extras union_extras
+    def_extras=$(yq -o=json '.packages.brew.extra_packages // []' "$defaults_path")
+    mach_extras=$(yq -o=json '.packages.brew.extra_packages // []' "$machine_path")
+    union_extras=$(printf '%s %s' "$def_extras" "$mach_extras" | jq -s 'add | unique')
+
+    # Pass 3: backfill platform.arch via uname -m if machine omitted it.
+    local arch
+    arch=$(yq -r '.platform.arch // ""' "$machine_path")
+    if [[ -z "$arch" ]]; then
+      arch=$(uname -m)
+    fi
+
+    # Compose final JSON.
+    printf '%s' "$merged" \
+      | jq --argjson extras "$union_extras" --arg arch "$arch" \
+          '.packages.brew.extra_packages = $extras
+           | .platform.arch = $arch'
+    return 0
+  fi
+
+  # Typed-bucket path (D-03 canonical shape; one sub-array per kind).
+  # Each sub-array is unioned independently with semantics tailored to its
+  # entry shape; see function-header comment.
+  local def_formulae mach_formulae union_formulae
+  local def_casks    mach_casks    union_casks
+  local def_mas      mach_mas      union_mas
+
+  def_formulae=$(yq -o=json '.packages.brew.extra_packages.formulae // []'  "$defaults_path")
+  mach_formulae=$(yq -o=json '.packages.brew.extra_packages.formulae // []' "$machine_path")
+  # formulae dedupe: lift bare strings to { name: ., __bare: true }; group_by .name;
+  # within each group prefer an object (drops __bare) over a bare string; demote
+  # surviving __bare objects back to their string-name form.
+  union_formulae=$(printf '%s %s' "$def_formulae" "$mach_formulae" \
+    | jq -s '
+        add
+        | map(if type == "string" then { name: ., __bare: true } else . end)
+        | group_by(.name)
+        | map(if length == 1
+              then .[0]
+              else (map(select(.__bare | not)) | first // .[0])
+              end)
+        | map(if .__bare then .name else . end)
+      ')
+
+  def_casks=$(yq -o=json  '.packages.brew.extra_packages.casks // []' "$defaults_path")
+  mach_casks=$(yq -o=json '.packages.brew.extra_packages.casks // []' "$machine_path")
+  # casks dedupe: keyed on .name; machine wins on conflict (last-write-wins).
+  union_casks=$(printf '%s %s' "$def_casks" "$mach_casks" \
+    | jq -s 'add | group_by(.name) | map(.[-1])')
+
+  def_mas=$(yq -o=json  '.packages.brew.extra_packages.mas // []' "$defaults_path")
+  mach_mas=$(yq -o=json '.packages.brew.extra_packages.mas // []' "$machine_path")
+  # mas dedupe: keyed on .id; machine wins on conflict (last-write-wins).
+  union_mas=$(printf '%s %s' "$def_mas" "$mach_mas" \
+    | jq -s 'add | group_by(.id) | map(.[-1])')
 
   # Pass 3: backfill platform.arch via uname -m if machine omitted it.
   local arch
@@ -326,10 +422,17 @@ resolve_pipeline() {
     arch=$(uname -m)
   fi
 
-  # Compose final JSON.
+  # Compose final JSON. Inject three independent sub-arrays back under
+  # `.packages.brew.extra_packages.{formulae,casks,mas}` so downstream readers
+  # (composer; Plan 04 packages:verify) see the typed shape verbatim.
   printf '%s' "$merged" \
-    | jq --argjson extras "$union_extras" --arg arch "$arch" \
-        '.packages.brew.extra_packages = $extras
+    | jq --argjson formulae "$union_formulae" \
+         --argjson casks    "$union_casks" \
+         --argjson mas      "$union_mas" \
+         --arg     arch     "$arch" \
+        '.packages.brew.extra_packages.formulae = $formulae
+         | .packages.brew.extra_packages.casks  = $casks
+         | .packages.brew.extra_packages.mas    = $mas
          | .platform.arch = $arch'
 }
 
