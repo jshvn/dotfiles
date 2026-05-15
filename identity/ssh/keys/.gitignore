@@ -1,0 +1,6 @@
+# identity/ssh/keys/.gitignore
+# Allowlist: only .pub files (and this .gitignore) may live here.
+# IDNT-06: private keys NEVER enter the repo.
+*
+!*.pub
+!.gitignore

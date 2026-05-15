@@ -1,0 +1,12 @@
+# identity/ssh/identities/work -- work SSH identity.
+#
+# Symlinked as ~/.ssh/identities/active when identity.ssh = "work".
+# Included via the Include directive in identity/ssh/config -> ~/.ssh/config.
+# Side effects: routes all SSH connections through the 1Password agent.
+# Requires: features.one-password-ssh = true in the machine manifest (D-16).
+
+# Use 1Password SSH agent for all work connections
+Host *
+    IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+
+# Add work-specific host configurations below

@@ -1,0 +1,19 @@
+# identity/ssh/config -- main SSH config; symlinked to ~/.ssh/config.
+#
+# Identity selection model:
+#   The Include line below points at ~/.ssh/identities/active, which is a symlink
+#   to one of identities/{personal,work,server-1,server-2,none}. The symlink is
+#   created and updated by `task identity:ssh` in taskfiles/identity.yml based on
+#   the identity.ssh value from the resolved machine manifest.
+#
+#   This replaces the v1 profile-file-exec pattern (ssh/configs/config:13-20) that
+#   read a profile file at connection time. The v2 model resolves identity at install
+#   time, making SSH config static and auditable.
+#
+# Callers: taskfiles/identity.yml via _:safe-link to ~/.ssh/config
+# Side effects: none (static config; no runtime eval or file reads).
+
+Host *
+    SetEnv TERM=xterm-256color
+
+Include ~/.ssh/identities/active

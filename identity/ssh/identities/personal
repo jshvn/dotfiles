@@ -1,0 +1,28 @@
+# identity/ssh/identities/personal -- personal SSH identity.
+#
+# Symlinked as ~/.ssh/identities/active when identity.ssh = "personal".
+# Included via the Include directive in identity/ssh/config -> ~/.ssh/config.
+# Side effects: routes all SSH connections through the 1Password agent; applies
+#   cloudflared ProxyCommand for jgrid.net and plex.me hosts.
+# Requires: features.one-password-ssh = true in the machine manifest (D-16).
+# Path updates vs v1:
+#   IdentityFile: ~/.ssh/id_ed25519_personal.pub -> ~/.ssh/identities/keys/personal.pub (D-13)
+#   ProxyCommand: ~/.ssh/cloudflared.zsh -> ~/.ssh/identities/cloudflared.zsh (D-14)
+
+# Use 1Password SSH agent for all personal connections
+Host *
+    IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+
+Host *.jgrid.net
+    IdentityFile ~/.ssh/identities/keys/personal.pub
+    IdentitiesOnly yes
+    User josh
+    ProxyCommand ~/.ssh/identities/cloudflared.zsh access ssh --hostname %h
+    RemoteCommand if [[ "$(uname)" = "Darwin" ]]; then cd ~/Git/personal/jgrid.net/; else cd ~/git/jgrid.net/; fi && exec $SHELL -l
+    RequestTTY yes
+
+Host *.plex.me
+    IdentityFile ~/.ssh/identities/keys/personal.pub
+    IdentitiesOnly yes
+    User josh
+    ProxyCommand ~/.ssh/identities/cloudflared.zsh access ssh --hostname %h
