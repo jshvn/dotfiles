@@ -21,6 +21,12 @@ version: '3'
 #   `{{.X}}` template vars ONLY -- never `$X` shell vars. Shell vars are
 #   not in scope during status evaluation; using `$X` causes the task to
 #   re-run on every invocation (the v1 macos:shell:145 bug class).
+#   Aggregator tasks (e.g., the `all:` aggregator below) intentionally
+#   omit the `status:` block and use the `# lint-allow: cmds-without-status`
+#   marker; idempotency is enforced inside each sub-task. A status: block
+#   on the aggregator that only checks a subset of the sub-tasks' symlinks
+#   would short-circuit on partial state -- the exact macos:shell:145
+#   regression class CR-02 closes.
 #
 # Symlink-creation convention (LINT-03b enforcement):
 #   No bare `ln -s` lives here -- every symlink goes through `_:safe-link`
@@ -66,14 +72,12 @@ tasks:
   # Aggregator -- P3 ships shell-only; later phases extend this list.
   # ---------------------------------------------------------------------------
 
+  # lint-allow: cmds-without-status
   all:
     desc: "Create all symlinks (P3: shell only; later phases extend)"
     cmds:
       - task: zsh
       - task: antidote
-    status:
-      - test -L "{{.ZDOTDIR}}/.zshenv"
-      - test -L "{{.ZDOTDIR}}/.zsh_plugins.txt"
 
   # ---------------------------------------------------------------------------
   # Shell startup files (SHEL-03) -- five files in zsh's documented order.
