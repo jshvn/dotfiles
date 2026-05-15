@@ -123,10 +123,7 @@ tasks:
           source "${DOTFILEDIR}/install/cutover-gate.zsh"
           cutover_gate_check
         msg: "cutover-ack gate failed -- see error above"
-    # P1 manifest.yml uses redundant `manifest:` prefix on its task names;
-    # combined with the `includes: manifest:` here that doubles to
-    # `manifest:manifest:resolve`. Refining P1's nomenclature is out of P2 scope.
-    deps: [manifest:manifest:resolve]
+    deps: [manifest:resolve]
     cmds:
       - task: links:all
       - task: brew:install

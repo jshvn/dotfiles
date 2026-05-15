@@ -137,15 +137,15 @@ tasks:
       - |
         {{.DOTFILES_MESSAGES}}
         success "Machine set to: ${CLI_ARGS_ENV}"
-      - task: manifest:validate
+      - task: validate
         vars: { CLI_ARGS: '' }
-      - task: manifest:resolve
+      - task: resolve
 
 # =============================================================================
 # Tasks: Resolve
 # =============================================================================
 
-  manifest:resolve:
+  resolve:
     desc: "Compile defaults + active machine TOML to resolved.json (idempotent)"
     # D-16: missing-state = hard fail with actionable error (PATTERNS Pattern 5).
     preconditions:
@@ -171,7 +171,7 @@ tasks:
 # Tasks: Show
 # =============================================================================
 
-  manifest:show:
+  show:
     desc: "Print resolved manifest (default: active machine; -- [--machine] NAME for any machine)"
     # No preconditions -- resolver hard-fails with actionable error if no state.
     # No status -- this is a read/print task; always re-run.
@@ -219,7 +219,7 @@ tasks:
 # Tasks: Validate
 # =============================================================================
 
-  manifest:validate:
+  validate:
     desc: "Validate active (or -- [--machine] NAME) manifest schema"
     # CR-03 fix: pass CLI_ARGS via env so apostrophes / shell metacharacters
     # in user input cannot break the rendered shell parse.
@@ -274,7 +274,7 @@ tasks:
 # Tasks: Test
 # =============================================================================
 
-  manifest:test:
+  test:
     desc: "Run deep-merge fixtures (positive + negative) — MFST-05"
     # No status -- always re-run; this is a test runner.
     cmds:
@@ -466,7 +466,7 @@ tasks:
 # Tasks: MFST-09 Smoke
 # =============================================================================
 
-  manifest:test:add-machine:
+  test:add-machine:
     desc: "Smoke test: adding a new machine is one TOML + task setup (MFST-09)"
     # No status -- always re-run; this is a smoke test.
     cmds:

@@ -10,7 +10,7 @@ version: '3'
 #   server-include.config only on server machines (D-08).
 #
 # Dependencies:
-#   - manifest:manifest:resolve (deps on the install aggregator) -- ensures
+#   - manifest:resolve (deps on the install aggregator) -- ensures
 #     resolved.json is current before any symlink is created.
 #   - taskfiles/helpers.yml provides `_:safe-link` (mkdir -p + ln -sfn) and
 #     `_:check-link` (verifies -L and -e on the target symlink).
@@ -108,7 +108,7 @@ tasks:
   # lint-allow: cmds-without-status
   install:
     desc: "Install identity layer (git + ssh)"
-    deps: [manifest:manifest:resolve]
+    deps: [":manifest:resolve"]
     cmds:
       - task: git
       - task: ssh
