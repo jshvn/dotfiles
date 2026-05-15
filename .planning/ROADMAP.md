@@ -95,8 +95,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
   - [x] 04-01-PLAN.md — Schema layer: resolver enum + cross-field rules; defaults.toml + four machine TOMLs + docs/MANIFEST.md (D-05/D-07/D-15/D-16)
   - [x] 04-02-PLAN.md — Identity content: identity/git/ + identity/ssh/ trees (v1 port + documented deltas; IDNT-01/02/03/04/06)
-  - [ ] 04-03-PLAN.md — Negative fixtures + manifest:test extension (three new fixtures; negative_count=5)
-  - [ ] 04-04-PLAN.md — taskfiles/identity.yml + Taskfile.yml/links.yml wiring + identity/README.md (IDNT-07/08, DOCS-02)
+  - [x] 04-03-PLAN.md — Negative fixtures + manifest:test extension (three new fixtures; negative_count=5)
+  - [x] 04-04-PLAN.md — taskfiles/identity.yml + Taskfile.yml/links.yml wiring + identity/README.md (IDNT-07/08, DOCS-02)
 
 ### Phase 5: Packages Layer — Brewfile Composition + Verification
 **Goal**: Per-purpose Brewfile bundles composed per-machine from the manifest, with idempotent install via `brew bundle check` AND post-install verification that declared binaries/casks are actually usable, plus a drift audit
