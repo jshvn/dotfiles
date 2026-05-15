@@ -1,0 +1,79 @@
+# identity/git/config -- main git config; symlinked to ~/.config/git/config.
+#
+# Identity selection model:
+#   Workstation identities (personal, work) are loaded via [includeIf gitdir/i:]
+#   blocks that match the project directory prefix. Server identities are loaded
+#   via the unconditional [include] path = server-include.config block; that file
+#   is materialized by `task identity:server-include` when identity.git is server-1
+#   or server-2, and is absent (silent no-op) on workstations (Pattern 2 / D-08).
+#
+# Schema reference: docs/MANIFEST.md identity.git enum.
+# Callers: taskfiles/identity.yml via _:safe-link to ~/.config/git/config
+
+[user]
+    name = Josh Vaughen
+
+[includeIf "gitdir/i:~/git/personal/"]
+    path = identities/personal
+
+[includeIf "gitdir/i:~/git/work/"]
+    path = identities/work
+
+[include]
+    path = server-include.config
+
+[core]
+    editor = code
+    excludesfile = ignore
+    pager = delta
+
+[init]
+    defaultBranch = main
+
+[fetch]
+    prune = true  # Auto-prune deleted remote branches
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true
+    light = false
+    side-by-side = true
+    line-numbers = true
+    syntax-theme = Monokai Extended
+
+[status]
+    showUntrackedFiles = all
+    submoduleSummary = true
+
+[alias]
+    # list all git aliases
+    aliases = !git config -l | grep alias | cut -c 7- | highlight --style=duotone-dark-sky --syntax=bash --out-format=xterm256
+
+    # useful aliases
+    tags = tag -l
+    branches = branch --all
+    remotes = remote --verbose
+    undo = reset --soft HEAD~1
+
+    # lookups
+    whois = "!sh -c 'git log --regexp-ignore-case -1 --pretty=\"format:%an <%ae>\n\" --author=\"$1\"' -"
+    whatis = show --no-patch --pretty='tformat:%h (%s, %ad)' --date=short
+
+    # Find commits by source code
+    fc = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -S$1; }; f"
+
+    # Find commits by commit message
+    fm = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short --grep=$1; }; f"
+
+    # List contributors with number of commits.
+    contributors = shortlog --summary --numbered
+
+    # Show the user email for the current repository.
+    whoami = config user.email
+
+    # useful displays
+    hist = log --graph --abbrev-commit --decorate --all --format=format:"%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(dim white) - %an%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset)"
+    latest = for-each-ref --sort=committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)'
+    quicklog = log --oneline --decorate -20 --pretty=format:'%C(yellow)%h%C(reset)%C(auto)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'
