@@ -93,8 +93,8 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. `task validate` asserts `git config user.email` matches the manifest identity, that `ssh-add -L` lists the expected public key, and that `identity/ssh/keys/` contains only `.pub` files (no private keys committed)
   5. `taskfiles/identity.yml` reads the active identity from `resolved.json` and creates all identity symlinks through `_:safe-link` (no bare `ln`); re-running is a no-op
 **Plans**: 4 plans
-  - [ ] 04-01-PLAN.md — Schema layer: resolver enum + cross-field rules; defaults.toml + four machine TOMLs + docs/MANIFEST.md (D-05/D-07/D-15/D-16)
-  - [ ] 04-02-PLAN.md — Identity content: identity/git/ + identity/ssh/ trees (v1 port + documented deltas; IDNT-01/02/03/04/06)
+  - [x] 04-01-PLAN.md — Schema layer: resolver enum + cross-field rules; defaults.toml + four machine TOMLs + docs/MANIFEST.md (D-05/D-07/D-15/D-16)
+  - [x] 04-02-PLAN.md — Identity content: identity/git/ + identity/ssh/ trees (v1 port + documented deltas; IDNT-01/02/03/04/06)
   - [ ] 04-03-PLAN.md — Negative fixtures + manifest:test extension (three new fixtures; negative_count=5)
   - [ ] 04-04-PLAN.md — taskfiles/identity.yml + Taskfile.yml/links.yml wiring + identity/README.md (IDNT-07/08, DOCS-02)
 
