@@ -189,10 +189,15 @@ tasks:
             ;;
         esac
     status:
+      # WR-07: exact-match check against the canonical two-line content the
+      # cmd writes. A loose grep would pass on stale-content cases (e.g.,
+      # a file containing both server-1 and server-2 path lines from a
+      # prior buggy append) and skip the rewrite that fixes them.
       - |
         case "{{.MANIFEST.identity.git}}" in
           server-1|server-2)
-            test -f "{{.SERVER_INCLUDE_CONFIG}}" && grep -q "identities/{{.MANIFEST.identity.git}}" "{{.SERVER_INCLUDE_CONFIG}}"
+            test -f "{{.SERVER_INCLUDE_CONFIG}}" || exit 1
+            diff <(printf '[includeIf "gitdir:~/"]\n    path = identities/%s\n' "{{.MANIFEST.identity.git}}") "{{.SERVER_INCLUDE_CONFIG}}" >/dev/null
             ;;
           *)
             test ! -f "{{.SERVER_INCLUDE_CONFIG}}"
