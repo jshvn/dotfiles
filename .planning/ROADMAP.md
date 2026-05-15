@@ -116,7 +116,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   - [x] 05-01-PLAN.md — packages/core.rb + packages/gui.rb + packages/README.md (PKGS-01, PKGS-05)
   - [x] 05-02-PLAN.md — Manifest TOML migration: defaults + 4 machines to typed-bucket extras (PKGS-04, PKGS-05)
   - [x] 05-03-PLAN.md — install/compose-brewfile.zsh + resolver Pass 2 update (PKGS-02, PKGS-03, PKGS-04)
-  - [ ] 05-04-PLAN.md — taskfiles/packages.yml (install/compose/verify/audit/validate) (PKGS-02, PKGS-03, PKGS-05, VRFY-01, VRFY-02, VRFY-03)
+  - [x] 05-04-PLAN.md — taskfiles/packages.yml (install/compose/verify/audit/validate) (PKGS-02, PKGS-03, PKGS-05, VRFY-01, VRFY-02, VRFY-03)
   - [ ] 05-05-PLAN.md — Root Taskfile.yml integration: rename brew include to packages; add packages:verify final step (VRFY-04)
   - [x] 05-06-PLAN.md — Canonical docs corrections: REQUIREMENTS PKGS-01/04, ROADMAP SC#3, PROJECT, docs/MANIFEST.md (PKGS-01, PKGS-04)
 
