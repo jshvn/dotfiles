@@ -1,0 +1,18 @@
+# negative fixture -- identity.ssh = "alice"; validator must reject (enum check)
+
+schema_version = 1
+
+[meta]
+description = "negative fixture: bad-identity-ssh enum value"
+
+[platform]
+os = "darwin"
+
+[features]
+
+[packages.brew]
+bundles = ["core"]
+
+[identity]
+git = "none"
+ssh = "alice"

@@ -1,0 +1,21 @@
+# negative fixture -- identity.ssh = "personal" but features.one-password-ssh = false
+# validator must reject with cross-field error
+
+schema_version = 1
+
+[meta]
+description = "negative fixture: identity-ssh-without-opssh"
+
+[platform]
+os = "darwin"
+
+[features]
+one-password-ssh = false
+one-password-signing = true
+
+[packages.brew]
+bundles = ["core"]
+
+[identity]
+git = "none"
+ssh = "personal"
