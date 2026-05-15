@@ -1,0 +1,10 @@
+# identity/ssh/identities/none -- no-op SSH identity.
+#
+# Symlinked as ~/.ssh/identities/active when identity.ssh = "none".
+# Included via the Include directive in identity/ssh/config -> ~/.ssh/config.
+# Side effects: none. No host-specific configuration is applied.
+#
+# Purpose: ensures the Include ~/.ssh/identities/active line in the main config
+# resolves to a real file. This avoids any "Include of missing file" ambiguity
+# across SSH versions (RESEARCH Pitfall 5). The file is intentionally comment-only;
+# no Host blocks or directives are set.

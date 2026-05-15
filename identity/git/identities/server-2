@@ -1,0 +1,17 @@
+# identity/git/identities/server-2 -- server-2 git identity overlay.
+#
+# Loaded via server-include.config when identity.git = "server-2".
+# server-include.config is materialized by `task identity:server-include` at install time;
+# it is absent on workstations (silent no-op per Pattern 2 / D-08).
+# Overrides: [user] name, email; [github] user; [commit] gpgsign.
+# Side effects: disables commit signing (servers do not have 1Password).
+
+[user]
+    name = Server-2
+    email = server-2@jgrid.net
+
+[github]
+    user = jshvn
+
+[commit]
+    gpgsign = false
