@@ -92,10 +92,10 @@ git and SSH identity, manifest-driven.
 
 Homebrew package management driven by manifest bundles (macOS-only v1).
 
-- [ ] **PKGS-01**: Per-purpose Brewfile bundles in `packages/brew/<purpose>.rb` (`core`, `gui`, `dev`, `ops`, `personal`) — named by role, not by profile
+- [ ] **PKGS-01**: Per-purpose Brewfile bundles in `packages/<purpose>.rb` (flat -- not `packages/brew/`). v1 ships `core` and `gui`; bundles are an as-needed grouping, not a fixed set (per-machine extras carry the bulk).
 - [ ] **PKGS-02**: `taskfiles/packages.yml` reads `packages.brew.bundles` from `resolved.json` and composes the per-machine Brewfile
 - [ ] **PKGS-03**: `brew bundle` task uses a `status:` check based on `brew bundle check --file=<composed>` (replaces unconditional re-run)
-- [ ] **PKGS-04**: Manifest can declare per-machine `extra_packages` (additive, concatenates with bundle contents)
+- [ ] **PKGS-04**: Manifest can declare per-machine `extra_packages` as a typed sub-table (`formulae`, `casks`, `mas`); each sub-array concat+dedupes with defaults at resolve time. Cask and MAS entries are typed objects (`{name, verify}` for casks; `{id, name}` for MAS).
 - [ ] **PKGS-05**: GUI bundles (casks) are isolated so server machines without GUI can omit them via manifest
 
 ### Package Verification

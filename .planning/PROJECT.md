@@ -66,7 +66,7 @@ A single declarative manifest per machine makes the complete install state legib
 **Packages:**
 
 - [ ] Brewfile composition via manifest bundles (replaces `Brewfile-<profile>.rb` suffixing)
-- [ ] Per-purpose bundles in `packages/brew/<purpose>.rb` (`core`, `gui`, `dev`, `ops`, `personal`) — named by role, not by profile
+- [ ] Per-purpose bundles in flat `packages/<purpose>.rb` (`core`, `gui`; +any future purpose-named additions). Per-machine variation lives in manifest `extra_packages` typed sub-table (`formulae`/`casks`/`mas`).
 - [ ] Per-machine package additions allowed via manifest `extra_packages` without forking a bundle
 
 **macOS defaults:**
