@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 4 context gathered
-last_updated: "2026-05-15T03:31:14.778Z"
-last_activity: "2026-05-15T02:10:14Z - Completed phase 03 gap-closure plans (03-06, 03-07, 03-08)"
+last_updated: "2026-05-15T04:18:00.370Z"
+last_activity: 2026-05-15 -- Phase 04 execution started
 progress:
   total_phases: 8
   completed_phases: 3
-  total_plans: 18
+  total_plans: 22
   completed_plans: 18
-  percent: 100
+  percent: 82
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** A single declarative manifest per machine makes the complete install state legible to both humans and AI agents — no inference from filename suffixes, no hidden profile branching, no hostname-based guessing.
-**Current focus:** Phase 03 — shell-layer-flat-content-port
+**Current focus:** Phase 04 — identity-layer-git-ssh-per-machine
 
 ## Current Position
 
-Phase: 03 (shell-layer-flat-content-port) — EXECUTING
-Plan: 1 of 8
-Status: Executing Phase 03
-Last activity: 2026-05-15T02:10:14Z - Completed phase 03 gap-closure plans (03-06, 03-07, 03-08)
+Phase: 04 (identity-layer-git-ssh-per-machine) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 04
+Last activity: 2026-05-15 -- Phase 04 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
