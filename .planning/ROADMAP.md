@@ -112,7 +112,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. `task packages:verify` reads the active machine's bundles, parses `# verify: <name>` per-line comments (default: bin name = formula name; app name derived from cask name), and asserts `command -v <bin>` resolves for every formula and `/Applications/<App>.app` exists for every cask — exits non-zero with a per-package check/cross report on failure
   5. `task packages:audit` lists currently-installed brew formulae and casks that are NOT declared in any manifest bundle for the active machine — non-blocking by default; `--strict` exits non-zero. Surfaces the "I `brew install`'d something manually and forgot to declare it" drift class.
   6. `task install` runs `task packages:verify` in its final step so a successful install fails loudly when a declared package didn't actually land (silent install failures caught at the verification layer, not just at the bundle layer)
-**Plans**: TBD
+**Plans**: 6 plans
+  - [ ] 05-01-PLAN.md — packages/core.rb + packages/gui.rb + packages/README.md (PKGS-01, PKGS-05)
+  - [ ] 05-02-PLAN.md — Manifest TOML migration: defaults + 4 machines to typed-bucket extras (PKGS-04, PKGS-05)
+  - [ ] 05-03-PLAN.md — install/compose-brewfile.zsh + resolver Pass 2 update (PKGS-02, PKGS-03, PKGS-04)
+  - [ ] 05-04-PLAN.md — taskfiles/packages.yml (install/compose/verify/audit/validate) (PKGS-02, PKGS-03, PKGS-05, VRFY-01, VRFY-02, VRFY-03)
+  - [ ] 05-05-PLAN.md — Root Taskfile.yml integration: rename brew include to packages; add packages:verify final step (VRFY-04)
+  - [ ] 05-06-PLAN.md — Canonical docs corrections: REQUIREMENTS PKGS-01/04, ROADMAP SC#3, PROJECT, docs/MANIFEST.md (PKGS-01, PKGS-04)
 
 ### Phase 6: OS Defaults — macOS Configuration
 **Goal**: macOS defaults split into per-concern files, opt-in via manifest features, idempotent on every run
@@ -164,7 +170,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 2. Install Engine — Bootstrap, Idempotency, Lint | 0/TBD | Not started | - |
 | 3. Shell Layer — Flat Content Port | 0/TBD | Not started | - |
 | 4. Identity Layer — Git + SSH per Machine | 4/7 | Gap closure planned | - |
-| 5. Packages Layer — Brewfile Composition + Verification | 0/TBD | Not started | - |
+| 5. Packages Layer — Brewfile Composition + Verification | 0/6 | Planned | - |
 | 6. OS Defaults — macOS Configuration | 0/TBD | Not started | - |
 | 7. Claude + Tool Configs + Smoke Tests | 0/TBD | Not started | - |
 | 8. Validation + Cutover Readiness | 0/TBD | Not started | - |
