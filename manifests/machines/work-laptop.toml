@@ -24,7 +24,36 @@ claude-marketplace = true
 ghostty = true
 
 [packages.brew]
-bundles = ["core", "gui", "dev"]
+bundles = ["core", "gui"]
+
+[packages.brew.extra_packages]
+formulae = []
+
+casks = [
+  { name = "slack",                verify = "Slack" },
+  { name = "spotify",              verify = "Spotify" },
+  { name = "sourcetree",           verify = "Sourcetree" },
+  { name = "sublime-text",         verify = "Sublime Text" },
+  { name = "visual-studio-code",   verify = "Visual Studio Code" },
+  { name = "appcleaner",           verify = "AppCleaner" },
+  { name = "raycast",              verify = "Raycast" },
+  { name = "alcove",               verify = "Alcove" },
+  { name = "standard-notes",       verify = "Standard Notes" },
+  { name = "fantastical",          verify = "Fantastical" },
+  { name = "cardhop",              verify = "Cardhop" },
+  { name = "microsoft-word",       verify = "Microsoft Word" },
+  { name = "microsoft-excel",      verify = "Microsoft Excel" },
+  { name = "microsoft-powerpoint", verify = "Microsoft PowerPoint" },
+  { name = "zoom",                 verify = "zoom.us" },
+  { name = "firefox",              verify = "Firefox" },
+  { name = "miniconda",            verify = "Miniconda" },
+  { name = "docker-desktop",       verify = "Docker" },
+]
+
+mas = [
+  { id = 441258766, name = "Magnet" },
+  { id = 904280696, name = "Things" },
+]
 
 [identity]
 git = "work"
