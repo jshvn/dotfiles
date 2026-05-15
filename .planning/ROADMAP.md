@@ -92,7 +92,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. On a machine with `one-password-ssh = true` in its manifest, `echo $SSH_AUTH_SOCK` resolves to the 1Password agent socket; on a machine without the feature, it resolves to the system agent — with zero `hostname` references in any identity-determining code path
   4. `task validate` asserts `git config user.email` matches the manifest identity, that `ssh-add -L` lists the expected public key, and that `identity/ssh/keys/` contains only `.pub` files (no private keys committed)
   5. `taskfiles/identity.yml` reads the active identity from `resolved.json` and creates all identity symlinks through `_:safe-link` (no bare `ln`); re-running is a no-op
-**Plans**: TBD
+**Plans**: 4 plans
+  - [ ] 04-01-PLAN.md — Schema layer: resolver enum + cross-field rules; defaults.toml + four machine TOMLs + docs/MANIFEST.md (D-05/D-07/D-15/D-16)
+  - [ ] 04-02-PLAN.md — Identity content: identity/git/ + identity/ssh/ trees (v1 port + documented deltas; IDNT-01/02/03/04/06)
+  - [ ] 04-03-PLAN.md — Negative fixtures + manifest:test extension (three new fixtures; negative_count=5)
+  - [ ] 04-04-PLAN.md — taskfiles/identity.yml + Taskfile.yml/links.yml wiring + identity/README.md (IDNT-07/08, DOCS-02)
 
 ### Phase 5: Packages Layer — Brewfile Composition + Verification
 **Goal**: Per-purpose Brewfile bundles composed per-machine from the manifest, with idempotent install via `brew bundle check` AND post-install verification that declared binaries/casks are actually usable, plus a drift audit
@@ -156,7 +160,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 1. Manifest Engine + Repository Skeleton | 0/4 | Planned | - |
 | 2. Install Engine — Bootstrap, Idempotency, Lint | 0/TBD | Not started | - |
 | 3. Shell Layer — Flat Content Port | 0/TBD | Not started | - |
-| 4. Identity Layer — Git + SSH per Machine | 0/TBD | Not started | - |
+| 4. Identity Layer — Git + SSH per Machine | 0/4 | Planned | - |
 | 5. Packages Layer — Brewfile Composition + Verification | 0/TBD | Not started | - |
 | 6. OS Defaults — macOS Configuration | 0/TBD | Not started | - |
 | 7. Claude + Tool Configs + Smoke Tests | 0/TBD | Not started | - |
