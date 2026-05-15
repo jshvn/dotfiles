@@ -16,7 +16,7 @@
 #   - links    (P3, real)
 #   - perf     (P3, real)
 #   - identity (P4, real)
-#   - brew     (stub; P5 wires real bodies)
+#   - packages (P5, real)
 #   - claude   (stub; P7 wires real bodies)
 #   - macos    (stub; P6 wires real bodies)
 #
@@ -92,7 +92,18 @@ includes:
       DOTFILEDIR: '{{.DOTFILEDIR}}'
       XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
-  brew:     ./taskfiles/brew-stub.yml       # P5 wires real bodies
+  # packages needs the root's DOTFILEDIR + XDG_STATE_HOME + XDG_CACHE_HOME
+  # explicitly forwarded -- it reads resolved.json (manifest), writes the
+  # composed Brewfile under XDG_CACHE_HOME (D-08), and verifies post-install
+  # state. XDG_CACHE_HOME is new in Phase 5; the root already declares it
+  # in the vars: block above.
+  packages:
+    taskfile: ./taskfiles/packages.yml
+    vars:
+      DOTFILEDIR: '{{.DOTFILEDIR}}'
+      XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
+      XDG_CACHE_HOME: '{{.XDG_CACHE_HOME}}'
+      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   claude:   ./taskfiles/claude-stub.yml     # P7 wires real bodies
   macos:    ./taskfiles/macos-stub.yml      # P6 wires real bodies
 
@@ -126,10 +137,16 @@ tasks:
     deps: [manifest:resolve]
     cmds:
       - task: links:all
-      - task: brew:install
+      - task: packages:install
       - task: claude:install
       - task: macos:defaults
       - task: macos:shell
+      # VRFY-04 + D-10 + ROADMAP P5 success criterion #6:
+      # packages:verify is the FINAL task-call in the install pipeline.
+      # A missing bin or missing /Applications/<App>.app fails the entire
+      # `task install` with exit 1 -- no `success "install complete"` line
+      # is printed when verify trips.
+      - task: packages:verify
       - |
         {{.DOTFILES_MESSAGES}}
         success "install complete"
