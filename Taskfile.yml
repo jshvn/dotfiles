@@ -15,6 +15,7 @@
 #   - lint     (P2, real)
 #   - links    (P3, real)
 #   - perf     (P3, real)
+#   - identity (P4, real)
 #   - brew     (stub; P5 wires real bodies)
 #   - claude   (stub; P7 wires real bodies)
 #   - macos    (stub; P6 wires real bodies)
@@ -83,6 +84,14 @@ includes:
   lint:     ./taskfiles/lint.yml
   links:    ./taskfiles/links.yml
   perf:     ./taskfiles/shell.yml
+  # identity needs the root's DOTFILEDIR + XDG_STATE_HOME explicitly forwarded
+  # since it also reads resolved.json via fromJson (mirrors manifest:).
+  identity:
+    taskfile: ./taskfiles/identity.yml
+    vars:
+      DOTFILEDIR: '{{.DOTFILEDIR}}'
+      XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
+      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   brew:     ./taskfiles/brew-stub.yml       # P5 wires real bodies
   claude:   ./taskfiles/claude-stub.yml     # P7 wires real bodies
   macos:    ./taskfiles/macos-stub.yml      # P6 wires real bodies

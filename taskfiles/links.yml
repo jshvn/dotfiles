@@ -5,9 +5,10 @@ version: '3'
 #
 # Purpose:
 #   Replaces taskfiles/links-stub.yml as the real implementation of links:all.
-#   Phase 3 scope: shell startup files + the antidote plugin bundle source.
-#   Later phases extend the `all:` aggregator with their own subtasks:
-#     - P4 adds git/ssh/identity
+#   P3 + P4 currently included; later phases extend the `all:` aggregator with
+#   their own subtasks:
+#     - P3 shell startup files + the antidote plugin bundle source (already wired)
+#     - P4 git/ssh/identity (already wired via `task: identity:install`)
 #     - P5 adds packages/brew (none in links.yml; package install lives in brew.yml)
 #     - P6 adds macos (none in links.yml; defaults live in macos.yml)
 #     - P7 adds tools/claude
@@ -69,15 +70,16 @@ vars:
 tasks:
 
   # ---------------------------------------------------------------------------
-  # Aggregator -- P3 ships shell-only; later phases extend this list.
+  # Aggregator -- P3 + P4 wired; later phases extend this list.
   # ---------------------------------------------------------------------------
 
   # lint-allow: cmds-without-status
   all:
-    desc: "Create all symlinks (P3: shell only; later phases extend)"
+    desc: "Create all symlinks (P3+P4: shell + identity)"
     cmds:
       - task: zsh
       - task: antidote
+      - task: identity:install
 
   # ---------------------------------------------------------------------------
   # Shell startup files (SHEL-03) -- five files in zsh's documented order.
