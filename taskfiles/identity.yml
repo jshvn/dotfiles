@@ -383,12 +383,17 @@ tasks:
             exit 0
             ;;
         esac
-        expected_body=$(awk '{print $2}' "$expected_pub" 2>/dev/null)
+        # WR-06: anchor on $1 (must be a real key-type field) and `exit`
+        # after the first match so the extracted key body is always a
+        # single line. A bare `awk '{print $2}'` would emit one $2 per
+        # input line (including comments), producing a newline-containing
+        # string that breaks the line-oriented `grep -qF` below.
+        expected_body=$(awk '$1 ~ /^(ssh-|ecdsa-|sk-)/ {print $2; exit}' "$expected_pub" 2>/dev/null)
         if [[ -z "$expected_body" ]]; then
           warn "could not extract key body from $expected_pub -- skipping"
           exit 0
         fi
-        if ssh-add -L 2>/dev/null | awk '{print $2}' | grep -qF "$expected_body"; then
+        if ssh-add -L 2>/dev/null | awk '$1 ~ /^(ssh-|ecdsa-|sk-)/ {print $2}' | grep -qF "$expected_body"; then
           check "ssh-add -L includes expected pub key for $identity"
         else
           cross "ssh-add -L does not include expected pub key for $identity"
