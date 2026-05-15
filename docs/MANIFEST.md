@@ -97,7 +97,9 @@ supply a value — silent inheritance of required fields is the drift class bein
 |-------|------|-------|
 | `meta.notes` | string | Freeform annotation; no semantic effect |
 | `platform.arch` | string | `"arm64"` or `"x86_64"`; resolver auto-detects via `uname -m` when absent |
-| `packages.brew.extra_packages` | array of strings | Additive escape hatch; deduplicated union with defaults value |
+| `packages.brew.extra_packages.formulae` | array of strings or `{name, verify}` objects | Per-machine formula extras; concat+dedupe across defaults + machine |
+| `packages.brew.extra_packages.casks` | array of `{name, verify}` objects | Per-machine cask extras; `verify` field is MANDATORY per cask (D-04) |
+| `packages.brew.extra_packages.mas` | array of `{id, name}` objects | Per-machine MAS app extras; `name` doubles as the `.app` verify name (D-06) |
 
 ### Unknown keys
 
@@ -287,18 +289,21 @@ key = "value"
 Rule: a key present only in defaults and a key present only in the machine both appear in
 the resolved output — neither side's unique keys are dropped.
 
-#### Fixture 06 — extra-packages-concat (additive union)
+#### Fixture 06 — extra-packages-concat (per-sub-array additive union)
 
 `defaults.toml`:
 ```toml
-[packages.brew]
-extra_packages = ["jq", "yq"]
+[packages.brew.extra_packages]
+formulae = ["jq", "yq"]
+casks = []
+mas = []
 ```
 
 `machine.toml`:
 ```toml
-[packages.brew]
-extra_packages = ["docker-desktop", "jq"]
+[packages.brew.extra_packages]
+formulae = [{ name = "ripgrep", verify = "rg" }]
+casks = [{ name = "docker-desktop", verify = "Docker" }]
 ```
 
 `resolved.json`:
@@ -306,15 +311,26 @@ extra_packages = ["docker-desktop", "jq"]
 {
   "packages": {
     "brew": {
-      "extra_packages": ["docker-desktop", "jq", "yq"]
+      "extra_packages": {
+        "formulae": ["jq", "yq", { "name": "ripgrep", "verify": "rg" }],
+        "casks": [{ "name": "docker-desktop", "verify": "Docker" }],
+        "mas": []
+      }
     }
   }
 }
 ```
 
-Rule: `extra_packages` is the single exception to the array-replace rule. The resolver
-computes the deduplicated union: `jq` appears only once in the output even though it was
-declared in both files.
+Rule: `extra_packages` is the single exception to the array-replace rule, applied
+per-sub-array. Each typed sub-array (`formulae`, `casks`, `mas`) is independently
+concat+deduped with the corresponding defaults sub-array. Bare strings and
+`{name, verify}` objects coexist in `formulae`; `casks` and `mas` always carry
+typed objects. In this example, `casks` is the machine's value because defaults
+declared `casks = []`; `mas` resolves to `[]` because both sides are empty.
+
+Per-sub-array union semantics replace the legacy flat-array union. The resolver's
+Pass 2 (Plan 03 deliverable) keeps backward-compat with the legacy flat-array
+shape so existing Phase 1 fixtures continue to pass.
 
 ### Why arrays replace (not concatenate)
 
