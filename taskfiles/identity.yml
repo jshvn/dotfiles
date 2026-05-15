@@ -357,6 +357,17 @@ tasks:
           warn "expected pub-key file $expected_pub is missing or empty -- skipping (placeholder?)"
           exit 0
         fi
+        # WR-01: a real pub key starts with one of the SSH key-type
+        # identifiers. The placeholder shape (a leading `#` comment) would
+        # otherwise pass the `! -s` guard above and produce a misleading
+        # "ssh-add -L does not include expected pub key" error.
+        case "$(head -n1 "$expected_pub")" in
+          ssh-ed25519*|ssh-rsa*|ecdsa-*|sk-*) ;;
+          *)
+            warn "$expected_pub is a placeholder, not a real public key -- skipping"
+            exit 0
+            ;;
+        esac
         expected_body=$(awk '{print $2}' "$expected_pub" 2>/dev/null)
         if [[ -z "$expected_body" ]]; then
           warn "could not extract key body from $expected_pub -- skipping"
