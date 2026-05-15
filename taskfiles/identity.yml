@@ -332,10 +332,20 @@ tasks:
           info "expected git user.email for identity.git=$identity is empty -- skipping"
           exit 0
         fi
-        if [[ ! -d "$gitdir" ]] && [[ "$identity" != "server-1" ]] && [[ "$identity" != "server-2" ]]; then
-          info "gitdir $gitdir absent -- skipping email assertion"
-          exit 0
-        fi
+        # WR-04: for workstation identities (personal, work) skipping the
+        # assertion when the gitdir is absent is expected (e.g., a fresh
+        # checkout where ~/git/personal has not been created). Server
+        # identities key off $HOME, which always exists, so they bypass
+        # this guard entirely.
+        case "$identity" in
+          server-1|server-2) ;;
+          *)
+            if [[ ! -d "$gitdir" ]]; then
+              info "gitdir $gitdir absent -- skipping email assertion"
+              exit 0
+            fi
+            ;;
+        esac
         actual_email=$(git -C "$gitdir" config user.email 2>/dev/null || echo "")
         if [[ "$actual_email" = "$expected_email" ]]; then
           check "git user.email matches identity ($expected_email)"
