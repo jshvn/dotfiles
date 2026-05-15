@@ -1,22 +1,10 @@
+# taskfiles/brew-stub.yml -- DEPRECATED, superseded by taskfiles/packages.yml in Phase 5.
+#
+# This file is retained only so the legacy `brew: ./taskfiles/brew-stub.yml` include in
+# the root Taskfile.yml continues to parse until Plan 05 (Wave 4) removes the include line
+# and re-routes through `packages: ./taskfiles/packages.yml`. Once Plan 05 lands, the file
+# is dead weight and may be deleted as part of Phase 8 cleanup.
+#
+# Do NOT add tasks here. All packages-layer functionality lives in taskfiles/packages.yml.
 version: '3'
-
-# =============================================================================
-# taskfiles/brew-stub.yml -- Phase 5 placeholder
-#
-# This file is loaded by the root Taskfile.yml via:
-#   includes:
-#     brew: ./taskfiles/brew-stub.yml
-#
-# Phase 5 (PKGS-01..05, VRFY-01..04) replaces this file with the real
-# taskfiles/brew.yml. The stub exists so `task install` has a complete call
-# graph in Phase 2 and the lint suite can self-test against a fully wired
-# manifest.
-# =============================================================================
-
-tasks:
-  install:
-    desc: "STUB (Phase 5 will implement PKGS-01..05, VRFY-01..04)"
-    status: [true]
-    cmds:
-      - |
-        echo "brew:install -- stub (Phase 5 will implement)" >&2
+tasks: {}
