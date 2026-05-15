@@ -32,11 +32,18 @@ ghostty = false       # gates shell/aliases/ghostty.zsh
 jgrid-net = false     # gates shell/aliases/jgrid.zsh
 
 [packages.brew]
-# Bundle names map to packages/<name>.rb in Phase 5.
+# Bundle names map to packages/<name>.rb (Phase 5).
 bundles = ["core"]
-# Additive escape hatch -- resolver computes the dedupe union of defaults
-# plus the active machine's extras at resolve time.
-extra_packages = []
+
+[packages.brew.extra_packages]
+# Typed sub-table per D-03. Resolver concat+dedupes each sub-array
+# independently with the active machine's extras.
+#   formulae -- bare strings OR { name, verify } objects (D-05)
+#   casks    -- { name, verify } objects ONLY (D-04 -- verify MANDATORY)
+#   mas      -- { id, name } objects ONLY (D-06 -- name doubles as verify)
+formulae = []
+casks    = []
+mas      = []
 
 [identity]
 # Allowed values: "personal" | "work" | "server-1" | "server-2" | "none". Drives Phase 4 git+SSH
