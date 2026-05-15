@@ -20,5 +20,5 @@ claude-marketplace = false
 bundles = ["core"]
 
 [identity]
-git = "none"
-ssh = "none"
+git = "server-1"
+ssh = "server-1"

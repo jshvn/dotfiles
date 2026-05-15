@@ -88,8 +88,8 @@ supply a value — silent inheritance of required fields is the drift class bein
 | `platform.os` | string | `"darwin"` | v1 only; v2 will add `"linux"` |
 | `features` | table | any key-value pairs | May be empty `{}`; each key is kebab-case |
 | `packages.brew.bundles` | array of strings | non-empty; must include `"core"` | Maps to `packages/<name>.rb` files (Phase 5) |
-| `identity.git` | string | `"personal"` \| `"work"` \| `"none"` | Drives Phase 4 git config selection |
-| `identity.ssh` | string | `"personal"` \| `"work"` \| `"none"` | Drives Phase 4 SSH config selection |
+| `identity.git` | string | `"personal"` \| `"work"` \| `"server-1"` \| `"server-2"` \| `"none"` | Drives Phase 4 git config selection |
+| `identity.ssh` | string | `"personal"` \| `"work"` \| `"server-1"` \| `"server-2"` \| `"none"` | Drives Phase 4 SSH config selection |
 
 ### Optional fields
 
@@ -396,6 +396,7 @@ as of Phase 1. Each subsequent phase extends this table with the flags it consum
 | Feature | Owner phase | What it does | Default in `defaults.toml` |
 |---------|-------------|--------------|---------------------------|
 | `one-password-ssh` | Phase 4 | Enables 1Password SSH agent integration | `false` |
+| `one-password-signing` | Phase 4 | Enables git commit signing via 1Password op-ssh-sign | `false` |
 | `motd` | Phase 3 | Enables MOTD display on `.zlogin` | `true` |
 | `claude-marketplace` | Phase 7 | Installs Claude marketplace plugins | `true` |
 | `macos-dock` | Phase 6 | Runs `os/defaults/dock.zsh` | machine-set (not in defaults.toml) |
