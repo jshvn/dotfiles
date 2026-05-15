@@ -301,10 +301,15 @@ tasks:
       - |
         {{.DOTFILES_MESSAGES}}
         identity="{{.MANIFEST.identity.git}}"
+        # WR-03: read expected_email from the overlay file uniformly across
+        # all identities so any future drift in identity/git/identities/*
+        # (e.g., changing josh@vaughen.net to a new address) is actually
+        # detected by the validator rather than silently masked by an
+        # inline constant.
         case "$identity" in
           personal)
             gitdir="$HOME/git/personal"
-            expected_email="josh@vaughen.net"
+            expected_email=$(git config -f "{{.DOTFILEDIR}}/identity/git/identities/personal" user.email 2>/dev/null || echo "")
             ;;
           work)
             gitdir="$HOME/git/work"
@@ -312,7 +317,7 @@ tasks:
             ;;
           server-1|server-2)
             gitdir="$HOME"
-            expected_email="${identity}@jgrid.net"
+            expected_email=$(git config -f "{{.DOTFILEDIR}}/identity/git/identities/${identity}" user.email 2>/dev/null || echo "")
             ;;
           none)
             info "identity.git = none -- skipping email assertion"
