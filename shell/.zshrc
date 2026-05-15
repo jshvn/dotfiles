@@ -106,16 +106,16 @@ fi
 # otherwise some functions/scripts like 'which' will not be found in the
 # correct spots, and that causes errors in aliases and functions
 
-# Load aliases (flat layout; per-file source-time or wrapper-function gates handle features per D-09)
-for file in "${DOTFILEDIR}/shell/aliases/"*.zsh(.N); do
+# Load functions FIRST (flat layout; one function per file). Source-time gates in shell/aliases/*.zsh (D-08, e.g. jgrid.zsh) call _dotfiles_feature, so the helper function must be defined before the aliases glob runs.
+for file in "${DOTFILEDIR}/shell/functions/"*.zsh(.N); do
     source "$file"
 done
 
 # load common ZSH custom themes
 source "${DOTFILEDIR}/shell/theme.zsh"
 
-# Load functions (flat layout; one function per file)
-for file in "${DOTFILEDIR}/shell/functions/"*.zsh(.N); do
+# Load aliases SECOND (flat layout; per-file source-time or wrapper-function gates handle features per D-09). Functions glob above has already defined _dotfiles_feature, so D-08 source-time gates evaluate correctly.
+for file in "${DOTFILEDIR}/shell/aliases/"*.zsh(.N); do
     source "$file"
 done
 
