@@ -392,6 +392,57 @@ tasks:
           failures=$(( failures + 1 ))
         fi
 
+        # _invalid-identity-without-opssh: cross-field rule (D-16); stderr must contain "one-password-ssh".
+        neg_dir="${fix_dir}/_invalid-identity-without-opssh"
+        tmp_neg="{{.MACHINES_DIR}}/_invalid-identity-without-opssh.toml"
+        neg_copies+=("$tmp_neg")
+        cp "$neg_dir/machine.toml" "$tmp_neg"
+        neg_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+          zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
+          --validate-only --machine _invalid-identity-without-opssh 2>&1 >/dev/null || true)
+        rm -f "$tmp_neg"
+        if echo "$neg_stderr" | grep -q 'one-password-ssh'; then
+          check "fixture: _invalid-identity-without-opssh -- correctly rejected (one-password-ssh in stderr)"
+        else
+          cross "fixture: _invalid-identity-without-opssh -- expected rejection with 'one-password-ssh' in stderr"
+          echo "stderr was: $neg_stderr" >&2
+          failures=$(( failures + 1 ))
+        fi
+
+        # _invalid-identity-without-opsign: cross-field rule (D-16); stderr must contain "one-password-signing".
+        neg_dir="${fix_dir}/_invalid-identity-without-opsign"
+        tmp_neg="{{.MACHINES_DIR}}/_invalid-identity-without-opsign.toml"
+        neg_copies+=("$tmp_neg")
+        cp "$neg_dir/machine.toml" "$tmp_neg"
+        neg_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+          zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
+          --validate-only --machine _invalid-identity-without-opsign 2>&1 >/dev/null || true)
+        rm -f "$tmp_neg"
+        if echo "$neg_stderr" | grep -q 'one-password-signing'; then
+          check "fixture: _invalid-identity-without-opsign -- correctly rejected (one-password-signing in stderr)"
+        else
+          cross "fixture: _invalid-identity-without-opsign -- expected rejection with 'one-password-signing' in stderr"
+          echo "stderr was: $neg_stderr" >&2
+          failures=$(( failures + 1 ))
+        fi
+
+        # _invalid-bad-identity: expanded enum (D-05); stderr must contain "server-1|server-2|none".
+        neg_dir="${fix_dir}/_invalid-bad-identity"
+        tmp_neg="{{.MACHINES_DIR}}/_invalid-bad-identity.toml"
+        neg_copies+=("$tmp_neg")
+        cp "$neg_dir/machine.toml" "$tmp_neg"
+        neg_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+          zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
+          --validate-only --machine _invalid-bad-identity 2>&1 >/dev/null || true)
+        rm -f "$tmp_neg"
+        if echo "$neg_stderr" | grep -q 'server-1|server-2|none'; then
+          check "fixture: _invalid-bad-identity -- correctly rejected (expanded enum in stderr)"
+        else
+          cross "fixture: _invalid-bad-identity -- expected rejection with 'server-1|server-2|none' in stderr"
+          echo "stderr was: $neg_stderr" >&2
+          failures=$(( failures + 1 ))
+        fi
+
         # ---------------------------------------------------------------
         # Summary
         # ---------------------------------------------------------------
@@ -401,7 +452,7 @@ tasks:
         for fix in "${fix_dir}"/[0-9][0-9]-*; do
           positive_count=$(( positive_count + 1 ))
         done
-        negative_count=2
+        negative_count=5
         total=$(( positive_count + negative_count ))
         passed=$(( total - failures ))
         if (( failures == 0 )); then
