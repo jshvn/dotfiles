@@ -183,8 +183,15 @@ tasks:
             # Skip internal: true tasks
             is_internal=$(yq ".tasks.\"$task_name\".internal // false" "$f" 2>/dev/null || echo false)
             [[ "$is_internal" == "true" ]] && continue
-            # Skip tasks whose cmds are ALL task: delegations
-            all_delegations=$(yq ".tasks.\"$task_name\".cmds | all(has(\"task\"))" "$f" 2>/dev/null || echo false)
+            # Skip tasks whose cmds are ALL task: delegations.
+            # Use `map(has("task")) | all` (no-arg `all` builtin) because the
+            # `all(filter)` form returns a yq syntax error -- and that error
+            # was masked here behind 2>/dev/null + ||echo false, so the
+            # exemption silently failed and orchestrator tasks were
+            # mis-flagged. Bracket-indexing `.tasks["$task_name"]` keeps the
+            # query robust when $task_name collides with a yq builtin name
+            # such as "all".
+            all_delegations=$(yq ".tasks[\"$task_name\"].cmds | map(has(\"task\")) | all" "$f" 2>/dev/null || echo false)
             [[ "$all_delegations" == "true" ]] && continue
             cross "LINT-03a: '$task_name' in $f has cmds: but no status:"
             failures=$(( failures + 1 ))
