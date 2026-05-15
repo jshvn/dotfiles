@@ -402,7 +402,10 @@ tasks:
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
-        bad=$(find "{{.DOTFILEDIR}}/identity/ssh/keys" -maxdepth 1 -type f -not -name '*.pub' -not -name '.gitignore' 2>/dev/null)
+        # WR-05: no -maxdepth -- a private key smuggled into a subdirectory
+        # of identity/ssh/keys/ would otherwise escape this validator
+        # (defense in depth for IDNT-06).
+        bad=$(find "{{.DOTFILEDIR}}/identity/ssh/keys" -type f -not -name '*.pub' -not -name '.gitignore' 2>/dev/null)
         if [[ -z "$bad" ]]; then
           check "identity/ssh/keys/ allowlist clean (no private keys)"
         else
