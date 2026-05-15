@@ -26,8 +26,45 @@ ghostty = true
 jgrid-net = true
 
 [packages.brew]
-bundles = ["core", "gui", "dev", "personal"]
-extra_packages = ["docker-desktop"]
+bundles = ["core", "gui"]
+
+[packages.brew.extra_packages]
+formulae = []  # all CLI lives in core.rb
+
+casks = [
+  { name = "discord",              verify = "Discord" },
+  { name = "slack",                verify = "Slack" },
+  { name = "whatsapp",             verify = "WhatsApp" },
+  { name = "spotify",              verify = "Spotify" },
+  { name = "appcleaner",           verify = "AppCleaner" },
+  { name = "raycast",              verify = "Raycast" },
+  { name = "alcove",               verify = "Alcove" },
+  { name = "protonvpn",            verify = "Proton VPN" },
+  { name = "proton-mail",          verify = "Proton Mail" },
+  { name = "proton-drive",         verify = "Proton Drive" },
+  { name = "dropbox",              verify = "Dropbox" },
+  { name = "cryptomator",          verify = "Cryptomator" },
+  { name = "sourcetree",           verify = "Sourcetree" },
+  { name = "sublime-text",         verify = "Sublime Text" },
+  { name = "visual-studio-code",   verify = "Visual Studio Code" },
+  { name = "standard-notes",       verify = "Standard Notes" },
+  { name = "fantastical",          verify = "Fantastical" },
+  { name = "cardhop",              verify = "Cardhop" },
+  { name = "microsoft-word",       verify = "Microsoft Word" },
+  { name = "microsoft-excel",      verify = "Microsoft Excel" },
+  { name = "microsoft-powerpoint", verify = "Microsoft PowerPoint" },
+  { name = "zoom",                 verify = "zoom.us" },
+  { name = "firefox",              verify = "Firefox" },
+  { name = "nvidia-geforce-now",   verify = "NVIDIA GeForce NOW" },
+  { name = "cloudflare-warp",      verify = "Cloudflare WARP" },
+  { name = "miniconda",            verify = "Miniconda" },
+  { name = "docker-desktop",       verify = "Docker" },
+]
+
+mas = [
+  { id = 441258766, name = "Magnet" },
+  { id = 904280696, name = "Things" },
+]
 
 [identity]
 git = "personal"
