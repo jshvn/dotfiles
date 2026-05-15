@@ -120,6 +120,22 @@ tasks:
 
   git:
     desc: "Link git identity files; materialize server-include.config on servers"
+    # CR-02: MANIFEST_JSON falls back to '{}' when resolved.json is missing,
+    # which renders {{.MANIFEST.identity.git}} as the literal string
+    # "<no value>". Refuse to install against the empty fallback rather
+    # than silently materializing broken state.
+    preconditions:
+      - sh: test -s '{{.RESOLVED_JSON_PATH}}'
+        msg: |
+          resolved.json missing or empty; cannot resolve identity.git
+            run: task setup -- <machine-name>
+      - sh: |
+          v='{{.MANIFEST.identity.git}}'
+          case "$v" in
+            personal|work|server-1|server-2|none) exit 0 ;;
+            *) exit 1 ;;
+          esac
+        msg: 'identity.git = "{{.MANIFEST.identity.git}}" is not a known identity'
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/config", TARGET: "{{.GIT_CONFIG_DIR}}/config" }
@@ -190,6 +206,23 @@ tasks:
 
   ssh:
     desc: "Link SSH identity files; swap active symlink to manifest value"
+    # CR-02: MANIFEST_JSON falls back to '{}' when resolved.json is missing,
+    # which renders {{.MANIFEST.identity.ssh}} as the literal string
+    # "<no value>". Without these preconditions the active-symlink swap
+    # below would create ~/.ssh/identities/active -> .../<no value>
+    # (silent corruption of the active SSH identity).
+    preconditions:
+      - sh: test -s '{{.RESOLVED_JSON_PATH}}'
+        msg: |
+          resolved.json missing or empty; cannot resolve identity.ssh
+            run: task setup -- <machine-name>
+      - sh: |
+          v='{{.MANIFEST.identity.ssh}}'
+          case "$v" in
+            personal|work|server-1|server-2|none) exit 0 ;;
+            *) exit 1 ;;
+          esac
+        msg: 'identity.ssh = "{{.MANIFEST.identity.ssh}}" is not a known identity'
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/config", TARGET: "{{.SSH_DIR}}/config" }
