@@ -1,0 +1,385 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/packages.yml -- Phase 5 manifest-driven package layer.
+#
+# Purpose:
+#   Reads packages.brew.bundles + packages.brew.extra_packages.{formulae,casks,mas}
+#   from resolved.json via `ref: fromJson` and composes the per-machine
+#   Brewfile to $XDG_CACHE_HOME/dotfiles/Brewfile, then runs
+#   `brew bundle install` and verifies post-install state (every declared
+#   formula bin on PATH; every declared cask + mas .app under /Applications).
+#
+# Dependencies:
+#   - :manifest:resolve (deps) -- ensures resolved.json is current before
+#     any read of {{.MANIFEST.packages.brew.*}}.
+#   - taskfiles/helpers.yml -- _:check-command, _:check-file as building
+#     blocks (verify task uses inline test -d / command -v + messages.zsh
+#     to honor the D-07 enumerate-all contract).
+#   - install/messages.zsh -- sourced via {{.DOTFILES_MESSAGES}} for the
+#     info/success/warn/error/check/cross UX primitives.
+#   - install/compose-brewfile.zsh (Plan 03) -- invoked by packages:install
+#     and packages:compose to render the per-machine Brewfile.
+#
+# Status-block convention (LINT-02 enforcement):
+#   Every install / compose task uses a `status:` block. Status blocks use
+#   `{{.X}}` template vars ONLY -- never `$X` shell vars (the v1
+#   macos:shell:145 bug class). Aggregator-style tasks (verify, audit,
+#   validate) intentionally omit `status:` and carry the
+#   `# lint-allow: cmds-without-status` marker on the line immediately
+#   above the task key.
+#
+# When the root Taskfile.yml includes this module, its vars (DOTFILEDIR,
+# XDG_STATE_HOME, XDG_CACHE_HOME, DOTFILES_MESSAGES) take precedence over
+# the local fallbacks defined below.
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+# =============================================================================
+# Vars block -- self-contained so `task -t taskfiles/packages.yml ...` works
+# without the root Taskfile.yml being loaded.
+# =============================================================================
+
+vars:
+  HOME: '{{.HOME}}'
+
+  XDG_CONFIG_HOME:
+    sh: echo "${XDG_CONFIG_HOME:-$HOME/.config}"
+
+  XDG_STATE_HOME:
+    sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
+
+  # NEW in Phase 5: XDG_CACHE_HOME is the destination for the composed
+  # Brewfile (D-08; CF-07). Identity / manifest layers did not need this.
+  XDG_CACHE_HOME:
+    sh: echo "${XDG_CACHE_HOME:-$HOME/.cache}"
+
+  # Resolve DOTFILEDIR from this taskfile's parent directory.
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+  RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
+
+  # WR-03 fallback: emit a stderr warning when resolved.json is missing so
+  # consumers of {{.MANIFEST.packages.brew.*}} fail loudly rather than
+  # evaluating against an empty {}.
+  MANIFEST_JSON:
+    sh: |
+      if [[ -s '{{.RESOLVED_JSON_PATH}}' ]]; then
+        cat '{{.RESOLVED_JSON_PATH}}'
+      else
+        echo "warning: {{.RESOLVED_JSON_PATH}} missing or empty -- run 'task setup -- <machine>' first" >&2
+        echo '{}'
+      fi
+
+  # fromJson ref pattern (matches taskfiles/manifest.yml +
+  # taskfiles/identity.yml). Downstream consumers use
+  # {{.MANIFEST.packages.brew.bundles}} via dot-access (snake_case-safe).
+  MANIFEST:
+    ref: 'fromJson .MANIFEST_JSON'
+
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+  # Derived path: the composed per-machine Brewfile (Plan 03 composer
+  # writes here; D-08 atomic compose to $XDG_CACHE_HOME/dotfiles/Brewfile).
+  COMPOSED_BREWFILE: '{{.XDG_CACHE_HOME}}/dotfiles/Brewfile'
+
+# =============================================================================
+# Tasks
+# =============================================================================
+
+tasks:
+
+  # ---------------------------------------------------------------------------
+  # install -- single task with the D-09 two-condition status block.
+  #   (a) composed Brewfile exists
+  #   (b) brew bundle check --no-upgrade exits 0
+  # Either fails -> regenerate the composed Brewfile, then brew bundle install.
+  #
+  # Realizes PKGS-02 (compose-and-install path), PKGS-03 (brew bundle check
+  # for status), PKGS-05 (servers' core-only bundle installs cleanly).
+  # ---------------------------------------------------------------------------
+
+  install:
+    desc: "Install packages: compose per-machine Brewfile then run brew bundle install"
+    deps: [":manifest:resolve"]
+    preconditions:
+      - sh: test -s '{{.RESOLVED_JSON_PATH}}'
+        msg: |
+          resolved.json missing or empty; cannot resolve packages.brew.bundles
+            run: task setup -- <machine-name>
+      - sh: command -v brew >/dev/null 2>&1
+        msg: "brew not on PATH -- run bootstrap.zsh first"
+    status:
+      - test -f "{{.COMPOSED_BREWFILE}}"
+      - brew bundle check --file="{{.COMPOSED_BREWFILE}}" --no-upgrade
+    cmds:
+      # 1. Compose the per-machine Brewfile from manifest + bundle files.
+      #    Explicit env forwarding so the composer's path constants resolve
+      #    correctly when invoked through go-task (which strips many envs).
+      - DOTFILEDIR="{{.DOTFILEDIR}}" XDG_CACHE_HOME="{{.XDG_CACHE_HOME}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" zsh "{{.DOTFILEDIR}}/install/compose-brewfile.zsh"
+      # 2. Run brew bundle install against the composed Brewfile. The shell
+      #    block sources messages.zsh so the info/success lines render in
+      #    the same color scheme as the rest of the install pipeline. The
+      #    root Taskfile.yml sets `set: [errexit, pipefail]` so any
+      #    brew-bundle-install failure propagates.
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running brew bundle install --file={{.COMPOSED_BREWFILE}}"
+        brew bundle install --file="{{.COMPOSED_BREWFILE}}"
+        success "brew bundle install complete"
+
+  # ---------------------------------------------------------------------------
+  # compose -- inspection helper. Runs the composer only; useful for
+  # diff-ing the composed Brewfile or sanity-checking the manifest -> Brewfile
+  # pipeline without triggering brew bundle install. Force regen via
+  # `task --force packages:compose`.
+  # ---------------------------------------------------------------------------
+
+  compose:
+    desc: "Compose per-machine Brewfile from manifest -> $XDG_CACHE_HOME/dotfiles/Brewfile"
+    deps: [":manifest:resolve"]
+    preconditions:
+      - sh: test -s '{{.RESOLVED_JSON_PATH}}'
+        msg: |
+          resolved.json missing or empty; cannot compose packages.brew.bundles
+            run: task setup -- <machine-name>
+    status:
+      - test -f "{{.COMPOSED_BREWFILE}}"
+    cmds:
+      - DOTFILEDIR="{{.DOTFILEDIR}}" XDG_CACHE_HOME="{{.XDG_CACHE_HOME}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" zsh "{{.DOTFILEDIR}}/install/compose-brewfile.zsh"
+      - |
+        {{.DOTFILES_MESSAGES}}
+        check "composed Brewfile -> {{.COMPOSED_BREWFILE}}"
+
+  # ---------------------------------------------------------------------------
+  # verify -- per-package check/cross. D-07 enumerate-all contract: emit a
+  # check or cross for EVERY declared formula/cask/mas; count failures;
+  # exit non-zero with the failure count if any failed (no first-failure
+  # short-circuit). Aggregator-style: no status block -- always re-run.
+  #
+  # Verify rules:
+  #   brew '<name>'                  -> command -v <name>
+  #   brew '<name>' # verify: <bin>  -> command -v <bin>          (D-05)
+  #   cask '<name>' # verify: <App>  -> test -d /Applications/<App>.app  (D-04)
+  #   mas '<name>', id: <id>         -> test -d /Applications/<name>.app (D-06)
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  # verify is intentionally always-re-run (D-07 enumerate-all contract).
+  # The `status: [false]` block satisfies LINT-03a structurally (a `cmds:`
+  # block with no `status:` would be the gsd-install bug class). `[false]`
+  # is the always-rerun shape -- mirrors root Taskfile.yml's install task.
+  verify:
+    desc: "Verify declared packages: every formula bin on PATH; every cask/mas .app in /Applications"
+    deps: [":manifest:resolve"]
+    preconditions:
+      - sh: test -s '{{.RESOLVED_JSON_PATH}}'
+        msg: |
+          resolved.json missing or empty; cannot resolve declared packages
+            run: task setup -- <machine-name>
+      - sh: test -f '{{.COMPOSED_BREWFILE}}'
+        msg: |
+          composed Brewfile missing: {{.COMPOSED_BREWFILE}}
+            run: task packages:compose first
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+
+        # ---- Formula loop (D-05: default + # verify: <bin> override) ----
+        # Anchored grep against the composed Brewfile: lines of the shape
+        #   brew '<name>'                  (bare; verify bin = name)
+        # OR
+        #   brew '<name>' # verify: <bin>  (override; verify bin = override)
+        # ggrep is required (no `awk` alternative chosen here so the
+        # `# verify:` extraction stays a single `awk -F` per matched line).
+        while IFS= read -r line; do
+          # Strip leading whitespace; extract the quoted formula name.
+          # The Plan 01 bundle authoring style uses single-quotes uniformly.
+          name=$(echo "$line" | ggrep -oE "^[[:space:]]*brew[[:space:]]+'[^']+'" | ggrep -oE "'[^']+'" | tr -d "'")
+          [[ -z "$name" ]] && continue
+          # Extract `# verify: <bin>` override if present.
+          override=$(echo "$line" | ggrep -oE "#[[:space:]]*verify:[[:space:]]*[^[:space:]]+" | awk '{print $3}')
+          bin="${override:-$name}"
+          if command -v "$bin" >/dev/null 2>&1; then
+            check "formula $name -> $bin"
+          else
+            cross "formula $name -> $bin NOT FOUND"
+            failures=$(( failures + 1 ))
+          fi
+        done < <(ggrep -E "^[[:space:]]*brew[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" || true)
+
+        # ---- Cask loop (D-04: mandatory # verify: <App>) ----
+        # Lines of the shape:
+        #   cask '<name>' # verify: <App>
+        # If a cask line is missing `# verify:`, treat as a hard failure
+        # (defense-in-depth for the LINT-09 invariant: a P5 Wave 5 deferral
+        # cannot silently break verify on Wave 3).
+        while IFS= read -r line; do
+          name=$(echo "$line" | ggrep -oE "^[[:space:]]*cask[[:space:]]+'[^']+'" | ggrep -oE "'[^']+'" | tr -d "'")
+          [[ -z "$name" ]] && continue
+          if ! echo "$line" | ggrep -qE "#[[:space:]]*verify:[[:space:]]*"; then
+            cross "cask $name line missing # verify: <App> comment"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+          # Extract the verify App name (everything after `# verify:`,
+          # trimmed). Use sed for a greedy match so multi-word App names
+          # (e.g., "Visual Studio Code") survive intact.
+          verify=$(echo "$line" | sed -E "s/.*#[[:space:]]*verify:[[:space:]]*//" | sed -E "s/[[:space:]]*$//")
+          if test -d "/Applications/${verify}.app"; then
+            check "cask $name -> /Applications/${verify}.app"
+          else
+            cross "cask $name -> /Applications/${verify}.app NOT FOUND"
+            failures=$(( failures + 1 ))
+          fi
+        done < <(ggrep -E "^[[:space:]]*cask[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" || true)
+
+        # ---- MAS loop (D-06: name doubles as verify target) ----
+        # Lines of the shape:
+        #   mas '<name>', id: <id>
+        # Verify target = `<name>` (the name doubles as the App-bundle name
+        # under /Applications/, e.g. /Applications/Magnet.app).
+        while IFS= read -r line; do
+          name=$(echo "$line" | ggrep -oE "^[[:space:]]*mas[[:space:]]+'[^']+'" | ggrep -oE "'[^']+'" | tr -d "'")
+          [[ -z "$name" ]] && continue
+          if test -d "/Applications/${name}.app"; then
+            check "mas $name -> /Applications/${name}.app"
+          else
+            cross "mas $name -> /Applications/${name}.app NOT FOUND"
+            failures=$(( failures + 1 ))
+          fi
+        done < <(ggrep -E "^[[:space:]]*mas[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" || true)
+
+        # ---- Summary (D-07: enumerate-all + count-failures) ----
+        if [[ "$failures" -gt 0 ]]; then
+          cross "${failures} package(s) failed verify"
+          exit "$failures"
+        fi
+        success "all declared packages verified"
+        exit 0
+
+  # ---------------------------------------------------------------------------
+  # audit -- drift detection (D-11). Compares installed packages
+  # (brew leaves, brew list --cask, mas list) against declared packages
+  # (parsed from the composed Brewfile). Non-blocking by default; --strict
+  # CLI flag promotes drift to a non-zero exit.
+  #
+  # Realizes VRFY-03 (audit declared vs installed).
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  # audit is intentionally always-re-run (drift detection is a fresh
+  # measurement each invocation). `status: [false]` satisfies LINT-03a
+  # while preserving always-rerun semantics; matches verify above.
+  audit:
+    desc: "Audit installed brew formulae/casks/mas vs declared. Non-blocking; --strict exits non-zero."
+    deps: [":manifest:resolve"]
+    preconditions:
+      - sh: test -s '{{.RESOLVED_JSON_PATH}}'
+        msg: |
+          resolved.json missing or empty; cannot determine declared packages
+            run: task setup -- <machine-name>
+      - sh: test -f '{{.COMPOSED_BREWFILE}}'
+        msg: |
+          composed Brewfile missing: {{.COMPOSED_BREWFILE}}
+            run: task packages:compose first
+      - sh: command -v brew >/dev/null 2>&1
+        msg: "brew not on PATH -- run bootstrap.zsh first"
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+
+        # Parse --strict from CLI_ARGS. Caller form:
+        #   task packages:audit -- --strict
+        strict=0
+        for arg in {{.CLI_ARGS}}; do
+          [[ "$arg" == "--strict" ]] && strict=1
+        done
+
+        # ---- Declared sets (extracted from the composed Brewfile) ----
+        # Formulae: name only (strip any `# verify:` suffix).
+        declared_formulae=$(ggrep -E "^[[:space:]]*brew[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
+          | ggrep -oE "^[[:space:]]*brew[[:space:]]+'[^']+'" \
+          | ggrep -oE "'[^']+'" | tr -d "'" \
+          | sort -u)
+
+        # Casks: cask name only (the `# verify:` is declared metadata, not
+        # an installed-package property).
+        declared_casks=$(ggrep -E "^[[:space:]]*cask[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
+          | ggrep -oE "^[[:space:]]*cask[[:space:]]+'[^']+'" \
+          | ggrep -oE "'[^']+'" | tr -d "'" \
+          | sort -u)
+
+        # MAS ids (numeric; matches `mas list` column 1).
+        declared_mas=$(ggrep -E "^[[:space:]]*mas[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
+          | ggrep -oE "id:[[:space:]]*[0-9]+" \
+          | awk '{print $2}' \
+          | sort -u)
+
+        # ---- Installed sets ----
+        # `brew leaves` = top-level formulae only (D-11: catches
+        # "I `brew install`'d X manually" not transitive deps).
+        installed_formulae=$(brew leaves 2>/dev/null | sort -u || true)
+        installed_casks=$(brew list --cask 2>/dev/null | sort -u || true)
+        # mas list column 1 = id; columns 2+ = name + version. Empty when
+        # MAS is unused on this machine.
+        if command -v mas >/dev/null 2>&1; then
+          installed_mas=$(mas list 2>/dev/null | awk '{print $1}' | sort -u || true)
+        else
+          warn "mas not on PATH -- skipping MAS audit section"
+          installed_mas=""
+        fi
+
+        total_drift=0
+
+        # ---- Diff (installed - declared) per category ----
+        # `comm -23 <installed> <declared>` yields lines present in
+        # installed but absent from declared = drift.
+        for item in $(comm -23 <(echo "$installed_formulae") <(echo "$declared_formulae")); do
+          [[ -z "$item" ]] && continue
+          warn "drift: formula $item (installed but not declared)"
+          total_drift=$(( total_drift + 1 ))
+        done
+
+        for item in $(comm -23 <(echo "$installed_casks") <(echo "$declared_casks")); do
+          [[ -z "$item" ]] && continue
+          warn "drift: cask $item (installed but not declared)"
+          total_drift=$(( total_drift + 1 ))
+        done
+
+        for item in $(comm -23 <(echo "$installed_mas") <(echo "$declared_mas")); do
+          [[ -z "$item" ]] && continue
+          warn "drift: mas $item (installed but not declared)"
+          total_drift=$(( total_drift + 1 ))
+        done
+
+        # ---- Final disposition ----
+        if [[ "$total_drift" -eq 0 ]]; then
+          success "no drift detected"
+          exit 0
+        fi
+        if [[ "$strict" -eq 1 ]]; then
+          cross "${total_drift} drift item(s) detected (--strict)"
+          exit 1
+        fi
+        warn "${total_drift} drift item(s) detected (non-blocking; --strict to fail)"
+        exit 0
+
+  # ---------------------------------------------------------------------------
+  # validate -- thin wrapper composed into the root `task validate` in P8
+  # (CUTV-01 composition slot). Delegates to packages:verify; the
+  # aggregator marker is correct here (single task: delegation).
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  validate:
+    desc: "Validate packages layer (wraps packages:verify; composed into root task validate in P8)"
+    cmds:
+      - task: verify
