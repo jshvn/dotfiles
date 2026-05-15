@@ -14,6 +14,7 @@ arch = "arm64"
 
 [features]
 one-password-ssh = true
+one-password-signing = true
 macos-dock = true
 macos-finder = true
 macos-input = true

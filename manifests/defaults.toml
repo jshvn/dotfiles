@@ -24,6 +24,7 @@ os = "darwin"
 # Opt-in feature flags. Each is consumed by exactly one task or asset in
 # a later phase. Defaults are conservative (mostly off).
 one-password-ssh = false
+one-password-signing = false   # gates git commit signing via 1Password op-ssh-sign
 motd = true
 claude-marketplace = true
 macos-finder = false  # gates shell/aliases/finder.zsh
@@ -38,7 +39,7 @@ bundles = ["core"]
 extra_packages = []
 
 [identity]
-# Allowed values: "personal" | "work" | "none". Drives Phase 4 git+SSH
+# Allowed values: "personal" | "work" | "server-1" | "server-2" | "none". Drives Phase 4 git+SSH
 # identity selection.
 git = "none"
 ssh = "none"

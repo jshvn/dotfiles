@@ -193,7 +193,7 @@ validate_manifest() {
     errors=$(( errors + 1 ))
   fi
 
-  # identity.git / identity.ssh enum: personal|work|none.
+  # identity.git / identity.ssh enum: personal|work|server-1|server-2|none.
   local ident_key ident_val
   for ident_key in git ssh; do
     ident_val=$(yq -r ".identity.${ident_key} // \"\"" "$machine_file" 2>/dev/null || echo "")
@@ -201,11 +201,39 @@ validate_manifest() {
       continue  # already counted above as missing/empty
     fi
     case "$ident_val" in
-      personal|work|none) ;;
-      *) error "identity.${ident_key} must be one of personal|work|none; got: ${ident_val}"
+      personal|work|server-1|server-2|none) ;;
+      *) error "identity.${ident_key} must be one of personal|work|server-1|server-2|none; got: ${ident_val}"
          errors=$(( errors + 1 )) ;;
     esac
   done
+
+  # D-16: cross-field rules. identity.ssh in {personal, work} requires features.one-password-ssh = true;
+  # identity.git in {personal, work} requires features.one-password-signing = true
+  local identity_ssh identity_git
+  identity_ssh=$(yq -r '.identity.ssh // ""' "$machine_file" 2>/dev/null || echo "")
+  identity_git=$(yq -r '.identity.git // ""' "$machine_file" 2>/dev/null || echo "")
+
+  local opssh opsign
+  opssh=$(yq -r '.features."one-password-ssh" // false' "$machine_file" 2>/dev/null || echo "false")
+  opsign=$(yq -r '.features."one-password-signing" // false' "$machine_file" 2>/dev/null || echo "false")
+
+  case "$identity_ssh" in
+    personal|work)
+      if [[ "$opssh" != "true" ]]; then
+        error "identity.ssh = \"${identity_ssh}\" requires features.one-password-ssh = true"
+        errors=$(( errors + 1 ))
+      fi
+      ;;
+  esac
+
+  case "$identity_git" in
+    personal|work)
+      if [[ "$opsign" != "true" ]]; then
+        error "identity.git = \"${identity_git}\" requires features.one-password-signing = true"
+        errors=$(( errors + 1 ))
+      fi
+      ;;
+  esac
 
   VALIDATE_ERRORS=$errors
   if (( errors > 0 )); then

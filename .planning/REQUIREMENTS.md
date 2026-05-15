@@ -83,7 +83,7 @@ git and SSH identity, manifest-driven.
 - [ ] **IDNT-02**: Per-identity git configs live under `identity/git/identities/<identity-name>` (no profile-suffix filenames)
 - [ ] **IDNT-03**: `identity/ssh/config` uses `Include` directives for identity-based host configs
 - [ ] **IDNT-04**: Per-identity SSH host configs live under `identity/ssh/identities/<identity-name>`
-- [ ] **IDNT-05**: 1Password SSH agent integration enabled only when manifest declares `one-password-ssh = true`; no hostname literals anywhere in the identity path
+- [ ] **IDNT-05**: 1Password integration is split into two flags -- `features.one-password-ssh` gates the SSH agent socket + `IdentityAgent` directive, and `features.one-password-signing` gates git commit signing via the `op-ssh-sign` program. Cross-field validation rejects mismatched configurations. No hostname literals anywhere in the identity path.
 - [ ] **IDNT-06**: Public SSH keys committed under `identity/ssh/keys/`; private keys never committed
 - [ ] **IDNT-07**: `task validate` asserts `git config user.email` matches manifest identity and `ssh-add -L` lists the expected key
 - [ ] **IDNT-08**: `taskfiles/identity.yml` reads identity from `resolved.json` and creates the appropriate symlinks via `_:safe-link`
