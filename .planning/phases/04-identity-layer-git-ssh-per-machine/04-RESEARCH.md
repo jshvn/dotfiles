@@ -1228,27 +1228,32 @@ grep -rEn 'hostname|scutil --get' . --include='*.zsh' --include='*.yml' --includ
 
 A1 and A2 are the only assumptions that carry runtime risk. Both are mitigated by failing loudly at use time rather than silently misbehaving.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Work git email value** (carried from CONTEXT.md Open Questions)
+   - RESOLVED: Plan 04-02 Task 1(d) ships `identity/git/identities/work` with a `# TODO: set work email before merge` marker. User must fill before Phase 4 merge. Validator's assertion (b) handles empty `expected_email` gracefully (silently passes when the gitdir is also absent).
    - What we know: v1 `git/config-work` has no email line.
    - What's unclear: which work email to put in `identity/git/identities/work`.
    - Recommendation: planner adds a task that ships `identity/git/identities/work` with a `# TODO: set work email` comment marker, plus a manual checklist item in the cutover documentation. Validator should soft-warn (not hard-fail) when `identity.git = "work"` AND the file has no `email` line.
 
 2. **`identity/git/identities/none` and `identity/ssh/identities/none` -- ship a no-op file or skip linking?** (Pitfall 5)
+   - RESOLVED: Plan 04-02 ships `none` as a comment-only file (single header line) so `active -> none` is a real link target (avoids Pitfall 5: "Include of missing file" ambiguity).
    - What we know: `identity.{git,ssh} = "none"` is a valid manifest value (D-05). What it should resolve to is not specified.
    - What's unclear: does linking `active -> none` (where `none` is a comment-only file) cleanly produce ssh-config-no-op behavior?
    - Recommendation: ship `identity/ssh/identities/none` as a comment-only file. Symmetric for git (`identity/git/identities/none` -- comment only, never loaded via includeIf because no gitdir-pattern matches it). This eliminates the "Include of missing file" ambiguity across ssh versions.
 
 3. **`server-include.config` materialization technique**
+   - RESOLVED: Plan 04-04 Task 1 generates the file at install time via `printf` heredoc in the `taskfiles/identity.yml :server-include` subtask (more inspectable than sed substitution).
    - What we know: D-08 leaves this to planner discretion (template + sed vs generate-at-install).
    - Recommendation: generate-at-install via `printf` heredoc inside the `server-include` subtask. Status block checks file existence + content match. This is more inspectable than a sed substitution (the generated file's content matches its expected form exactly).
 
 4. **`task identity:install` aggregator placement** (Claude's Discretion item)
+   - RESOLVED: Plan 04-04 Task 1 wires the aggregator into `taskfiles/links.yml all:` (per Phase 3 comment naming Phase 4 as the next extender). Root `Taskfile.yml` gains a `task: identity:install` include only if not already present.
    - What we know: extend `links.yml all:` vs. add to root `Taskfile.yml`.
    - Recommendation: add to `links.yml all:` (lower-impact change, Phase 3 already named P4 as next extender). The aggregator there is the natural place for "all symlinks" tasks; identity is exactly that.
 
 5. **Server pub-key placeholder content** (CONTEXT.md Claude's Discretion)
+   - RESOLVED: Plan 04-02 Task 2 ships `identity/ssh/keys/server.pub` and `identity/ssh/keys/server-staging.pub` with a single header comment line each. `task identity:validate` skips the `ssh-add -L` assertion when `features.one-password-ssh = false` (so placeholder-only machines pass).
    - What we know: D-09 commits the files, but the actual key content materializes at first cutover.
    - Recommendation: ship the file with a single header comment line:
      ```
