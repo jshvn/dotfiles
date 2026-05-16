@@ -369,3 +369,166 @@ tasks:
         done <<< "{{.EXPECTED_TARGETS}}"
 
         exit "$failures"
+
+  # ---------------------------------------------------------------------------
+  # links:reconcile (CUTV-02 + CUTV-07 + CUTV-08) -- orphan symlink detection.
+  #
+  # Three invocation modes, dispatched via CLI_ARGS:
+  #   - default (no flag):  detect-only; exit non-zero on orphan; CI-safe gate.
+  #   - -- --remove:         interactive cleanup; TTY-gated; y/N per orphan;
+  #                          uses `unlink` only (never `rm`).
+  #   - -- --warn-only:      non-fatal; emits orphans via warn() to stderr;
+  #                          always exits 0; reserved for install-time call.
+  #
+  # Orphan detection (D-09) walks ONLY parent dirs derived from
+  # EXPECTED_TARGETS with `find -maxdepth 2 -type l`; a symlink is an
+  # orphan iff its readlink -f target is under $DOTFILEDIR AND the link
+  # path itself is not in EXPECTED_TARGETS. Bounded surface; fast.
+  #
+  # Security:
+  #   - --remove mode TTY-gates BEFORE orphan enumeration ([[ -t 0 ]])
+  #   - removal uses `unlink` (operates only on the named symlink)
+  #   - parent_dirs deduplication uses word-split-safe `while IFS= read -r`
+  #     pattern (NOT `array=($(...))` which is vulnerable to word-splitting
+  #     on paths containing spaces and is not shellcheck-clean)
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  reconcile:
+    desc: "Detect orphan symlinks (default: exit non-zero); -- --remove for interactive cleanup"
+    deps: [":manifest:resolve"]
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+
+        # Mode dispatch via CLI_ARGS. If CLI_ARGS contains both --remove and
+        # --warn-only, last-wins by parse order (warn-only wins if both
+        # appear; documented but not user-facing -- pick one flag).
+        mode="detect"
+        cli="{{.CLI_ARGS}}"
+        case " $cli " in
+          *" --remove "*)      mode="remove" ;;
+        esac
+        case " $cli " in
+          *" --warn-only "*)   mode="warn" ;;
+        esac
+
+        # --remove TTY-gate (D-10 / Pitfall 6). MUST appear BEFORE any
+        # orphan enumeration so non-TTY callers fail fast.
+        if [[ "$mode" == "remove" ]]; then
+          if [[ ! -t 0 ]]; then
+            error "links:reconcile --remove requires an interactive TTY; stdin is not a tty"
+            exit 1
+          fi
+        fi
+
+        dotfiledir="{{.DOTFILEDIR}}"
+
+        # Enumerate EXPECTED_TARGETS line-by-line. Feature-off entries
+        # render as empty lines (per the inline-ternary form in the vars:
+        # block) and are skipped, matching the consumer contract used by
+        # links:validate.
+        expected=()
+        while IFS= read -r line; do
+          [[ -n "$line" ]] && expected+=("$line")
+        done <<< "{{.EXPECTED_TARGETS}}"
+
+        # Derive deduplicated parent_dirs from expected. CRITICAL:
+        # word-split-safe assignment via `while IFS= read -r` (NOT the
+        # `array=($(...))` cmd-subst-into-array form, which is vulnerable
+        # to word-splitting on path components containing spaces and is
+        # not shellcheck-clean). Matches the EXPECTED_TARGETS reader
+        # pattern above.
+        raw_parents=()
+        for t in "${expected[@]}"; do
+          raw_parents+=("$(dirname "$t")")
+        done
+        parent_dirs=()
+        while IFS= read -r dir; do
+          [[ -n "$dir" ]] && parent_dirs+=("$dir")
+        done < <(printf '%s\n' "${raw_parents[@]}" | sort -u)
+
+        # Walk each parent dir; collect orphans. Bounded scan
+        # (-maxdepth 2). For each symlink found: readlink -f to resolve
+        # the target; skip if target does not start with $dotfiledir;
+        # check if the link path is in EXPECTED_TARGETS; if not, append
+        # to orphans.
+        #
+        # NOTE on `set -e` interaction: the root Taskfile.yml sets
+        # [errexit, pipefail] globally and the include inherits it.
+        # `(( expr ))` evaluates to exit-1 when expr is zero -- under
+        # errexit that aborts the script. So we use `if ... ; then ...
+        # ; fi` (which is exempt from errexit on the condition itself)
+        # instead of `(( ... )) && cmd` or bare `(( ... ))`.
+        orphans=()
+        for dir in "${parent_dirs[@]}"; do
+          [[ -d "$dir" ]] || continue
+          while IFS= read -r lnk; do
+            [[ -z "$lnk" ]] && continue
+            target="$(readlink -f "$lnk" 2>/dev/null || true)"
+            [[ "$target" == "$dotfiledir"* ]] || continue
+            found=0
+            for e in "${expected[@]}"; do
+              if [[ "$lnk" == "$e" ]]; then
+                found=1
+                break
+              fi
+            done
+            if [[ "$found" == "0" ]]; then
+              orphans+=("$lnk")
+            fi
+          done < <(find "$dir" -maxdepth 2 -type l 2>/dev/null)
+        done
+
+        orphan_count=${#orphans[@]}
+
+        # Mode-specific action.
+        case "$mode" in
+          detect)
+            if [[ "$orphan_count" -eq 0 ]]; then
+              info "no orphan symlinks detected"
+              exit 0
+            fi
+            for orphan in "${orphans[@]}"; do
+              warn "orphan: $orphan -> $(readlink "$orphan" 2>/dev/null || echo unreadable)"
+            done
+            exit 1
+            ;;
+          warn)
+            if [[ "$orphan_count" -eq 0 ]]; then
+              info "no orphan symlinks detected"
+              exit 0
+            fi
+            for orphan in "${orphans[@]}"; do
+              warn "orphan: $orphan -> $(readlink "$orphan" 2>/dev/null || echo unreadable)"
+            done
+            # --warn-only ALWAYS exits 0 regardless of orphan count.
+            exit 0
+            ;;
+          remove)
+            if [[ "$orphan_count" -eq 0 ]]; then
+              info "no orphan symlinks detected"
+              exit 0
+            fi
+            for orphan in "${orphans[@]}"; do
+              tgt="$(readlink "$orphan" 2>/dev/null || echo unreadable)"
+              info "orphan: $orphan -> $tgt"
+              printf 'Remove? [y/N]: '
+              read -r REPLY
+              if [[ "$REPLY" == "y" || "$REPLY" == "yes" ]]; then
+                # Security: `unlink` removes ONLY the named symlink path.
+                # Never use `rm` here -- a misdirected rm could delete a
+                # directory if a real path slipped through orphan detection.
+                if unlink "$orphan"; then
+                  success "removed: $orphan"
+                else
+                  error "failed to unlink: $orphan"
+                fi
+              else
+                info "skipped: $orphan"
+              fi
+            done
+            exit 0
+            ;;
+        esac
