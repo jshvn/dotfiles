@@ -7,13 +7,13 @@ machine: `manifests/defaults.toml` (shared baseline) and `manifests/machines/<na
 (per-machine identity, features, package bundles, and overrides). The resolver
 (`install/resolver.zsh`) compiles them into a JSON file at
 `$XDG_STATE_HOME/dotfiles/resolved.json`. Every go-task task reads that JSON via
-`fromJson` — no task reads TOML directly.
+`fromJson` -- no task reads TOML directly.
 
 ## Schema (v1)
 
 ### `defaults.toml` and `machines/<name>.toml` shape
 
-**`manifests/defaults.toml`** — shared baseline every machine inherits:
+**`manifests/defaults.toml`** -- shared baseline every machine inherits:
 
 ```toml
 schema_version = 1
@@ -45,7 +45,7 @@ git = "none"
 ssh = "none"
 ```
 
-**`manifests/machines/personal-laptop.toml`** — a concrete machine manifest:
+**`manifests/machines/personal-laptop.toml`** -- a concrete machine manifest:
 
 ```toml
 schema_version = 1
@@ -68,8 +68,13 @@ motd = true
 claude-marketplace = true
 
 [packages.brew]
-bundles = ["core", "gui", "dev", "personal"]
-extra_packages = ["docker-desktop"]
+bundles = ["core", "gui"]
+
+[packages.brew.extra_packages]
+casks = [
+  { name = "docker-desktop" },
+  { name = "slack" },
+]
 
 [identity]
 git = "personal"
@@ -80,7 +85,7 @@ ssh = "personal"
 
 Every `manifests/machines/<name>.toml` must explicitly declare each of the following fields.
 The validator rejects the manifest if any is missing or empty, even if `defaults.toml` would
-supply a value — silent inheritance of required fields is the drift class being guarded against.
+supply a value -- silent inheritance of required fields is the drift class being guarded against.
 
 | Field | Type | Allowed values | Notes |
 |-------|------|---------------|-------|
@@ -98,13 +103,13 @@ supply a value — silent inheritance of required fields is the drift class bein
 | `meta.notes` | string | Freeform annotation; no semantic effect |
 | `platform.arch` | string | `"arm64"` or `"x86_64"`; resolver auto-detects via `uname -m` when absent |
 | `packages.brew.extra_packages.formulae` | array of strings or `{name, verify}` objects | Per-machine formula extras; concat+dedupe across defaults + machine |
-| `packages.brew.extra_packages.casks` | array of `{name, verify}` objects | Per-machine cask extras; `verify` field is MANDATORY per cask (D-04) |
+| `packages.brew.extra_packages.casks` | array of `{name}` objects | Per-machine cask extras; the legacy `verify` field is optional and ignored post-Gap-2 pivot (see ## Verify model) |
 | `packages.brew.extra_packages.mas` | array of `{id, name}` objects | Per-machine MAS app extras; `name` doubles as the `.app` verify name (D-06) |
 
 ### Unknown keys
 
 Unknown keys produce a warning to stderr but do not fail validation (exit 0). This permits
-forward compatibility — a key added for a future phase does not break current validation.
+forward compatibility -- a key added for a future phase does not break current validation.
 
 Warning format: `unknown key: features.macos-dok at manifests/machines/personal-laptop.toml:14`
 
@@ -117,14 +122,14 @@ concatenation for `extra_packages`.
 
 | What | Rule |
 |------|------|
-| Tables (maps) | Deep-merge — machine wins on conflict; sibling keys from defaults are preserved |
+| Tables (maps) | Deep-merge -- machine wins on conflict; sibling keys from defaults are preserved |
 | Scalars | Machine value replaces defaults value |
 | Arrays | Machine value replaces defaults value wholesale (see rationale below) |
 | `packages.brew.extra_packages` | Special case: deduplicated union of defaults and machine arrays |
 
 ### Worked examples
 
-#### Fixture 01 — map-over-map (deep-merge preserves siblings)
+#### Fixture 01 -- map-over-map (deep-merge preserves siblings)
 
 `defaults.toml`:
 ```toml
@@ -152,10 +157,10 @@ macos-dock = true
 }
 ```
 
-Rule: when both sides define keys in the same table, the resolved output contains all keys —
+Rule: when both sides define keys in the same table, the resolved output contains all keys --
 machine keys win on conflict; defaults keys with no machine counterpart are preserved.
 
-#### Fixture 02 — list-replace (arrays replaced wholesale)
+#### Fixture 02 -- list-replace (arrays replaced wholesale)
 
 `defaults.toml`:
 ```toml
@@ -166,7 +171,7 @@ bundles = ["core"]
 `machine.toml`:
 ```toml
 [packages.brew]
-bundles = ["core", "gui", "dev", "personal"]
+bundles = ["core", "gui"]
 ```
 
 `resolved.json`:
@@ -174,7 +179,7 @@ bundles = ["core", "gui", "dev", "personal"]
 {
   "packages": {
     "brew": {
-      "bundles": ["core", "gui", "dev", "personal"]
+      "bundles": ["core", "gui"]
     }
   }
 }
@@ -183,7 +188,7 @@ bundles = ["core", "gui", "dev", "personal"]
 Rule: the machine's `bundles` array completely replaces the defaults array. The defaults
 value `["core"]` does not appear alongside the machine value.
 
-#### Fixture 03 — scalar-override (machine replaces defaults)
+#### Fixture 03 -- scalar-override (machine replaces defaults)
 
 `defaults.toml`:
 ```toml
@@ -208,7 +213,7 @@ description = "personal-laptop"
 
 Rule: machine scalar wins unconditionally. There is no "merge" for scalar values.
 
-#### Fixture 04 — nested-table (deep-merge at arbitrary depth)
+#### Fixture 04 -- nested-table (deep-merge at arbitrary depth)
 
 `defaults.toml`:
 ```toml
@@ -260,7 +265,7 @@ totally_new = true
 Rule: deep-merge is recursive to arbitrary depth. At each level, machine keys win on
 conflict while defaults keys with no machine counterpart are preserved.
 
-#### Fixture 05 — missing-keys (both sides preserved)
+#### Fixture 05 -- missing-keys (both sides preserved)
 
 `defaults.toml`:
 ```toml
@@ -287,9 +292,9 @@ key = "value"
 ```
 
 Rule: a key present only in defaults and a key present only in the machine both appear in
-the resolved output — neither side's unique keys are dropped.
+the resolved output -- neither side's unique keys are dropped.
 
-#### Fixture 06 — extra-packages-concat (per-sub-array additive union)
+#### Fixture 06 -- extra-packages-concat (per-sub-array additive union)
 
 `defaults.toml`:
 ```toml
@@ -302,8 +307,8 @@ mas = []
 `machine.toml`:
 ```toml
 [packages.brew.extra_packages]
-formulae = [{ name = "ripgrep", verify = "rg" }]
-casks = [{ name = "docker-desktop", verify = "Docker" }]
+formulae = [{ name = "ripgrep" }]
+casks = [{ name = "docker-desktop" }]
 ```
 
 `resolved.json`:
@@ -312,8 +317,8 @@ casks = [{ name = "docker-desktop", verify = "Docker" }]
   "packages": {
     "brew": {
       "extra_packages": {
-        "formulae": ["jq", "yq", { "name": "ripgrep", "verify": "rg" }],
-        "casks": [{ "name": "docker-desktop", "verify": "Docker" }],
+        "formulae": ["jq", "yq", { "name": "ripgrep" }],
+        "casks": [{ "name": "docker-desktop" }],
         "mas": []
       }
     }
@@ -324,8 +329,8 @@ casks = [{ name = "docker-desktop", verify = "Docker" }]
 Rule: `extra_packages` is the single exception to the array-replace rule, applied
 per-sub-array. Each typed sub-array (`formulae`, `casks`, `mas`) is independently
 concat+deduped with the corresponding defaults sub-array. Bare strings and
-`{name, verify}` objects coexist in `formulae`; `casks` and `mas` always carry
-typed objects. In this example, `casks` is the machine's value because defaults
+`{name}` objects coexist in `formulae`; `casks` and `mas` always carry typed
+objects. In this example, `casks` is the machine's value because defaults
 declared `casks = []`; `mas` resolves to `[]` because both sides are empty.
 
 Per-sub-array union semantics replace the legacy flat-array union. The resolver's
@@ -338,8 +343,41 @@ Predictability. A machine that wants exactly `["core"]` in `bundles` must not be
 extended by defaults `["core", "dev"]`. Wholesale replacement gives the machine file full
 authority over every array field.
 
-`extra_packages` is the intentional escape hatch for the additive case — explicitly
+`extra_packages` is the intentional escape hatch for the additive case -- explicitly
 concatenated so a machine can add one-off packages without forking a bundle file.
+
+## Verify model
+
+`task packages:verify` uses a two-layer approach to confirm every declared package is
+correctly installed after `task packages:install` runs.
+
+**Layer 1 -- bundle presence check.** `brew bundle check --no-upgrade --file="$XDG_CACHE_HOME/dotfiles/Brewfile"`
+confirms every package declared in the composed Brewfile is installed per Homebrew's view of
+the world. This is the same check the `packages:install` status block exercises; it runs
+sub-second on a converged machine.
+
+**Layer 2 -- artifact-path probe.** `brew info --installed --json=v2` returns the full set of
+installed formulae and installed casks with their artifact paths. `task packages:verify`
+parses `.casks[].artifacts[]` for the appropriate artifact path entries and asserts each
+declared artifact path actually exists on disk. For formulae, the bin-path entries in the
+formula JSON confirm the binary is present.
+
+This replaces the v1 per-line annotation approach (the `# verify: <bin>` bundle comment and
+the `verify` field on cask objects in machine TOML extras). Those annotations went stale on
+every upstream cask rename -- for example, `nvidia-geforce-now` installs `GeForceNOW.app`
+not `NVIDIA GeForce NOW.app`; `protonvpn` installs `Proton VPN.app`; `miniconda` is a
+binary-only cask with no `.app` artifact at all. The `brew info --installed --json=v2` bulk
+call is authoritative (~200ms for the full installed set), never goes stale, and removes the
+per-entry authorship cost entirely.
+
+**MAS exception.** Apple App Store apps have no `brew info` equivalent. The `name` field in
+each `{ id, name }` object doubles as both the install-list display name (drives `mas install
+<id>` UX) and the verify target (`/Applications/<name>.app` existence check). This is the one
+place per-entry verify metadata is still authored in v2, because Apple does not expose an
+authoritative artifacts list the way Homebrew does. D-06 preserved.
+
+The task body lives in `taskfiles/packages.yml :: packages:verify` (rewritten in Plan 05-08).
+See that task for the implementation details.
 
 ## Adding a New Machine
 
@@ -392,7 +430,7 @@ concatenated so a machine can add one-off packages without forking a bundle file
 | `task setup -- <name>` | Persist machine selection; runs validate and resolve |
 | `task manifest:resolve` | (Re)compile `resolved.json` from defaults + active machine TOML |
 | `task manifest:show [-- --machine <name>]` | Print resolved manifest (active machine by default) |
-| `task manifest:validate [-- --machine <name>]` | Schema check — required fields + unknown-key warnings |
+| `task manifest:validate [-- --machine <name>]` | Schema check -- required fields + unknown-key warnings |
 | `task manifest:test` | Run the six golden-output fixture tests |
 
 ## State Files
@@ -422,7 +460,7 @@ as of Phase 1. Each subsequent phase extends this table with the flags it consum
 | `macos-security` | Phase 6 | Runs `os/defaults/security.zsh` | machine-set (not in defaults.toml) |
 
 To access any of these in a taskfile, use `{{index .MANIFEST.features "feature-name"}}`.
-Do not use dot-access (`{{.MANIFEST.features.one-password-ssh}}`) — Go-template parsing
+Do not use dot-access (`{{.MANIFEST.features.one-password-ssh}}`) -- Go-template parsing
 rejects the `-` character in identifiers.
 
 ## Known Limitations (v1)
@@ -430,4 +468,4 @@ rejects the `-` character in identifiers.
 - Line numbers in unknown-key warnings may be imprecise for deeply nested keys.
 - The rename flow is manual: rename the TOML file and edit `$XDG_STATE_HOME/dotfiles/machine`
   by hand.
-- No JSON Schema file for editor validation — deferred to v2 (`TOOL-V2-01`).
+- No JSON Schema file for editor validation -- deferred to v2 (`TOOL-V2-01`).
