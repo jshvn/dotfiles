@@ -33,6 +33,11 @@ tasks:
     requires:
       vars: [SOURCE, TARGET]
     cmds:
+      - |
+        if [[ -e "{{.TARGET}}" && ! -L "{{.TARGET}}" ]]; then
+          echo "_:safe-link: target exists and is not a symlink: {{.TARGET}}" >&2
+          exit 1
+        fi
       - mkdir -p "$(dirname "{{.TARGET}}")"
       - ln -sfn "{{.SOURCE}}" "{{.TARGET}}"
 
