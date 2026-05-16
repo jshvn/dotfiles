@@ -169,7 +169,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. All four target macOS machines (`personal-laptop`, `work-laptop`, `server-1`, `server-2` — all macOS, mixed roles) install end-to-end from v2 with a 100% `task validate` pass — recorded in `docs/CUTOVER.md`; per-machine fresh-install verification procedure (manual steps for a clean Mac) documented in the same file (DOCS-08)
   5. Each machine runs v2 for at least 7 days without falling back to v1 before being declared cut over; `docs/CUTOVER.md` tracks per-machine state
   6. After the last machine cuts over, the v1 repo is archived (renamed, not deleted) and `docs/MIGRATION.md`, `docs/MACHINES.md`, and the top-level `README.md` are finalized with the v1-to-v2 mapping, per-machine purpose/identity, and the manifest-model explanation
-**Plans**: TBD
+**Plans**: 6 plans
+  - [ ] 08-01-PLAN.md — taskfiles/links.yml EXPECTED_TARGETS refactor + links:validate exit-code fix (CUTV-02 foundation)
+  - [ ] 08-02-PLAN.md — Root `task validate` aggregator in Taskfile.yml + D-06 feature-off sentinel (CUTV-01)
+  - [ ] 08-03-PLAN.md — links:reconcile two-mode task + install-time orphan warn + cutover:ack writer (CUTV-02, CUTV-07, CUTV-08)
+  - [ ] 08-04-PLAN.md — docs/CUTOVER.md (procedure + state table) + docs/MACHINES.md (CUTV-03, DOCS-06, DOCS-08)
+  - [ ] 08-05-PLAN.md — docs/MIGRATION.md (per-concept + rollback + archive) + root README.md replacement (DOCS-01, DOCS-05)
+  - [ ] 08-06-PLAN.md — Per-machine cutover execution + 7-day soak per machine + v1 archive (CUTV-04, CUTV-05, CUTV-06) — autonomous: false
 
 ## Progress
 
@@ -185,4 +191,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Packages Layer — Brewfile Composition + Verification | 0/6 | Planned | - |
 | 6. OS Defaults — macOS Configuration | 0/4 | Planned | - |
 | 7. Claude + Tool Configs + Smoke Tests | 6/6 | Complete   | 2026-05-16 |
-| 8. Validation + Cutover Readiness | 0/TBD | Not started | - |
+| 8. Validation + Cutover Readiness | 0/6 | Planned | - |
