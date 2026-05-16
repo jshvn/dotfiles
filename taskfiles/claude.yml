@@ -243,17 +243,24 @@ tasks:
         info "claude: feature disabled -- skipped"
         exit 0
         {{end}}
+        # CR-03: missing CLIs are hard failures. Track via $rc and exit
+        # non-zero at the end of this block so the root validate aggregator
+        # renders the row as `cross`. Previously this block exited 0 on
+        # missing claude, silently passing a known-broken state.
+        rc=0
         if command -v claude >/dev/null 2>&1; then
           check "claude CLI installed"
         else
           cross "claude CLI missing -- run 'task packages:install' first"
-          exit 0
+          rc=1
         fi
         if command -v jq >/dev/null 2>&1; then
           check "jq installed"
         else
           cross "jq missing -- run 'task packages:install' first"
+          rc=1
         fi
+        exit "$rc"
       - for:
           var: CLAUDE_MARKETPLACES
           split: "\n"
