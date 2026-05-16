@@ -170,7 +170,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Each machine runs v2 for at least 7 days without falling back to v1 before being declared cut over; `docs/CUTOVER.md` tracks per-machine state
   6. After the last machine cuts over, the v1 repo is archived (renamed, not deleted) and `docs/MIGRATION.md`, `docs/MACHINES.md`, and the top-level `README.md` are finalized with the v1-to-v2 mapping, per-machine purpose/identity, and the manifest-model explanation
 **Plans**: 6 plans
-  - [ ] 08-01-PLAN.md — taskfiles/links.yml EXPECTED_TARGETS refactor + links:validate exit-code fix (CUTV-02 foundation)
+  - [x] 08-01-PLAN.md — taskfiles/links.yml EXPECTED_TARGETS refactor + links:validate exit-code fix (CUTV-02 foundation)
   - [ ] 08-02-PLAN.md — Root `task validate` aggregator in Taskfile.yml + D-06 feature-off sentinel (CUTV-01)
   - [ ] 08-03-PLAN.md — links:reconcile two-mode task + install-time orphan warn + cutover:ack writer (CUTV-02, CUTV-07, CUTV-08)
   - [ ] 08-04-PLAN.md — docs/CUTOVER.md (procedure + state table) + docs/MACHINES.md (CUTV-03, DOCS-06, DOCS-08)
@@ -191,4 +191,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Packages Layer — Brewfile Composition + Verification | 0/6 | Planned | - |
 | 6. OS Defaults — macOS Configuration | 0/4 | Planned | - |
 | 7. Claude + Tool Configs + Smoke Tests | 6/6 | Complete   | 2026-05-16 |
-| 8. Validation + Cutover Readiness | 0/6 | Planned | - |
+| 8. Validation + Cutover Readiness | 1/6 | In Progress|  |

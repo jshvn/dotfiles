@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 8 context gathered
-last_updated: "2026-05-16T21:21:49.651Z"
-last_activity: 2026-05-16 -- Phase 08 planning complete
+last_updated: "2026-05-16T21:24:12.659Z"
+last_activity: 2026-05-16 -- Phase 08 execution started
 progress:
   total_phases: 8
   completed_phases: 7
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** A single declarative manifest per machine makes the complete install state legible to both humans and AI agents — no inference from filename suffixes, no hidden profile branching, no hostname-based guessing.
-**Current focus:** Phase 07 — claude-tool-configs-smoke-tests
+**Current focus:** Phase 08 — validation-cutover-readiness
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-16 -- Phase 08 planning complete
+Phase: 08 (validation-cutover-readiness) — EXECUTING
+Plan: 1 of 6
+Status: Executing Phase 08
+Last activity: 2026-05-16 -- Phase 08 execution started
 
 Progress: [██████████] 100%
 
