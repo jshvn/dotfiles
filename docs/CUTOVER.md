@@ -66,10 +66,14 @@ failure against the referenced source-of-truth doc and re-run that step.
 6. Run `task validate`. The composed validator runs every per-component
    validate (manifest, identity, links, macos, packages, claude) to
    completion regardless of any single failure and prints a check/cross/n/a
-   summary table at the end. All six rows must show check on a freshly
-   installed machine; feature-off components (e.g., `claude` on server-1
-   where `claude-marketplace` is false) show `n/a` and are considered
-   passing.
+   summary table at the end. All six rows must show `check` or `n/a` on a
+   freshly installed machine. Currently only `claude:validate` emits the
+   `feature disabled -- skipped` sentinel substring that the aggregator
+   renders as `n/a` (when `claude-marketplace` is false, e.g., on server-1
+   and server-2). The other per-component validates return `check` even
+   when their feature flags are off because the underlying validates
+   internally no-op feature-gated work rather than emitting a separate skip
+   marker; both forms are considered passing.
 
 7. Begin the 7-day soak period. Do not delete or archive the v1 repo
    during the soak -- v1 remains on disk so a regression on any machine has
