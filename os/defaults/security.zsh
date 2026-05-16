@@ -101,9 +101,30 @@ apply_security() {
   # Check the unprivileged status first; sudo only fires when the guest
   # account is actually enabled (RESEARCH Code Examples; CONTEXT
   # Claude's Discretion option a).
-  if sysadminctl -guestAccount status 2>&1 | grep -q "enabled"; then
+  # macOS sysadminctl output varies across versions; observed forms:
+  #   "Guest account enabled." / "Guest account disabled."
+  #   "Enabled = true" / "Enabled = false"
+  #   "Enabled: Yes" / "Enabled: No"
+  # A bare substring grep for "enabled" silently false-positives on
+  # "Enabled = false" (the v1 behavior) and a substring grep for
+  # "disabled" misses every variant that uses a boolean qualifier instead.
+  # The two-step parser below first checks for the disabled signals; only
+  # if disabled is NOT detected and enabled IS detected do we conclude
+  # the account is enabled and trigger sudo. Unknown output (empty / perm
+  # denied) is treated as not-enabled (no-op).
+  local guest_status guest_state=unknown
+  guest_status=$(sysadminctl -guestAccount status 2>&1 || true)
+  if printf '%s' "$guest_status" | grep -qiE '\bdisabled\b|enabled[[:space:]]*[:=][[:space:]]*(false|no|0)'; then
+    guest_state=disabled
+  elif printf '%s' "$guest_status" | grep -qiE '\benabled\b'; then
+    guest_state=enabled
+  fi
+  if [[ "$guest_state" == enabled ]]; then
     warn "Guest account is enabled. Disabling it now (sudo required)..."
-    sudo sysadminctl -guestAccount off
+    if ! sudo sysadminctl -guestAccount off; then
+      error "Failed to disable guest account; run manually: sudo sysadminctl -guestAccount off"
+      return 1
+    fi
   fi
 }
 
@@ -147,10 +168,21 @@ verify_security() {
     fi
   done
   # --- guest account -----------------------------------------------------
-  if sysadminctl -guestAccount status 2>&1 | grep -q "disabled"; then
+  # Mirrors apply_security's two-step parser. Disabled-signal short-circuit
+  # comes first so "Enabled = false" is correctly recognized as disabled.
+  # Surface the raw output in the cross message so field debugging is not
+  # misled by absence of a specific substring.
+  local guest_status guest_state=unknown
+  guest_status=$(sysadminctl -guestAccount status 2>&1 || true)
+  if printf '%s' "$guest_status" | grep -qiE '\bdisabled\b|enabled[[:space:]]*[:=][[:space:]]*(false|no|0)'; then
+    guest_state=disabled
+  elif printf '%s' "$guest_status" | grep -qiE '\benabled\b'; then
+    guest_state=enabled
+  fi
+  if [[ "$guest_state" == disabled ]]; then
     check "security.guest-account = disabled"
   else
-    cross "security.guest-account: expected 'disabled', got 'enabled'"
+    cross "security.guest-account: expected 'disabled', got '$guest_state', raw='$guest_status'"
     failed=1
   fi
   return $failed

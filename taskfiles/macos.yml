@@ -222,16 +222,25 @@ tasks:
     platforms: [darwin]
     vars:
       BREW_ZSH: '{{.HOMEBREW_PREFIX}}/bin/zsh'
+      # USER_NAME hoisted out of the status: block to close a LINT-02 blind
+      # spot. The LINT-02 regex skips lines containing `{{`, so a $VAR
+      # shell-var on a line that ALSO carries a {{.TEMPLATE_VAR}} reference
+      # slips through unscanned. Hoisting via `sh: id -un` at task-graph
+      # build time gives the status block a pure template var, no shell
+      # var, and the v1 macos:shell:145 bug-class regression vector is
+      # closed in spirit as well as in letter.
+      USER_NAME:
+        sh: id -un
     cmds:
       - |
         DOTFILEDIR={{.DOTFILEDIR}} BREW_ZSH={{.BREW_ZSH}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/shell-registration.zsh"; apply_shell_registration'
     status:
-      # LINT-02 contract: both status conditions use {{.BREW_ZSH}} template var.
-      # Zero shell-var (dollar-prefixed) references to BREW_ZSH appear in this
-      # block -- structural fix for the v1 macos:shell:145 bug class
-      # (CONCERNS.md lines 15-19).
+      # LINT-02 contract: every status condition uses {{.TEMPLATE_VAR}}
+      # references only -- zero shell-var (dollar-prefixed) references to
+      # BREW_ZSH or USER appear in this block. Structural fix for the v1
+      # macos:shell:145 bug class (CONCERNS.md lines 15-19).
       - grep -qxF "{{.BREW_ZSH}}" /etc/shells
-      - '[[ "$(dscl . -read /Users/$USER UserShell 2>/dev/null | awk "{print \$2}")" = "{{.BREW_ZSH}}" ]]'
+      - '[[ "$(dscl . -read "/Users/{{.USER_NAME}}" UserShell 2>/dev/null | awk ''{print $2}'')" = "{{.BREW_ZSH}}" ]]'
 
   # ---------------------------------------------------------------------------
   # validate -- always-rerun aggregator. Sources every enabled concern's script

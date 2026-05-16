@@ -77,7 +77,7 @@ apply_shell_registration() {
   # head -n 1 is cheap insurance against future dscl output variance
   # (RESEARCH Pitfall 4).
   local current_shell
-  current_shell=$(dscl . -read /Users/$USER UserShell 2>/dev/null | head -n 1 | awk '{print $2}')
+  current_shell=$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | head -n 1 | awk '{print $2}')
   if [[ "$current_shell" != "$BREW_ZSH" ]]; then
     info "Changing default shell from $current_shell to $BREW_ZSH..."
     chsh -s "$BREW_ZSH" || { error "chsh failed; run manually: chsh -s $BREW_ZSH"; exit 1; }
@@ -92,7 +92,7 @@ verify_shell_registration() {
     cross "shell.brew-zsh-not-in-etc-shells (expected: $BREW_ZSH)"
     failed=1
   fi
-  current_shell=$(dscl . -read /Users/$USER UserShell 2>/dev/null | head -n 1 | awk '{print $2}')
+  current_shell=$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | head -n 1 | awk '{print $2}')
   if [[ "$current_shell" == "$BREW_ZSH" ]]; then
     check "shell.user-default = $BREW_ZSH"
   else

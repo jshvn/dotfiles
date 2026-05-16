@@ -69,8 +69,12 @@ apply_screenshots() {
     key="${SCREENSHOTS_DEFAULTS[$((i + 1))]}"
     value="${SCREENSHOTS_DEFAULTS[$((i + 2))]}"
     type="${SCREENSHOTS_DEFAULTS[$((i + 3))]}"
-    # Expand $HOME and any other env vars in the tuple value at use time.
-    expanded="${(e)value}"
+    # Expand the literal $HOME token at use time. (e)-flag was rejected --
+    # it performs command substitution + arithmetic and would be a code-exec
+    # sink the moment a future concern is copied from this template and
+    # starts sourcing tuple values from external data. Narrow substitution
+    # only.
+    expanded="${value/\$HOME/$HOME}"
     defaults write "$domain" "$key" "-${type}" "$expanded"
   done
   killall SystemUIServer 2>/dev/null || true
