@@ -139,8 +139,8 @@ Per-tool configuration deployment via symlinks.
 
 Component-level functional tests aggregated under `task test`.
 
-- [ ] **TEST-01**: `task test:hooks` pipes synthetic JSON input through each Claude hook (`secret-scan`, `no-emojis`, `no-ai-comments`, `agent-transparency`) and asserts expected exit code (0 for pass/warn, 2 for block) and stderr pattern. Catches runtime regressions that lint misses.
-- [ ] **TEST-02**: Root `task test` aggregates `task manifest:test` (existing MFST-05 fixtures) and `task test:hooks` so a single command runs all smoke tests; CI wires this in alongside `task lint`
+- [x] **TEST-01**: `task test:hooks` pipes synthetic JSON input through each Claude hook (`secret-scan`, `no-emojis`, `no-ai-comments`, `agent-transparency`) and asserts expected exit code (0 for pass/warn, 2 for block) and stderr pattern. Catches runtime regressions that lint misses.
+- [x] **TEST-02**: Root `task test` aggregates `task manifest:test` (existing MFST-05 fixtures) and `task test:hooks` so a single command runs all smoke tests; CI wires this in alongside `task lint`
 
 ### Documentation
 
@@ -292,8 +292,8 @@ Per-REQ-ID mapping to roadmap phase.
 | TOOL-02 | Phase 7 (Claude + Configs) | Pending |
 | TOOL-03 | Phase 7 (Claude + Configs) | Complete |
 | TOOL-04 | Phase 7 (Claude + Configs) | Complete |
-| TEST-01 | Phase 7 (Claude + Configs) | Pending |
-| TEST-02 | Phase 7 (Claude + Configs) | Pending |
+| TEST-01 | Phase 7 (Claude + Configs) | Complete |
+| TEST-02 | Phase 7 (Claude + Configs) | Complete |
 | DOCS-01 | Phase 8 (Validation + Cutover) | Pending |
 | DOCS-02 | Phase 3 (Shell Layer) | Pending |
 | DOCS-03 | Phase 1 (Manifest Engine + Skeleton) | Pending |

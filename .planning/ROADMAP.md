@@ -154,7 +154,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   - [x] 07-01-PLAN.md — Pre-Phase-7 cleanup: drop GSD-managed artifacts + .gitignore + REQUIREMENTS/ROADMAP wording amend (D-02, D-09)
   - [x] 07-02-PLAN.md — Harden _:safe-link (TOOL-03) + _:check-link strict mode (TOOL-04) + rewrite agent-transparency.zsh (CLDE-02)
   - [x] 07-03-PLAN.md — Real taskfiles/claude.yml (install/marketplace/gsd/update/status/validate/ensure-cli) + root include flip + claude/README.md (CLDE-01/03/04)
-  - [ ] 07-04-PLAN.md — install/test-hooks.zsh runner + taskfiles/test.yml + root `task test` aggregator (TEST-01, TEST-02)
+  - [x] 07-04-PLAN.md — install/test-hooks.zsh runner + taskfiles/test.yml + root `task test` aggregator (TEST-01, TEST-02)
   - [x] 07-05-PLAN.md — Port seven tool configs to configs/<tool>/ with per-tool READMEs + aggregate configs/README.md (TOOL-02)
   - [ ] 07-06-PLAN.md — Extend taskfiles/links.yml with claude: + configs: sub-tasks; retrofit validate with SOURCE strict mode (CLDE-01, TOOL-01, TOOL-02, TOOL-04)
 
@@ -184,5 +184,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 4. Identity Layer — Git + SSH per Machine | 4/7 | Gap closure planned | - |
 | 5. Packages Layer — Brewfile Composition + Verification | 0/6 | Planned | - |
 | 6. OS Defaults — macOS Configuration | 0/4 | Planned | - |
-| 7. Claude + Tool Configs + Smoke Tests | 4/6 | In Progress|  |
+| 7. Claude + Tool Configs + Smoke Tests | 5/6 | In Progress|  |
 | 8. Validation + Cutover Readiness | 0/TBD | Not started | - |
