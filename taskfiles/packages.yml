@@ -162,7 +162,7 @@ tasks:
   #                          confirms every declared package is installed per Homebrew.
   # Layer 2 (artifact-state): brew info --installed --json=v2 returns the full set of
   #                           installed-formulae + installed-casks records with
-  #                           .artifacts[] (casks) / .installed[].linked_keg (formulae);
+  #                           .artifacts[] (casks) / .linked_keg (formulae;
   #                           verify task asserts every declared package's on-disk
   #                           artifacts exist.
   # MAS layer (D-06):        no brew-info equivalent for App Store apps; declared
@@ -269,8 +269,18 @@ tasks:
                 ;;
               binary)
                 checkable=1
-                bin_path=$(echo "$artifact_json" | jq -r '.binary[0]')
-                bin_name=$(basename "$bin_path")
+                # Homebrew cask binary artifacts can be:
+                #   ["<source-path>"]                      -- destination name = basename(source)
+                #   ["<source-path>", {"target": "<name>"}] -- destination name = target
+                # The target form is required for casks like firefox where the source
+                # is a wrapper script (firefox.wrapper.sh) but the installed bin is "firefox".
+                bin_target=$(echo "$artifact_json" | jq -r '.binary[1].target // empty')
+                if [[ -n "$bin_target" ]]; then
+                  bin_name="$bin_target"
+                else
+                  bin_path=$(echo "$artifact_json" | jq -r '.binary[0]')
+                  bin_name=$(basename "$bin_path")
+                fi
                 if command -v "$bin_name" >/dev/null 2>&1; then
                   check "cask $cask_name -> $bin_name"
                 else
@@ -295,8 +305,11 @@ tasks:
         # ---- Layer 2: formula linked_keg probe ----
         # For each formula declared in the composed Brewfile:
         #   - Look up the installed formula record from brew info JSON.
-        #   - Assert .installed[0].linked_keg is non-null (formula is built
-        #     and linked, not just downloaded).
+        #   - Assert .linked_keg is non-null (formula is built and linked,
+        #     not just downloaded). Note: this is the top-level linked_keg on
+        #     the formula record (the version string of the currently linked
+        #     keg), NOT .installed[0].linked_keg which is always null in
+        #     `brew info --installed --json=v2` output.
         #   - D-05 escape hatch preserved: if the bundle line carries a
         #     `# verify: <bin>` comment, also run `command -v <bin>` as
         #     defense-in-depth (no bundle lines carry overrides post-Gap-2
@@ -315,7 +328,16 @@ tasks:
             continue
           fi
 
-          linked_keg=$(echo "$formula_record" | jq -r '.installed[0].linked_keg // empty')
+          # keg-only formulae (e.g., whois on macOS, which would shadow /usr/bin/whois)
+          # are intentionally not symlinked into the Homebrew prefix; .linked_keg is
+          # always null. Layer 1 (brew bundle check) already confirmed installation,
+          # so accept keg-only formulae without the linked_keg probe.
+          keg_only=$(echo "$formula_record" | jq -r '.keg_only // false')
+          linked_keg=$(echo "$formula_record" | jq -r '.linked_keg // empty')
+          if [[ "$keg_only" == "true" ]]; then
+            check "formula $formula_name: installed (keg-only; Layer 1 pass)"
+            continue
+          fi
           if [[ -z "$linked_keg" ]]; then
             cross "formula $formula_name: installed but not linked (linked_keg=null)"
             failures=$(( failures + 1 ))
