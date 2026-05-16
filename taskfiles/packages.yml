@@ -156,26 +156,34 @@ tasks:
         check "composed Brewfile -> {{.COMPOSED_BREWFILE}}"
 
   # ---------------------------------------------------------------------------
-  # verify -- per-package check/cross. D-07 enumerate-all contract: emit a
-  # check or cross for EVERY declared formula/cask/mas; count failures;
-  # exit non-zero with the failure count if any failed (no first-failure
-  # short-circuit). Aggregator-style: no status block -- always re-run.
+  # verify -- D-07 enumerate-all + Gap 2 brew-info-driven two-layer model.
   #
-  # Verify rules:
-  #   brew '<name>'                       -> command -v <name>
-  #   brew '<name>' # verify: <bin>       -> command -v <bin>          (D-05)
-  #   cask '<name>' # verify: <App>       -> test -d /Applications/<App>.app  (D-04)
-  #   cask '<name>' # verify: bin:<bin>   -> command -v <bin>          (gap-1; binary-only casks)
-  #   mas '<name>', id: <id>              -> test -d /Applications/<name>.app (D-06)
+  # Layer 1 (install-state): brew bundle check --no-upgrade --file={{.COMPOSED_BREWFILE}}
+  #                          confirms every declared package is installed per Homebrew.
+  # Layer 2 (artifact-state): brew info --installed --json=v2 returns the full set of
+  #                           installed-formulae + installed-casks records with
+  #                           .artifacts[] (casks) / .installed[].linked_keg (formulae);
+  #                           verify task asserts every declared package's on-disk
+  #                           artifacts exist.
+  # MAS layer (D-06):        no brew-info equivalent for App Store apps; declared
+  #                          { id, name } objects -> mas list | awk '{print $1}' for
+  #                          installed ids + /Applications/<name>.app probe.
+  #
+  # Aggregator-style (D-07 enumerate-all): never short-circuit; emit check/cross row
+  # per package; exit non-zero with failure count.
+  #
+  # silent: false (task-level) -- closes Gap 3 (root Taskfile.yml silent:true hides
+  # verify output through pipes / non-TTY captures); the task-level override restores
+  # stdout/stderr visibility for THIS task only without disturbing the root global.
+  #
+  # Aggregator: intentionally always-re-run (D-07). `status: [false]` satisfies
+  # LINT-03a structurally; `[false]` is the always-rerun shape.
   # ---------------------------------------------------------------------------
 
   # lint-allow: cmds-without-status
-  # verify is intentionally always-re-run (D-07 enumerate-all contract).
-  # The `status: [false]` block satisfies LINT-03a structurally (a `cmds:`
-  # block with no `status:` would be the gsd-install bug class). `[false]`
-  # is the always-rerun shape -- mirrors root Taskfile.yml's install task.
   verify:
-    desc: "Verify declared packages: every formula bin on PATH; every cask/mas .app in /Applications"
+    desc: "Verify declared packages: brew bundle check (Layer 1) + brew info artifact probe (Layer 2)"
+    silent: false
     deps: [":manifest:resolve"]
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
@@ -186,94 +194,181 @@ tasks:
         msg: |
           composed Brewfile missing: {{.COMPOSED_BREWFILE}}
             run: task packages:compose first
+      - sh: command -v brew >/dev/null 2>&1
+        msg: "brew not on PATH -- run bootstrap.zsh first"
+      - sh: command -v jq >/dev/null 2>&1
+        msg: "jq not on PATH -- required for Layer 2 brew info JSON parsing"
     status: [false]
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
         failures=0
 
-        # ---- Formula loop (D-05: default + # verify: <bin> override) ----
-        # Anchored grep against the composed Brewfile: lines of the shape
-        #   brew '<name>'                  (bare; verify bin = name)
-        # OR
-        #   brew '<name>' # verify: <bin>  (override; verify bin = override)
-        # ggrep is required (no `awk` alternative chosen here so the
-        # `# verify:` extraction stays a single `awk -F` per matched line).
-        while IFS= read -r line; do
-          # Strip leading whitespace; extract the quoted formula name.
-          # The Plan 01 bundle authoring style uses single-quotes uniformly.
-          name=$(echo "$line" | ggrep -oE "^[[:space:]]*brew[[:space:]]+'[^']+'" | ggrep -oE "'[^']+'" | tr -d "'")
-          [[ -z "$name" ]] && continue
-          # Extract `# verify: <bin>` override if present.
-          override=$(echo "$line" | ggrep -oE "#[[:space:]]*verify:[[:space:]]*[^[:space:]]+" | awk '{print $3}')
-          bin="${override:-$name}"
-          if command -v "$bin" >/dev/null 2>&1; then
-            check "formula $name -> $bin"
-          else
-            cross "formula $name -> $bin NOT FOUND"
-            failures=$(( failures + 1 ))
-          fi
-        done < <(ggrep -E "^[[:space:]]*brew[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" || true)
+        # ---- Layer 1: brew bundle check (install-state gate) ----
+        # Reuses the EXACT same command as the install task's status block
+        # (D-09) so Layer 1 install-state semantics are identical: install
+        # and verify share the same gate. Continue to Layer 2 even on failure
+        # (enumerate-all; D-07 -- no short-circuit).
+        info "Layer 1: brew bundle check --no-upgrade"
+        if brew bundle check --no-upgrade --file="{{.COMPOSED_BREWFILE}}" >/dev/null 2>&1; then
+          check "Layer 1: all declared packages installed per brew bundle"
+        else
+          bundle_check_output=$(brew bundle check --no-upgrade --file="{{.COMPOSED_BREWFILE}}" 2>&1 || true)
+          cross "Layer 1: brew bundle check FAILED"
+          printf '%s\n' "$bundle_check_output" | sed 's/^/    /' >&2
+          failures=$(( failures + 1 ))
+        fi
 
-        # ---- Cask loop (D-04: mandatory # verify: <App>) ----
-        # Lines of the shape:
-        #   cask '<name>' # verify: <App>
-        # If a cask line is missing `# verify:`, treat as a hard failure
-        # (defense-in-depth for the LINT-09 invariant: a P5 Wave 5 deferral
-        # cannot silently break verify on Wave 3).
+        # ---- Layer 2 prelude: bulk brew info call (artifact-state gate) ----
+        # Single invocation for the full installed set (~200ms on local
+        # metadata). Hard-fail if brew info itself is broken -- cannot
+        # enumerate artifacts without a parseable JSON response.
+        info "Layer 2: bulk brew info (artifact-state gate)"
+        brew_info_json=$(brew info --installed --json=v2 2>/dev/null || true)
+        if ! echo "$brew_info_json" | jq -e '.casks' >/dev/null 2>&1; then
+          error "brew info --installed failed -- cannot enumerate installed artifacts"
+          exit 1
+        fi
+
+        # ---- Layer 2: cask artifact probe ----
+        # For each cask declared in the composed Brewfile (bare `cask '<name>'`
+        # lines, no # verify: suffix post-Gap-2 pivot):
+        #   - Look up the installed cask record from brew info JSON.
+        #   - Walk .artifacts[] for .app / .binary entries and assert on-disk
+        #     presence. Skip .pkg / .manpage / .uninstall / .zap / other
+        #     informational-only artifact kinds (not user-visible).
+        #   - A cask with empty or non-checkable .artifacts[] passes implicitly
+        #     (Layer 1 already confirmed Homebrew considers it installed).
         while IFS= read -r line; do
-          name=$(echo "$line" | ggrep -oE "^[[:space:]]*cask[[:space:]]+'[^']+'" | ggrep -oE "'[^']+'" | tr -d "'")
-          [[ -z "$name" ]] && continue
-          if ! echo "$line" | ggrep -qE "#[[:space:]]*verify:[[:space:]]*"; then
-            cross "cask $name line missing # verify: <App> comment"
+          cask_name=$(echo "$line" | ggrep -oE "^[[:space:]]*cask[[:space:]]+'[^']+'" | ggrep -oE "'[^']+'" | tr -d "'")
+          [[ -z "$cask_name" ]] && continue
+
+          cask_record=$(echo "$brew_info_json" | jq -c --arg t "$cask_name" '.casks[] | select(.token == $t)')
+          if [[ -z "$cask_record" ]]; then
+            cross "cask $cask_name: not installed per brew info (Layer 1 should have caught this)"
             failures=$(( failures + 1 ))
             continue
           fi
-          # Extract the verify target (everything after `# verify:`,
-          # trimmed). Use sed for a greedy match so multi-word App names
-          # (e.g., "Visual Studio Code") survive intact.
-          verify=$(echo "$line" | sed -E "s/.*#[[:space:]]*verify:[[:space:]]*//" | sed -E "s/[[:space:]]*$//")
-          # Dispatch: `bin:<name>` -> command -v <name> (binary-only cask,
-          # e.g. 1password-cli ships /opt/homebrew/bin/op with no .app).
-          # Bare `<App>` -> test -d /Applications/<App>.app (default).
-          if [[ "$verify" == bin:* ]]; then
-            bin="${verify#bin:}"
-            if command -v "$bin" >/dev/null 2>&1; then
-              check "cask $name -> $bin"
-            else
-              cross "cask $name -> $bin NOT FOUND on PATH"
-              failures=$(( failures + 1 ))
-            fi
-          elif test -d "/Applications/${verify}.app"; then
-            check "cask $name -> /Applications/${verify}.app"
-          else
-            cross "cask $name -> /Applications/${verify}.app NOT FOUND"
-            failures=$(( failures + 1 ))
+
+          # Walk artifacts. Track whether any checkable artifact was found.
+          checkable=0
+          any_miss=0
+          while IFS= read -r artifact_json; do
+            [[ -z "$artifact_json" ]] && continue
+            kind=$(echo "$artifact_json" | jq -r 'keys[0]')
+            case "$kind" in
+              app)
+                checkable=1
+                target=$(echo "$artifact_json" | jq -r '.app[0]')
+                if [[ -d "/Applications/${target}" ]]; then
+                  check "cask $cask_name -> /Applications/${target}"
+                else
+                  cross "cask $cask_name -> /Applications/${target} NOT FOUND"
+                  any_miss=$(( any_miss + 1 ))
+                fi
+                ;;
+              binary)
+                checkable=1
+                bin_path=$(echo "$artifact_json" | jq -r '.binary[0]')
+                bin_name=$(basename "$bin_path")
+                if command -v "$bin_name" >/dev/null 2>&1; then
+                  check "cask $cask_name -> $bin_name"
+                else
+                  cross "cask $cask_name -> $bin_name NOT FOUND on PATH"
+                  any_miss=$(( any_miss + 1 ))
+                fi
+                ;;
+              *)
+                # pkg, manpage, uninstall, zap, installer, service, etc.
+                # Informational artifacts -- not user-visible; skip.
+                ;;
+            esac
+          done < <(echo "$cask_record" | jq -c '.artifacts[]?' 2>/dev/null || true)
+
+          if [[ "$any_miss" -gt 0 ]]; then
+            failures=$(( failures + any_miss ))
+          elif [[ "$checkable" -eq 0 ]]; then
+            check "cask $cask_name: installed (no checkable artifacts; Layer 1 pass)"
           fi
         done < <(ggrep -E "^[[:space:]]*cask[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" || true)
 
-        # ---- MAS loop (D-06: name doubles as verify target) ----
-        # Lines of the shape:
-        #   mas '<name>', id: <id>
-        # Verify target = `<name>` (the name doubles as the App-bundle name
-        # under /Applications/, e.g. /Applications/Magnet.app).
+        # ---- Layer 2: formula linked_keg probe ----
+        # For each formula declared in the composed Brewfile:
+        #   - Look up the installed formula record from brew info JSON.
+        #   - Assert .installed[0].linked_keg is non-null (formula is built
+        #     and linked, not just downloaded).
+        #   - D-05 escape hatch preserved: if the bundle line carries a
+        #     `# verify: <bin>` comment, also run `command -v <bin>` as
+        #     defense-in-depth (no bundle lines carry overrides post-Gap-2
+        #     pivot, but the parsing pathway is preserved for schema defense).
         while IFS= read -r line; do
-          name=$(echo "$line" | ggrep -oE "^[[:space:]]*mas[[:space:]]+'[^']+'" | ggrep -oE "'[^']+'" | tr -d "'")
-          [[ -z "$name" ]] && continue
-          if test -d "/Applications/${name}.app"; then
-            check "mas $name -> /Applications/${name}.app"
-          else
-            cross "mas $name -> /Applications/${name}.app NOT FOUND"
-            failures=$(( failures + 1 ))
-          fi
-        done < <(ggrep -E "^[[:space:]]*mas[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" || true)
+          formula_name=$(echo "$line" | ggrep -oE "^[[:space:]]*brew[[:space:]]+'[^']+'" | ggrep -oE "'[^']+'" | tr -d "'")
+          [[ -z "$formula_name" ]] && continue
 
-        # ---- Summary (D-07: enumerate-all + count-failures) ----
+          # D-05 defense-in-depth: extract # verify: <bin> override if present.
+          bin_override=$(echo "$line" | ggrep -oE "#[[:space:]]*verify:[[:space:]]*[^[:space:]]+" | awk '{print $3}' || true)
+
+          formula_record=$(echo "$brew_info_json" | jq -c --arg n "$formula_name" '.formulae[] | select(.name == $n)')
+          if [[ -z "$formula_record" ]]; then
+            cross "formula $formula_name: not installed per brew info"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+
+          linked_keg=$(echo "$formula_record" | jq -r '.installed[0].linked_keg // empty')
+          if [[ -z "$linked_keg" ]]; then
+            cross "formula $formula_name: installed but not linked (linked_keg=null)"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+
+          if [[ -n "$bin_override" ]]; then
+            if command -v "$bin_override" >/dev/null 2>&1; then
+              check "formula $formula_name -> linked_keg=$(basename "$linked_keg") + $bin_override"
+            else
+              cross "formula $formula_name -> $bin_override NOT FOUND on PATH (D-05 override)"
+              failures=$(( failures + 1 ))
+            fi
+          else
+            check "formula $formula_name -> linked_keg=$(basename "$linked_keg")"
+          fi
+        done < <(ggrep -E "^[[:space:]]*brew[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" || true)
+
+        # ---- MAS layer (D-06: name doubles as verify target) ----
+        # No brew-info equivalent for App Store apps. Use:
+        #   mas list | awk '{print $1}' -> installed ids
+        #   /Applications/<name>.app probe -> artifact presence (D-06)
+        # Skip gracefully if mas is not on PATH (mas is in core.rb so should
+        # always be installed on a fully-converged machine).
+        if ! command -v mas >/dev/null 2>&1; then
+          warn "MAS layer skipped: mas not on PATH"
+        else
+          mas_installed=$(mas list 2>/dev/null | awk '{print $1}' | sort -u || true)
+          while IFS= read -r line; do
+            mas_name=$(echo "$line" | ggrep -oE "^[[:space:]]*mas[[:space:]]+'[^']+'" | ggrep -oE "'[^']+'" | tr -d "'")
+            [[ -z "$mas_name" ]] && continue
+            mas_id=$(echo "$line" | ggrep -oE "id:[[:space:]]*[0-9]+" | awk '{print $2}')
+            [[ -z "$mas_id" ]] && continue
+            if ! echo "$mas_installed" | ggrep -qx "$mas_id"; then
+              cross "mas $mas_name (id $mas_id): not installed per mas list"
+              failures=$(( failures + 1 ))
+              continue
+            fi
+            if [[ -d "/Applications/${mas_name}.app" ]]; then
+              check "mas $mas_name -> /Applications/${mas_name}.app"
+            else
+              cross "mas $mas_name -> /Applications/${mas_name}.app NOT FOUND"
+              failures=$(( failures + 1 ))
+            fi
+          done < <(ggrep -E "^[[:space:]]*mas[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" || true)
+        fi
+
+        # ---- Summary (D-07: enumerate-all + count-failures; D-10: hard-fail) ----
         if [[ "$failures" -gt 0 ]]; then
           cross "${failures} package(s) failed verify"
           exit "$failures"
         fi
-        success "all declared packages verified"
+        success "all declared packages verified (Layer 1 + Layer 2 + MAS)"
         exit 0
 
   # ---------------------------------------------------------------------------
