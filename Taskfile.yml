@@ -105,7 +105,7 @@ includes:
       XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
       XDG_CACHE_HOME: '{{.XDG_CACHE_HOME}}'
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
-  claude:   ./taskfiles/claude-stub.yml     # P7 wires real bodies
+  claude:   ./taskfiles/claude.yml           # P7 real bodies
   macos:    ./taskfiles/macos.yml           # P6 ships real bodies
 
 # Note: task install IS task update -- D-10 dropped the update: block.
