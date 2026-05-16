@@ -537,4 +537,14 @@ tasks:
             done
             exit 0
             ;;
+          *)
+            # WR-03: defensive catch-all. The three valid modes (detect,
+            # warn, remove) are the only values $mode can take given the
+            # initialization at line 408 + the two case mutators above; this
+            # branch surfaces a future flag-parsing bug or refactor mistake
+            # as a hard error instead of a silent no-op (exit 0 with no
+            # orphan action taken).
+            error "links:reconcile: internal bug -- unknown mode '$mode'"
+            exit 1
+            ;;
         esac
