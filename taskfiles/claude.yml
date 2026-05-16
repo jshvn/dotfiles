@@ -1,24 +1,63 @@
 version: '3'
 
 # =============================================================================
-# Claude Code Plugin Management
-# =============================================================================
+# taskfiles/claude.yml -- Phase 7 Claude Code plugin management.
 #
-# Centralizes install/update/validate for Claude Code plugins, marketplaces,
-# and the get-shit-done-cc global installer. All operations are idempotent
-# and safe to run on a fresh box (`claude plugin update` would otherwise
-# error on uninstalled plugins).
+# Role:
+#   Install, update, and validate Claude Code marketplaces, plugins, and the
+#   get-shit-done-cc (GSD) global installer. Replaces claude-stub.yml in the
+#   root Taskfile.yml `includes.claude:` slot.
 #
-# Config symlinks for ~/.config/claude/{CLAUDE.md,settings.json,agents,
-# commands,hooks,skills} are owned by taskfiles/links.yml and not touched here.
+# Feature gate:
+#   The `install` aggregator is gated on `features.claude-marketplace` in
+#   resolved.json (kebab-case index form required -- CLAUDE.md / CF-02).
+#   Machines with `claude-marketplace = false` (e.g., server-1.toml) skip
+#   `claude:install` at the feature-gate level; `task install` still calls
+#   `claude:install` but the `{{if}}` guard no-ops the body.
+#
+# Sentinel idempotency (D-09 / D-11 / CLDE-03):
+#   `claude:gsd` is gated by `test -f {{.GSD_SENTINEL}}` where
+#   GSD_SENTINEL = `{{.XDG_STATE_HOME}}/dotfiles/gsd-installed`.
+#   `npx -y get-shit-done-cc@latest --claude --global` runs ONLY when the
+#   sentinel is absent. After successful installation, the sentinel is touched.
+#   To force a re-install, delete the sentinel or run `task claude:update`.
+#
+# Two-condition marketplace status (D-12 / CLDE-04):
+#   `claude:marketplace` is a no-op when BOTH conditions hold:
+#     (1) every declared marketplace is registered (jq probe)
+#     (2) every declared plugin is installed (jq probe)
+#   Each status line is a literal string rendered by go-template at build time.
+#   No shell-variable references anywhere in the status: block (LINT-02 / W-02).
+#
+# Dynamic sh: var scoping (W-01):
+#   MARKETPLACES_JSON and PLUGINS_JSON are task-scoped to `marketplace:` only.
+#   File-level vars: contains only static/non-sh: entries (CLAUDE_MARKETPLACES,
+#   CLAUDE_PLUGINS, GSD_SENTINEL). This prevents `claude plugin ...` subprocess
+#   spawns during `task --list`, `task lint`, `task test`, and any other task
+#   invocation that is not `task claude:marketplace` itself.
+#
+# LINT-02 compliance:
+#   Status blocks use `{{.X}}` template vars ONLY -- never shell vars.
+#   The marketplace status: block uses literal names with zero shell-var
+#   occurrences (verified by `task lint:taskfile` at CI time).
+#
+# LINT-03a compliance:
+#   Aggregator tasks that cannot be all-task-delegations use `status: [false]`
+#   (always-rerun shape). Sub-tasks with real idempotency use `status:` blocks.
+#
+# Config symlinks (CLAUDE.md, settings.json, hooks/, agents/, commands/, skills/)
+# are owned by taskfiles/links.yml -- not touched here.
 # =============================================================================
 
 includes:
   _: ./helpers.yml
 
+# =============================================================================
+# File-level vars (W-01: static-only; no sh: dynamic queries here)
+# =============================================================================
+
 vars:
   # Marketplaces to keep registered. One per line: `<name> <source>`.
-  # Source can be a URL, GitHub repo (owner/repo), or filesystem path.
   CLAUDE_MARKETPLACES: |
     ecc https://github.com/affaan-m/everything-claude-code.git
 
@@ -26,120 +65,66 @@ vars:
   CLAUDE_PLUGINS: |
     ecc@ecc
 
-tasks:
-  # ===========================================================================
-  # Public tasks
-  # ===========================================================================
+  # Presence sentinel for get-shit-done-cc (D-11). Touched after successful
+  # `npx -y get-shit-done-cc@latest --claude --global`. Delete to force re-run.
+  GSD_SENTINEL: '{{.XDG_STATE_HOME}}/dotfiles/gsd-installed'
 
+# =============================================================================
+# Tasks
+# =============================================================================
+
+tasks:
+
+  # ---------------------------------------------------------------------------
+  # install -- public aggregator. Feature-gated on claude-marketplace.
+  # LINT-03a: status: [false] (always-rerun aggregator; idempotency lives in
+  # sub-tasks). The `{{if}}` gate makes this a no-op on feature-off machines.
+  # lint-allow: cmds-without-status
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
   install:
     desc: "Install Claude Code marketplaces, plugins, and get-shit-done-cc"
+    deps: [manifest:resolve]
+    status: [false]
     cmds:
+      - '{{if index .MANIFEST.features "claude-marketplace"}}'
       - task: ensure-cli
-      - task: marketplaces-add
-      - task: plugins-install
-      - task: gsd-install
+      - task: marketplace
+      - task: gsd
       - |
         {{.DOTFILES_MESSAGES}}
         success "Claude plugins installed"
+      - '{{end}}'
 
-  update:
-    desc: "Update Claude Code marketplaces and plugins"
-    cmds:
-      - task: ensure-cli
-      - task: marketplaces-update
-      - task: plugins-install
-      - task: plugins-update
-      - |
-        {{.DOTFILES_MESSAGES}}
-        success "Claude plugins updated"
+  # ---------------------------------------------------------------------------
+  # marketplace -- internal. Registers marketplaces and installs plugins.
+  # Two-condition status: both marketplace list AND plugin list must be
+  # converged for the task to no-op (D-12 / CLDE-04).
+  #
+  # W-01: MARKETPLACES_JSON and PLUGINS_JSON are task-scoped here -- they are
+  # evaluated only when this task is actually invoked (not at `task --list`
+  # or `task lint` time).
+  #
+  # W-02: status: block uses go-template-rendered literal names only.
+  # The status lines are fully interpolated at build time -- no shell vars.
+  # ---------------------------------------------------------------------------
 
-  validate:
-    desc: "Validate Claude Code install state"
+  marketplace:
+    internal: true
+    desc: "Register marketplaces + install plugins"
+    deps: [ensure-cli, manifest:resolve]
     vars:
+      # W-01: task-scoped sh: vars -- only evaluated when this task runs.
       MARKETPLACES_JSON:
         sh: claude plugin marketplace list --json 2>/dev/null || echo '[]'
       PLUGINS_JSON:
         sh: claude plugin list --json 2>/dev/null || echo '[]'
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        {{.BREW_SHELLENV}}
-        if command -v claude >/dev/null 2>&1; then
-          check "claude CLI installed"
-        else
-          cross "claude CLI missing (brew install claude)"
-          exit 0
-        fi
-        if command -v jq >/dev/null 2>&1; then
-          check "jq installed"
-        else
-          cross "jq missing (brew install jq)"
-        fi
-      - for:
-          var: CLAUDE_MARKETPLACES
-          split: "\n"
-          as: ENTRY
-        cmd: |
-          [[ -z "{{.ENTRY}}" ]] && exit 0
-          read -r name _source <<< "{{.ENTRY}}"
-          {{.DOTFILES_MESSAGES}}
-          if echo '{{.MARKETPLACES_JSON}}' | jq -e --arg n "$name" '.[] | select(.name == $n)' >/dev/null; then
-            check "marketplace $name registered"
-          else
-            cross "marketplace $name missing"
-          fi
-      - for:
-          var: CLAUDE_PLUGINS
-          split: "\n"
-          as: ID
-        cmd: |
-          [[ -z "{{.ID}}" ]] && exit 0
-          {{.DOTFILES_MESSAGES}}
-          if echo '{{.PLUGINS_JSON}}' | jq -e --arg i "{{.ID}}" '.[] | select(.id == $i)' >/dev/null; then
-            check "plugin {{.ID}} installed"
-          else
-            cross "plugin {{.ID}} missing"
-          fi
-
-  status:
-    desc: "Show installed Claude plugins and registered marketplaces"
-    cmds:
-      - |
-        {{.BREW_SHELLENV}}
-        if ! command -v claude >/dev/null 2>&1; then
-          echo "claude CLI not installed" >&2
-          exit 1
-        fi
-        claude plugin marketplace list
-        echo
-        claude plugin list
-
-  # ===========================================================================
-  # Internal helpers
-  # ===========================================================================
-
-  ensure-cli:
-    internal: true
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        {{.BREW_SHELLENV}}
-        missing=0
-        if ! command -v claude >/dev/null 2>&1; then
-          cross "claude CLI not found -- install via 'brew install claude'"
-          missing=1
-        fi
-        if ! command -v jq >/dev/null 2>&1; then
-          cross "jq not found -- install via 'brew install jq'"
-          missing=1
-        fi
-        [[ $missing -eq 0 ]]
-
-  marketplaces-add:
-    internal: true
-    vars:
-      MARKETPLACES_JSON:
-        sh: claude plugin marketplace list --json 2>/dev/null || echo '[]'
+    status:
+      # One line per CLAUDE_MARKETPLACES entry (literal name, no shell vars):
+      - jq -e '.[] | select(.name == "ecc")' <(claude plugin marketplace list --json 2>/dev/null || echo '[]') >/dev/null
+      # One line per CLAUDE_PLUGINS entry (literal name, no shell vars):
+      - jq -e '.[] | select(.name == "ecc@ecc")' <(claude plugin list --json 2>/dev/null || echo '[]') >/dev/null
     cmds:
       - for:
           var: CLAUDE_MARKETPLACES
@@ -149,29 +134,12 @@ tasks:
           [[ -z "{{.ENTRY}}" ]] && exit 0
           read -r name source <<< "{{.ENTRY}}"
           {{.DOTFILES_MESSAGES}}
-          {{.BREW_SHELLENV}}
           if echo '{{.MARKETPLACES_JSON}}' | jq -e --arg n "$name" '.[] | select(.name == $n)' >/dev/null; then
             check "marketplace $name already registered"
           else
             info "registering marketplace $name from $source"
             claude plugin marketplace add "$source"
           fi
-
-  marketplaces-update:
-    internal: true
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        {{.BREW_SHELLENV}}
-        info "updating all marketplaces"
-        claude plugin marketplace update
-
-  plugins-install:
-    internal: true
-    vars:
-      PLUGINS_JSON:
-        sh: claude plugin list --json 2>/dev/null || echo '[]'
-    cmds:
       - for:
           var: CLAUDE_PLUGINS
           split: "\n"
@@ -179,7 +147,6 @@ tasks:
         cmd: |
           [[ -z "{{.ID}}" ]] && exit 0
           {{.DOTFILES_MESSAGES}}
-          {{.BREW_SHELLENV}}
           if echo '{{.PLUGINS_JSON}}' | jq -e --arg i "{{.ID}}" '.[] | select(.id == $i)' >/dev/null; then
             check "plugin {{.ID}} already installed"
           else
@@ -187,12 +154,106 @@ tasks:
             claude plugin install "{{.ID}}"
           fi
 
-  plugins-update:
+  # ---------------------------------------------------------------------------
+  # gsd -- internal. Installs get-shit-done-cc via npx.
+  # Sentinel-idempotent: runs only when GSD_SENTINEL is absent (D-11 / CLDE-03).
+  # T-07-12 mitigation: touch AFTER npx; bash errexit propagates npx failure.
+  # ---------------------------------------------------------------------------
+
+  gsd:
     internal: true
-    vars:
-      PLUGINS_JSON:
-        sh: claude plugin list --json 2>/dev/null || echo '[]'
+    desc: "Install get-shit-done-cc (presence-sentinel idempotent)"
+    deps: [ensure-cli]
+    status:
+      - test -f {{.GSD_SENTINEL}}
     cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "installing get-shit-done-cc (global)"
+        npx -y get-shit-done-cc@latest --claude --global
+        mkdir -p "$(dirname {{.GSD_SENTINEL}})"
+        touch {{.GSD_SENTINEL}}
+        success "GSD installed; sentinel touched at {{.GSD_SENTINEL}}"
+
+  # ---------------------------------------------------------------------------
+  # update -- public aggregator. Explicit refresh path (D-10 / D-14).
+  # NOT in `task install`'s call graph. Run when you want fresh artifacts.
+  # LINT-03a: status: [false] (explicit refresh always runs).
+  # lint-allow: cmds-without-status
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  update:
+    desc: "Refresh marketplaces + plugins + GSD (explicit; not in task install)"
+    deps: [ensure-cli, manifest:resolve]
+    status: [false]
+    cmds:
+      - claude plugin marketplace update
+      - for:
+          var: CLAUDE_PLUGINS
+          split: "\n"
+          as: ID
+        cmd: |
+          [[ -z "{{.ID}}" ]] && exit 0
+          claude plugin update "{{.ID}}"
+      - rm -f {{.GSD_SENTINEL}}
+      - task: gsd
+
+  # ---------------------------------------------------------------------------
+  # status -- public diagnostic. Always re-runs; no idempotency semantics.
+  # LINT-03a: status: [false] (diagnostic always-rerun).
+  # lint-allow: cmds-without-status
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  status:
+    desc: "Show installed marketplaces + plugins (diagnostic)"
+    status: [false]
+    cmds:
+      - claude plugin marketplace list
+      - echo
+      - claude plugin list
+
+  # ---------------------------------------------------------------------------
+  # validate -- public diagnostic. Enumerates check/cross for all install
+  # state. Composed into root `task validate` in P8 (CUTV-01).
+  # LINT-03a: status: [false] (diagnostic always-rerun).
+  # lint-allow: cmds-without-status
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  validate:
+    desc: "Validate Claude install state (composed into root task validate in P8)"
+    deps: [manifest:resolve]
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        if command -v claude >/dev/null 2>&1; then
+          check "claude CLI installed"
+        else
+          cross "claude CLI missing -- run 'task packages:install' first"
+          exit 0
+        fi
+        if command -v jq >/dev/null 2>&1; then
+          check "jq installed"
+        else
+          cross "jq missing -- run 'task packages:install' first"
+        fi
+      - for:
+          var: CLAUDE_MARKETPLACES
+          split: "\n"
+          as: ENTRY
+        cmd: |
+          [[ -z "{{.ENTRY}}" ]] && exit 0
+          read -r name _source <<< "{{.ENTRY}}"
+          {{.DOTFILES_MESSAGES}}
+          marketplaces_json=$(claude plugin marketplace list --json 2>/dev/null || echo '[]')
+          if echo "$marketplaces_json" | jq -e --arg n "$name" '.[] | select(.name == $n)' >/dev/null; then
+            check "marketplace $name registered"
+          else
+            cross "marketplace $name missing -- run 'task claude:install'"
+          fi
       - for:
           var: CLAUDE_PLUGINS
           split: "\n"
@@ -200,20 +261,40 @@ tasks:
         cmd: |
           [[ -z "{{.ID}}" ]] && exit 0
           {{.DOTFILES_MESSAGES}}
-          {{.BREW_SHELLENV}}
-          if echo '{{.PLUGINS_JSON}}' | jq -e --arg i "{{.ID}}" '.[] | select(.id == $i)' >/dev/null; then
-            info "updating plugin {{.ID}}"
-            claude plugin update "{{.ID}}"
+          plugins_json=$(claude plugin list --json 2>/dev/null || echo '[]')
+          if echo "$plugins_json" | jq -e --arg i "{{.ID}}" '.[] | select(.id == $i)' >/dev/null; then
+            check "plugin {{.ID}} installed"
           else
-            warn "plugin {{.ID}} not installed -- skipping update"
+            cross "plugin {{.ID}} missing -- run 'task claude:install'"
           fi
+      - |
+        {{.DOTFILES_MESSAGES}}
+        if test -f {{.GSD_SENTINEL}}; then
+          check "GSD installed (sentinel present at {{.GSD_SENTINEL}})"
+        else
+          cross "GSD missing -- run 'task claude:install'"
+        fi
 
-  gsd-install:
-    desc: "Install/update get-shit-done-cc global"
+  # ---------------------------------------------------------------------------
+  # ensure-cli -- internal gate. Hard-fails when claude or jq is absent.
+  # T-07-15 mitigation: explicit [[ $missing -eq 0 ]] as final expression so
+  # the task exits non-zero regardless of shell flags. Internal + deps: caller
+  # abort is guaranteed.
+  # ---------------------------------------------------------------------------
+
+  ensure-cli:
     internal: true
+    desc: "Hard-fail if claude or jq missing"
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
-        {{.BREW_SHELLENV}}
-        info "installing get-shit-done-cc (global)"
-        npx -y get-shit-done-cc@latest --claude --global
+        missing=0
+        if ! command -v claude >/dev/null 2>&1; then
+          cross "claude CLI not found -- run 'task packages:install' first"
+          missing=1
+        fi
+        if ! command -v jq >/dev/null 2>&1; then
+          cross "jq not found -- run 'task packages:install' first"
+          missing=1
+        fi
+        [[ $missing -eq 0 ]]
