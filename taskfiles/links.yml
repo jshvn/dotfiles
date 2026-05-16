@@ -239,6 +239,12 @@ tasks:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/configs/eza/theme.yaml", TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml" }
     status:
+      # CR-04: ghostty MUST appear in this status block. Without it, on a
+      # ghostty=true machine where the ghostty link is broken but the
+      # always-on configs are healthy, status returns 0 and go-task skips
+      # the entire cmds block -- including `task: configs:ghostty`. The
+      # gated entry mirrors the `claude:` pattern at lines 204-216.
+      - '{{if not (index .MANIFEST.features "ghostty")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/ghostty/config"{{end}}'
       - test -L "{{.XDG_CONFIG_HOME}}/glow/glow.yml"
       - test -L "{{.XDG_CONFIG_HOME}}/glow/glow_style.json"
       - test -L "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"
