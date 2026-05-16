@@ -139,34 +139,36 @@ tasks:
     desc: "Validate full installation state (all components; run-all-aggregate)"
     status: [false]
     deps: [manifest:resolve]
-    # ignore_error mechanism: per-entry (go-task 3.50 confirmed supports it
-    # via /tmp/probe.yml on 2026-05-16; closes 08-RESEARCH.md A1).
+    # WR-04: single-pass design. Each per-component validate runs once,
+    # output teed via `tee` to terminal + per-component cache file, exit
+    # code captured via $PIPESTATUS into a per-component shell variable
+    # (rc_manifest, rc_identity, ...). The summary block reads back the
+    # cache file (sentinel detection) and the exit-code variable to render
+    # one row per component. Replaces the prior two-phase design where
+    # each validate ran TWICE: once via `task: <component>:validate` with
+    # ignore_error: true for visible output, once via `$(task ...)` for
+    # capture. Eliminates the implicit "validates are pure read-only"
+    # architectural assumption.
+    #
     # D-04 run-all-aggregate: every component runs regardless of prior
-    # failures. D-05: pure go-task -- ignore_error: true on each task:
-    # entry (Pitfall 4: must be per-entry, never on the aggregator).
-    # Order: manifest first (keystone), remaining alphabetical
+    # failures. Order: manifest first (keystone), remaining alphabetical
     # (identity, links, macos, packages, claude) per 08-CONTEXT.md
     # Claude's Discretion.
     cmds:
-      - task: manifest:validate
-        ignore_error: true
-      - task: identity:validate
-        ignore_error: true
-      - task: links:validate
-        ignore_error: true
-      - task: macos:validate
-        ignore_error: true
-      - task: packages:validate
-        ignore_error: true
-      - task: claude:validate
-        ignore_error: true
       - |
-        # Summary: re-invoke each per-component validate to capture exit
-        # code + stdout independently. Per-component validates are
-        # idempotent read-only checks (Pitfall 5: double-run cost is
-        # negligible, milliseconds per component). D-06 sentinel
-        # short-circuits to an n/a row (no failures increment). Final
-        # exit failures bubbles the aggregate exit code.
+        # WR-04: single-pass design. Each per-component validate runs ONCE;
+        # stdout/stderr is teed to the terminal (visible to the operator)
+        # AND captured to a tempfile so the summary block can detect the
+        # `feature disabled -- skipped` sentinel and render `n/a` rows. The
+        # previous two-phase design invoked each validate twice (once via
+        # `task:` for visible output, once via `$(...)` for capture) on the
+        # assumption that validates are pure read-only -- an unenforced
+        # architectural property. Single-pass eliminates that footgun.
+        #
+        # Order: manifest first (keystone), remaining alphabetical
+        # (identity, links, macos, packages, claude) per 08-CONTEXT.md
+        # Claude's Discretion. D-04 run-all-aggregate: every component
+        # runs regardless of prior failures.
         #
         # Source messages.zsh via TASKFILE_DIR (NOT DOTFILES_MESSAGES):
         # root DOTFILEDIR var gets polluted to dirname(TASKFILE_DIR)
@@ -180,14 +182,24 @@ tasks:
         # per-component validate exit code into $rc and decides how to
         # render that row. With root-level `errexit` (Taskfile.yml line
         # 31) active, a non-zero exit from `task <component>:validate`
-        # inside `$(...)` would abort the loop before $rc is captured.
+        # would abort the loop before $rc is captured.
         set +e +o pipefail
         failures=0
+        # Per-component output cache: tempfile per component, cleaned on
+        # exit. Using a directory is simpler than tracking N tempfiles and
+        # `trap` ensures cleanup even if a validate explodes catastrophically.
+        cache_dir=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-validate-XXXXXX")
+        trap 'rm -rf "$cache_dir"' EXIT
+        for component in manifest identity links macos packages claude; do
+          # `tee` writes the validate output to terminal AND tempfile in
+          # one pass. PIPESTATUS[0] is the `task` exit code, not tee's.
+          task "${component}:validate" 2>&1 | tee "${cache_dir}/${component}"
+          eval "rc_${component}=\${PIPESTATUS[0]}"
+        done
         header "Validation Summary"
         for component in manifest identity links macos packages claude; do
-          output=$(task "${component}:validate" 2>&1)
-          rc=$?
-          if echo "$output" | grep -q "feature disabled -- skipped"; then
+          eval "rc=\$rc_${component}"
+          if grep -q "feature disabled -- skipped" "${cache_dir}/${component}"; then
             info "n/a   ${component}"
           elif [ "$rc" -eq 0 ]; then
             check "${component}"
