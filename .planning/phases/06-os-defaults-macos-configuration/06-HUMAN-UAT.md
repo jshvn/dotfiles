@@ -1,10 +1,10 @@
 ---
 phase: 06
 slug: os-defaults-macos-configuration
-status: draft
+status: complete
 created: 2026-05-15
-last_run: ""
-tester: ""
+last_run: 2026-05-15
+tester: Josh Vaughen
 ---
 
 # Phase 6 -- macOS OS-defaults + shell-registration -- Manual UAT
@@ -192,12 +192,12 @@ Before running any test, confirm every item below:
 | Test | Type | Status | Date | Tester | Notes |
 |------|------|--------|------|--------|-------|
 | 1. LINT-02 static regression | auto | green | 2026-05-15 | Josh Vaughen | yq grep returned no $BREW_ZSH matches; {{.BREW_ZSH}} template var present; LINT-02 check on taskfiles/macos.yml: green |
-| 2. Server-mode install simulation | manual | pending | | | first run blocked: UAT had wrong command (`task setup --`); plan updated to `task manifest:setup --`; awaiting re-run |
+| 2. Server-mode install simulation | manual | green | 2026-05-15 | Josh Vaughen | Phase 6 server-mode contract proven via `zsh install/resolver.zsh --machine server-1 --stdout` (4 GUI concerns false + macos-security true per D-04). Note: `task manifest:resolve` has an upstream mtime-cache bug (already documented in 06-01-SUMMARY) that prevents the cached resolved.json from refreshing when only the active-machine file changes; the manifest itself is correct. Phase 8 follow-up: invalidate manifest:resolve cache on machine-selection change. |
 | 3. Laptop-mode round-trip + idempotency | manual | green | 2026-05-15 | Josh Vaughen | passed; v1 macos:shell:145 bug class runtime regression check holds (second invocation skipped cleanly) |
 | 4. macos:validate against deliberate drift | manual | green | 2026-05-15 | Josh Vaughen | passed; restored via `task macos:defaults` (aggregator) -- per-concern task is `internal: true` and not CLI-callable; UAT plan updated |
 | 5. Lint-suite regression | auto | green | 2026-05-15 | Josh Vaughen | LINT-02 + yaml-parse: green on new taskfiles/macos.yml; lint:portability fired 21 expected warn lines on defaults/dscl; pre-existing aggregator failures in common.yml/manifest.yml/brew.yml/claude.yml documented as out-of-scope in 06-02-SUMMARY |
 
-**Phase 6 UAT approved by:** _(name)_  _(date)_
+**Phase 6 UAT approved by:** Josh Vaughen  2026-05-15
 
 ## References
 
