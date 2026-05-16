@@ -27,9 +27,13 @@ one-password-ssh = false
 one-password-signing = false   # gates git commit signing via 1Password op-ssh-sign
 motd = true
 claude-marketplace = true
-macos-finder = false  # gates shell/aliases/finder.zsh
-ghostty = false       # gates shell/aliases/ghostty.zsh
-jgrid-net = false     # gates shell/aliases/jgrid.zsh
+macos-dock = false        # gates os/defaults/dock.zsh + macos:defaults:dock (P6)
+macos-finder = false      # gates shell/aliases/finder.zsh (P3) + os/defaults/finder.zsh (P6) -- D-01 same-flag-two-consumers
+macos-input = false       # gates os/defaults/input.zsh + macos:defaults:input (P6)
+macos-screenshots = false # gates os/defaults/screenshots.zsh + macos:defaults:screenshots (P6)
+macos-security = false    # gates os/defaults/security.zsh + macos:defaults:security (P6)
+ghostty = false           # gates shell/aliases/ghostty.zsh
+jgrid-net = false         # gates shell/aliases/jgrid.zsh
 
 [packages.brew]
 # Bundle names map to packages/<name>.rb (Phase 5).
