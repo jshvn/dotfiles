@@ -16,7 +16,7 @@ content="$(hook::extract '(.tool_input.content // "") + (.tool_input.new_string 
 hook::match_patterns "$content" 2 "BLOCKED: Potential secret detected" \
   'AKIA[0-9A-Z]{16}' \
   'gh[pousr]_[A-Za-z0-9_]{36,}' \
-  '(api[_-]?key|api[_-]?secret|access[_-]?token|auth[_-]?token|secret[_-]?key)\s*[:=]\s*["\x27][A-Za-z0-9+/=_-]{20,}["\x27]' \
+  $'(api[_-]?key|api[_-]?secret|access[_-]?token|auth[_-]?token|secret[_-]?key)\\s*[:=]\\s*["\'"][A-Za-z0-9+/=_-]{20,}["\']' \
   '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----' \
   '://[^:]+:[^@]{8,}@'
 

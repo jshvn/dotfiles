@@ -17,7 +17,7 @@
 #   cross "Item failed" (prints ✗ with message)
 
 # Prevent double-sourcing
-[[ -n "$DOTFILES_MESSAGES_LOADED" ]] && return 0
+[[ -n "${DOTFILES_MESSAGES_LOADED:-}" ]] && return 0
 DOTFILES_MESSAGES_LOADED=1
 
 # Color codes (ANSI for broad compatibility)
