@@ -198,6 +198,83 @@ tasks:
         done
         exit "$failures"
 
+  # ---------------------------------------------------------------------------
+  # cutover:ack (CUTV-03) -- per-machine cutover sentinel writer.
+  #
+  # Writes a single line "<machine-name> <ISO-8601-UTC-timestamp>" to
+  # $XDG_STATE_HOME/dotfiles/cutover-ack. The reader (install/cutover-gate.zsh
+  # cutover_gate_check, wired into install: preconditions below) checks this
+  # file before allowing `task install` to run on a fresh machine.
+  #
+  # Without this task, the v2-only branch cannot be installed on any fresh
+  # machine -- task install hard-fails on the cutover-gate precondition.
+  # Shipping cutover:ack unblocks the per-machine cutover runbook (P6 docs).
+  #
+  # CRITICAL (Pitfall 7 chicken-and-egg avoidance): this task MUST NOT have
+  # `cutover_gate_check` in its preconditions. The install: task has that
+  # precondition; cutover:ack runs BEFORE install to satisfy it. Adding the
+  # gate would create a circular dep: cannot run install without ack, cannot
+  # run ack without install.
+  #
+  # Security:
+  #   - Machine-name input passed via env (CLI_ARGS_ENV) per Pattern 6 to
+  #     prevent apostrophe/metacharacter injection from user input
+  #     templated into shell-quoted text (mirrors manifest:setup line 118-119)
+  #   - Regex validation `^[a-z0-9_][a-z0-9_-]*$` (matches manifest:setup line
+  #     129; allows underscore-prefix for fixture machines)
+  #   - Active-machine match enforcement: the sentinel can only be written
+  #     for the machine the user actually selected via `task setup`
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  cutover:ack:
+    desc: "Acknowledge per-machine cutover to v2: task cutover:ack -- <machine-name>"
+    requires:
+      vars: [CLI_ARGS]
+    # Pattern 6: pass CLI_ARGS via env so apostrophes / shell metacharacters
+    # in user input cannot break the rendered shell parse (proven idiom from
+    # taskfiles/manifest.yml setup: lines 118-119).
+    env:
+      CLI_ARGS_ENV: '{{.CLI_ARGS}}'
+    preconditions:
+      - sh: |
+          name="${CLI_ARGS_ENV}"
+          # Step 1: regex validation -- same regex as manifest:setup line 129;
+          # allows underscore-prefix for _addmachine-test fixtures.
+          [[ "$name" =~ ^[a-z0-9_][a-z0-9_-]*$ ]] || exit 1
+          # Step 2: active-machine match -- read state file (single line by
+          # contract) and trim only leading/trailing whitespace (NOT embedded;
+          # IN-02 fix from manifest.yml line 65-69). Mismatch is a hard fail.
+          machine_file="{{.XDG_STATE_HOME}}/dotfiles/machine"
+          test -f "$machine_file" || exit 1
+          active=$(head -n1 "$machine_file" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          [[ "$name" == "$active" ]] || exit 1
+        msg: |
+          cutover:ack requires the machine name to match the active machine.
+            - Name must match regex: ^[a-z0-9_][a-z0-9_-]*$
+            - Name must equal the contents of $XDG_STATE_HOME/dotfiles/machine
+          usage: task cutover:ack -- <machine-name>
+    status: [false]
+    cmds:
+      - mkdir -p "{{.XDG_STATE_HOME}}/dotfiles"
+      - |
+        # Source messages.zsh via TASKFILE_DIR (NOT DOTFILES_MESSAGES):
+        # root DOTFILEDIR var gets polluted to dirname(TASKFILE_DIR)
+        # after include-merge because some included taskfiles (lint.yml:59,
+        # links.yml:61) define DOTFILEDIR via sh-dirname of TASKFILE_DIR
+        # and that definition leaks back to root scope, stripping the
+        # worktree agent segment. TASKFILE_DIR is per-task and not subject
+        # to that pollution. Same pattern as validate: line 178 and
+        # install: line 213. Documented in 08-02-SUMMARY decisions.
+        source '{{.TASKFILE_DIR}}/install/messages.zsh'
+        # ISO-8601 UTC timestamp via `date -u` (built-in; portable).
+        ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+        # Write sentinel: single line "<name> <ts>" per the reader's
+        # `read -r ack_machine ack_ts < "$ack_file"` parser
+        # (install/cutover-gate.zsh line 50).
+        printf '%s %s\n' "${CLI_ARGS_ENV}" "$ts" > "{{.XDG_STATE_HOME}}/dotfiles/cutover-ack"
+        success "Machine ${CLI_ARGS_ENV} cut over at $ts. Update docs/CUTOVER.md table."
+
   # lint-allow: cmds-without-status
   install:
     desc: "Install dotfiles for active machine (canonical entry)"
@@ -222,11 +299,21 @@ tasks:
       - task: macos:defaults
       - task: macos:shell
       # VRFY-04 + D-10 + ROADMAP P5 success criterion #6:
-      # packages:verify is the FINAL task-call in the install pipeline.
+      # packages:verify is the LAST FATAL task-call in the install pipeline.
       # A missing bin or missing /Applications/<App>.app fails the entire
       # `task install` with exit 1 -- no `success "install complete"` line
       # is printed when verify trips.
       - task: packages:verify
+      # CUTV-08 / D-11: install-time orphan warning -- non-fatal.
+      # links:reconcile in --warn-only mode emits orphans via warn() to
+      # stderr and ALWAYS exits 0 (internal to the task body), so install
+      # exits 0 even when an orphan is detected. The standalone
+      # `task links:reconcile` (default mode) keeps the non-zero-exit-on-
+      # orphans contract for CI use; this entry only invokes warn-only.
+      # No `ignore_error: true` needed here -- the task's mode dispatch
+      # swallows the non-zero exit internally.
+      - task: links:reconcile
+        vars: { CLI_ARGS: "--warn-only" }
       - |
         {{.DOTFILES_MESSAGES}}
         success "install complete"
