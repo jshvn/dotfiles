@@ -123,7 +123,7 @@ Claude Code integration with bug fixes for known v1 issues.
 
 - [ ] **CLDE-01**: Global `CLAUDE.md`, `settings.json`, hooks, agents, commands, and skills installed via `taskfiles/claude.yml`
 - [ ] **CLDE-02**: All hooks ported and shellcheck-clean: `secret-scan.zsh`, `no-emojis.zsh`, `no-ai-comments.zsh`, `agent-transparency.zsh` (last one rewritten to remove `local` at script scope)
-- [ ] **CLDE-03**: GSD install task uses a version-pinned sentinel file as its `status:` check (no `npx` on every `task install`)
+- [ ] **CLDE-03**: GSD install task uses a presence sentinel file as its `status:` check — `npx` runs only when the sentinel is absent. An explicit `task claude:update` deletes the sentinel and re-runs `npx`.
 - [ ] **CLDE-04**: Marketplace install uses `claude plugin list` as its `status:` check
 
 ### Tool Configs
