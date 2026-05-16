@@ -54,9 +54,9 @@ Before running any test, confirm every item below:
    ```
 2. Switch active machine to `server-1`:
    ```bash
-   task setup -- server-1
+   task manifest:setup -- server-1
    ```
-   This runs the resolver against `manifests/machines/server-1.toml`; the four GUI concern feature flags inherit `false` from defaults; `macos-security = true` per Plan 01.
+   This runs the resolver against `manifests/machines/server-1.toml`; the four GUI concern feature flags inherit `false` from defaults; `macos-security = true` per Plan 01. (Note: `task --list` describes this as `task setup --`, but the actual task name is `manifest:setup` -- the root-level alias does not exist.)
 3. Verify the resolved feature gates:
    ```bash
    task manifest:resolve
@@ -92,7 +92,7 @@ Before running any test, confirm every item below:
 
 1. Switch back to the original dev machine:
    ```bash
-   task setup -- "$CURRENT_MACHINE"
+   task manifest:setup -- "$CURRENT_MACHINE"
    ```
 2. Run `task manifest:resolve` to restore the original `resolved.json`.
 3. (Optional, rarely needed) If the security apply set `guest-account=disabled` on a machine where it was previously enabled and the dev wants to revert: `sudo sysadminctl -guestAccount on`.
@@ -156,9 +156,9 @@ Before running any test, confirm every item below:
    Expected: `exit=1` (non-zero); the output contains a cross line of the shape `dock.orientation: expected 'bottom', got 'left'` (exact text format may vary; the key name + both values must appear).
 4. Restore the converged state:
    ```bash
-   task macos:defaults:dock
+   task macos:defaults
    ```
-   `apply_dock` writes orientation back to `bottom` + `killall Dock` to refresh.
+   `task macos:defaults:dock` is marked `internal: true` in `taskfiles/macos.yml` and is NOT CLI-callable. The aggregator `task macos:defaults` routes through the internal task and `apply_dock` writes orientation back to `bottom` + `killall Dock` to refresh.
 5. Re-validate:
    ```bash
    task macos:validate; echo "exit=$?"
@@ -167,7 +167,7 @@ Before running any test, confirm every item below:
 
 **Success criterion:** Step 3 produces exit-1 + the specific cross line for `dock.orientation`; Step 5 restores exit-0.
 
-**Rollback:** Step 4 is the rollback. If `task macos:defaults:dock` fails for any reason: manually run `defaults write com.apple.dock orientation -string "bottom" && killall Dock 2>/dev/null || true` and re-run `task macos:validate` to confirm.
+**Rollback:** Step 4 is the rollback. If `task macos:defaults` fails for any reason: manually run `defaults write com.apple.dock orientation -string "bottom" && killall Dock 2>/dev/null || true` and re-run `task macos:validate` to confirm.
 
 ## Test 5 -- Lint-suite regression on the new taskfile (OSCF-04 / LINT-02 / LINT-05 expected warnings)
 
@@ -192,9 +192,9 @@ Before running any test, confirm every item below:
 | Test | Type | Status | Date | Tester | Notes |
 |------|------|--------|------|--------|-------|
 | 1. LINT-02 static regression | auto | green | 2026-05-15 | Josh Vaughen | yq grep returned no $BREW_ZSH matches; {{.BREW_ZSH}} template var present; LINT-02 check on taskfiles/macos.yml: green |
-| 2. Server-mode install simulation | manual | pending | | | |
-| 3. Laptop-mode round-trip + idempotency | manual | pending | | | |
-| 4. macos:validate against deliberate drift | manual | pending | | | |
+| 2. Server-mode install simulation | manual | pending | | | first run blocked: UAT had wrong command (`task setup --`); plan updated to `task manifest:setup --`; awaiting re-run |
+| 3. Laptop-mode round-trip + idempotency | manual | green | 2026-05-15 | Josh Vaughen | passed; v1 macos:shell:145 bug class runtime regression check holds (second invocation skipped cleanly) |
+| 4. macos:validate against deliberate drift | manual | green | 2026-05-15 | Josh Vaughen | passed; restored via `task macos:defaults` (aggregator) -- per-concern task is `internal: true` and not CLI-callable; UAT plan updated |
 | 5. Lint-suite regression | auto | green | 2026-05-15 | Josh Vaughen | LINT-02 + yaml-parse: green on new taskfiles/macos.yml; lint:portability fired 21 expected warn lines on defaults/dscl; pre-existing aggregator failures in common.yml/manifest.yml/brew.yml/claude.yml documented as out-of-scope in 06-02-SUMMARY |
 
 **Phase 6 UAT approved by:** _(name)_  _(date)_
