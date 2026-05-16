@@ -1,0 +1,12 @@
+# condarc configuration file for conda
+# Environments go under XDG_DATA_HOME (persistent data)
+envs_dirs:
+  - ${XDG_DATA_HOME}/conda/envs
+
+# OPTIONAL: put downloaded package cache under XDG_CACHE_HOME
+# Comment this block out if you prefer pkgs in DATA instead.
+pkgs_dirs:
+  - ${XDG_CACHE_HOME}/conda/pkgs
+
+# turn off data collection
+anaconda_anon_usage: false
