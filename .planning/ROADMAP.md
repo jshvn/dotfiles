@@ -133,8 +133,8 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. A Mac server machine that declines GUI defaults (dock, finder, screenshots) installs cleanly with those tasks gated off; only `shell-registration.zsh` and `security.zsh` run
   5. `task validate` reads current `defaults` values for declared keys and asserts them against the in-script expected values for each enabled concern
 **Plans**: 4 plans
-  - [ ] 06-01-PLAN.md — Manifest schema: defaults.toml +4 macos-* keys + server-{1,2}.toml macos-security = true (OSCF-02)
-  - [ ] 06-02-PLAN.md — Five os/defaults/<concern>.zsh sourced scripts + os/shell-registration.zsh + os/README.md DOCS-02 (OSCF-01, OSCF-03, OSCF-04)
+  - [x] 06-01-PLAN.md — Manifest schema: defaults.toml +4 macos-* keys + server-{1,2}.toml macos-security = true (OSCF-02)
+  - [x] 06-02-PLAN.md — Five os/defaults/<concern>.zsh sourced scripts + os/shell-registration.zsh + os/README.md DOCS-02 (OSCF-01, OSCF-03, OSCF-04)
   - [ ] 06-03-PLAN.md — taskfiles/macos.yml real bodies + Taskfile.yml include flip + ROADMAP/REQUIREMENTS/docs/MANIFEST.md amends (OSCF-01..05; structural fix for v1 macos:shell:145 bug class)
   - [ ] 06-04-PLAN.md — 06-HUMAN-UAT.md manual UAT plan: 5 tests (LINT-02 static, server-mode install, laptop-mode round-trip, deliberate-drift validate, lint regression) (OSCF-03/04/05)
 
