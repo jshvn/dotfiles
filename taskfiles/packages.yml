@@ -162,10 +162,11 @@ tasks:
   # short-circuit). Aggregator-style: no status block -- always re-run.
   #
   # Verify rules:
-  #   brew '<name>'                  -> command -v <name>
-  #   brew '<name>' # verify: <bin>  -> command -v <bin>          (D-05)
-  #   cask '<name>' # verify: <App>  -> test -d /Applications/<App>.app  (D-04)
-  #   mas '<name>', id: <id>         -> test -d /Applications/<name>.app (D-06)
+  #   brew '<name>'                       -> command -v <name>
+  #   brew '<name>' # verify: <bin>       -> command -v <bin>          (D-05)
+  #   cask '<name>' # verify: <App>       -> test -d /Applications/<App>.app  (D-04)
+  #   cask '<name>' # verify: bin:<bin>   -> command -v <bin>          (gap-1; binary-only casks)
+  #   mas '<name>', id: <id>              -> test -d /Applications/<name>.app (D-06)
   # ---------------------------------------------------------------------------
 
   # lint-allow: cmds-without-status
@@ -228,11 +229,22 @@ tasks:
             failures=$(( failures + 1 ))
             continue
           fi
-          # Extract the verify App name (everything after `# verify:`,
+          # Extract the verify target (everything after `# verify:`,
           # trimmed). Use sed for a greedy match so multi-word App names
           # (e.g., "Visual Studio Code") survive intact.
           verify=$(echo "$line" | sed -E "s/.*#[[:space:]]*verify:[[:space:]]*//" | sed -E "s/[[:space:]]*$//")
-          if test -d "/Applications/${verify}.app"; then
+          # Dispatch: `bin:<name>` -> command -v <name> (binary-only cask,
+          # e.g. 1password-cli ships /opt/homebrew/bin/op with no .app).
+          # Bare `<App>` -> test -d /Applications/<App>.app (default).
+          if [[ "$verify" == bin:* ]]; then
+            bin="${verify#bin:}"
+            if command -v "$bin" >/dev/null 2>&1; then
+              check "cask $name -> $bin"
+            else
+              cross "cask $name -> $bin NOT FOUND on PATH"
+              failures=$(( failures + 1 ))
+            fi
+          elif test -d "/Applications/${verify}.app"; then
             check "cask $name -> /Applications/${verify}.app"
           else
             cross "cask $name -> /Applications/${verify}.app NOT FOUND"

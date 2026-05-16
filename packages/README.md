@@ -18,7 +18,8 @@ in scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
   search (jq, yq, ripgrep-substitutes via bat/eza/fd, grep, glow,
   highlight), system inspectors (htop, bottom, fastfetch, onefetch),
   network tools (cloudflared, doggo, whois, trippy), and the
-  1Password command-line tool as a formula-style entry (uniform verify).
+  1Password command-line tool as a binary-only cask
+  (`cask '1password-cli' # verify: bin:op` -- see Verify rules).
 - `gui.rb` -- laptop GUI baseline. Any machine with a display includes
   this (laptops add `"gui"` to `bundles`; servers omit it -- PKGS-05).
   Minimum set: 1Password + Ghostty. Other GUI apps (Slack, Discord, VS
@@ -69,6 +70,14 @@ in scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
   `# verify: <App>` comment (e.g.
   `cask 'ghostty' # verify: Ghostty` verifies
   `test -d /Applications/Ghostty.app`).
+- Cask (binary-only, gap-1): `command -v <bin>` from the
+  `# verify: bin:<bin>` comment. Used for casks that ship a CLI
+  binary instead of an `.app` bundle (e.g.
+  `cask '1password-cli' # verify: bin:op` verifies
+  `command -v op`, since Homebrew installs `op` to
+  `/opt/homebrew/bin/` with no `/Applications/.app` artifact). The
+  `bin:` prefix is the explicit opt-in -- bare `# verify: <App>`
+  still defaults to the `/Applications/<App>.app` check.
 - MAS: `test -d /Applications/<name>.app` where `<name>` is the `name`
   field of the `{ id, name }` object (D-06).
 

@@ -8,8 +8,9 @@
 #              `brew bundle install` against the composed Brewfile.
 #
 # Verify rules (consumed by `task packages:verify` in Plan 04):
-#   brew '<name>'                  -> command -v <name>     (default; D-05)
-#   brew '<name>' # verify: <bin>  -> command -v <bin>      (override; D-05)
+#   brew '<name>'                       -> command -v <name>     (default; D-05)
+#   brew '<name>' # verify: <bin>       -> command -v <bin>      (override; D-05)
+#   cask '<name>' # verify: bin:<bin>   -> command -v <bin>      (binary-only cask; gap-1 fix)
 #
 # Conventions:
 #   - Single-quote string-literal form.
@@ -23,10 +24,15 @@
 # Notable surgery vs v1 install/Brewfile.rb:
 #   - Drops the v1 zsh plugin manager line (Phase 3 swapped it for antidote).
 #   - Adds  `brew 'antidote'`    (the v2 plugin manager wired in Phase 3).
-#   - Adds  `brew '1password-cli' # verify: op` (CLI-only cask with no .app
-#                                  bundle; expressed formula-style so the
-#                                  verify rule stays uniform -- Claude's
-#                                  Discretion call in 05-CONTEXT.md).
+#   - Adds  `cask '1password-cli' # verify: bin:op` (binary-only cask:
+#                                  Homebrew lists this as a cask that ships
+#                                  the `op` binary to /opt/homebrew/bin --
+#                                  no /Applications/.app bundle. The
+#                                  `bin:` prefix on the verify comment
+#                                  tells packages:verify to dispatch
+#                                  `command -v op` instead of the default
+#                                  cask path `/Applications/op.app`. See
+#                                  packages/README.md "Verify rules".).
 #   - Adds  `# verify: <bin>` overrides on the multi-binary / renamed-binary
 #     formulas: git-delta -> delta, grep -> ggrep, openssh -> ssh,
 #     trippy -> trip, bottom -> btm, coreutils -> gsha256sum.
@@ -60,5 +66,5 @@ brew 'onefetch'
 brew 'bottom'              # verify: btm
 brew 'coreutils'           # verify: gsha256sum
 brew 'mas'
-brew '1password-cli'       # verify: op
 brew 'antidote'
+cask '1password-cli'       # verify: bin:op
