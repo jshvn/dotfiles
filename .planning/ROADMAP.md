@@ -150,7 +150,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Root `task test` aggregates `task manifest:test` (deep-merge fixtures from Phase 1) and `task test:hooks` so a single command runs all smoke tests; CI wires this in alongside `task lint`
   6. Every tool config (Ghostty, glow, trippy, tlrc, conda, eza, motd) is symlinked through `_:safe-link` from `configs/<tool>/` to its destination; `_:safe-link` verifies target type and refuses to clobber an incompatible target
   7. `_:check-link` enforces all three conditions: symlink exists, target resolves (non-broken), AND `readlink -f` equals the manifest-expected source path — mismatch fails the check (catches "symlink exists but points to stale path after refactor")
-**Plans**: TBD
+**Plans**: 6 plans
+  - [ ] 07-01-PLAN.md — Pre-Phase-7 cleanup: drop GSD-managed artifacts + .gitignore + REQUIREMENTS/ROADMAP wording amend (D-02, D-09)
+  - [ ] 07-02-PLAN.md — Harden _:safe-link (TOOL-03) + _:check-link strict mode (TOOL-04) + rewrite agent-transparency.zsh (CLDE-02)
+  - [ ] 07-03-PLAN.md — Real taskfiles/claude.yml (install/marketplace/gsd/update/status/validate/ensure-cli) + root include flip + claude/README.md (CLDE-01/03/04)
+  - [ ] 07-04-PLAN.md — install/test-hooks.zsh runner + taskfiles/test.yml + root `task test` aggregator (TEST-01, TEST-02)
+  - [ ] 07-05-PLAN.md — Port seven tool configs to configs/<tool>/ with per-tool READMEs + aggregate configs/README.md (TOOL-02)
+  - [ ] 07-06-PLAN.md — Extend taskfiles/links.yml with claude: + configs: sub-tasks; retrofit validate with SOURCE strict mode (CLDE-01, TOOL-01, TOOL-02, TOOL-04)
 
 ### Phase 8: Validation + Cutover Readiness
 **Goal**: A composed `task validate`, two-mode `task links:reconcile` (detect + cleanup), install-time orphan warning, and per-machine cutover gate with a documented fresh-machine verification procedure
