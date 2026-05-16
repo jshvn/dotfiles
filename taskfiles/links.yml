@@ -75,11 +75,13 @@ tasks:
 
   # lint-allow: cmds-without-status
   all:
-    desc: "Create all symlinks (P3+P4: shell + identity)"
+    desc: "Create all symlinks (P3+P4+P7: shell + identity + claude + configs)"
     cmds:
       - task: zsh
       - task: antidote
       - task: identity:install
+      - task: claude
+      - task: configs
 
   # ---------------------------------------------------------------------------
   # Shell startup files (SHEL-03) -- five files in zsh's documented order.
@@ -212,17 +214,65 @@ tasks:
 
   # lint-allow: cmds-without-status
   validate:
-    desc: "Validate all P3 symlinks"
+    desc: "Validate all P3+P4+P7 symlinks (strict-mode SOURCE check per TOOL-04)"
     cmds:
+      # --- zsh startup files (P3; retrofitted with SOURCE for strict mode) ---
       - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zshenv", NAME: "zshenv" }
+        vars: { TARGET: "{{.ZDOTDIR}}/.zshenv", NAME: "zshenv", SOURCE: "{{.DOTFILEDIR}}/shell/.zshenv" }
       - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zprofile", NAME: "zprofile" }
+        vars: { TARGET: "{{.ZDOTDIR}}/.zprofile", NAME: "zprofile", SOURCE: "{{.DOTFILEDIR}}/shell/.zprofile" }
       - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zshrc", NAME: "zshrc" }
+        vars: { TARGET: "{{.ZDOTDIR}}/.zshrc", NAME: "zshrc", SOURCE: "{{.DOTFILEDIR}}/shell/.zshrc" }
       - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zlogin", NAME: "zlogin" }
+        vars: { TARGET: "{{.ZDOTDIR}}/.zlogin", NAME: "zlogin", SOURCE: "{{.DOTFILEDIR}}/shell/.zlogin" }
       - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zlogout", NAME: "zlogout" }
+        vars: { TARGET: "{{.ZDOTDIR}}/.zlogout", NAME: "zlogout", SOURCE: "{{.DOTFILEDIR}}/shell/.zlogout" }
+      # --- antidote plugin manifest (P3; retrofitted with SOURCE) ---
       - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zsh_plugins.txt", NAME: "antidote plugin manifest" }
+        vars: { TARGET: "{{.ZDOTDIR}}/.zsh_plugins.txt", NAME: "antidote plugin manifest", SOURCE: "{{.DOTFILEDIR}}/configs/antidote/zsh_plugins.txt" }
+      # --- claude config tree (P7; gated on claude-marketplace) ---
+      - '{{if index .MANIFEST.features "claude-marketplace"}}'
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md", NAME: "claude/CLAUDE.md", SOURCE: "{{.DOTFILEDIR}}/claude/CLAUDE.md" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/settings.json", NAME: "claude/settings.json", SOURCE: "{{.DOTFILEDIR}}/claude/settings.json" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/agents", NAME: "claude/agents", SOURCE: "{{.DOTFILEDIR}}/claude/agents" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/commands", NAME: "claude/commands", SOURCE: "{{.DOTFILEDIR}}/claude/commands" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/skills", NAME: "claude/skills", SOURCE: "{{.DOTFILEDIR}}/claude/skills" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh", NAME: "claude/hooks/post-compact.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/post-compact.zsh" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh", NAME: "claude/hooks/agent-transparency.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/agent-transparency.zsh" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh", NAME: "claude/hooks/secret-scan.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/secret-scan.zsh" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh", NAME: "claude/hooks/block-destructive.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/block-destructive.zsh" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh", NAME: "claude/hooks/no-ai-comments.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/no-ai-comments.zsh" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh", NAME: "claude/hooks/no-emojis.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/no-emojis.zsh" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh", NAME: "claude/hooks/notify.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/notify.zsh" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh", NAME: "claude/hooks/lib.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/lib.zsh" }
+      - '{{end}}'
+      # --- tool configs (P7; ghostty gated; rest always-on) ---
+      - '{{if index .MANIFEST.features "ghostty"}}'
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config", NAME: "ghostty/config", SOURCE: "{{.DOTFILEDIR}}/configs/ghostty/config" }
+      - '{{end}}'
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow.yml", NAME: "glow/glow.yml", SOURCE: "{{.DOTFILEDIR}}/configs/glow/glow.yml" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow_style.json", NAME: "glow/glow_style.json", SOURCE: "{{.DOTFILEDIR}}/configs/glow/glow_style.json" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml", NAME: "trippy/trippy.toml", SOURCE: "{{.DOTFILEDIR}}/configs/trippy/trippy.toml" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/tlrc/config.toml", NAME: "tlrc/config.toml", SOURCE: "{{.DOTFILEDIR}}/configs/tlrc/config.toml" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc", NAME: "conda/condarc", SOURCE: "{{.DOTFILEDIR}}/configs/conda/condarc" }
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml", NAME: "eza/theme.yaml", SOURCE: "{{.DOTFILEDIR}}/configs/eza/theme.yaml" }
