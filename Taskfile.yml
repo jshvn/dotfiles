@@ -106,6 +106,14 @@ includes:
       XDG_CACHE_HOME: '{{.XDG_CACHE_HOME}}'
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   claude:   ./taskfiles/claude.yml           # P7 real bodies
+  # test needs the root's DOTFILEDIR + DOTFILES_MESSAGES explicitly forwarded;
+  # its DOTFILEDIR sh:dirname pattern resolves to the wrong path when
+  # invoked as an included taskfile (same issue as manifest: and identity:).
+  test:
+    taskfile: ./taskfiles/test.yml
+    vars:
+      DOTFILEDIR: '{{.DOTFILEDIR}}'
+      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   macos:    ./taskfiles/macos.yml           # P6 ships real bodies
 
 # Note: task install IS task update -- D-10 dropped the update: block.
@@ -118,6 +126,13 @@ tasks:
     status: [true]
     cmds:
       - task --list
+
+  # lint-allow: cmds-without-status
+  test:
+    desc: "Run all smoke tests (manifest fixtures + hook fixtures)"
+    cmds:
+      - task: manifest:test
+      - task: test:hooks
 
   # lint-allow: cmds-without-status
   install:
