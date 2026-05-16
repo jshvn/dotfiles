@@ -120,7 +120,34 @@ task: Failed to run task "packages:install": exit status 1
 5. **protonvpn** (cask): Same -- inspect `/Applications/` for the real `.app` name and update the `verify` field.
 6. **Things** (mas): Verify the actual installed `.app` name (probably `Things3.app`) and update the `name` field in the manifest's `extra_packages.mas` entry. Note: `name` here doubles as both the MAS-list display name and the verify target, so any change must keep the MAS install path working.
 
-**Suggested closure path:** This is a per-machine verify-metadata correctness pass, not a code-architecture change. Most efficient path is `/gsd-plan-phase 5 --gaps` (formal) or inline `/gsd-quick` (faster). Either way, the changes touch only `manifests/machines/personal-laptop.toml` (or `defaults.toml` for the formula entries) and `packages/core.rb` (for `antidote` clarification).
+**Closure path (decided 2026-05-15):** Full design pivot to brew-info-driven verify. The per-item rename fix proposed above is superseded -- it papers over the underlying brittleness (hand-typed verify metadata that re-breaks on the next upstream rename). Instead:
+
+**Two-layer verify model (replaces D-04 + D-05 + D-06 verify-comment annotations):**
+
+| Layer | Check | Mechanism |
+|---|---|---|
+| 1 | Is the package installed per brew? | `brew bundle check --no-upgrade --file=<composed>` -- already wired in `packages:install`'s status block; Test 1 confirmed sub-second behavior. |
+| 2 | Are the artifacts actually on disk? | `brew info --installed --json=v2` (bulk call, ~200ms total) returns every installed package's artifact list. `packages:verify` parses `.casks[].artifacts[]` / `.formulae[].installed[].linked_keg` / per-package binaries and checks each declared artifact path exists. |
+
+**Scope delta vs the original 6-file rename:**
+
+- `taskfiles/packages.yml` -- rewrite the `verify` task to use the brew-info bulk path. Drop the cask-loop verify-comment dispatch (including the just-added `bin:` prefix from commit 896e09e). Drop the formula-loop's `# verify: <bin>` override path. Keep the MAS loop (no brew-info equivalent for App Store; `mas list | awk '{print $1}'` returns installed ids, compared against declared `extra_packages.mas[].id`).
+- `packages/core.rb` -- strip every `# verify: <bin>` and `# verify: bin:<bin>` comment. The brew-info bulk call is authoritative. Keep `1password-cli` as a cask (gap-1 was correct independent of this pivot).
+- `packages/gui.rb` -- strip the two `# verify: <App>` comments on the cask lines.
+- `manifests/defaults.toml` + `manifests/machines/*.toml` (5 files) -- drop the `verify` field from every cask object in `extra_packages.casks` (27 + 18 + 0 + 0 + 0 = 45 entries to delist). Schema becomes `casks = [{name = "<cask>"}]` instead of `[{name, verify}]`. Keep `extra_packages.mas[].name` (drives MAS-list display + the simple `/Applications/<name>.app` fallback for App Store apps).
+- `install/resolver.zsh` -- adjust the cask validation: `name` field still required, `verify` field no longer required.
+- `docs/MANIFEST.md` -- update the typed-bucket-extras section to remove the `verify` requirement on cask entries. Add a Verify-model section describing the brew-info two-layer check.
+- `packages/README.md` -- replace the Verify rules section with the new two-layer model. Drop the gap-1 `bin:` prefix documentation (no longer needed).
+- `taskfiles/packages.yml` -- set `silent: false` on `packages:verify` to close Gap 3 in the same plan.
+
+**Mitigations baked in:** Bulk `brew info --installed --json=v2` keeps verify under 1s even for the full 50-package set (~200ms brew call + parse). No per-package brew-info subprocess fan-out. Cache file path (`$XDG_CACHE_HOME/dotfiles/brew-artifacts.json`) is an open question for the planner to decide -- whether to cache between runs (faster repeat verify) or always-fresh (no stale-cache failure class).
+
+**Risk register for the planner:**
+- Some brew packages have empty `.casks[].artifacts[]` (no installable artifacts; service-only formulas). The verify task must accept "package installed per brew + no on-disk artifact required" as a pass.
+- `brew info` over the network on first run after a long idle period can take longer; the `--installed` form should hit local metadata only, but the planner should test this assumption.
+- The `name` field on MAS entries doubles as display + verify target. Keep both responsibilities -- MAS has no `brew info` equivalent.
+
+Plan goes through `/gsd-plan-phase 5 --gaps`.
 
 ### Gap 3: `silent: true` swallows `packages:verify` output through `task`
 
