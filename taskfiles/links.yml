@@ -272,69 +272,100 @@ tasks:
   # lint-allow: cmds-without-status
   validate:
     desc: "Validate all P3+P4+P7 symlinks (strict-mode SOURCE check per TOOL-04)"
+    deps: [":manifest:resolve"]
+    status: [false]
     cmds:
-      # --- zsh startup files (P3; retrofitted with SOURCE for strict mode) ---
-      - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zshenv", NAME: "zshenv", SOURCE: "{{.DOTFILEDIR}}/shell/.zshenv" }
-      - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zprofile", NAME: "zprofile", SOURCE: "{{.DOTFILEDIR}}/shell/.zprofile" }
-      - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zshrc", NAME: "zshrc", SOURCE: "{{.DOTFILEDIR}}/shell/.zshrc" }
-      - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zlogin", NAME: "zlogin", SOURCE: "{{.DOTFILEDIR}}/shell/.zlogin" }
-      - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zlogout", NAME: "zlogout", SOURCE: "{{.DOTFILEDIR}}/shell/.zlogout" }
-      # --- antidote plugin manifest (P3; retrofitted with SOURCE) ---
-      - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zsh_plugins.txt", NAME: "antidote plugin manifest", SOURCE: "{{.DOTFILEDIR}}/configs/antidote/zsh_plugins.txt" }
-      # --- claude config tree (P7; gated on claude-marketplace) ---
-      # NOTE: Task 2 (08-01) removed the cmds-spanning {{if}}/{{end}} wrappers
-      # that previously gated this block. The full rewrite in Task 3 replaces
-      # this _:check-link chain with a shell-block iterator over
-      # EXPECTED_TARGETS (where claude-marketplace + ghostty inline-ternary
-      # renders elide feature-off entries naturally). Until Task 3 lands, this
-      # block is unconditionally executed -- but _:check-link is a diagnostic
-      # that prints check/cross and always exits 0, so feature-off machines
-      # will see (incorrect) "missing" output for the claude entries. This is
-      # superseded one task later and is acceptable transit state.
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md", NAME: "claude/CLAUDE.md", SOURCE: "{{.DOTFILEDIR}}/claude/CLAUDE.md" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/settings.json", NAME: "claude/settings.json", SOURCE: "{{.DOTFILEDIR}}/claude/settings.json" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/agents", NAME: "claude/agents", SOURCE: "{{.DOTFILEDIR}}/claude/agents" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/commands", NAME: "claude/commands", SOURCE: "{{.DOTFILEDIR}}/claude/commands" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/skills", NAME: "claude/skills", SOURCE: "{{.DOTFILEDIR}}/claude/skills" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh", NAME: "claude/hooks/post-compact.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/post-compact.zsh" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh", NAME: "claude/hooks/agent-transparency.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/agent-transparency.zsh" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh", NAME: "claude/hooks/secret-scan.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/secret-scan.zsh" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh", NAME: "claude/hooks/block-destructive.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/block-destructive.zsh" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh", NAME: "claude/hooks/no-ai-comments.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/no-ai-comments.zsh" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh", NAME: "claude/hooks/no-emojis.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/no-emojis.zsh" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh", NAME: "claude/hooks/notify.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/notify.zsh" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh", NAME: "claude/hooks/lib.zsh", SOURCE: "{{.DOTFILEDIR}}/claude/hooks/lib.zsh" }
-      # --- tool configs (P7; ghostty gated; rest always-on) ---
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config", NAME: "ghostty/config", SOURCE: "{{.DOTFILEDIR}}/configs/ghostty/config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow.yml", NAME: "glow/glow.yml", SOURCE: "{{.DOTFILEDIR}}/configs/glow/glow.yml" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow_style.json", NAME: "glow/glow_style.json", SOURCE: "{{.DOTFILEDIR}}/configs/glow/glow_style.json" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml", NAME: "trippy/trippy.toml", SOURCE: "{{.DOTFILEDIR}}/configs/trippy/trippy.toml" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/tlrc/config.toml", NAME: "tlrc/config.toml", SOURCE: "{{.DOTFILEDIR}}/configs/tlrc/config.toml" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc", NAME: "conda/condarc", SOURCE: "{{.DOTFILEDIR}}/configs/conda/condarc" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml", NAME: "eza/theme.yaml", SOURCE: "{{.DOTFILEDIR}}/configs/eza/theme.yaml" }
+      # ---------------------------------------------------------------------
+      # Shell-block validator (D-08 / 08-01 P1 rewrite).
+      #
+      # Iterates EXPECTED_TARGETS line-by-line and verifies each symlink with
+      # the same three-condition logic as helpers.yml _:check-link (lines
+      # 48-73) BUT increments an explicit failures counter on each failing
+      # path, ending with `exit "$failures"`. This closes the
+      # _:check-link-always-exits-0 gap so root `task validate` (Plan 02) can
+      # bubble links:validate failures via exit code.
+      #
+      # Feature-off entries in EXPECTED_TARGETS render as empty lines (per
+      # the inline-ternary form in the vars: block) and are skipped via
+      # [[ -z "$target" ]] && continue -- so claude-marketplace=false elides
+      # the 13 claude entries and ghostty=false elides 1 ghostty entry from
+      # the iteration without any conditional logic in the loop body.
+      #
+      # The TARGET -> SOURCE mapping uses a single case statement keyed on
+      # target path patterns. This is the SAME mapping the links:zsh,
+      # links:antidote, links:claude, and links:configs cmds: blocks use
+      # when creating the links -- changing one mapping requires editing
+      # this case statement AND the corresponding cmds: entry, but the
+      # mappings are mechanical (target path under XDG -> equivalent path
+      # under DOTFILEDIR with module prefix).
+      # ---------------------------------------------------------------------
+      - |
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+
+        # Resolve the expected SOURCE for a given TARGET. Mirrors the literal
+        # pairings used by links:zsh, links:antidote, links:claude,
+        # links:configs (and configs:ghostty) when materializing the links.
+        resolve_source() {
+          local target="$1"
+          local zdotdir="{{.ZDOTDIR}}"
+          local xdg="{{.XDG_CONFIG_HOME}}"
+          local dotfiledir="{{.DOTFILEDIR}}"
+          case "$target" in
+            "$zdotdir/.zshenv")            printf '%s\n' "$dotfiledir/shell/.zshenv" ;;
+            "$zdotdir/.zprofile")          printf '%s\n' "$dotfiledir/shell/.zprofile" ;;
+            "$zdotdir/.zshrc")             printf '%s\n' "$dotfiledir/shell/.zshrc" ;;
+            "$zdotdir/.zlogin")            printf '%s\n' "$dotfiledir/shell/.zlogin" ;;
+            "$zdotdir/.zlogout")           printf '%s\n' "$dotfiledir/shell/.zlogout" ;;
+            "$zdotdir/.zsh_plugins.txt")   printf '%s\n' "$dotfiledir/configs/antidote/zsh_plugins.txt" ;;
+            "$xdg/claude/CLAUDE.md")       printf '%s\n' "$dotfiledir/claude/CLAUDE.md" ;;
+            "$xdg/claude/settings.json")   printf '%s\n' "$dotfiledir/claude/settings.json" ;;
+            "$xdg/claude/agents")          printf '%s\n' "$dotfiledir/claude/agents" ;;
+            "$xdg/claude/commands")        printf '%s\n' "$dotfiledir/claude/commands" ;;
+            "$xdg/claude/skills")          printf '%s\n' "$dotfiledir/claude/skills" ;;
+            "$xdg/claude/hooks/"*)         printf '%s\n' "$dotfiledir/claude/hooks/${target##*/hooks/}" ;;
+            "$xdg/ghostty/config")         printf '%s\n' "$dotfiledir/configs/ghostty/config" ;;
+            "$xdg/glow/"*)                 printf '%s\n' "$dotfiledir/configs/glow/${target##*/glow/}" ;;
+            "$xdg/trippy/"*)               printf '%s\n' "$dotfiledir/configs/trippy/${target##*/trippy/}" ;;
+            "$xdg/tlrc/"*)                 printf '%s\n' "$dotfiledir/configs/tlrc/${target##*/tlrc/}" ;;
+            "$xdg/conda/"*)                printf '%s\n' "$dotfiledir/configs/conda/${target##*/conda/}" ;;
+            "$xdg/eza/"*)                  printf '%s\n' "$dotfiledir/configs/eza/${target##*/eza/}" ;;
+            *)                             printf '%s\n' "" ;;  # unknown target -- treat as no expected source
+          esac
+        }
+
+        # Iterate EXPECTED_TARGETS line-by-line. Empty lines are feature-off
+        # ternary renders (e.g., claude-marketplace=false produces 13 empty
+        # lines for the claude entries); skip them.
+        while IFS= read -r target; do
+          [[ -z "$target" ]] && continue
+
+          if [[ ! -L "$target" ]]; then
+            cross "$target missing"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+
+          if [[ ! -e "$target" ]]; then
+            cross "$target broken (target missing)"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+
+          expected="$(resolve_source "$target")"
+          if [[ -z "$expected" ]]; then
+            cross "$target has no known expected source (links:validate bug)"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+
+          actual="$(readlink -f "$target" 2>/dev/null || true)"
+          if [[ "$actual" != "$expected" ]]; then
+            cross "$target points to wrong source (expected $expected, got $actual)"
+            failures=$(( failures + 1 ))
+          else
+            check "$target linked"
+          fi
+        done <<< "{{.EXPECTED_TARGETS}}"
+
+        exit "$failures"
