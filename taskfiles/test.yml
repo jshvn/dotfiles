@@ -1,0 +1,64 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test.yml -- Phase-7 smoke-test surface (TEST-01 + TEST-02)
+#
+# Exposes hook smoke tests for the four CLDE-02 named hooks via
+# install/test-hooks.zsh. Included from the root Taskfile.yml as the
+# `test:` namespace. The root `task test` aggregator combines this with
+# `task manifest:test` (P1 deep-merge fixtures) to form the full Tier-3
+# smoke-test suite (TEST-02).
+#
+# Callable as:
+#   task test:hooks      # run hook smoke tests (CLDE-02 named hooks)
+#   task test:default    # alias for test:hooks (local-to-this-file default)
+#   task test            # root aggregator: manifest:test + test:hooks (TEST-02)
+#
+# Scope: CLDE-02 named hooks only. block-destructive, notify, and
+# post-compact are excluded (D-17).
+# =============================================================================
+
+# =============================================================================
+# Vars -- self-contained fallbacks for standalone invocation:
+#   task -t taskfiles/test.yml hooks
+# When loaded via root Taskfile.yml, root vars take precedence.
+# =============================================================================
+
+vars:
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+# =============================================================================
+# Tasks
+# =============================================================================
+
+tasks:
+
+  # ---------------------------------------------------------------------------
+  # default -- local aggregator so `task -t taskfiles/test.yml` runs hooks.
+  # Root `task test` is the canonical entry point (TEST-02).
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  default:
+    desc: "Run hook smoke tests (CLDE-02 named hooks)"
+    cmds:
+      - task: hooks
+
+  # ---------------------------------------------------------------------------
+  # hooks -- invoke the test runner. Always re-run; diagnostic by nature.
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  hooks:
+    desc: "Run Claude hook smoke tests via install/test-hooks.zsh (TEST-01)"
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running hook smoke tests"
+        export DOTFILEDIR="{{.DOTFILEDIR}}"
+        zsh "${DOTFILEDIR}/install/test-hooks.zsh"
+    status:
+      - false
