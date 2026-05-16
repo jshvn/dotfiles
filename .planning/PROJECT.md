@@ -187,4 +187,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-05-14 after Phase 2 (install-engine-bootstrap-idempotency-lint) completion*
+*Last updated: 2026-05-16 after Phase 7 (claude-tool-configs-smoke-tests) completion -- claude/ task suite landed, 7 tool configs ported, hook smoke-test surface wired (task test = 19/19 green)*
