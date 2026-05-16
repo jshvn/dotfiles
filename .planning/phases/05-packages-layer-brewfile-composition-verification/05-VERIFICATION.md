@@ -1,15 +1,20 @@
 ---
-status: human_needed
+status: gaps_found
 phase: 05-packages-layer-brewfile-composition-verification
 verified: 2026-05-15
 goal: Per-purpose Brewfile bundles composed per-machine from the manifest, with idempotent install via `brew bundle check` AND post-install verification that declared binaries/casks are actually usable, plus a drift audit
 requirements: [PKGS-01, PKGS-02, PKGS-03, PKGS-04, PKGS-05, VRFY-01, VRFY-02, VRFY-03, VRFY-04]
 must_haves_total: 9
-must_haves_verified: 6
+must_haves_verified: 7
 human_verification_items: 3
+human_verification_passed: 1
+gaps_open: 2
+gaps_closed: 1
 notes:
   - Verifier agent stalled on the SSE stream at the VERIFICATION.md write step; its findings were complete and transcribed here verbatim.
   - Spot-checked all key filesystem and task-listing claims before persisting this report.
+  - HUMAN-UAT (Test 1: PKGS-03 idempotency) passed 2026-05-15 after gap-1 fix (1password-cli brew->cask + verify bin: prefix; commit 896e09e). VRFY-04 + PKGS-03 architecture verified end-to-end.
+  - HUMAN-UAT Tests 2 + 3 surfaced 2 new gaps -- see 05-UAT.md Gap 2 (7 verify-comment correctness issues) + Gap 3 (silent:true hides packages:verify output). Both routed to /gsd-plan-phase 5 --gaps for formal gap-closure planning.
 ---
 
 # Phase 05 Verification Report -- Packages Layer
