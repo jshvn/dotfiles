@@ -85,7 +85,7 @@ tasks:
   # lint-allow: cmds-without-status
   install:
     desc: "Install Claude Code marketplaces, plugins, and get-shit-done-cc"
-    deps: [manifest:resolve]
+    deps: [":manifest:resolve"]
     status: [false]
     cmds:
       - '{{if index .MANIFEST.features "claude-marketplace"}}'
@@ -113,7 +113,7 @@ tasks:
   marketplace:
     internal: true
     desc: "Register marketplaces + install plugins"
-    deps: [ensure-cli, manifest:resolve]
+    deps: ["ensure-cli", ":manifest:resolve"]
     vars:
       # W-01: task-scoped sh: vars -- only evaluated when this task runs.
       MARKETPLACES_JSON:
@@ -191,7 +191,7 @@ tasks:
   # lint-allow: cmds-without-status
   update:
     desc: "Refresh marketplaces + plugins + GSD (explicit; not in task install)"
-    deps: [ensure-cli, manifest:resolve]
+    deps: ["ensure-cli", ":manifest:resolve"]
     status: [false]
     cmds:
       - claude plugin marketplace update
