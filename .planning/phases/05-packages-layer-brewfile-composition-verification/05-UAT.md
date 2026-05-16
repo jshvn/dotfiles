@@ -1,42 +1,57 @@
 ---
-status: blocked
+status: testing
 phase: 05-packages-layer-brewfile-composition-verification
 source: [05-VERIFICATION.md, 05-HUMAN-UAT.md]
 started: 2026-05-15T19:35:00Z
-updated: 2026-05-15T19:45:00Z
+updated: 2026-05-15T20:05:00Z
 ---
 
 ## Current Test
 
-number: 1
-name: PKGS-03 idempotency smoke
+number: 2
+name: VRFY-03 negative-path smoke
 expected: |
-  Run `task packages:install` once on personal-laptop and let it finish.
-  Run it again immediately. The second invocation is a sub-second no-op.
-awaiting: gap closure (1password-cli formula/cask classification bug)
+  Rename a declared cask's `.app` (e.g. `mv /Applications/Slack.app /Applications/Slack.app.tmp`),
+  then run `task install`. The full pipeline halts at `packages:verify` with non-zero exit
+  and a per-package cross row for the missing `.app`. Restore with
+  `mv /Applications/Slack.app.tmp /Applications/Slack.app`.
+awaiting: user response (after deciding how to handle Gap 2: 7 unrelated verify-comment issues)
 
 ## Tests
 
 ### 1. PKGS-03 idempotency smoke
 expected: After a converged install, running `task packages:install` a second time is a sub-second no-op (status block via `brew bundle check --file=<composed>` returns clean; no full `brew bundle` invocation).
-result: fail
-issue: blocked at first install -- `brew bundle install` fails before reaching convergence.
+result: pass
+evidence: |
+  After applying the gap-1 fix (commit 896e09e):
+  - `brew bundle check --no-upgrade --file=$XDG_CACHE_HOME/dotfiles/Brewfile`
+    returned "The Brewfile's dependencies are satisfied." in 0.959s.
+  - Two back-to-back `task packages:install` invocations both completed
+    as no-ops (1.001s / 1.001s wall, no `brew bundle install` output,
+    no "Using/Installing" lines).
+  - Idempotency claim (sub-second no-op via status block) confirmed.
 
 ### 2. VRFY-03 negative-path smoke
 expected: Rename a declared cask's `.app` (e.g. `mv /Applications/Slack.app /Applications/Slack.app.tmp`), then run `task install`. The full pipeline halts at `packages:verify` with non-zero exit and a per-package cross row for the missing `.app`. Restore with `mv /Applications/Slack.app.tmp /Applications/Slack.app`.
 result: blocked
-reason: depends on a converged install (Test 1).
+reason: |
+  Gap 2 (7 unrelated verify-comment issues) makes `packages:verify` already exit
+  non-zero for legitimately-installed packages, so Test 2 can't isolate the
+  rename-induced failure from the background noise.
 
 ### 3. End-to-end `task install` smoke
 expected: From a clean working tree on `personal-laptop` on the `josh/dotfiles-v2-refactor` branch, `task install` runs the full pipeline (`links:all` -> `packages:install` -> `claude:install` -> `macos:defaults` -> `macos:shell` -> `packages:verify`) and exits 0 with the success banner.
 result: blocked
-reason: depends on a converged install (Test 1).
+reason: |
+  Blocked on Gap 2 -- `packages:verify` is the final step of `task install`
+  (D-10 + VRFY-04) and currently fails on the 7 verify-comment issues even
+  for fully-installed packages.
 
 ## Summary
 
 total: 3
-passed: 0
-issues: 1
+passed: 1
+issues: 2
 pending: 0
 blocked: 2
 
@@ -75,4 +90,49 @@ task: Failed to run task "packages:install": exit status 1
 - `packages/core.rb` -- move `1password-cli` from `brew` to `cask`, update verify comment
 - `taskfiles/packages.yml` -- extend cask-verify dispatch to handle `bin:` prefix
 - `packages/README.md` (DOCS-02) -- document the `# verify: bin:<name>` extension
+
+**Resolution:** Fixed inline 2026-05-15 in commit 896e09e (Option C). The new `# verify: bin:<bin>` convention is implemented in the cask loop of `taskfiles/packages.yml`; `packages/core.rb` declares `cask '1password-cli' # verify: bin:op`; `packages/README.md` documents the extension under "Verify rules". Direct exercise of the dispatch path confirmed `✓ cask 1password-cli -> op`. `brew bundle check` is clean against the new composed Brewfile.
+
+### Gap 2: 7 unrelated verify-comment mismatches surfaced by `packages:verify`
+
+**Test:** 1 (revealed while exercising the post-gap-1 verify path)
+**Severity:** high (blocks `task install` end-to-end via VRFY-04; tests 2 and 3 cannot proceed)
+**Encountered:** 2026-05-15 after gap-1 fix on personal-laptop
+
+**Symptom:** `task packages:verify` reports 7 failures even though all referenced packages are fully installed:
+
+| Kind | Declared | Verify target | Actual on disk |
+|------|----------|---------------|----------------|
+| formula | `brew 'tlrc'` | `command -v tlrc` | tlrc binary not on PATH (likely not installed; check `brew list tlrc`) |
+| formula | `brew 'antidote'` | `command -v antidote` | antidote is a zsh plugin (function loaded via `.zshrc`), not a binary -- `command -v` from a non-interactive shell can't find it |
+| cask | `cask 'miniconda'` | `/Applications/Miniconda.app` | Miniconda is a CLI distribution; no .app bundle. Same class as 1password-cli -- needs `# verify: bin:conda` or similar |
+| cask | `cask 'nvidia-geforce-now'` | `/Applications/NVIDIA GeForce NOW.app` | App-name mismatch (cask installs to a different bundle name) |
+| cask | `cask 'protonvpn'` | `/Applications/Proton VPN.app` | App-name mismatch (verify comment in manifest TOML is wrong) |
+| mas | `mas 'Things'` | `/Applications/Things.app` | App-name mismatch -- the actual bundle is `Things3.app` |
+
+**Root cause:** Each entry's verify metadata was authored against the *expected* App-bundle name without per-machine field validation. The verify-comment shape works (the dispatch logic is correct), but the metadata values are wrong for at least these 5 casks/MAS apps, plus 2 formulas that need different verify strategies (antidote = function-not-binary; tlrc = legitimately not installed yet).
+
+**Fix scope (per-item):**
+1. **antidote** (formula): Either drop the verify check (it's a sourced zsh function) or change to `# verify: cd-or-similar-shim`. Architectural call. The most honest fix is to remove `# verify: antidote` and add a comment that documents why -- antidote loads via the .zshrc plugin chain, not as a PATH binary. Alternative: ship a `antidote-loaded` wrapper script.
+2. **tlrc** (formula): Run `brew list tlrc` to confirm install state; if missing, `brew install tlrc` once (Brewfile install must have skipped it). If installed but the binary is named differently, add `# verify: <bin>` override.
+3. **miniconda** (cask): Move to `# verify: bin:conda` (or `bin:python` if the cask's binary artifact is the python installer). Same pattern as 1password-cli.
+4. **nvidia-geforce-now** (cask): Run `brew info --cask nvidia-geforce-now | grep -i artifact` (or `ls /Applications/ | grep -i nvidia`) and update the `verify` field in `manifests/machines/personal-laptop.toml`.
+5. **protonvpn** (cask): Same -- inspect `/Applications/` for the real `.app` name and update the `verify` field.
+6. **Things** (mas): Verify the actual installed `.app` name (probably `Things3.app`) and update the `name` field in the manifest's `extra_packages.mas` entry. Note: `name` here doubles as both the MAS-list display name and the verify target, so any change must keep the MAS install path working.
+
+**Suggested closure path:** This is a per-machine verify-metadata correctness pass, not a code-architecture change. Most efficient path is `/gsd-plan-phase 5 --gaps` (formal) or inline `/gsd-quick` (faster). Either way, the changes touch only `manifests/machines/personal-laptop.toml` (or `defaults.toml` for the formula entries) and `packages/core.rb` (for `antidote` clarification).
+
+### Gap 3: `silent: true` swallows `packages:verify` output through `task`
+
+**Test:** 1 (observed while diagnosing Gap 2)
+**Severity:** medium (diagnosability; verify still produces correct exit codes)
+**Encountered:** 2026-05-15 while running `task packages:verify` to investigate Gap 2
+
+**Symptom:** Running `task packages:verify` directly (or piped to a file) produces zero visible stdout/stderr lines, even though the underlying script writes check/cross output via `messages.zsh`. The task exits with the correct failure count (exit 1 in our case), but the user gets no actionable diagnostic. Running the same script body in a plain `zsh -c '...'` block (bypassing the `task` wrapper) prints the full check/cross enumeration correctly.
+
+**Root cause:** Root `Taskfile.yml` declares `silent: true` at the top level. Combined with `set: [errexit, pipefail]` and the way go-task captures cmd output when the cmd returns non-zero, the heredoc cmd's stdout/stderr gets buffered and discarded on failure exit. `--silent=false`, `--output=interleaved`, `--output=group`, and `--verbose` flags do not restore output. Output is visible in a real interactive TTY (per the user's original failing transcript), so the issue is specific to non-TTY/piped/captured invocations.
+
+**Fix scope:** Either (a) drop `silent: true` at root and add `silent: true` per-task only where it's wanted, or (b) keep `silent: true` but explicitly mark `packages:verify` with `silent: false` so its check/cross output is always visible. Option (b) is smaller and matches the intent (verify failures should be diagnosable).
+
+**Suggested closure path:** Same as Gap 2 -- bundle into the same gap-closure plan since it touches `taskfiles/packages.yml` and is logically the same "verify diagnosability" concern.
 
