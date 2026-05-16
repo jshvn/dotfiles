@@ -118,6 +118,60 @@ tasks:
       - test -L "{{.ZDOTDIR}}/.zsh_plugins.txt"
 
   # ---------------------------------------------------------------------------
+  # Claude config tree (CLDE-01) -- feature-gated on claude-marketplace.
+  # 13 entries: 2 file + 3 dir + 8 hook file symlinks per D-01.
+  # On servers where claude-marketplace=false the gate skips the entire body;
+  # the status: block mirrors the gate so status checks also no-op.
+  # ---------------------------------------------------------------------------
+
+  claude:
+    desc: "Link claude config tree (files, dirs, hooks)"
+    deps: [manifest:resolve]
+    cmds:
+      - '{{if index .MANIFEST.features "claude-marketplace"}}'
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/CLAUDE.md", TARGET: "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/settings.json", TARGET: "{{.XDG_CONFIG_HOME}}/claude/settings.json" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/agents", TARGET: "{{.XDG_CONFIG_HOME}}/claude/agents" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/commands", TARGET: "{{.XDG_CONFIG_HOME}}/claude/commands" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/skills", TARGET: "{{.XDG_CONFIG_HOME}}/claude/skills" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/post-compact.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/agent-transparency.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/secret-scan.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/block-destructive.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/no-ai-comments.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/no-emojis.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/notify.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/lib.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh" }
+      - '{{end}}'
+    status:
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/settings.json"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/agents"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/commands"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/skills"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh"{{end}}'
+
+  # ---------------------------------------------------------------------------
   # Validation -- always-re-run diagnostic output; no status: by design.
   # ---------------------------------------------------------------------------
 
