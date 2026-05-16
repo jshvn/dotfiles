@@ -123,8 +123,14 @@ tasks:
     status:
       # One line per CLAUDE_MARKETPLACES entry (literal name, no shell vars):
       - jq -e '.[] | select(.name == "ecc")' <(claude plugin marketplace list --json 2>/dev/null || echo '[]') >/dev/null
-      # One line per CLAUDE_PLUGINS entry (literal name, no shell vars):
-      - jq -e '.[] | select(.name == "ecc@ecc")' <(claude plugin list --json 2>/dev/null || echo '[]') >/dev/null
+      # One line per CLAUDE_PLUGINS entry (literal id, no shell vars).
+      # CRITICAL (CR-02): selector field MUST match the install body (line 150)
+      # and validate body (line 277), both of which use `.id == $i`. Plugin
+      # objects expose `.id` as the fully-qualified `<name>@<marketplace>` token
+      # (the same string declared in CLAUDE_PLUGINS). Mismatching the field
+      # here breaks two-condition idempotency (the v1 macos:shell:145 bug
+      # class).
+      - jq -e '.[] | select(.id == "ecc@ecc")' <(claude plugin list --json 2>/dev/null || echo '[]') >/dev/null
     cmds:
       - for:
           var: CLAUDE_MARKETPLACES
