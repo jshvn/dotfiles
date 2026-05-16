@@ -1,8 +1,14 @@
 ---
-status: human_needed
+status: passed
 phase: 05-packages-layer-brewfile-composition-verification
 verified: 2026-05-15T19:00:00Z
 re_verified: 2026-05-16T02:30:00Z
+closed: 2026-05-16T03:00:00Z
+deferred_items:
+  - test: "End-to-end task install smoke (Test 3 in 05-HUMAN-UAT.md)"
+    reason: "Cutover-ack gate sentinel writer (task cutover:ack -- <machine>) is owned by Phase 8 CUTV-03 and not yet implemented. The gate exists in Phase 2 (install/cutover-gate.zsh) but its writer ships with Phase 8."
+    deferred_to: "Phase 8 acceptance"
+    decided_by: "user 2026-05-16 (gsd-execute-phase 5 --gaps-only close)"
 goal: Per-purpose Brewfile bundles composed per-machine from the manifest, with idempotent install via `brew bundle check` AND post-install verification that declared binaries/casks are actually usable, plus a drift audit
 requirements: [PKGS-01, PKGS-02, PKGS-03, PKGS-04, PKGS-05, VRFY-01, VRFY-02, VRFY-03, VRFY-04, DOCS-02]
 must_haves_total: 10
@@ -33,9 +39,11 @@ human_verification:
   - test: "VRFY-03 negative-path smoke"
     expected: "mv /Applications/Slack.app /Applications/Slack.app.tmp; task packages:verify exits non-zero with a cross row identifying 'Slack.app NOT FOUND'; restore with mv back"
     why_human: "Requires destructive fs action on a real machine with Slack.app installed"
+    result: "passed 2026-05-16"
   - test: "End-to-end task install smoke (Test 3)"
     expected: "task install runs the full pipeline on personal-laptop and exits 0 with the success banner"
     why_human: "Blocked by cutover-ack gate (intentional Phase 2 protection D-09); user must ack the gate to allow full pipeline run"
+    result: "deferred to Phase 8 (CUTV-03 ships the gate's sentinel writer)"
 ---
 
 # Phase 05 Verification Report -- Packages Layer (Re-verification after gap-closure waves 1 + 2)
