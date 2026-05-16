@@ -151,7 +151,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   6. Every tool config (Ghostty, glow, trippy, tlrc, conda, eza, motd) is symlinked through `_:safe-link` from `configs/<tool>/` to its destination; `_:safe-link` verifies target type and refuses to clobber an incompatible target
   7. `_:check-link` enforces all three conditions: symlink exists, target resolves (non-broken), AND `readlink -f` equals the manifest-expected source path — mismatch fails the check (catches "symlink exists but points to stale path after refactor")
 **Plans**: 6 plans
-  - [ ] 07-01-PLAN.md — Pre-Phase-7 cleanup: drop GSD-managed artifacts + .gitignore + REQUIREMENTS/ROADMAP wording amend (D-02, D-09)
+  - [x] 07-01-PLAN.md — Pre-Phase-7 cleanup: drop GSD-managed artifacts + .gitignore + REQUIREMENTS/ROADMAP wording amend (D-02, D-09)
   - [ ] 07-02-PLAN.md — Harden _:safe-link (TOOL-03) + _:check-link strict mode (TOOL-04) + rewrite agent-transparency.zsh (CLDE-02)
   - [ ] 07-03-PLAN.md — Real taskfiles/claude.yml (install/marketplace/gsd/update/status/validate/ensure-cli) + root include flip + claude/README.md (CLDE-01/03/04)
   - [ ] 07-04-PLAN.md — install/test-hooks.zsh runner + taskfiles/test.yml + root `task test` aggregator (TEST-01, TEST-02)
@@ -184,5 +184,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 4. Identity Layer — Git + SSH per Machine | 4/7 | Gap closure planned | - |
 | 5. Packages Layer — Brewfile Composition + Verification | 0/6 | Planned | - |
 | 6. OS Defaults — macOS Configuration | 0/4 | Planned | - |
-| 7. Claude + Tool Configs + Smoke Tests | 0/TBD | Not started | - |
+| 7. Claude + Tool Configs + Smoke Tests | 1/6 | In Progress|  |
 | 8. Validation + Cutover Readiness | 0/TBD | Not started | - |
