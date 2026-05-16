@@ -1,0 +1,230 @@
+# original LS_COLORS:
+# LS_COLORS='rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:';
+
+# useful ls_colors / lscolor converter tool: 
+# https://geoff.greer.fm/lscolors/ - https://github.com/ggreer/lscolors
+
+colourful: true
+
+filekinds:
+  normal: {foreground: Default}
+  directory: {foreground: Blue, is_bold: true}  # di=01;34
+  symlink: {foreground: Cyan, is_bold: true}  # ln=01;36
+  pipe: {foreground: Yellow, background: Yellow}  # pi=40;33
+  block_device: {foreground: Yellow, background: Yellow, is_bold: true}  # bd=40;33;01
+  char_device: {foreground: Yellow, background: Yellow, is_bold: true}  # cd=40;33;01
+  socket: {foreground: Magenta, is_bold: true}  # so=01;35
+  special: {foreground: Magenta, is_bold: true}  # do=01;35
+  executable: {foreground: Green, is_bold: true}  # ex=01;32
+
+perms:
+  user_read: {foreground: Yellow, is_bold: true}
+  user_write: {foreground: Red, is_bold: true}
+  user_execute_file: {foreground: Green, is_bold: true, is_underline: true}
+  user_execute_other: {foreground: Green, is_bold: true}
+  group_read: {foreground: Yellow}
+  group_write: {foreground: Red}
+  group_execute: {foreground: Green}
+  other_read: {foreground: Yellow}
+  other_write: {foreground: Red}
+  other_execute: {foreground: Green}
+  special_user_file: {foreground: White, background: Red}  # su=37;41
+  special_other: {foreground: Black, background: Yellow}  # sg=30;43
+  attribute: {foreground: Default}
+
+size:
+  major: {foreground: Green, is_bold: true}
+  minor: {foreground: Green}
+  number_byte: {foreground: Green}
+  number_kilo: {foreground: Green, is_bold: true}
+  number_mega: {foreground: Green, is_bold: true}
+  number_giga: {foreground: Green, is_bold: true}
+  number_huge: {foreground: Green, is_bold: true}
+  unit_byte: {foreground: Green}
+  unit_kilo: {foreground: Green}
+  unit_mega: {foreground: Green}
+  unit_giga: {foreground: Green}
+  unit_huge: {foreground: Green}
+
+users:
+  user_you: {foreground: Yellow, is_bold: true}
+  user_root: {foreground: Default}
+  user_other: {foreground: Default}
+  group_yours: {foreground: Yellow, is_bold: true}
+  group_other: {foreground: Default}
+  group_root: {foreground: Default}
+
+links:
+  normal: {foreground: Red, is_bold: true}  # mh=00 (multi-hardlink default)
+  multi_link_file: {foreground: Red, background: Yellow}
+
+git:
+  new: {foreground: Green}
+  modified: {foreground: Blue}
+  deleted: {foreground: Red}
+  renamed: {foreground: Yellow}
+  typechange: {foreground: Purple}
+  ignored: {foreground: Default, is_dimmed: true}
+  conflicted: {foreground: Red}
+
+git_repo:
+  branch_main: {foreground: Green}
+  branch_other: {foreground: Yellow}
+  git_clean: {foreground: Green}
+  git_dirty: {foreground: Yellow}
+
+security_context:
+  colon: {foreground: Default, is_dimmed: true}
+  user: {foreground: Blue}
+  role: {foreground: Green}
+  typ: {foreground: Yellow}
+  range: {foreground: Cyan}
+
+file_type:
+  image: {foreground: Magenta, is_bold: true}  # *.jpg etc = 01;35
+  video: {foreground: Magenta, is_bold: true}  # *.mp4 etc = 01;35
+  music: {foreground: Cyan}  # *.mp3 etc = 00;36
+  lossless: {foreground: Cyan, is_bold: true}
+  crypto: {foreground: Green, is_bold: true}
+  document: {foreground: Green}
+  compressed: {foreground: Red, is_bold: true}  # *.tar etc = 01;31
+  temp: {foreground: White}
+  compiled: {foreground: Yellow}
+  build: {foreground: Yellow, is_bold: true, is_underline: true}
+  source: {foreground: Yellow, is_bold: true}
+
+punctuation: {foreground: DarkGray, is_bold: true}
+date: {foreground: Blue}
+inode: {foreground: Purple}
+blocks: {foreground: Cyan}
+header: {foreground: Default, is_underline: true}
+octal: {foreground: Purple}
+flags: {foreground: Default}
+
+symlink_path: {foreground: Cyan}
+control_char: {foreground: Red}
+broken_symlink: {foreground: Red, background: Black, is_bold: true}  # or=40;31;01
+broken_path_overlay: {foreground: Red, background: Black, is_underline: true}  # or=40;31;01
+
+filenames: {}
+
+extensions:
+  # Compressed archives - 01;31 (bold red)
+  tar: {filename: {foreground: Red, is_bold: true}}
+  tgz: {filename: {foreground: Red, is_bold: true}}
+  arc: {filename: {foreground: Red, is_bold: true}}
+  arj: {filename: {foreground: Red, is_bold: true}}
+  taz: {filename: {foreground: Red, is_bold: true}}
+  lha: {filename: {foreground: Red, is_bold: true}}
+  lz4: {filename: {foreground: Red, is_bold: true}}
+  lzh: {filename: {foreground: Red, is_bold: true}}
+  lzma: {filename: {foreground: Red, is_bold: true}}
+  tlz: {filename: {foreground: Red, is_bold: true}}
+  txz: {filename: {foreground: Red, is_bold: true}}
+  tzo: {filename: {foreground: Red, is_bold: true}}
+  t7z: {filename: {foreground: Red, is_bold: true}}
+  zip: {filename: {foreground: Red, is_bold: true}}
+  z: {filename: {foreground: Red, is_bold: true}}
+  Z: {filename: {foreground: Red, is_bold: true}}
+  dz: {filename: {foreground: Red, is_bold: true}}
+  gz: {filename: {foreground: Red, is_bold: true}}
+  lrz: {filename: {foreground: Red, is_bold: true}}
+  lz: {filename: {foreground: Red, is_bold: true}}
+  lzo: {filename: {foreground: Red, is_bold: true}}
+  xz: {filename: {foreground: Red, is_bold: true}}
+  zst: {filename: {foreground: Red, is_bold: true}}
+  tzst: {filename: {foreground: Red, is_bold: true}}
+  bz2: {filename: {foreground: Red, is_bold: true}}
+  bz: {filename: {foreground: Red, is_bold: true}}
+  tbz: {filename: {foreground: Red, is_bold: true}}
+  tbz2: {filename: {foreground: Red, is_bold: true}}
+  tz: {filename: {foreground: Red, is_bold: true}}
+  deb: {filename: {foreground: Red, is_bold: true}}
+  rpm: {filename: {foreground: Red, is_bold: true}}
+  jar: {filename: {foreground: Red, is_bold: true}}
+  war: {filename: {foreground: Red, is_bold: true}}
+  ear: {filename: {foreground: Red, is_bold: true}}
+  sar: {filename: {foreground: Red, is_bold: true}}
+  rar: {filename: {foreground: Red, is_bold: true}}
+  alz: {filename: {foreground: Red, is_bold: true}}
+  ace: {filename: {foreground: Red, is_bold: true}}
+  zoo: {filename: {foreground: Red, is_bold: true}}
+  cpio: {filename: {foreground: Red, is_bold: true}}
+  7z: {filename: {foreground: Red, is_bold: true}}
+  rz: {filename: {foreground: Red, is_bold: true}}
+  cab: {filename: {foreground: Red, is_bold: true}}
+  wim: {filename: {foreground: Red, is_bold: true}}
+  swm: {filename: {foreground: Red, is_bold: true}}
+  dwm: {filename: {foreground: Red, is_bold: true}}
+  esd: {filename: {foreground: Red, is_bold: true}}
+  
+  # Image files - 01;35 (bold magenta)
+  jpg: {filename: {foreground: Magenta, is_bold: true}}
+  jpeg: {filename: {foreground: Magenta, is_bold: true}}
+  mjpg: {filename: {foreground: Magenta, is_bold: true}}
+  mjpeg: {filename: {foreground: Magenta, is_bold: true}}
+  gif: {filename: {foreground: Magenta, is_bold: true}}
+  bmp: {filename: {foreground: Magenta, is_bold: true}}
+  pbm: {filename: {foreground: Magenta, is_bold: true}}
+  pgm: {filename: {foreground: Magenta, is_bold: true}}
+  ppm: {filename: {foreground: Magenta, is_bold: true}}
+  tga: {filename: {foreground: Magenta, is_bold: true}}
+  xbm: {filename: {foreground: Magenta, is_bold: true}}
+  xpm: {filename: {foreground: Magenta, is_bold: true}}
+  tif: {filename: {foreground: Magenta, is_bold: true}}
+  tiff: {filename: {foreground: Magenta, is_bold: true}}
+  png: {filename: {foreground: Magenta, is_bold: true}}
+  svg: {filename: {foreground: Magenta, is_bold: true}}
+  svgz: {filename: {foreground: Magenta, is_bold: true}}
+  mng: {filename: {foreground: Magenta, is_bold: true}}
+  pcx: {filename: {foreground: Magenta, is_bold: true}}
+  xcf: {filename: {foreground: Magenta, is_bold: true}}
+  xwd: {filename: {foreground: Magenta, is_bold: true}}
+  yuv: {filename: {foreground: Magenta, is_bold: true}}
+  cgm: {filename: {foreground: Magenta, is_bold: true}}
+  emf: {filename: {foreground: Magenta, is_bold: true}}
+  
+  # Video files - 01;35 (bold magenta)
+  mov: {filename: {foreground: Magenta, is_bold: true}}
+  mpg: {filename: {foreground: Magenta, is_bold: true}}
+  mpeg: {filename: {foreground: Magenta, is_bold: true}}
+  m2v: {filename: {foreground: Magenta, is_bold: true}}
+  mkv: {filename: {foreground: Magenta, is_bold: true}}
+  webm: {filename: {foreground: Magenta, is_bold: true}}
+  ogm: {filename: {foreground: Magenta, is_bold: true}}
+  mp4: {filename: {foreground: Magenta, is_bold: true}}
+  m4v: {filename: {foreground: Magenta, is_bold: true}}
+  mp4v: {filename: {foreground: Magenta, is_bold: true}}
+  vob: {filename: {foreground: Magenta, is_bold: true}}
+  qt: {filename: {foreground: Magenta, is_bold: true}}
+  nuv: {filename: {foreground: Magenta, is_bold: true}}
+  wmv: {filename: {foreground: Magenta, is_bold: true}}
+  asf: {filename: {foreground: Magenta, is_bold: true}}
+  rm: {filename: {foreground: Magenta, is_bold: true}}
+  rmvb: {filename: {foreground: Magenta, is_bold: true}}
+  flc: {filename: {foreground: Magenta, is_bold: true}}
+  avi: {filename: {foreground: Magenta, is_bold: true}}
+  fli: {filename: {foreground: Magenta, is_bold: true}}
+  flv: {filename: {foreground: Magenta, is_bold: true}}
+  gl: {filename: {foreground: Magenta, is_bold: true}}
+  dl: {filename: {foreground: Magenta, is_bold: true}}
+  ogv: {filename: {foreground: Magenta, is_bold: true}}
+  ogx: {filename: {foreground: Magenta, is_bold: true}}
+  
+  # Audio files - 00;36 (cyan, not bold)
+  aac: {filename: {foreground: Cyan}}
+  au: {filename: {foreground: Cyan}}
+  flac: {filename: {foreground: Cyan}}
+  m4a: {filename: {foreground: Cyan}}
+  mid: {filename: {foreground: Cyan}}
+  midi: {filename: {foreground: Cyan}}
+  mka: {filename: {foreground: Cyan}}
+  mp3: {filename: {foreground: Cyan}}
+  mpc: {filename: {foreground: Cyan}}
+  ogg: {filename: {foreground: Cyan}}
+  ra: {filename: {foreground: Cyan}}
+  wav: {filename: {foreground: Cyan}}
+  oga: {filename: {foreground: Cyan}}
+  opus: {filename: {foreground: Cyan}}
+  spx: {filename: {foreground: Cyan}}
+  xspf: {filename: {foreground: Cyan}}
