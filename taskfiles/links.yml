@@ -172,6 +172,41 @@ tasks:
       - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh"{{end}}'
 
   # ---------------------------------------------------------------------------
+  # Tool configs (TOOL-01, TOOL-02) -- 7 symlinks; ghostty gated on ghostty
+  # feature flag; glow, trippy, tlrc, conda, eza always-on (D-07).
+  # motd intentionally absent -- D-08 (runtime read from DOTFILEDIR).
+  # ---------------------------------------------------------------------------
+
+  configs:
+    desc: "Link tool config files (ghostty, glow, trippy, tlrc, conda, eza)"
+    deps: [manifest:resolve]
+    cmds:
+      - '{{if index .MANIFEST.features "ghostty"}}'
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/ghostty/config", TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config" }
+      - '{{end}}'
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/glow/glow.yml", TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow.yml" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/glow/glow_style.json", TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow_style.json" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/trippy/trippy.toml", TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/tlrc/config.toml", TARGET: "{{.XDG_CONFIG_HOME}}/tlrc/config.toml" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/conda/condarc", TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/eza/theme.yaml", TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml" }
+    status:
+      - '{{if not (index .MANIFEST.features "ghostty")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/ghostty/config"{{end}}'
+      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow.yml"
+      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow_style.json"
+      - test -L "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"
+      - test -L "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"
+      - test -L "{{.XDG_CONFIG_HOME}}/conda/condarc"
+      - test -L "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"
+
+  # ---------------------------------------------------------------------------
   # Validation -- always-re-run diagnostic output; no status: by design.
   # ---------------------------------------------------------------------------
 
