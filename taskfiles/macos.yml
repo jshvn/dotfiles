@@ -1,183 +1,296 @@
 version: '3'
 
+# =============================================================================
+# taskfiles/macos.yml -- Phase 6 macOS OS-defaults + shell-registration layer.
+#
+# Purpose:
+#   Reads features.macos-{dock,finder,input,screenshots,security} from
+#   resolved.json via `ref: fromJson` and applies per-concern defaults via
+#   `os/defaults/<concern>.zsh` sourced helpers. Also runs
+#   os/shell-registration.zsh (always-on) to add Homebrew zsh to /etc/shells
+#   and chsh.
+#
+# Dependencies:
+#   - :manifest:resolve (deps) -- ensures resolved.json is current before any
+#     gate read.
+#   - install/messages.zsh -- sourced via {{.DOTFILES_MESSAGES}} for check/cross.
+#   - os/defaults/<concern>.zsh -- sourced by each macos:defaults:<concern>.
+#   - os/shell-registration.zsh -- sourced by macos:shell.
+#
+# Status-block convention (LINT-02 enforcement):
+#   Every install / verify task's `status:` uses `{{.X}}` template vars ONLY --
+#   never `$X` shell vars (the v1 macos:shell:145 bug class). Aggregator-style
+#   tasks (defaults, validate) intentionally omit `status:` and carry the
+#   `# lint-allow: cmds-without-status` marker on the line immediately above
+#   the task key (LINT-01/03a aggregator exemption).
+#
+# Per-concern feature-gate pattern (RESEARCH Pattern 2):
+#   Each macos:defaults:<concern> task uses a SINGLE-SHELL-BLOCK status: the
+#   heredoc renders `{{if not (index .MANIFEST.features "macos-<concern>")}}exit 0{{end}}`
+#   at template build time as the SECOND line of the block. When the feature
+#   is off, the line renders to literal `exit 0` and the block short-circuits
+#   (verify_<concern> never runs). When the feature is on, the line renders
+#   to empty and the block proceeds to source the script and run the verifier.
+#   This is NOT the broken two-line ANDed pattern -- multi-line status entries
+#   would AND verify_<concern>'s exit code with the gate output, causing the
+#   verifier to run on feature-off machines (RESEARCH Pitfall 1).
+#
+# Bug-class structural fix (v1 macos:shell:145):
+#   The `shell:` task's status: block uses `{{.BREW_ZSH}}` (template var,
+#   resolved at task-graph build time) in BOTH entries -- zero `$BREW_ZSH`
+#   literal references. LINT-02 enforces no `$VAR` in status: at lint time;
+#   per .planning/codebase/CONCERNS.md lines 15-19 this closes the v1
+#   `$BREW_ZSH`-unset-in-status re-run-forever bug class structurally.
+#
+# When the root Taskfile.yml includes this module, its vars (DOTFILEDIR,
+# XDG_STATE_HOME, DOTFILES_MESSAGES, HOMEBREW_PREFIX) take precedence over
+# the local fallbacks defined below.
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+# =============================================================================
+# Vars block -- self-contained so `task -t taskfiles/macos.yml ...` works
+# without the root Taskfile.yml being loaded.
+# =============================================================================
+
+vars:
+  HOME: '{{.HOME}}'
+
+  XDG_CONFIG_HOME:
+    sh: echo "${XDG_CONFIG_HOME:-$HOME/.config}"
+
+  XDG_STATE_HOME:
+    sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
+
+  # Resolve DOTFILEDIR from this taskfile's parent directory.
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+  RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
+
+  # WR-03 fallback: emit a stderr warning when resolved.json is missing so
+  # consumers of {{.MANIFEST.features.macos-*}} fail loudly rather than
+  # evaluating against an empty {}.
+  MANIFEST_JSON:
+    sh: |
+      if [[ -s '{{.RESOLVED_JSON_PATH}}' ]]; then
+        cat '{{.RESOLVED_JSON_PATH}}'
+      else
+        echo "warning: {{.RESOLVED_JSON_PATH}} missing or empty -- run 'task setup -- <machine>' first" >&2
+        echo '{}'
+      fi
+
+  # fromJson ref pattern (matches taskfiles/manifest.yml + identity.yml +
+  # packages.yml). Kebab-case feature keys access via:
+  #   {{if index .MANIFEST.features "macos-dock"}}
+  MANIFEST:
+    ref: 'fromJson .MANIFEST_JSON'
+
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+  # HOMEBREW_PREFIX is forwarded from root Taskfile.yml's vars block when this
+  # taskfile is loaded via includes:. The local sh: fallback mirrors the root
+  # detection so `task -t taskfiles/macos.yml shell` works in isolation.
+  HOMEBREW_PREFIX:
+    sh: |
+      if command -v brew >/dev/null 2>&1; then brew --prefix
+      elif [[ "$(uname -m)" == "arm64" ]]; then echo "/opt/homebrew"
+      else echo "/usr/local"
+      fi
+
+# =============================================================================
+# Tasks
+# =============================================================================
+
 tasks:
+
+  # ---------------------------------------------------------------------------
+  # defaults -- aggregator. Calls each macos:defaults:<concern> in declared
+  # order (matches OSCF-01: dock -> finder -> input -> screenshots -> security).
+  # No status: block; cmds: are all task: delegations -- LINT-01/03a auto-exempt.
+  # Carries the # lint-allow: cmds-without-status marker per convention.
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
   defaults:
-    desc: "Apply macOS system defaults"
+    desc: "Apply macOS system defaults (per-concern, feature-gated)"
     platforms: [darwin]
+    deps: [":manifest:resolve"]
+    preconditions:
+      - sh: test -s '{{.RESOLVED_JSON_PATH}}'
+        msg: |
+          resolved.json missing or empty; cannot resolve features.macos-*
+            run: task setup -- <machine-name>
+    cmds:
+      - task: defaults:dock
+      - task: defaults:finder
+      - task: defaults:input
+      - task: defaults:screenshots
+      - task: defaults:security
+
+  # ---------------------------------------------------------------------------
+  # defaults:<concern> -- five per-concern tasks, identical shape.
+  # RESEARCH Pattern 2: single-shell-block status with template-time short-circuit.
+  # internal: true -- aggregator dispatches; not shown in `task --list`.
+  # ---------------------------------------------------------------------------
+
+  defaults:dock:
+    desc: "Apply Dock defaults (gated on macos-dock)"
+    internal: true
+    platforms: [darwin]
+    deps: [":manifest:resolve"]
     cmds:
       - |
-        {{.DOTFILES_MESSAGES}}
-        info "Applying macOS defaults..."
-        warn "Some settings require administrator credentials. You may be prompted for your password."
-      - task: defaults-init
-      - task: defaults-general
-      - task: defaults-dock
-      - task: defaults-appearance
-      - task: defaults-finder
-      - task: defaults-misc
+        {{if not (index .MANIFEST.features "macos-dock")}}exit 0{{end}}
+        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/dock.zsh"; apply_dock'
+    status:
       - |
-        {{.DOTFILES_MESSAGES}}
-        success "Defaults applied. Some changes require logout/restart to take effect."
+        {{if not (index .MANIFEST.features "macos-dock")}}exit 0{{end}}
+        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/dock.zsh"; verify_dock > /dev/null 2>&1'
 
-  defaults-init:
-    desc: "Prepare for defaults application"
+  defaults:finder:
+    desc: "Apply Finder defaults (gated on macos-finder)"
     internal: true
     platforms: [darwin]
+    deps: [":manifest:resolve"]
     cmds:
-      - osascript -e 'tell application "System Preferences" to quit' 2>/dev/null || true
-
-  defaults-general:
-    desc: "Apply general security defaults"
-    internal: true
-    platforms: [darwin]
-    cmds:
-      - defaults write com.apple.screensaver askForPassword -int 1
-      - defaults write com.apple.screensaver askForPasswordDelay -int 0
-    status:
-      - '[[ $(defaults read com.apple.screensaver askForPassword 2>/dev/null) == "1" ]]'
-      - '[[ $(defaults read com.apple.screensaver askForPasswordDelay 2>/dev/null) == "0" ]]'
-
-  defaults-dock:
-    desc: "Apply Dock configuration defaults"
-    internal: true
-    platforms: [darwin]
-    cmds:
-      - defaults write com.apple.dock orientation -string "bottom"
-      - defaults write com.apple.dock tilesize -int 45
-      - defaults write com.apple.dock autohide -bool $([[ "{{.PROFILE}}" == "server" ]] && echo false || echo true)
-      - defaults write com.apple.dock mineffect -string "genie"
-      - defaults write com.apple.dock show-recents -bool true
-      - defaults write com.apple.dock mru-spaces -bool false
-    status:
-      - '[[ $(defaults read com.apple.dock orientation 2>/dev/null) == "bottom" ]]'
-      - '[[ $(defaults read com.apple.dock tilesize 2>/dev/null) == "45" ]]'
-      - '[[ $(defaults read com.apple.dock autohide 2>/dev/null) == $([[ "{{.PROFILE}}" == "server" ]] && echo 0 || echo 1) ]]'
-      - '[[ $(defaults read com.apple.dock mineffect 2>/dev/null) == "genie" ]]'
-      - '[[ $(defaults read com.apple.dock show-recents 2>/dev/null) == "1" ]]'
-      - '[[ $(defaults read com.apple.dock mru-spaces 2>/dev/null) == "0" ]]'
-
-  defaults-appearance:
-    desc: "Apply appearance defaults (dark mode, scroll direction)"
-    internal: true
-    platforms: [darwin]
-    cmds:
-      - defaults write NSGlobalDomain AppleInterfaceStyle -string Dark
-      - defaults write NSGlobalDomain AppleIconAppearanceTheme -string RegularDark
-      - defaults write -g com.apple.swipescrolldirection -bool false
-    status:
-      - '[[ $(defaults read NSGlobalDomain AppleInterfaceStyle 2>/dev/null) == "Dark" ]]'
-      - '[[ $(defaults read NSGlobalDomain AppleIconAppearanceTheme 2>/dev/null) == "RegularDark" ]]'
-      - '[[ $(defaults read -g com.apple.swipescrolldirection 2>/dev/null) == "0" ]]'
-
-  defaults-finder:
-    desc: "Apply Finder defaults"
-    internal: true
-    platforms: [darwin]
-    cmds:
-      - defaults write NSGlobalDomain AppleShowAllExtensions -bool true
-      - defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
-      - defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
-      - /usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
-      - /usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
-      - /usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
-    status:
-      - '[[ $(defaults read NSGlobalDomain AppleShowAllExtensions 2>/dev/null) == "1" ]]'
-      - '[[ $(defaults read com.apple.finder FXEnableExtensionChangeWarning 2>/dev/null) == "0" ]]'
-      - '[[ $(defaults read com.apple.finder FXPreferredViewStyle 2>/dev/null) == "clmv" ]]'
-      - '[[ "$(/usr/libexec/PlistBuddy -c "Print :DesktopViewSettings:IconViewSettings:arrangeBy" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null)" = "grid" ]]'
-      - '[[ "$(/usr/libexec/PlistBuddy -c "Print :FK_StandardViewSettings:IconViewSettings:arrangeBy" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null)" = "grid" ]]'
-      - '[[ "$(/usr/libexec/PlistBuddy -c "Print :StandardViewSettings:IconViewSettings:arrangeBy" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null)" = "grid" ]]'
-
-  defaults-misc:
-    desc: "Apply miscellaneous defaults"
-    internal: true
-    platforms: [darwin]
-    cmds:
-      - defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
-      - defaults write com.apple.TextInputMenu visible -bool false
-      - defaults write com.apple.Siri StatusMenuVisible -bool false
       - |
-        if sysadminctl -guestAccount status 2>&1 | grep -q "enabled"; then
-          {{.DOTFILES_MESSAGES}}
-          warn "Guest account is enabled. Disabling it now..."
-          sudo sysadminctl -guestAccount off
-        fi
+        {{if not (index .MANIFEST.features "macos-finder")}}exit 0{{end}}
+        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/finder.zsh"; apply_finder'
     status:
-      - '[[ $(defaults -currentHost read com.apple.ImageCapture disableHotPlug 2>/dev/null) == "1" ]]'
-      - '[[ $(defaults read com.apple.TextInputMenu visible 2>/dev/null) == "0" ]]'
-      - '[[ $(defaults read com.apple.Siri StatusMenuVisible 2>/dev/null) == "0" ]]'
-      - sysadminctl -guestAccount status 2>&1 | grep -q "disabled"
+      - |
+        {{if not (index .MANIFEST.features "macos-finder")}}exit 0{{end}}
+        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/finder.zsh"; verify_finder > /dev/null 2>&1'
+
+  defaults:input:
+    desc: "Apply Input defaults (gated on macos-input)"
+    internal: true
+    platforms: [darwin]
+    deps: [":manifest:resolve"]
+    cmds:
+      - |
+        {{if not (index .MANIFEST.features "macos-input")}}exit 0{{end}}
+        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/input.zsh"; apply_input'
+    status:
+      - |
+        {{if not (index .MANIFEST.features "macos-input")}}exit 0{{end}}
+        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/input.zsh"; verify_input > /dev/null 2>&1'
+
+  defaults:screenshots:
+    desc: "Apply Screenshots defaults (gated on macos-screenshots)"
+    internal: true
+    platforms: [darwin]
+    deps: [":manifest:resolve"]
+    cmds:
+      - |
+        {{if not (index .MANIFEST.features "macos-screenshots")}}exit 0{{end}}
+        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/screenshots.zsh"; apply_screenshots'
+    status:
+      - |
+        {{if not (index .MANIFEST.features "macos-screenshots")}}exit 0{{end}}
+        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/screenshots.zsh"; verify_screenshots > /dev/null 2>&1'
+
+  defaults:security:
+    desc: "Apply Security defaults (gated on macos-security)"
+    internal: true
+    platforms: [darwin]
+    deps: [":manifest:resolve"]
+    cmds:
+      - |
+        {{if not (index .MANIFEST.features "macos-security")}}exit 0{{end}}
+        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/security.zsh"; apply_security'
+    status:
+      - |
+        {{if not (index .MANIFEST.features "macos-security")}}exit 0{{end}}
+        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/security.zsh"; verify_security > /dev/null 2>&1'
+
+  # ---------------------------------------------------------------------------
+  # shell -- always-on (no feature gate). Adds Homebrew zsh to /etc/shells and
+  # runs chsh. RESEARCH Pattern 5 -- the structural LINT-02 fix:
+  #   vars.BREW_ZSH renders {{.HOMEBREW_PREFIX}}/bin/zsh at task-graph build time;
+  #   cmds heredoc exports BREW_ZSH so the shell-registration.zsh :? assertion
+  #     does not abort; status: uses {{.BREW_ZSH}} template var in BOTH entries.
+  # The v1 macos:shell:145 bug class is closed structurally: LINT-02 enforces
+  # no $VAR in status:, and this task is the canonical correct shape.
+  # ---------------------------------------------------------------------------
 
   shell:
-    desc: "Set Homebrew zsh as default shell"
+    desc: "Register Homebrew zsh as login shell (/etc/shells + chsh)"
     platforms: [darwin]
     vars:
       BREW_ZSH: '{{.HOMEBREW_PREFIX}}/bin/zsh'
     cmds:
       - |
-        {{.DOTFILES_MESSAGES}}
-
-        # Add to /etc/shells if not present
-        if ! grep -qxF "{{.BREW_ZSH}}" /etc/shells; then
-          info "Adding Homebrew zsh to /etc/shells..."
-          echo "{{.BREW_ZSH}}" | sudo tee -a /etc/shells
-          success "Homebrew zsh added to /etc/shells"
-        else
-          info "Homebrew zsh already in /etc/shells"
-        fi
-        
-        # Check current default shell via Directory Services (more reliable than $SHELL)
-        CURRENT_SHELL=$(dscl . -read /Users/$USER UserShell 2>/dev/null | awk '{print $2}')
-        
-        if [[ "$CURRENT_SHELL" == "{{.BREW_ZSH}}" ]]; then
-          info "Default shell already set to Homebrew zsh"
-        else
-          info "Changing default shell from $CURRENT_SHELL to {{.BREW_ZSH}}..."
-          info "You may be prompted for your password."
-          if chsh -s "{{.BREW_ZSH}}"; then
-            success "Default shell changed to Homebrew zsh (effective on next login)"
-          else
-            error "Failed to change default shell. Try running: chsh -s {{.BREW_ZSH}}"
-            exit 1
-          fi
-        fi
+        DOTFILEDIR={{.DOTFILEDIR}} BREW_ZSH={{.BREW_ZSH}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/shell-registration.zsh"; apply_shell_registration'
     status:
-      - grep -qxF "$BREW_ZSH" /etc/shells
+      # LINT-02 contract: both status conditions use {{.BREW_ZSH}} template var.
+      # Zero shell-var (dollar-prefixed) references to BREW_ZSH appear in this
+      # block -- structural fix for the v1 macos:shell:145 bug class
+      # (CONCERNS.md lines 15-19).
+      - grep -qxF "{{.BREW_ZSH}}" /etc/shells
       - '[[ "$(dscl . -read /Users/$USER UserShell 2>/dev/null | awk "{print \$2}")" = "{{.BREW_ZSH}}" ]]'
 
-  # ============================================================================
-  # Validation
-  # ============================================================================
+  # ---------------------------------------------------------------------------
+  # validate -- always-rerun aggregator. Sources every enabled concern's script
+  # and runs verify_<concern>; sources shell-registration.zsh always and runs
+  # verify_shell_registration. Prints check/cross output via messages.zsh.
+  # Enumerate-all (no fast-fail) per OSCF-05 + D-07 pattern: each verify
+  # ORs into failed flag; final exit "$failed" returns 0 (clean) or 1 (any drift).
+  # status: [false] satisfies LINT-03a always-rerun; marker is documentation.
+  # ---------------------------------------------------------------------------
 
+  # lint-allow: cmds-without-status
   validate:
-    desc: "Validate macOS-specific components"
+    desc: "Validate macOS defaults match in-script expected values"
     platforms: [darwin]
-    vars:
-      BREW_ZSH: '{{.HOMEBREW_PREFIX}}/bin/zsh'
+    deps: [":manifest:resolve"]
+    status: [false]
     cmds:
-      # Shell configuration
+      # All sourced scripts use zsh-specific syntax (typeset -ga; 1-indexed
+      # arrays). Run the validate body in an explicit `zsh -c` so the script
+      # interpreter matches the scripts' contract. DOTFILEDIR and BREW_ZSH
+      # forwarded via env; the inner script-single-quotes keep ${DOTFILEDIR},
+      # ${BREW_ZSH}, $failed unexpanded by the outer mvdan/sh shell.
       - |
-        {{.DOTFILES_MESSAGES}}
-        if grep -qxF "{{.BREW_ZSH}}" /etc/shells 2>/dev/null; then
-          check "Homebrew zsh in /etc/shells"
-        else
-          cross "Homebrew zsh not in /etc/shells"
-        fi
-        if [[ "$SHELL" == "{{.BREW_ZSH}}" ]]; then
-          check "Default shell is Homebrew zsh"
-        else
-          cross "Default shell is not Homebrew zsh (currently: $SHELL)"
-        fi
-      
-      # 1Password SSH agent (skipped on machines named "server" which use system ssh-agent)
-      - |
-        {{.DOTFILES_MESSAGES}}
-        if [[ "{{.PROFILE}}" == "server" ]]; then
-          check "Server profile: using system ssh-agent (1Password check skipped)"
-        else 
-          if [[ -S "$SSH_AUTH_SOCK" ]] && [[ "$SSH_AUTH_SOCK" == *"1password"* ]]; then
-            check "1Password SSH agent socket active"
-          else
-            cross "1Password SSH agent socket missing or SSH_AUTH_SOCK not set to 1Password"
+        DOTFILEDIR={{.DOTFILEDIR}} BREW_ZSH={{.HOMEBREW_PREFIX}}/bin/zsh zsh -c '
+          set -euo pipefail
+          # set-u-safe messages.zsh source (Plan 02 prelude pattern).
+          : "${DOTFILES_MESSAGES_LOADED:=}"
+          if [[ -z "$DOTFILES_MESSAGES_LOADED" ]]; then
+            source "${DOTFILEDIR}/install/messages.zsh"
           fi
-        fi
+
+          failed=0
+
+          # Always-on: shell registration.
+          source "${DOTFILEDIR}/os/shell-registration.zsh"
+          verify_shell_registration || failed=1
+
+          # Per-concern, feature-gated -- enumerate-all (no fast-fail).
+          # Enumeration order matches OSCF-01: dock -> finder -> input -> screenshots -> security.
+          {{if index .MANIFEST.features "macos-dock"}}
+          source "${DOTFILEDIR}/os/defaults/dock.zsh"
+          verify_dock || failed=1
+          {{end}}
+          {{if index .MANIFEST.features "macos-finder"}}
+          source "${DOTFILEDIR}/os/defaults/finder.zsh"
+          verify_finder || failed=1
+          {{end}}
+          {{if index .MANIFEST.features "macos-input"}}
+          source "${DOTFILEDIR}/os/defaults/input.zsh"
+          verify_input || failed=1
+          {{end}}
+          {{if index .MANIFEST.features "macos-screenshots"}}
+          source "${DOTFILEDIR}/os/defaults/screenshots.zsh"
+          verify_screenshots || failed=1
+          {{end}}
+          {{if index .MANIFEST.features "macos-security"}}
+          source "${DOTFILEDIR}/os/defaults/security.zsh"
+          verify_security || failed=1
+          {{end}}
+
+          exit "$failed"
+        '

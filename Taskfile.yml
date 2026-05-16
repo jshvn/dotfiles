@@ -18,11 +18,12 @@
 #   - identity (P4, real)
 #   - packages (P5, real)
 #   - claude   (stub; P7 wires real bodies)
-#   - macos    (stub; P6 wires real bodies)
+#   - macos    (P6, real)
 #
 # v1 leftover taskfiles (common.yml, profile.yml, brew.yml, claude.yml,
-# links.yml, macos.yml, profile-tasks.yml) are NOT included by v2. They
-# remain on disk and will be removed/replaced phase-by-phase.
+# links.yml, profile-tasks.yml) are NOT included by v2. They remain on
+# disk and will be removed/replaced phase-by-phase. (v1 macos.yml is now
+# parked at taskfiles/macos.v1.yml.bak pending P8 cutover deletion.)
 # =============================================================================
 
 version: '3'
@@ -105,7 +106,7 @@ includes:
       XDG_CACHE_HOME: '{{.XDG_CACHE_HOME}}'
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   claude:   ./taskfiles/claude-stub.yml     # P7 wires real bodies
-  macos:    ./taskfiles/macos-stub.yml      # P6 wires real bodies
+  macos:    ./taskfiles/macos.yml           # P6 ships real bodies
 
 # Note: task install IS task update -- D-10 dropped the update: block.
 # Phase 3 ships shell alias `update='task install'` for muscle memory.
