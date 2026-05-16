@@ -63,6 +63,50 @@ vars:
   DOTFILES_MESSAGES: |
     source '{{.DOTFILEDIR}}/install/messages.zsh'
 
+  # ---------------------------------------------------------------------------
+  # EXPECTED_TARGETS (D-08) -- single source of truth for every symlink target
+  # owned by this taskfile. The 27 entries below cover the zsh + antidote +
+  # claude + tool-configs sub-tasks; identity-layer symlinks
+  # ({{.GIT_CONFIG_DIR}}/config, {{.SSH_DIR}}/config) are intentionally
+  # EXCLUDED -- they live in taskfiles/identity.yml's EXPECTED_TARGETS
+  # equivalent and are validated by identity:validate.
+  #
+  # Feature-gated entries use the inline-ternary form:
+  #   {{if index .MANIFEST.features "<key>"}}<path>{{end}}
+  # which renders an empty line when the feature is off; downstream consumers
+  # (links:validate shell-block; future links:reconcile) skip empty lines via
+  #   [[ -z "$target" ]] && continue
+  # per the pseudocode in 08-RESEARCH.md lines 178-208.
+  # ---------------------------------------------------------------------------
+
+  EXPECTED_TARGETS: |
+    {{.ZDOTDIR}}/.zshenv
+    {{.ZDOTDIR}}/.zprofile
+    {{.ZDOTDIR}}/.zshrc
+    {{.ZDOTDIR}}/.zlogin
+    {{.ZDOTDIR}}/.zlogout
+    {{.ZDOTDIR}}/.zsh_plugins.txt
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/settings.json{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/agents{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/commands{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/skills{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh{{end}}
+    {{if index .MANIFEST.features "ghostty"}}{{.XDG_CONFIG_HOME}}/ghostty/config{{end}}
+    {{.XDG_CONFIG_HOME}}/glow/glow.yml
+    {{.XDG_CONFIG_HOME}}/glow/glow_style.json
+    {{.XDG_CONFIG_HOME}}/trippy/trippy.toml
+    {{.XDG_CONFIG_HOME}}/tlrc/config.toml
+    {{.XDG_CONFIG_HOME}}/conda/condarc
+    {{.XDG_CONFIG_HOME}}/eza/theme.yaml
+
 # =============================================================================
 # Tasks
 # =============================================================================
@@ -128,7 +172,7 @@ tasks:
 
   claude:
     desc: "Link claude config tree (files, dirs, hooks)"
-    deps: [manifest:resolve]
+    deps: [":manifest:resolve"]
     cmds:
       - '{{if index .MANIFEST.features "claude-marketplace"}}'
       - task: _:safe-link
@@ -181,7 +225,7 @@ tasks:
 
   configs:
     desc: "Link tool config files (ghostty, glow, trippy, tlrc, conda, eza)"
-    deps: [manifest:resolve]
+    deps: [":manifest:resolve"]
     cmds:
       - '{{if index .MANIFEST.features "ghostty"}}'
       - task: _:safe-link
