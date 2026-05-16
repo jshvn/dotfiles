@@ -55,7 +55,16 @@ tasks:
         {{.DOTFILES_MESSAGES}}
         if [[ -L "{{.TARGET}}" ]]; then
           if [[ -e "{{.TARGET}}" ]]; then
+            {{- if .SOURCE}}
+            actual="$(readlink -f "{{.TARGET}}")"
+            if [[ "$actual" == "{{.SOURCE}}" ]]; then
+              check "{{.NAME}} linked"
+            else
+              cross "{{.NAME}} points to wrong source (expected {{.SOURCE}}, got $actual)"
+            fi
+            {{- else}}
             check "{{.NAME}} linked"
+            {{- end}}
           else
             cross "{{.NAME}} broken (target missing)"
           fi
