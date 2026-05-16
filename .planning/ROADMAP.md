@@ -112,13 +112,15 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. `task packages:verify` reads the active machine's bundles, parses `# verify: <name>` per-line comments (default: bin name = formula name; app name derived from cask name), and asserts `command -v <bin>` resolves for every formula and `/Applications/<App>.app` exists for every cask — exits non-zero with a per-package check/cross report on failure
   5. `task packages:audit` lists currently-installed brew formulae and casks that are NOT declared in any manifest bundle for the active machine — non-blocking by default; `--strict` exits non-zero. Surfaces the "I `brew install`'d something manually and forgot to declare it" drift class.
   6. `task install` runs `task packages:verify` in its final step so a successful install fails loudly when a declared package didn't actually land (silent install failures caught at the verification layer, not just at the bundle layer)
-**Plans**: 6 plans
+**Plans**: 8 plans (6 original + 2 gap-closure from 05-UAT.md Gaps 2 + 3)
   - [x] 05-01-PLAN.md — packages/core.rb + packages/gui.rb + packages/README.md (PKGS-01, PKGS-05)
   - [x] 05-02-PLAN.md — Manifest TOML migration: defaults + 4 machines to typed-bucket extras (PKGS-04, PKGS-05)
   - [x] 05-03-PLAN.md — install/compose-brewfile.zsh + resolver Pass 2 update (PKGS-02, PKGS-03, PKGS-04)
   - [x] 05-04-PLAN.md — taskfiles/packages.yml (install/compose/verify/audit/validate) (PKGS-02, PKGS-03, PKGS-05, VRFY-01, VRFY-02, VRFY-03)
   - [x] 05-05-PLAN.md — Root Taskfile.yml integration: rename brew include to packages; add packages:verify final step (VRFY-04)
   - [x] 05-06-PLAN.md — Canonical docs corrections: REQUIREMENTS PKGS-01/04, ROADMAP SC#3, PROJECT, docs/MANIFEST.md (PKGS-01, PKGS-04)
+  - [ ] 05-07-PLAN.md — Strip per-line `# verify:` comments + per-cask `verify` field from bundles, manifests, resolver/composer comments, docs (Gap 2 schema/code/docs; VRFY-01, VRFY-02, PKGS-04, DOCS-02)
+  - [ ] 05-08-PLAN.md — Rewrite `verify` task body to brew-info-driven two-layer model + `silent: false` task-level override (Gaps 2 + 3; VRFY-01, VRFY-02, VRFY-03, VRFY-04)
 
 ### Phase 6: OS Defaults — macOS Configuration
 **Goal**: macOS defaults split into per-concern files, opt-in via manifest features, idempotent on every run
