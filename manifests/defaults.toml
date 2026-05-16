@@ -39,7 +39,9 @@ bundles = ["core"]
 # Typed sub-table per D-03. Resolver concat+dedupes each sub-array
 # independently with the active machine's extras.
 #   formulae -- bare strings OR { name, verify } objects (D-05)
-#   casks    -- { name, verify } objects ONLY (D-04 -- verify MANDATORY)
+#   casks    -- { name } objects required (verify field retained as optional
+#               metadata for backward-compat; ignored by dedupe semantics;
+#               brew info drives post-install verify post-Gap-2 pivot)
 #   mas      -- { id, name } objects ONLY (D-06 -- name doubles as verify)
 formulae = []
 casks    = []

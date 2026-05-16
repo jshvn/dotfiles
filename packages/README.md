@@ -19,7 +19,9 @@ in scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
   highlight), system inspectors (htop, bottom, fastfetch, onefetch),
   network tools (cloudflared, doggo, whois, trippy), and the
   1Password command-line tool as a binary-only cask
-  (`cask '1password-cli' # verify: bin:op` -- see Verify rules).
+  (`cask '1password-cli'`; the `op` binary is installed under the
+  Homebrew prefix and verified by `task packages:verify` via the
+  `brew info` artifacts path -- see Verify rules below).
 - `gui.rb` -- laptop GUI baseline. Any machine with a display includes
   this (laptops add `"gui"` to `bundles`; servers omit it -- PKGS-05).
   Minimum set: 1Password + Ghostty. Other GUI apps (Slack, Discord, VS
@@ -28,10 +30,11 @@ in scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
 - `../manifests/machines/<name>.toml`
   `[packages.brew.extra_packages]` -- per-machine package extras typed
   sub-table. `formulae` accepts bare strings (default verify) or
-  `{ name, verify }` objects (override). `casks` REQUIRES
-  `{ name, verify }` objects on every entry (no derivation -- D-04).
-  `mas` REQUIRES `{ id, name }` objects (id drives install; name drives
-  the `/Applications/<name>.app` verify -- D-06).
+  `{ name, verify }` objects (override). `casks` takes `{ name }`
+  objects -- no per-entry `verify` field required (data-driven from
+  `brew info` post-Gap-2 pivot). `mas` REQUIRES `{ id, name }` objects
+  (id drives install; name drives the `/Applications/<name>.app`
+  verify -- D-06).
 
 ## Adding a pattern
 
@@ -45,46 +48,52 @@ in scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
 - **A per-machine package.** Edit
   `../manifests/machines/<name>.toml`
   `[packages.brew.extra_packages]` typed sub-table (D-03): `formulae`
-  (bare strings OR `{ name, verify }` objects), `casks` (REQUIRED
-  `{ name, verify }` objects per D-04), `mas` (REQUIRED
+  (bare strings OR `{ name, verify }` objects), `casks` (bare
+  `{ name }` objects -- no verify field required), `mas` (REQUIRED
   `{ id, name }` objects). The resolver concat+dedupes each sub-array
   with the defaults at resolve time; the composer renders one Ruby DSL
   line per entry into the cached Brewfile.
-- **A verify-comment override.** When? Formula bin name differs from
-  formula name (e.g. `bottom` ships `btm`, `git-delta` ships `delta`).
-  Add `# verify: <bin>` suffix to the bundle line per D-05. Reminder:
-  cask `# verify: <App>` is MANDATORY on every line -- there is no
-  default and no derivation (D-04); a missing cask verify comment fails
-  lint (LINT-09, Plan 04).
+- **Verify metadata.** No per-line annotations are required in bundle
+  files and no per-cask `verify` field is required in machine TOMLs.
+  Verify is data-driven from `brew info` post-Gap-2 pivot. See
+  `## Verify rules` below for the user-facing model and
+  `../docs/MANIFEST.md` `## Verify model` for the canonical reference.
 
 ## Verify rules
 
-`task packages:verify` (Plan 04) enforces:
+`task packages:verify` uses a two-layer model to confirm every declared
+package is correctly installed.
 
-- Formula default: `command -v <formula-name>` (e.g. `brew 'jq'`
-  verifies `command -v jq`).
-- Formula override: `command -v <bin>` from the `# verify: <bin>`
-  comment (e.g. `brew 'git-delta' # verify: delta` verifies
-  `command -v delta`).
-- Cask: `test -d /Applications/<App>.app` from the mandatory
-  `# verify: <App>` comment (e.g.
-  `cask 'ghostty' # verify: Ghostty` verifies
-  `test -d /Applications/Ghostty.app`).
-- Cask (binary-only, gap-1): `command -v <bin>` from the
-  `# verify: bin:<bin>` comment. Used for casks that ship a CLI
-  binary instead of an `.app` bundle (e.g.
-  `cask '1password-cli' # verify: bin:op` verifies
-  `command -v op`, since Homebrew installs `op` to
-  `/opt/homebrew/bin/` with no `/Applications/.app` artifact). The
-  `bin:` prefix is the explicit opt-in -- bare `# verify: <App>`
-  still defaults to the `/Applications/<App>.app` check.
-- MAS: `test -d /Applications/<name>.app` where `<name>` is the `name`
-  field of the `{ id, name }` object (D-06).
+**Layer 1** -- `brew bundle check --no-upgrade --file="$XDG_CACHE_HOME/dotfiles/Brewfile"`
+confirms every package declared in the composed Brewfile is installed per
+Homebrew's view of the world. Sub-second on a converged machine.
 
-Verify runs as the final step of `task install` and is hard-fail with no
-escape hatch -- D-10. Failures emit a check/cross table and exit
-non-zero; the recovery path is "fix the manifest or the upstream
-formula/cask, re-run `task install`."
+**Layer 2** -- `brew info --installed --json=v2` returns the full set of
+installed formulae and casks with their artifact paths. `task packages:verify`
+parses the artifact entries and asserts each declared artifact path actually
+exists on disk.
+
+For the canonical schema-level reference see `../docs/MANIFEST.md`
+`## Verify model`.
+
+**MAS exception.** Apple App Store apps have no `brew info` equivalent.
+The `name` field in each `{ id, name }` MAS entry doubles as both the
+install-list display name and the verify target
+(`/Applications/<name>.app` existence check). This is the one place
+per-entry verify metadata is still authored in v2 -- D-06 preserved.
+
+**Failure semantics.** Verify is hard-fail at the install gate per D-10:
+`task install`'s final step is `task packages:verify`; a missing artifact
+fails the entire `task install` with exit 1 after printing the full
+check/cross table. The recovery path is "fix the manifest or the upstream
+formula/cask, re-run `task install`." No `--no-verify` escape hatch.
+
+**Retired conventions.** The per-line verify comment annotations and
+the `bin:` prefix convention used in earlier Phase 5 plans are retired.
+Authors of new bundles or machine extras do NOT write per-line verify
+annotations -- the `brew info` bulk path is authoritative and the
+annotation metadata went stale on upstream renames (Gap 2 surface area,
+discovered during Phase 5 UAT).
 
 ## Composed Brewfile cache
 
@@ -104,8 +113,8 @@ $XDG_CACHE_HOME/dotfiles/Brewfile` after a run.
 
 ## References
 
-- `../docs/MANIFEST.md` -- manifest schema and merge semantics,
-  including the `[packages.brew.extra_packages]` typed sub-table
+- `../docs/MANIFEST.md` -- manifest schema, merge semantics, and the
+  `## Verify model` section (canonical two-layer verify reference)
 - `../CLAUDE.md` -- v2 conventions (flat directories, one concept per
   file, no `packages/brew/` subdirectory)
 - `../.planning/REQUIREMENTS.md` -- PKGS-01..05 + VRFY-01..04 + DOCS-02

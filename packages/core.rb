@@ -7,16 +7,14 @@
 # Side effects: None at source time -- this is static Ruby DSL content read by
 #              `brew bundle install` against the composed Brewfile.
 #
-# Verify rules (consumed by `task packages:verify` in Plan 04):
-#   brew '<name>'                       -> command -v <name>     (default; D-05)
-#   brew '<name>' # verify: <bin>       -> command -v <bin>      (override; D-05)
-#   cask '<name>' # verify: bin:<bin>   -> command -v <bin>      (binary-only cask; gap-1 fix)
+# Verify is data-driven from `brew info` post-Gap-2 pivot; see
+# ../docs/MANIFEST.md `## Verify model` for the canonical model and
+# ../packages/README.md `## Verify rules` for the user-facing summary.
 #
 # Conventions:
 #   - Single-quote string-literal form.
-#   - Override comments use the exact shape `# verify: <bin>` (single space
-#     after `#`, single space after `:`); the verify parser in Plan 04 is
-#     anchored on that shape.
+#   - No per-line verify annotations required -- the verify task reads
+#     artifact paths directly from `brew info --installed --json=v2`.
 #   - No global brew-bundle args directives here -- core.rb has no casks; any
 #     downstream cask lines (gui.rb + per-machine extras) inherit brew bundle's
 #     default appdir (/Applications).
@@ -24,31 +22,24 @@
 # Notable surgery vs v1 install/Brewfile.rb:
 #   - Drops the v1 zsh plugin manager line (Phase 3 swapped it for antidote).
 #   - Adds  `brew 'antidote'`    (the v2 plugin manager wired in Phase 3).
-#   - Adds  `cask '1password-cli' # verify: bin:op` (binary-only cask:
-#                                  Homebrew lists this as a cask that ships
-#                                  the `op` binary to /opt/homebrew/bin --
-#                                  no /Applications/.app bundle. The
-#                                  `bin:` prefix on the verify comment
-#                                  tells packages:verify to dispatch
-#                                  `command -v op` instead of the default
-#                                  cask path `/Applications/op.app`. See
-#                                  packages/README.md "Verify rules".).
-#   - Adds  `# verify: <bin>` overrides on the multi-binary / renamed-binary
-#     formulas: git-delta -> delta, grep -> ggrep, openssh -> ssh,
-#     trippy -> trip, bottom -> btm, coreutils -> gsha256sum.
+#   - Adds  `cask '1password-cli'` (binary-only cask: Homebrew lists this as a
+#                                   cask that ships the `op` binary to
+#                                   /opt/homebrew/bin -- no /Applications/.app
+#                                   bundle; gap-1 fix preserved, bin: verify
+#                                   convention retired by gap-2 pivot).
 
 brew 'zsh'
 brew 'go-task'
 brew 'yq'
 brew 'jq'
 brew 'git'
-brew 'git-delta'           # verify: delta
-brew 'openssh'             # verify: ssh
+brew 'git-delta'
+brew 'openssh'
 brew 'wget'
 brew 'eza'
 brew 'bat'
 brew 'fd'
-brew 'grep'                # verify: ggrep
+brew 'grep'
 brew 'glow'
 brew 'highlight'
 brew 'grc'
@@ -59,12 +50,12 @@ brew 'doggo'
 brew 'hugo'
 brew 'ncdu'
 brew 'tlrc'
-brew 'trippy'              # verify: trip
+brew 'trippy'
 brew 'cloudflared'
 brew 'fastfetch'
 brew 'onefetch'
-brew 'bottom'              # verify: btm
-brew 'coreutils'           # verify: gsha256sum
+brew 'bottom'
+brew 'coreutils'
 brew 'mas'
 brew 'antidote'
-cask '1password-cli'       # verify: bin:op
+cask '1password-cli'

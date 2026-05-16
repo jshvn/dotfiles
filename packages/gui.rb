@@ -9,22 +9,18 @@
 # Side effects: None at source time -- this is static Ruby DSL content read by
 #              `brew bundle install` against the composed Brewfile.
 #
-# Verify rules (consumed by `task packages:verify` in Plan 04):
-#   cask '<name>' # verify: <App Name>  -> /Applications/<App Name>.app  (MANDATORY per D-04)
+# Verify is data-driven from `brew info` post-Gap-2 pivot; see
+# ../docs/MANIFEST.md `## Verify model`.
 #
 # Conventions:
 #   - Single-quote string-literal form.
-#   - Cask `# verify: <App>` is MANDATORY on every line; no derivation, no
-#     defaults. Cask app names diverge from cask names enough that any
-#     derivation heuristic produces enough false-negatives to undermine the
-#     verify contract (D-04). LINT-09 (Plan 04) rejects any cask line without
-#     `# verify:`.
+#   - No per-line verify annotations required -- the verify task reads
+#     artifact paths directly from `brew info --installed --json=v2`.
 #   - Beyond the two lines below, GUI apps live in per-machine
 #     `manifests/machines/<name>.toml` `[packages.brew.extra_packages.casks]`
 #     -- per D-02 minimal-bundles philosophy (Plan 02 migrations).
 #   - The 1Password command-line tool is NOT here -- it lives in core.rb as a
-#     formula-style entry with `# verify: op` (uniform formula-line verify;
-#     the corresponding Homebrew cask has no .app bundle).
+#     binary-only cask (`cask '1password-cli'`; no /Applications/.app bundle).
 
-cask '1password' # verify: 1Password
-cask 'ghostty' # verify: Ghostty
+cask '1password'
+cask 'ghostty'
