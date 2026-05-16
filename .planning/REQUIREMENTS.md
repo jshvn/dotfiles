@@ -130,8 +130,8 @@ Claude Code integration with bug fixes for known v1 issues.
 
 Per-tool configuration deployment via symlinks.
 
-- [ ] **TOOL-01**: Tool configs deployed via `taskfiles/links.yml` using the `_:safe-link` helper (no bare `ln`)
-- [ ] **TOOL-02**: Ghostty, glow, trippy, tlrc, conda, eza, motd configs ported to `configs/<tool>/`
+- [x] **TOOL-01**: Tool configs deployed via `taskfiles/links.yml` using the `_:safe-link` helper (no bare `ln`)
+- [x] **TOOL-02**: Ghostty, glow, trippy, tlrc, conda, eza, motd configs ported to `configs/<tool>/`
 - [x] **TOOL-03**: `_:safe-link` hardened to verify target type (catches broken symlinks pointing to wrong target type)
 - [x] **TOOL-04**: `_:check-link` verifies the symlink (a) exists, (b) target is not broken, and (c) `readlink -f` equals the manifest-expected source path; mismatch is a failure not a warning (catches "symlink exists but points to stale path after refactor" class of bug)
 
@@ -288,8 +288,8 @@ Per-REQ-ID mapping to roadmap phase.
 | CLDE-02 | Phase 7 (Claude + Configs) | Complete |
 | CLDE-03 | Phase 7 (Claude + Configs) | Complete |
 | CLDE-04 | Phase 7 (Claude + Configs) | Complete |
-| TOOL-01 | Phase 7 (Claude + Configs) | Pending |
-| TOOL-02 | Phase 7 (Claude + Configs) | Pending |
+| TOOL-01 | Phase 7 (Claude + Configs) | Complete |
+| TOOL-02 | Phase 7 (Claude + Configs) | Complete |
 | TOOL-03 | Phase 7 (Claude + Configs) | Complete |
 | TOOL-04 | Phase 7 (Claude + Configs) | Complete |
 | TEST-01 | Phase 7 (Claude + Configs) | Complete |

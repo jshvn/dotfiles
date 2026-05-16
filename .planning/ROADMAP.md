@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4: Identity Layer — Git + SSH per Machine** - Manifest-driven `includeIf` git config, `Include`-based SSH config, 1Password feature flag, identity validation
 - [ ] **Phase 5: Packages Layer — Brewfile Composition + Verification** - Purpose-named bundles, manifest-driven composition, `brew bundle check` idempotency, post-install binary/cask verification, install-vs-declared drift audit
 - [ ] **Phase 6: OS Defaults — macOS Configuration** - Per-concern defaults files, feature-flag gating, `defaults read` idempotency, `chsh` bug fix
-- [ ] **Phase 7: Claude + Tool Configs + Smoke Tests** - Claude integration with bug-fixed hooks, GSD sentinel, marketplace status check, tool config symlinks, hardened `_:check-link`, hook smoke tests, root `task test`
+- [x] **Phase 7: Claude + Tool Configs + Smoke Tests** - Claude integration with bug-fixed hooks, GSD sentinel, marketplace status check, tool config symlinks, hardened `_:check-link`, hook smoke tests, root `task test` (completed 2026-05-16)
 - [ ] **Phase 8: Validation + Cutover Readiness** - Composed `task validate`, two-mode links reconcile, install-time orphan warning, per-machine cutover register + fresh-machine procedure, top-level README, MIGRATION.md, MACHINES.md
 
 ## Phase Details
@@ -156,7 +156,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   - [x] 07-03-PLAN.md — Real taskfiles/claude.yml (install/marketplace/gsd/update/status/validate/ensure-cli) + root include flip + claude/README.md (CLDE-01/03/04)
   - [x] 07-04-PLAN.md — install/test-hooks.zsh runner + taskfiles/test.yml + root `task test` aggregator (TEST-01, TEST-02)
   - [x] 07-05-PLAN.md — Port seven tool configs to configs/<tool>/ with per-tool READMEs + aggregate configs/README.md (TOOL-02)
-  - [ ] 07-06-PLAN.md — Extend taskfiles/links.yml with claude: + configs: sub-tasks; retrofit validate with SOURCE strict mode (CLDE-01, TOOL-01, TOOL-02, TOOL-04)
+  - [x] 07-06-PLAN.md — Extend taskfiles/links.yml with claude: + configs: sub-tasks; retrofit validate with SOURCE strict mode (CLDE-01, TOOL-01, TOOL-02, TOOL-04)
 
 ### Phase 8: Validation + Cutover Readiness
 **Goal**: A composed `task validate`, two-mode `task links:reconcile` (detect + cleanup), install-time orphan warning, and per-machine cutover gate with a documented fresh-machine verification procedure
@@ -184,5 +184,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 4. Identity Layer — Git + SSH per Machine | 4/7 | Gap closure planned | - |
 | 5. Packages Layer — Brewfile Composition + Verification | 0/6 | Planned | - |
 | 6. OS Defaults — macOS Configuration | 0/4 | Planned | - |
-| 7. Claude + Tool Configs + Smoke Tests | 5/6 | In Progress|  |
+| 7. Claude + Tool Configs + Smoke Tests | 6/6 | Complete   | 2026-05-16 |
 | 8. Validation + Cutover Readiness | 0/TBD | Not started | - |
