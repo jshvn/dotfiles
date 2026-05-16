@@ -173,7 +173,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   - [x] 08-01-PLAN.md — taskfiles/links.yml EXPECTED_TARGETS refactor + links:validate exit-code fix (CUTV-02 foundation)
   - [x] 08-02-PLAN.md — Root `task validate` aggregator in Taskfile.yml + D-06 feature-off sentinel (CUTV-01)
   - [x] 08-03-PLAN.md — links:reconcile two-mode task + install-time orphan warn + cutover:ack writer (CUTV-02, CUTV-07, CUTV-08)
-  - [ ] 08-04-PLAN.md — docs/CUTOVER.md (procedure + state table) + docs/MACHINES.md (CUTV-03, DOCS-06, DOCS-08)
+  - [x] 08-04-PLAN.md — docs/CUTOVER.md (procedure + state table) + docs/MACHINES.md (CUTV-03, DOCS-06, DOCS-08)
   - [ ] 08-05-PLAN.md — docs/MIGRATION.md (per-concept + rollback + archive) + root README.md replacement (DOCS-01, DOCS-05)
   - [ ] 08-06-PLAN.md — Per-machine cutover execution + 7-day soak per machine + v1 archive (CUTV-04, CUTV-05, CUTV-06) — autonomous: false
 
@@ -191,4 +191,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Packages Layer — Brewfile Composition + Verification | 0/6 | Planned | - |
 | 6. OS Defaults — macOS Configuration | 0/4 | Planned | - |
 | 7. Claude + Tool Configs + Smoke Tests | 6/6 | Complete   | 2026-05-16 |
-| 8. Validation + Cutover Readiness | 3/6 | In Progress|  |
+| 8. Validation + Cutover Readiness | 4/6 | In Progress|  |
