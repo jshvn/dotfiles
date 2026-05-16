@@ -122,7 +122,7 @@ macOS defaults feature-flag-gated.
 Claude Code integration with bug fixes for known v1 issues.
 
 - [ ] **CLDE-01**: Global `CLAUDE.md`, `settings.json`, hooks, agents, commands, and skills installed via `taskfiles/claude.yml`
-- [ ] **CLDE-02**: All hooks ported and shellcheck-clean: `secret-scan.zsh`, `no-emojis.zsh`, `no-ai-comments.zsh`, `agent-transparency.zsh` (last one rewritten to remove `local` at script scope)
+- [x] **CLDE-02**: All hooks ported and shellcheck-clean: `secret-scan.zsh`, `no-emojis.zsh`, `no-ai-comments.zsh`, `agent-transparency.zsh` (last one rewritten to remove `local` at script scope)
 - [x] **CLDE-03**: GSD install task uses a presence sentinel file as its `status:` check — `npx` runs only when the sentinel is absent. An explicit `task claude:update` deletes the sentinel and re-runs `npx`.
 - [ ] **CLDE-04**: Marketplace install uses `claude plugin list` as its `status:` check
 
@@ -132,8 +132,8 @@ Per-tool configuration deployment via symlinks.
 
 - [ ] **TOOL-01**: Tool configs deployed via `taskfiles/links.yml` using the `_:safe-link` helper (no bare `ln`)
 - [ ] **TOOL-02**: Ghostty, glow, trippy, tlrc, conda, eza, motd configs ported to `configs/<tool>/`
-- [ ] **TOOL-03**: `_:safe-link` hardened to verify target type (catches broken symlinks pointing to wrong target type)
-- [ ] **TOOL-04**: `_:check-link` verifies the symlink (a) exists, (b) target is not broken, and (c) `readlink -f` equals the manifest-expected source path; mismatch is a failure not a warning (catches "symlink exists but points to stale path after refactor" class of bug)
+- [x] **TOOL-03**: `_:safe-link` hardened to verify target type (catches broken symlinks pointing to wrong target type)
+- [x] **TOOL-04**: `_:check-link` verifies the symlink (a) exists, (b) target is not broken, and (c) `readlink -f` equals the manifest-expected source path; mismatch is a failure not a warning (catches "symlink exists but points to stale path after refactor" class of bug)
 
 ### Smoke Tests
 
@@ -285,13 +285,13 @@ Per-REQ-ID mapping to roadmap phase.
 | OSCF-04 | Phase 6 (OS Defaults) | Pending |
 | OSCF-05 | Phase 6 (OS Defaults) | Pending |
 | CLDE-01 | Phase 7 (Claude + Configs) | Pending |
-| CLDE-02 | Phase 7 (Claude + Configs) | Pending |
+| CLDE-02 | Phase 7 (Claude + Configs) | Complete |
 | CLDE-03 | Phase 7 (Claude + Configs) | Complete |
 | CLDE-04 | Phase 7 (Claude + Configs) | Pending |
 | TOOL-01 | Phase 7 (Claude + Configs) | Pending |
 | TOOL-02 | Phase 7 (Claude + Configs) | Pending |
-| TOOL-03 | Phase 7 (Claude + Configs) | Pending |
-| TOOL-04 | Phase 7 (Claude + Configs) | Pending |
+| TOOL-03 | Phase 7 (Claude + Configs) | Complete |
+| TOOL-04 | Phase 7 (Claude + Configs) | Complete |
 | TEST-01 | Phase 7 (Claude + Configs) | Pending |
 | TEST-02 | Phase 7 (Claude + Configs) | Pending |
 | DOCS-01 | Phase 8 (Validation + Cutover) | Pending |
