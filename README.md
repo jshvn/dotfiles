@@ -25,7 +25,10 @@ files (sections, types, deep-merge rules, worked examples) lives in
 
 Run these commands in order on a clean Mac. The `task cutover:ack` step
 is required, not optional -- `task install` declares a `cutover_gate_check`
-precondition that hard-fails on a fresh machine without the sentinel.
+precondition that hard-fails once a machine has been selected but the
+cutover-ack sentinel is missing. `bootstrap.zsh` itself completes cleanly
+on a fresh machine (no machine file yet) so the user reaches the next-step
+hint without manual intervention.
 
 ```zsh
 git clone <repo-url>

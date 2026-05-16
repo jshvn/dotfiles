@@ -10,6 +10,15 @@
 #        $XDG_STATE_HOME/dotfiles/machine        (active machine name)
 # Exits: cutover_gate_check returns 1 on missing/invalid/mismatched sentinel
 #        cutover_gate_check returns 0 on valid sentinel for active machine
+#        cutover_gate_check returns 0 on fresh machine (no machine file yet)
+#
+# Fresh-machine semantics:
+#   On a first-time install no machine has been selected yet, so the machine
+#   file is absent. The gate treats this as "not applicable" and returns 0 --
+#   the gate's purpose is to protect existing v1 installs that are being
+#   cut over, not to fail bootstrap on a clean Mac. Enforcement still fires
+#   on `task install` via the precondition, which runs AFTER `task setup`
+#   writes the machine file.
 #
 # The sentinel WRITER (`task cutover:ack -- <name>`) is owned by Phase 8
 # (CUTV-03). P2 only reads/enforces.
@@ -32,9 +41,13 @@ cutover_gate_check() {
   local ack_file="${state_dir}/cutover-ack"
   local active_machine ack_machine ack_ts
 
+  # Fresh-machine path: no machine selected yet. The gate has no machine to
+  # check against; defer enforcement to `task install` preconditions, which
+  # run AFTER `task setup` writes the machine file. This lets bootstrap.zsh
+  # complete cleanly on a clean Mac per docs/CUTOVER.md "Fresh-machine
+  # verification" step 2.
   if [[ ! -f "$machine_file" ]]; then
-    error "no machine selected (run: task setup -- <machine-name>)"
-    return 1
+    return 0
   fi
   active_machine=$(head -n1 "$machine_file" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 
