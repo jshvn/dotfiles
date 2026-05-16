@@ -127,12 +127,16 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Depends on**: Phase 5
 **Requirements**: OSCF-01, OSCF-02, OSCF-03, OSCF-04, OSCF-05
 **Success Criteria** (what must be TRUE):
-  1. On a machine with `features.macos-defaults.dock = true`, `task macos:defaults:dock` writes the configured dock keys; on a machine without the feature, the task is a no-op (skipped at the feature-gate level)
+  1. On a machine with `features.macos-dock = true`, `task macos:defaults:dock` writes the configured dock keys; on a machine without the feature, the task is a no-op (skipped at the feature-gate level)
   2. Re-running `task macos:defaults` on a converged machine performs zero `defaults write` operations because each task's `status:` reads `defaults read <domain> <key>` first and matches the manifest value
   3. `task macos:shell` uses `{{.BREW_ZSH}}` (template var) in its `status:` check — not `$BREW_ZSH` (shell var) — and re-running on a converged machine is a no-op (live v1 bug fixed structurally)
   4. A Mac server machine that declines GUI defaults (dock, finder, screenshots) installs cleanly with those tasks gated off; only `shell-registration.zsh` and `security.zsh` run
-  5. `task validate` reads current `defaults` values for declared keys and asserts them against the manifest's expected values for the active machine
-**Plans**: TBD
+  5. `task validate` reads current `defaults` values for declared keys and asserts them against the in-script expected values for each enabled concern
+**Plans**: 4 plans
+  - [ ] 06-01-PLAN.md — Manifest schema: defaults.toml +4 macos-* keys + server-{1,2}.toml macos-security = true (OSCF-02)
+  - [ ] 06-02-PLAN.md — Five os/defaults/<concern>.zsh sourced scripts + os/shell-registration.zsh + os/README.md DOCS-02 (OSCF-01, OSCF-03, OSCF-04)
+  - [ ] 06-03-PLAN.md — taskfiles/macos.yml real bodies + Taskfile.yml include flip + ROADMAP/REQUIREMENTS/docs/MANIFEST.md amends (OSCF-01..05; structural fix for v1 macos:shell:145 bug class)
+  - [ ] 06-04-PLAN.md — 06-HUMAN-UAT.md manual UAT plan: 5 tests (LINT-02 static, server-mode install, laptop-mode round-trip, deliberate-drift validate, lint regression) (OSCF-03/04/05)
 
 ### Phase 7: Claude + Tool Configs + Smoke Tests
 **Goal**: Claude Code integration with shellcheck-clean hooks AND runtime hook smoke tests, idempotent GSD/marketplace install, tool config symlinks via hardened `_:safe-link` and `_:check-link` (target-match enforced), and a root `task test` aggregator
@@ -173,6 +177,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 3. Shell Layer — Flat Content Port | 0/TBD | Not started | - |
 | 4. Identity Layer — Git + SSH per Machine | 4/7 | Gap closure planned | - |
 | 5. Packages Layer — Brewfile Composition + Verification | 0/6 | Planned | - |
-| 6. OS Defaults — macOS Configuration | 0/TBD | Not started | - |
+| 6. OS Defaults — macOS Configuration | 0/4 | Planned | - |
 | 7. Claude + Tool Configs + Smoke Tests | 0/TBD | Not started | - |
 | 8. Validation + Cutover Readiness | 0/TBD | Not started | - |
