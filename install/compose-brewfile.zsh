@@ -31,7 +31,7 @@ set -euo pipefail
 # Extras line shapes (canonical; literal single-quotes around the name):
 #   brew '<name>'                              (bare formula)
 #   brew '<name>' # verify: <verify>           (formula override)
-#   cask '<name>' # verify: <verify>           (cask with mandatory verify)
+#   cask '<name>'                              (bare cask; verify is data-driven from brew info)
 #   mas  '<name>', id: <id>                    (Mac App Store entry)
 
 # Source the messages library, but only if not already loaded by a parent
@@ -142,9 +142,10 @@ compose() {
     echo "$formulae_json" | jq -r --arg q "$SQ" '.[] | if type == "string" then "brew " + $q + . + $q else "brew " + $q + .name + $q + " # verify: " + .verify end'
 
     # ---- Extras: casks ------------------------------------------------------
-    # Canonical jq emit form (casks): "cask '<name>' # verify: <verify>".
+    # Canonical jq emit form (casks): "cask '<name>'" (bare; verify is
+    # data-driven from `brew info --installed --json=v2` post-Gap-2 pivot).
     echo "# === extras (casks) ==="
-    echo "$casks_json" | jq -r --arg q "$SQ" '.[] | "cask " + $q + .name + $q + " # verify: " + .verify'
+    echo "$casks_json" | jq -r --arg q "$SQ" '.[] | "cask " + $q + .name + $q'
 
     # ---- Extras: mas --------------------------------------------------------
     # Canonical jq emit form (mas): "mas '<name>', id: <id>".

@@ -313,7 +313,7 @@ emit_unknown_key_warnings() {
 #   Typed-bucket (D-03; current canonical shape):
 #     [packages.brew.extra_packages]
 #     formulae = [ "hugo" | { name, verify } ... ]
-#     casks    = [ { name, verify } ... ]   # D-04 verify MANDATORY
+#     casks    = [ { name } ... ]           # .verify optional and ignored post-Gap-2 pivot
 #     mas      = [ { id, name } ... ]       # D-06 name doubles as verify
 #
 #     Each sub-array gets an independent union+dedupe with the active machine's
