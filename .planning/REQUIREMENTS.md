@@ -115,7 +115,7 @@ macOS defaults feature-flag-gated.
 - [ ] **OSCF-02**: Each defaults group is gated by a manifest feature flag — opt-in per machine (servers can decline all GUI-related defaults)
 - [ ] **OSCF-03**: Every defaults task has a `status:` that reads `defaults read <domain> <key>` before writing (replaces re-running on every install)
 - [ ] **OSCF-04**: `os/shell-registration.zsh` adds Homebrew zsh to `/etc/shells` and runs `chsh` with a correct `{{.BREW_ZSH}}` template-var `status:` check (fixes the live v1 bug)
-- [ ] **OSCF-05**: `task validate` asserts current defaults values match manifest expectations for the active machine
+- [ ] **OSCF-05**: `task validate` asserts current defaults values match in-script expectations for each enabled concern
 
 ### Claude
 

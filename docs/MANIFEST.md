@@ -453,11 +453,11 @@ as of Phase 1. Each subsequent phase extends this table with the flags it consum
 | `one-password-signing` | Phase 4 | Enables git commit signing via 1Password op-ssh-sign | `false` |
 | `motd` | Phase 3 | Enables MOTD display on `.zlogin` | `true` |
 | `claude-marketplace` | Phase 7 | Installs Claude marketplace plugins | `true` |
-| `macos-dock` | Phase 6 | Runs `os/defaults/dock.zsh` | machine-set (not in defaults.toml) |
-| `macos-finder` | Phase 6 | Runs `os/defaults/finder.zsh` | machine-set (not in defaults.toml) |
-| `macos-input` | Phase 6 | Runs `os/defaults/input.zsh` | machine-set (not in defaults.toml) |
-| `macos-screenshots` | Phase 6 | Runs `os/defaults/screenshots.zsh` | machine-set (not in defaults.toml) |
-| `macos-security` | Phase 6 | Runs `os/defaults/security.zsh` | machine-set (not in defaults.toml) |
+| `macos-dock` | Phase 6 | Runs `os/defaults/dock.zsh` | `false` |
+| `macos-finder` | Phase 3 + Phase 6 | Gates `shell/aliases/finder.zsh` (P3 D-07) + runs `os/defaults/finder.zsh` (P6 D-01 same-flag-two-consumers) | `false` |
+| `macos-input` | Phase 6 | Runs `os/defaults/input.zsh` | `false` |
+| `macos-screenshots` | Phase 6 | Runs `os/defaults/screenshots.zsh` | `false` |
+| `macos-security` | Phase 6 | Runs `os/defaults/security.zsh` | `false` |
 
 To access any of these in a taskfile, use `{{index .MANIFEST.features "feature-name"}}`.
 Do not use dot-access (`{{.MANIFEST.features.one-password-ssh}}`) -- Go-template parsing
