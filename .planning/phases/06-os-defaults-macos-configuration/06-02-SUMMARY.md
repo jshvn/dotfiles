@@ -176,9 +176,9 @@ The v1 `macos:shell:145` `$BREW_ZSH`-in-status bug class (recorded in `.planning
 
 Plan 02 is the structural prerequisite -- Plan 03 cannot ship its `macos:shell` task body without this script existing. The two plans are parallel-safe in Wave 0 because Plan 02 produces files Plan 03 reads; Plan 03 produces taskfile content that does not touch any file Plan 02 owns.
 
-## Self-Check
+## Self-Check: PASSED
 
-Performed in the next agent turn.
+All claimed files exist on disk (`os/defaults/{dock,finder,input,screenshots,security}.zsh`, `os/shell-registration.zsh`, `os/README.md`, `.planning/phases/06-os-defaults-macos-configuration/06-02-SUMMARY.md`). All four claimed commits resolve in `git log --oneline --all`: `d8b8cbf` (Task 1 -- five concern scripts), `29db850` (Task 2 -- shell-registration), `96eb4ad` (Task 3 -- README rewrite), `bd5e89c` (SUMMARY). Worktree clean after SUMMARY commit.
 
 ---
 *Phase: 06-os-defaults-macos-configuration*
