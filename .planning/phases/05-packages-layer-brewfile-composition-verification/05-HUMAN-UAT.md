@@ -3,7 +3,7 @@ status: partial
 phase: 05-packages-layer-brewfile-composition-verification
 source: [05-VERIFICATION.md]
 started: 2026-05-15T19:25:00Z
-updated: 2026-05-16T02:40:00Z
+updated: 2026-05-16T02:55:00Z
 ---
 
 ## Current Test
@@ -34,7 +34,8 @@ note: |
   sentinel writer (CUTV-03). `task packages:verify` exercises the identical
   verify code path that `task install` would have run as its final step, so the
   test still covers VRFY-03 end-to-end without being held up by the gate.
-result: [pending]
+result: passed
+verified: 2026-05-16
 
 ### 3. End-to-end `task install` smoke
 expected: From a clean working tree on `personal-laptop`, `task install` runs the full pipeline (`links:all` -> `packages:install` -> `claude:install` -> `macos:defaults` -> `macos:shell` -> `packages:verify`) and exits 0 with the success banner.
@@ -56,14 +57,14 @@ result: [pending]
 ## Summary
 
 total: 3
-passed: 1
+passed: 2
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
 blocked: 1
 notes:
   - Test 1 (PKGS-03 idempotency) recorded passed 2026-05-15 in 05-VERIFICATION.md.
-  - Test 2 (VRFY-03 negative path) reworded 2026-05-16 to invoke `task packages:verify` directly instead of `task install`; the cutover-ack gate would otherwise block before verify runs. Identical verify code path; identical contract.
+  - Test 2 (VRFY-03 negative path) reworded 2026-05-16 to invoke `task packages:verify` directly instead of `task install`; the cutover-ack gate would otherwise block before verify runs. Identical verify code path; identical contract. Confirmed passed 2026-05-16.
   - Test 3 blocked on Phase 8 CUTV-03 (the `task cutover:ack -- <machine>` writer is not yet implemented). A manual sentinel-write workaround is documented in-step for users who want to exercise the full pipeline before CUTV-03 lands.
 
 ## Gaps

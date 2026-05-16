@@ -8,7 +8,8 @@ requirements: [PKGS-01, PKGS-02, PKGS-03, PKGS-04, PKGS-05, VRFY-01, VRFY-02, VR
 must_haves_total: 10
 must_haves_verified: 10
 human_verification_items: 2
-human_verification_passed: 1
+human_verification_passed: 2
+human_verification_blocked: 1
 gaps_open: 0
 gaps_closed: 3
 re_verification:
@@ -24,8 +25,8 @@ notes:
   - "Post-pivot semantics apply to VRFY-01 / VRFY-02: brew-info two-layer model replaces per-line # verify: comments (design pivot decided 2026-05-15; ratified in plans 05-07 + 05-08)."
   - "task packages:verify exits 0 with 'all declared packages verified (Layer 1 + Layer 2 + MAS)' on personal-laptop."
   - "Human Test 1 (PKGS-03 idempotency) passed 2026-05-15 (commit 896e09e fix)."
-  - "Human Test 2 (VRFY-03 negative-path smoke) still requires user action but is structurally unblocked."
-  - "Human Test 3 (task install end-to-end smoke) blocked by cutover-ack gate by design (D-09 / Phase 2 protection); not a gap."
+  - "Human Test 2 (VRFY-03 negative-path smoke) confirmed passed 2026-05-16 -- the reworded form (task packages:verify with Slack.app renamed) produced the expected non-zero exit and per-package cross row."
+  - "Human Test 3 (task install end-to-end smoke) blocked by cutover-ack gate by design (D-09 / Phase 2 protection); the gate's sentinel writer (task cutover:ack -- <machine>) is owned by Phase 8 CUTV-03 and not yet implemented. Not a phase 5 gap."
   - "REQUIREMENTS.md PKGS-04 wording still says '{name, verify}' for cask objects; actual implementation uses name-only objects per Gap 2 pivot; behavioral contract met under post-pivot semantics."
   - "work-laptop.toml Things entry still says 'Things' (not 'Things3') -- the e1bd6f9 fix was only confirmed on personal-laptop; work-laptop has not been validated. Not a phase 5 gap (work-laptop validation deferred to cutover)."
 human_verification:
