@@ -224,11 +224,19 @@ tasks:
   # lint-allow: cmds-without-status
   validate:
     desc: "Validate Claude install state (composed into root task validate in P8)"
-    deps: [manifest:resolve]
+    deps: [":manifest:resolve"]
     status: [false]
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
+        # D-06 (P8 CUTV-01): emit sentinel + exit 0 when claude-marketplace is off
+        # so the root `task validate` aggregator can render this row as `n/a`.
+        # Sentinel substring `feature disabled -- skipped` is contract-bound across
+        # all D-06 emitters and matched verbatim by the aggregator summary block.
+        {{if not (index .MANIFEST.features "claude-marketplace")}}
+        info "claude: feature disabled -- skipped"
+        exit 0
+        {{end}}
         if command -v claude >/dev/null 2>&1; then
           check "claude CLI installed"
         else
@@ -245,6 +253,8 @@ tasks:
           split: "\n"
           as: ENTRY
         cmd: |
+          # D-06 short-circuit: feature-off skips this for-loop body entirely.
+          {{if not (index .MANIFEST.features "claude-marketplace")}}exit 0{{end}}
           [[ -z "{{.ENTRY}}" ]] && exit 0
           read -r name _source <<< "{{.ENTRY}}"
           {{.DOTFILES_MESSAGES}}
@@ -259,6 +269,8 @@ tasks:
           split: "\n"
           as: ID
         cmd: |
+          # D-06 short-circuit: feature-off skips this for-loop body entirely.
+          {{if not (index .MANIFEST.features "claude-marketplace")}}exit 0{{end}}
           [[ -z "{{.ID}}" ]] && exit 0
           {{.DOTFILES_MESSAGES}}
           plugins_json=$(claude plugin list --json 2>/dev/null || echo '[]')
@@ -268,6 +280,8 @@ tasks:
             cross "plugin {{.ID}} missing -- run 'task claude:install'"
           fi
       - |
+        # D-06 short-circuit: feature-off skips the GSD sentinel check.
+        {{if not (index .MANIFEST.features "claude-marketplace")}}exit 0{{end}}
         {{.DOTFILES_MESSAGES}}
         if test -f {{.GSD_SENTINEL}}; then
           check "GSD installed (sentinel present at {{.GSD_SENTINEL}})"
