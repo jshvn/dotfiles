@@ -4,8 +4,8 @@ milestone: v2.1
 milestone_name: Cleanup
 status: executing
 stopped_at: Phase 9 context gathered
-last_updated: "2026-05-17T20:10:03.127Z"
-last_activity: 2026-05-17 -- Phase 09 planning complete
+last_updated: "2026-05-17T20:12:03.567Z"
+last_activity: 2026-05-17 -- Phase 09 execution started
 progress:
   total_phases: 14
   completed_phases: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** A single declarative manifest per machine makes the complete install state legible to both humans and AI agents — no inference from filename suffixes, no hidden profile branching, no hostname-based guessing.
-**Current focus:** v2.1 Cleanup — Phase 9 v1-Drop Audit ready for planning
+**Current focus:** Phase 09 — v1-drop-audit
 
 ## Current Position
 
-Phase: 9 (v1-Drop Audit)
-Plan: —
-Status: Ready to execute
-Last activity: 2026-05-17 -- Phase 09 planning complete
+Phase: 09 (v1-drop-audit) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 09
+Last activity: 2026-05-17 -- Phase 09 execution started
 
 ## Performance Metrics
 
