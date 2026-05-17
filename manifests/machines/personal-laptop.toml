@@ -32,6 +32,7 @@ bundles = ["core", "gui"]
 formulae = []  # all CLI lives in core.rb
 
 casks = [
+  { name = "claude-code" },
   { name = "discord" },
   { name = "slack" },
   { name = "whatsapp" },

@@ -30,6 +30,7 @@ bundles = ["core", "gui"]
 formulae = []
 
 casks = [
+  { name = "claude-code" },
   { name = "slack" },
   { name = "spotify" },
   { name = "sourcetree" },
