@@ -117,9 +117,11 @@ tasks:
         msg: "brew not on PATH -- run bootstrap.zsh first"
     # Three-condition status (all must pass to skip cmds):
     #   1. Composed Brewfile exists on disk.
-    #   2. Composed Brewfile is at least as fresh as resolved.json
-    #      (otherwise it is stale relative to the manifest -- e.g. after a
-    #      `git pull` that adds a cask -- and must be recomposed).
+    #   2. Composed Brewfile is at least as fresh as ALL composer inputs:
+    #      resolved.json AND every $DOTFILEDIR/packages/*.rb bundle file.
+    #      The composer (install/compose-brewfile.zsh) reads BOTH; pulling
+    #      a manifest change (resolved.json ticks) OR a bundle change
+    #      (packages/core.rb ticks via `git pull`) must trigger a recompose.
     #   3. brew bundle check passes against the composed Brewfile.
     # The freshness check (line 2) was missing before: `brew bundle check`
     # against a stale Brewfile passes when the previously-declared packages
@@ -127,7 +129,9 @@ tasks:
     # ignored until $XDG_CACHE_HOME/dotfiles/Brewfile was manually deleted.
     status:
       - test -f "{{.COMPOSED_BREWFILE}}"
-      - 'test ! "{{.RESOLVED_JSON_PATH}}" -nt "{{.COMPOSED_BREWFILE}}"'
+      - |
+        out=$(find "{{.RESOLVED_JSON_PATH}}" "{{.DOTFILEDIR}}/packages" -newer "{{.COMPOSED_BREWFILE}}" -print -quit 2>/dev/null)
+        [ -z "$out" ]
       - brew bundle check --file="{{.COMPOSED_BREWFILE}}" --no-upgrade
     cmds:
       # 1. Compose the per-machine Brewfile from manifest + bundle files.
@@ -161,12 +165,15 @@ tasks:
           resolved.json missing or empty; cannot compose packages.brew.bundles
             run: task setup -- <machine-name>
     # Two-condition status: Brewfile exists AND is at least as fresh as
-    # resolved.json. Same freshness-check rationale as packages:install
-    # above -- a stale Brewfile must be regenerated when the manifest
+    # all composer inputs (resolved.json + packages/*.rb bundle files).
+    # Same freshness-check rationale as packages:install above -- a stale
+    # Brewfile must be regenerated when the manifest OR a bundle file
     # changes, even though brew bundle check still passes against it.
     status:
       - test -f "{{.COMPOSED_BREWFILE}}"
-      - 'test ! "{{.RESOLVED_JSON_PATH}}" -nt "{{.COMPOSED_BREWFILE}}"'
+      - |
+        out=$(find "{{.RESOLVED_JSON_PATH}}" "{{.DOTFILEDIR}}/packages" -newer "{{.COMPOSED_BREWFILE}}" -print -quit 2>/dev/null)
+        [ -z "$out" ]
     cmds:
       - DOTFILEDIR="{{.DOTFILEDIR}}" XDG_CACHE_HOME="{{.XDG_CACHE_HOME}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" zsh "{{.DOTFILEDIR}}/install/compose-brewfile.zsh"
       - |
