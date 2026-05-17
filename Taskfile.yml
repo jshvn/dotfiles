@@ -349,5 +349,12 @@ tasks:
       - task: links:reconcile
         vars: { CLI_ARGS: "--warn-only" }
       - |
-        {{.DOTFILES_MESSAGES}}
+        # Source messages.zsh via TASKFILE_DIR (NOT DOTFILES_MESSAGES):
+        # root DOTFILEDIR var gets polluted to dirname(TASKFILE_DIR) after
+        # include-merge because some included taskfiles (lint.yml:59,
+        # links.yml:61) define DOTFILEDIR via sh-dirname of TASKFILE_DIR
+        # and that definition leaks back to root scope. TASKFILE_DIR is
+        # per-task and not subject to that pollution. Same pattern as
+        # validate: line 202 and cutover:ack: line 303.
+        source '{{.TASKFILE_DIR}}/install/messages.zsh'
         success "install complete"
