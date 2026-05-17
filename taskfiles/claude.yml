@@ -76,26 +76,38 @@ vars:
 tasks:
 
   # ---------------------------------------------------------------------------
-  # install -- public aggregator. Feature-gated on claude-marketplace.
-  # LINT-03a: status: [false] (always-rerun aggregator; idempotency lives in
-  # sub-tasks). The `{{if}}` gate makes this a no-op on feature-off machines.
-  # lint-allow: cmds-without-status
+  # install -- public aggregator. Feature-gated on claude-marketplace via
+  # status: block (NOT split-cmd `{{if}}` / `{{end}}` -- go-task parses each
+  # cmds entry as an independent template, so an opening `{{if}}` in cmds[0]
+  # without its matching `{{end}}` in the same scalar raises
+  # `template: :1: unexpected EOF` on every install run regardless of feature
+  # state; see d79db11's note on claude:validate for the same bug class).
+  #
+  # Feature gate semantics:
+  #   - claude-marketplace = true  -> templated status returns `false`
+  #     (exit 1) -> task is out-of-date -> cmds run
+  #   - claude-marketplace = false -> templated status returns `true`
+  #     (exit 0) -> task is up-to-date -> cmds skipped wholesale (no
+  #     ensure-cli, no marketplace, no gsd)
+  #
+  # Idempotency for the feature-on path lives inside each sub-task
+  # (marketplace: two-condition status block per D-12 / CLDE-04; gsd:
+  # sentinel-presence per D-11). The status block here is purely a
+  # feature gate, not an idempotency check.
   # ---------------------------------------------------------------------------
 
-  # lint-allow: cmds-without-status
   install:
     desc: "Install Claude Code marketplaces, plugins, and get-shit-done-cc"
     deps: [":manifest:resolve"]
-    status: [false]
+    status:
+      - '{{if index .MANIFEST.features "claude-marketplace"}}false{{else}}true{{end}}'
     cmds:
-      - '{{if index .MANIFEST.features "claude-marketplace"}}'
       - task: ensure-cli
       - task: marketplace
       - task: gsd
       - |
         {{.DOTFILES_MESSAGES}}
         success "Claude plugins installed"
-      - '{{end}}'
 
   # ---------------------------------------------------------------------------
   # marketplace -- internal. Registers marketplaces and installs plugins.
