@@ -115,8 +115,19 @@ tasks:
             run: task setup -- <machine-name>
       - sh: command -v brew >/dev/null 2>&1
         msg: "brew not on PATH -- run bootstrap.zsh first"
+    # Three-condition status (all must pass to skip cmds):
+    #   1. Composed Brewfile exists on disk.
+    #   2. Composed Brewfile is at least as fresh as resolved.json
+    #      (otherwise it is stale relative to the manifest -- e.g. after a
+    #      `git pull` that adds a cask -- and must be recomposed).
+    #   3. brew bundle check passes against the composed Brewfile.
+    # The freshness check (line 2) was missing before: `brew bundle check`
+    # against a stale Brewfile passes when the previously-declared packages
+    # happen to be installed, so newly-declared packages were silently
+    # ignored until $XDG_CACHE_HOME/dotfiles/Brewfile was manually deleted.
     status:
       - test -f "{{.COMPOSED_BREWFILE}}"
+      - 'test ! "{{.RESOLVED_JSON_PATH}}" -nt "{{.COMPOSED_BREWFILE}}"'
       - brew bundle check --file="{{.COMPOSED_BREWFILE}}" --no-upgrade
     cmds:
       # 1. Compose the per-machine Brewfile from manifest + bundle files.
@@ -149,8 +160,13 @@ tasks:
         msg: |
           resolved.json missing or empty; cannot compose packages.brew.bundles
             run: task setup -- <machine-name>
+    # Two-condition status: Brewfile exists AND is at least as fresh as
+    # resolved.json. Same freshness-check rationale as packages:install
+    # above -- a stale Brewfile must be regenerated when the manifest
+    # changes, even though brew bundle check still passes against it.
     status:
       - test -f "{{.COMPOSED_BREWFILE}}"
+      - 'test ! "{{.RESOLVED_JSON_PATH}}" -nt "{{.COMPOSED_BREWFILE}}"'
     cmds:
       - DOTFILEDIR="{{.DOTFILEDIR}}" XDG_CACHE_HOME="{{.XDG_CACHE_HOME}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" zsh "{{.DOTFILEDIR}}/install/compose-brewfile.zsh"
       - |
