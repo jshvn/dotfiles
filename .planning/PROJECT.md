@@ -202,4 +202,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-05-17 -- Milestone v2.1 (Cleanup) started after v1.0 shipped (8 phases: manifest engine, install engine, shell layer, identity, packages, OS defaults, claude/tool-configs, validation+cutover). v2.1 prioritizes v1-drop audit before v1 removal after fresh-machine install surfaced silently-dropped /etc/zshenv writing.*
+*Last updated: 2026-05-17 -- Milestone v2.1 (Cleanup) started after v1.0 shipped (8 phases: manifest engine, install engine, shell layer, identity, packages, OS defaults, claude/tool-configs, validation+cutover). v2.1 prioritizes v1-drop audit before v1 removal after fresh-machine install surfaced silently-dropped /etc/zshenv writing. Phase 9 (v1-drop-audit) complete — AUDIT.md catalogues 102 v1 surfaces (3 keep, 99 drop, 70 already-ported) with file:line evidence; hands a 3-item implementation queue to Phase 10 (ZDOTDIR write to /etc/zshenv pinned first as PORT-01 driver).*
