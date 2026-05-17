@@ -1,336 +1,99 @@
-# Requirements: Dotfiles v2 Refactor
+# Requirements: Dotfiles v2.1 Cleanup
 
-**Defined:** 2026-05-13
-**Last updated:** 2026-05-13 after testing/verification expansion
+**Defined:** 2026-05-17
+**Last updated:** 2026-05-17 (milestone start)
 **Core Value:** A single declarative manifest per machine makes the complete install state legible to both humans and AI agents.
 
-## v1 Requirements
+## Milestone v2.1 Requirements
 
-Requirements for the v2.0 cutover gate. Each maps to a roadmap phase. All requirements are hypotheses until shipped and validated on every target machine.
+Requirements scoped to the v2.1 Cleanup milestone. v1.0 (the v2 refactor itself) shipped across 8 phases ending 2026-05-16; its requirements are preserved in git history and PROJECT.md's Validated section.
 
-**Scope note:** v1 is macOS-only across all four target machines (laptops + Mac servers). Linux support is deferred to v2+.
+**Audit-first ordering note:** Phase 1 (audit) must complete before Phase 3 (v1 removal). The audit report (`AUDIT.md`) classifies every v1-only feature as keep / drop / already-ported. Phase 2 implements every "keep" item before Phase 3 deletes the v1 files that contain the source-of-truth.
 
-**Testing tiers (covered by these requirements):**
+### Audit (v1-drop investigation)
 
-| Tier | Purpose | Where |
-|---|---|---|
-| 0. Static | Lint, syntax, shellcheck | LINT-01..08, CLDE-02 |
-| 1. Validate | Installed state matches manifest | MFST-08, IDNT-07, OSCF-05, VRFY-01..02, CUTV-01 |
-| 2. Reconcile | Detect/cleanup drift | VRFY-03, TOOL-04, CUTV-02, CUTV-07, CUTV-08 |
-| 3. Smoke | Component functional tests | MFST-05, LINT-08, TEST-01, TEST-02 |
-| 4. System | End-to-end on real machines | CUTV-04, CUTV-05, DOCS-08 |
+Read-only investigation across every v1 leftover file. Produces a single classified report.
 
-### Manifest
+- [ ] **AUDIT-01**: Every v1 leftover taskfile (`taskfiles/common.yml`, `taskfiles/profile.yml`, `taskfiles/brew.yml`, `taskfiles/profile-tasks.yml`, `taskfiles/claude-stub.yml`, `taskfiles/brew-stub.yml`, `taskfiles/links-stub.yml`, `taskfiles/macos.v1.yml.bak`) is read in full and every defined task is enumerated with its purpose and v2 status (ported / partially-ported / dropped).
+- [ ] **AUDIT-02**: Every v1 leftover install asset (`install/Brewfile*`, plus any `install/*.zsh` not part of the v2 set) is read and enumerated with its purpose and v2 status.
+- [ ] **AUDIT-03**: The v1 `zsh/` tree is compared file-by-file against the v2 `shell/` tree; any aliases, functions, theme features, or prompt behavior in v1 absent from v2 is captured.
+- [ ] **AUDIT-04**: A single `.planning/phases/<phase>/AUDIT.md` report enumerates every v1-only feature with: source file + line range, current v2 status, keep/drop classification, rationale, and (if keep) the v2 file that should own the port.
+- [ ] **AUDIT-05**: Any v1 documentation content (notes in v1 READMEs, install/README.md, docs/ files not in v2 docs/) is reviewed for substantive content the v2 docs don't carry.
 
-Schema, parsing, merge semantics. Keystone layer — every other phase reads `resolved.json`.
+### Port (v1-drop remediation)
 
-- [ ] **MFST-01**: `manifests/defaults.toml` defines shared baseline (identity, features, default package bundles)
-- [ ] **MFST-02**: `manifests/machines/<name>.toml` declares per-machine identity, features, package bundles, and any overrides
-- [ ] **MFST-03**: Machine manifest can override any `defaults.toml` key with documented merge semantics (maps deep-merge, scalars/arrays replace, `extra_packages` concatenates)
-- [ ] **MFST-04**: `install/resolver.zsh` compiles defaults + machine manifest into `$XDG_STATE_HOME/dotfiles/resolved.json` using yq for TOML-to-JSON and a correct deep-merge expression
-- [ ] **MFST-05**: Test fixtures cover all merge cases (map-over-map, list-replace, scalar-override, nested table, missing key) and are run by `task manifest:test`
-- [ ] **MFST-06**: `task manifest:resolve` produces `resolved.json`; downstream tasks consume it via go-task `fromJson` and never read TOML directly
-- [ ] **MFST-07**: `task manifest:show` prints the post-merge structure for debugging
-- [ ] **MFST-08**: `task manifest:validate` enforces required schema fields (description, identity, features at minimum)
-- [ ] **MFST-09**: Adding a new machine is a single new file in `manifests/machines/` plus `task setup -- <name>`
+Implement every "keep" item from `AUDIT.md` into v2's existing task and file structure.
 
-### Bootstrap
+- [ ] **PORT-01**: A v2 task writes `/etc/zshenv` with `export ZDOTDIR="$HOME/.config/zsh"` during `task install` so a fresh-machine install produces a working shell on first new terminal (driver: the live finding that broke the fresh machine).
+- [ ] **PORT-02**: Every "keep" item from `AUDIT.md` is implemented in v2 in the v2 file that should own it (per the audit's owner column). No PORT items remain outstanding before Phase 3 runs.
+- [ ] **PORT-03**: A fresh-machine install from clean state produces a fully-functional first shell: prompt, theme, aliases, functions, MOTD, and `_dotfiles_feature` are all available without manual remediation. Verified via real fresh-machine install OR a documented smoke procedure that exercises the startup chain.
 
-Fresh-install entry point with hardened supply chain.
+### Removal (v1 deletion)
 
-- [ ] **BTSP-01**: `bootstrap.zsh` uses `set -euo pipefail` (not `set -e`); pipefail catches install-script failures
-- [ ] **BTSP-02**: Bootstrap installs go-task via Homebrew (no curl-pipe-to-shell)
-- [ ] **BTSP-03**: Bootstrap is resumable — every step has a guard against re-running
-- [ ] **BTSP-04**: `task setup -- <machine-name>` persists explicit machine selection to `$XDG_STATE_HOME/dotfiles/machine`; no hostname inference
-- [ ] **BTSP-05**: `docs/SECURITY.md` documents the bootstrap trust chain (what is downloaded, from where, how verified)
-- [ ] **BTSP-06**: `task install` is the canonical idempotent entry; `task update` is an alias for the same task (`task: install`) — there is no separate update pipeline that could diverge from install and produce the "added-to-update-forgot-install" drift class
+Delete every v1 leftover from the repo after PORT verifies no live dependencies remain.
 
-### Install Engine
+- [ ] **RMV-01**: Every v1 leftover taskfile is deleted (`taskfiles/common.yml`, `taskfiles/profile.yml`, `taskfiles/brew.yml`, `taskfiles/profile-tasks.yml`, `taskfiles/claude-stub.yml`, `taskfiles/brew-stub.yml`, `taskfiles/links-stub.yml`, `taskfiles/macos.v1.yml.bak`).
+- [ ] **RMV-02**: The v1 `zsh/` directory is deleted; only `shell/` remains as the shell-content tree.
+- [ ] **RMV-03**: `install/Brewfile*` files are deleted; the per-purpose `packages/<purpose>.rb` bundles are the only Brewfile source.
+- [ ] **RMV-04**: Cutover infrastructure is removed: `install/cutover-gate.zsh`, `cutover:ack` task, `docs/CUTOVER.md`, and `docs/MIGRATION.md`'s cutover-specific content. The per-machine 7-day-soak model is retired entirely.
+- [ ] **RMV-05**: `Taskfile.yml` is simplified: the "v1 leftover taskfiles" comment block (lines ~23-26) is removed; no `task install` precondition references the cutover gate; no v1 file paths appear anywhere.
+- [ ] **RMV-06**: Project-level `CLAUDE.md`, `.claude/CLAUDE.md`, top-level `README.md`, and the `docs/` directory carry no references to v1 (the v2 implementation IS the dotfiles now).
+- [ ] **RMV-07**: After Phase 3 lands, a fresh `task install` on a clean machine succeeds end-to-end with no cutover-ack step, no manual gate, no v1 path references.
 
-Idempotency, lint suite, validation foundation. Built before shell content is ported.
+### Surface (task surface redesign)
 
-- [ ] **LINT-01**: Every install task has a `status:` block that makes re-runs a no-op (local-only conditions; no network dependencies)
-- [ ] **LINT-02**: `task lint:taskfile` flags `$VAR` references inside `status:` blocks (fixes `macos:shell` class of bug)
-- [ ] **LINT-03**: `task lint:taskfile` flags bare `ln -s` outside `helpers.yml` and flags tasks with `cmds:` but no `status:`
-- [ ] **LINT-04**: `task lint:shell-headers` flags executable `.zsh` files missing `set -euo pipefail`
-- [ ] **LINT-05**: `task lint:portability` warns (non-blocking) when likely portability-sensitive commands appear in flat directories (e.g. `pbcopy`, `osascript`, `defaults`) — surfaces what would need to be handled if Linux returns in v2; does not block v1 builds
-- [ ] **LINT-06**: Root `task lint` aggregates all lint subtasks
-- [ ] **LINT-07**: `zsh -n` runs over every `.zsh` file as Tier-0 syntax test (catches `local`-at-script-scope class of bug)
-- [ ] **LINT-08**: `task install` re-run on a converged machine completes in under 5 seconds (idempotency timing test)
+Audit every public go-task task; curate names and visibility.
 
-### Shell
+- [ ] **SURF-01**: Every task listed by `task --list` is reviewed and classified (keep-as-is / rename / mark-internal / remove).
+- [ ] **SURF-02**: Renames are applied to `Taskfile.yml` and every included taskfile; references in docs are updated; `task --list` output reflects the new surface.
+- [ ] **SURF-03**: Tasks marked internal-only carry `internal: true` and are absent from `task --list` output.
+- [ ] **SURF-04**: `task` (bare invocation) prints the curated task list. Top-level `README.md` and `CLAUDE.md` document the canonical task surface.
 
-zsh startup chain with flat content layout (macOS-only v1).
+### Review (code review + dead-code cleanup)
 
-- [ ] **SHEL-01**: `shell/.zshenv` exports XDG vars and `$DOTFILES_MACHINE` (from state file); no `$DOTFILES_PROFILE`
-- [ ] **SHEL-02**: `shell/.zprofile` sets Homebrew shellenv (guarded by `[[ -x "$BREW" ]]`) and SSH agent socket only when manifest declares the feature
-- [ ] **SHEL-03**: `shell/.zshrc` glob-loads `shell/aliases/*.zsh` and `shell/functions/*.zsh` (interactive only; flat — no platform subdirectories in v1)
-- [ ] **SHEL-04**: Antidote replaces Antigen as the plugin manager (static bundle file) — primary lever for the 200ms target
-- [ ] **SHEL-05**: Port v1 `zsh/theme.zsh` (alanpeabody-based) to `shell/theme.zsh` as-is; Starship rejected in v1 (existing prompt is small, fast, and not on life support)
-- [ ] **SHEL-06**: One alias topic per file in `shell/aliases/<topic>.zsh`
-- [ ] **SHEL-07**: One function per file in `shell/functions/<name>.zsh`
-- [ ] **SHEL-08**: All v1 aliases ported to flat `shell/aliases/`; broken `local`-at-script-scope and similar v1 quality issues fixed in transit
-- [ ] **SHEL-09**: All v1 functions ported to flat `shell/functions/`; each file passes `zsh -n`
-- [ ] **SHEL-10**: compinit uses a daily-rebuilt cache rather than running per shell startup
-- [ ] **SHEL-11**: MOTD output is cached to disk with 24-hour TTL (async refresh)
-- [ ] **SHEL-12**: Cold interactive shell startup under 200ms (measured by `task perf:shell`; fails CI if exceeded)
+Repo-wide code review with severity classification and surgical fixes.
 
-### Identity
+- [ ] **REVW-01**: Repo-wide review run with language-aware reviewers (zsh shellcheck, taskfile lint, TOML schema). Findings classified HIGH / MEDIUM / LOW with file:line locations.
+- [ ] **REVW-02**: Every HIGH-severity finding is fixed in this milestone; MEDIUM and LOW are triaged into "fix now" / "defer with rationale".
+- [ ] **REVW-03**: Dead code is identified and removed: unused functions, dead branches, unreachable code, helpers with zero call sites.
+- [ ] **REVW-04**: Duplicated logic is consolidated into shared helpers; near-duplicate status blocks across taskfiles use shared variables or helper tasks where it reduces drift risk.
+- [ ] **REVW-05**: `links:*` status blocks verify each symlink's *target* (via `readlink -f`), not just its existence (the 27-entry `test -L` bug surfaced in this session). After the fix, a stale symlink pointing to the wrong source forces a re-link.
+- [ ] **REVW-06**: Every `task test*` invocation runs and passes after every fix; any test fixture for removed/changed v1 code is updated or removed (no orphan fixtures).
 
-git and SSH identity, manifest-driven.
+### Trim (comment/doc trim)
 
-- [ ] **IDNT-01**: `identity/git/config` uses `includeIf` for path-based identity selection
-- [ ] **IDNT-02**: Per-identity git configs live under `identity/git/identities/<identity-name>` (no profile-suffix filenames)
-- [ ] **IDNT-03**: `identity/ssh/config` uses `Include` directives for identity-based host configs
-- [ ] **IDNT-04**: Per-identity SSH host configs live under `identity/ssh/identities/<identity-name>`
-- [ ] **IDNT-05**: 1Password integration is split into two flags -- `features.one-password-ssh` gates the SSH agent socket + `IdentityAgent` directive, and `features.one-password-signing` gates git commit signing via the `op-ssh-sign` program. Cross-field validation rejects mismatched configurations. No hostname literals anywhere in the identity path.
-- [ ] **IDNT-06**: Public SSH keys committed under `identity/ssh/keys/`; private keys never committed
-- [ ] **IDNT-07**: `task validate` asserts `git config user.email` matches manifest identity and `ssh-add -L` lists the expected key
-- [ ] **IDNT-08**: `taskfiles/identity.yml` reads identity from `resolved.json` and creates the appropriate symlinks via `_:safe-link`
+Strip excess inline commentary; simplify docs; prefer self-documenting code.
 
-### Packages
+- [ ] **TRIM-01**: Inline comments in taskfiles are reduced to essential WHY only. The current taskfiles are 30-50% comment by line count; the trim should leave purpose-explanatory comments and drop redundant restatements of what the code does.
+- [ ] **TRIM-02**: Per-file header banners are slimmed to: purpose (1-2 lines), key dependencies, side effects. Verbose change-history annotations move to git history (where they belong).
+- [ ] **TRIM-03**: `docs/` directory is reviewed; obsolete docs are removed (e.g., `CUTOVER.md` after RMV-04, `MIGRATION.md` either removed or rewritten as a single-page "what changed from v1" summary).
+- [ ] **TRIM-04**: Top-level `README.md`, `CLAUDE.md`, and `.claude/CLAUDE.md` are simplified — sections that duplicate each other are consolidated; the canonical home for each piece of info is unambiguous.
+- [ ] **TRIM-05**: After trim, the codebase reads cleanly for a new contributor with zero v2-history context (no "v1 macos:shell:145 bug class" references, no "Gap 2 brew-info pivot" references, no historical commit-hash references in code comments).
 
-Homebrew package management driven by manifest bundles (macOS-only v1).
+## Future Requirements
 
-- [ ] **PKGS-01**: Per-purpose Brewfile bundles in `packages/<purpose>.rb` (flat -- not `packages/brew/`). v1 ships `core` and `gui`; bundles are an as-needed grouping, not a fixed set (per-machine extras carry the bulk).
-- [ ] **PKGS-02**: `taskfiles/packages.yml` reads `packages.brew.bundles` from `resolved.json` and composes the per-machine Brewfile
-- [ ] **PKGS-03**: `brew bundle` task uses a `status:` check based on `brew bundle check --file=<composed>` (replaces unconditional re-run)
-- [ ] **PKGS-04**: Manifest can declare per-machine `extra_packages` as a typed sub-table (`formulae`, `casks`, `mas`); each sub-array concat+dedupes with defaults at resolve time. Cask and MAS entries are typed objects (`{name, verify}` for casks; `{id, name}` for MAS).
-- [ ] **PKGS-05**: GUI bundles (casks) are isolated so server machines without GUI can omit them via manifest
+Items acknowledged but deferred past v2.1:
 
-### Package Verification
-
-Post-install checks that declared packages are actually usable. Closes the "brew bundle applied but binary missing or app didn't land" gap.
-
-- [ ] **VRFY-01**: `task packages:verify` confirms `command -v <bin>` resolves for every formula declared in the active manifest's bundles. Binary names declared as per-line comments in bundle files: `brew 'ripgrep' # verify: rg`. Default convention: if no comment, assume bin name == formula name.
-- [ ] **VRFY-02**: `task packages:verify` confirms `/Applications/<App>.app` exists for every cask declared in the active manifest's bundles. App names declared as per-line comments: `cask '1password' # verify: 1Password`. Default convention: if no comment, derive from cask name.
-- [ ] **VRFY-03**: `task packages:audit` lists currently-installed brew formulae/casks that are NOT declared in any manifest bundle for the active machine — surfaces "installed manually, forgot to declare" drift. Non-blocking by default; exits non-zero with `--strict`.
-- [ ] **VRFY-04**: `task install` includes `task packages:verify` in its final step so a successful install fails loudly when a declared package didn't actually land (silent install failures caught at the bundle layer)
-
-### OS Defaults
-
-macOS defaults feature-flag-gated.
-
-- [ ] **OSCF-01**: macOS defaults split into per-concern files (`os/defaults/dock.zsh`, `finder.zsh`, `input.zsh`, `screenshots.zsh`, `security.zsh`)
-- [ ] **OSCF-02**: Each defaults group is gated by a manifest feature flag — opt-in per machine (servers can decline all GUI-related defaults)
-- [ ] **OSCF-03**: Every defaults task has a `status:` that reads `defaults read <domain> <key>` before writing (replaces re-running on every install)
-- [ ] **OSCF-04**: `os/shell-registration.zsh` adds Homebrew zsh to `/etc/shells` and runs `chsh` with a correct `{{.BREW_ZSH}}` template-var `status:` check (fixes the live v1 bug)
-- [ ] **OSCF-05**: `task validate` asserts current defaults values match in-script expectations for each enabled concern
-
-### Claude
-
-Claude Code integration with bug fixes for known v1 issues.
-
-- [x] **CLDE-01**: Global `CLAUDE.md`, `settings.json`, hooks, agents, commands, and skills installed via `taskfiles/claude.yml`
-- [x] **CLDE-02**: All hooks ported and shellcheck-clean: `secret-scan.zsh`, `no-emojis.zsh`, `no-ai-comments.zsh`, `agent-transparency.zsh` (last one rewritten to remove `local` at script scope)
-- [x] **CLDE-03**: GSD install task uses a presence sentinel file as its `status:` check — `npx` runs only when the sentinel is absent. An explicit `task claude:update` deletes the sentinel and re-runs `npx`.
-- [x] **CLDE-04**: Marketplace install uses `claude plugin list` as its `status:` check
-
-### Tool Configs
-
-Per-tool configuration deployment via symlinks.
-
-- [x] **TOOL-01**: Tool configs deployed via `taskfiles/links.yml` using the `_:safe-link` helper (no bare `ln`)
-- [x] **TOOL-02**: Ghostty, glow, trippy, tlrc, conda, eza, motd configs ported to `configs/<tool>/`
-- [x] **TOOL-03**: `_:safe-link` hardened to verify target type (catches broken symlinks pointing to wrong target type)
-- [x] **TOOL-04**: `_:check-link` verifies the symlink (a) exists, (b) target is not broken, and (c) `readlink -f` equals the manifest-expected source path; mismatch is a failure not a warning (catches "symlink exists but points to stale path after refactor" class of bug)
-
-### Smoke Tests
-
-Component-level functional tests aggregated under `task test`.
-
-- [x] **TEST-01**: `task test:hooks` pipes synthetic JSON input through each Claude hook (`secret-scan`, `no-emojis`, `no-ai-comments`, `agent-transparency`) and asserts expected exit code (0 for pass/warn, 2 for block) and stderr pattern. Catches runtime regressions that lint misses.
-- [x] **TEST-02**: Root `task test` aggregates `task manifest:test` (existing MFST-05 fixtures) and `task test:hooks` so a single command runs all smoke tests; CI wires this in alongside `task lint`
-
-### Documentation
-
-README-per-directory + project-level docs for AI-collaboration fit.
-
-- [ ] **DOCS-01**: Top-level `README.md` explains the manifest model, machine setup flow, and where to add things
-- [ ] **DOCS-02**: Each top-level directory has a `README.md` covering purpose, key files, and how-to-add patterns
-- [ ] **DOCS-03**: `CLAUDE.md` (project-level) captures v2 conventions for AI maintenance
-- [ ] **DOCS-04**: `docs/MANIFEST.md` documents schema, inheritance rules, and worked examples
-- [ ] **DOCS-05**: `docs/MIGRATION.md` records v1-to-v2 mapping and cutover plan
-- [ ] **DOCS-06**: `docs/MACHINES.md` documents each machine's purpose, identity, and special config
-- [ ] **DOCS-07**: `docs/SECURITY.md` documents bootstrap trust chain and SSH key handling
-- [ ] **DOCS-08**: `docs/CUTOVER.md` includes a per-machine fresh-install verification procedure (manual steps to verify on a clean Mac before declaring cutover complete)
-
-### Cutover
-
-Per-machine cutover gates; v1 stays fully working throughout.
-
-- [ ] **CUTV-01**: `task validate` composes all per-component validate tasks with check/cross output
-- [ ] **CUTV-02**: `task links:reconcile` (default mode) detects orphan symlinks — symlinks pointing into `$DOTFILEDIR` not declared in the manifest. Prints them and exits non-zero. CI-safe; no destructive action.
-- [ ] **CUTV-03**: `docs/CUTOVER.md` tracks per-machine cutover state with verification steps
-- [ ] **CUTV-04**: All four target machines (personal-laptop, work-laptop, server-1, server-2 — all macOS, mixed roles) installable from v2 with 100% `task validate` pass
-- [ ] **CUTV-05**: Each machine runs v2 for at least 7 days without falling back to v1 before being declared cut over
-- [ ] **CUTV-06**: Old repo archived (not deleted) after final per-machine cutover
-- [ ] **CUTV-07**: `task links:reconcile -- --remove` enters interactive cleanup mode: for each orphan, prompts y/N before deleting. Destructive operations are never silent.
-- [ ] **CUTV-08**: `task install` runs `task links:reconcile` in detect-only mode at the end and warns (non-fatal) if orphans exist — surfaces "you moved a link in the manifest, the old one is dangling" feedback at install time
-
-## v2 Requirements
-
-Deferred to a follow-up milestone after the v1 cutover is stable.
-
-### Linux Support
-
-- **LINUX-V2-01**: Reintroduce platform-aware directory split (`aliases/{common,darwin,linux}/`) when first Linux machine enters scope
-- **LINUX-V2-02**: First-class Linux package manifests (`packages/apt/*.list`, `packages/dnf/*.list`)
-- **LINUX-V2-03**: Linux bootstrap branch (SHA256-verified go-task binary; yq pre-Homebrew sequencing)
-- **LINUX-V2-04**: Linux idempotency check for apt/dnf package installs (`dpkg -s` or `rpm -q`, or sentinel file)
-- **LINUX-V2-05**: macOS-defaults tasks no-op on Linux (platform check at task level)
-- **LINUX-V2-06**: Promote LINT-05 from warning to blocker once cross-platform support is live
-
-### Performance & UX
-
-- **PERF-01**: Drift detection in `task validate` (manifest-declared vs deployed state diff — broader than VRFY-03 audit)
-- **PERF-02**: `DRY_RUN=1 task install` shows planned actions without executing
-- **PERF-03**: Per-directory predictable templates (one example file per directory illustrating the pattern)
-- **PERF-04**: Brew bundle pre-install snapshot for rollback safety
-
-### Tooling Hardening
-
-- **TOOL-V2-01**: Manifest JSON Schema for editor validation (taplo lint in CI)
-- **TOOL-V2-02**: Audit-and-trim pass over ported v1 functions and aliases (kept verbatim in v1 for feature parity)
-- **TOOL-V2-03**: `bats` or `zunit` unit tests for shell functions (Tier-2 expansion — only if regression frequency justifies)
-- **TOOL-V2-04**: macOS CI runner for end-to-end validation of the install pipeline (full fresh-install simulation)
+- Linux support (server-class or laptop). Returns when a real Linux machine enters scope.
+- Starship prompt swap. Current alanpeabody-based prompt is small, fast, and working.
+- Auditing every existing zsh function/alias for keep-or-cut. v2.1 only ports what was dropped from v1; a content audit is a separate later milestone.
 
 ## Out of Scope
 
-Explicit exclusions documented to prevent scope creep.
+Explicit exclusions with reasoning:
 
-| Feature | Reason |
-|---------|--------|
-| Linux support in v1 | All four target machines are macOS (laptops + Mac servers); avoids cross-platform complexity until a real Linux machine enters scope. Returns as v2 work item set. |
-| Starship prompt | v1 keeps the existing alanpeabody-based `theme.zsh`. Starship recommendation was based on a misread of the v1 prompt as Powerlevel10k. Existing prompt is small, fast, and not on life support. |
-| Separate `task update` pipeline | `task install` IS `task update` — single idempotent entry point. Prevents drift class where adding a package to update path silently misses the install path. |
-| Nix / home-manager | Conflicts with go-task lock-in; slows AI iteration loop; Homebrew still needed for macOS GUI apps; declarative-manifest goal achieved at lower cost with TOML |
-| chezmoi / stow / yadm | Adds a tool that overlaps with go-task; doesn't address the profile rethink that motivates this work |
-| Windows or WSL support | Out of platform scope |
-| Migrating away from zsh | fish/nu/bash explicitly out |
-| Replacing go-task | Locked decision |
-| Hostname-based machine detection | Burned us before (`.zprofile:55-56` bug); explicit selection only |
-| Platform-aware directory split (v1) | Deferred to v2 with Linux support — flat `shell/aliases/` and `shell/functions/` for v1 |
-| Inline profile branching in shared files | Replaced by manifest feature gates |
-| Auditing every v1 alias/function for keep-or-cut | Feature parity in v1; trim pass deferred to v2 |
-| `test` profile | Currently declared but never implemented; drop entirely |
-| Auto-detection of identity or capabilities at runtime | Manifest is the source of truth; no clever inference |
-| Tag-based manifest composition (`tags/dev.toml`, etc.) | User chose clarity (per-machine) over DRY (tags) |
-| dasel as a parser | Resolved during research — yq throughout; one query syntax |
-| Antigen, Powerlevel10k | Antigen archived since Jan 2018; replaced by antidote. p10k not in use; keep v1 alanpeabody-based theme. |
-| Encrypted secrets in repo | 1Password is the answer; no `git-crypt` / `transcrypt` / `sops` for secrets |
-| Automated fresh-install CI | Documented manual procedure in `docs/CUTOVER.md` (DOCS-08); full macOS CI runner is v2 (TOOL-V2-04) |
+- **Behavior changes beyond cleanup.** v2.1 is a cleanup milestone. Net-new features (new tasks, new manifests, new install behaviors) are out of scope unless they're "keep" items surfaced by AUDIT.
+- **Reformatting for the sake of reformatting.** TRIM removes redundant content. It does NOT impose a new comment style, new banner format, or new doc structure — that would be a separate stylistic milestone.
+- **Reorganizing the directory tree.** v2 layout (shell/, packages/, manifests/, configs/, install/, taskfiles/, claude/) stays. v2.1 cleans within this layout.
+- **Migrating any tool away from current choices.** go-task stays, antidote stays, yq stays, Homebrew stays. SURF can rename tasks; it can't replace the orchestrator.
 
 ## Traceability
 
-Per-REQ-ID mapping to roadmap phase.
-
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| MFST-01 | Phase 1 (Manifest Engine + Skeleton) | Pending |
-| MFST-02 | Phase 1 (Manifest Engine + Skeleton) | Pending |
-| MFST-03 | Phase 1 (Manifest Engine + Skeleton) | Pending |
-| MFST-04 | Phase 1 (Manifest Engine + Skeleton) | Pending |
-| MFST-05 | Phase 1 (Manifest Engine + Skeleton) | Pending |
-| MFST-06 | Phase 1 (Manifest Engine + Skeleton) | Pending |
-| MFST-07 | Phase 1 (Manifest Engine + Skeleton) | Pending |
-| MFST-08 | Phase 1 (Manifest Engine + Skeleton) | Pending |
-| MFST-09 | Phase 1 (Manifest Engine + Skeleton) | Pending |
-| BTSP-01 | Phase 2 (Install Engine) | Pending |
-| BTSP-02 | Phase 2 (Install Engine) | Pending |
-| BTSP-03 | Phase 2 (Install Engine) | Pending |
-| BTSP-04 | Phase 2 (Install Engine) | Pending |
-| BTSP-05 | Phase 2 (Install Engine) | Pending |
-| BTSP-06 | Phase 2 (Install Engine) | Pending |
-| LINT-01 | Phase 2 (Install Engine) | Pending |
-| LINT-02 | Phase 2 (Install Engine) | Pending |
-| LINT-03 | Phase 2 (Install Engine) | Pending |
-| LINT-04 | Phase 2 (Install Engine) | Pending |
-| LINT-05 | Phase 2 (Install Engine) | Pending |
-| LINT-06 | Phase 2 (Install Engine) | Pending |
-| LINT-07 | Phase 2 (Install Engine) | Pending |
-| LINT-08 | Phase 2 (Install Engine) | Pending |
-| SHEL-01 | Phase 3 (Shell Layer) | Pending |
-| SHEL-02 | Phase 3 (Shell Layer) | Pending |
-| SHEL-03 | Phase 3 (Shell Layer) | Pending |
-| SHEL-04 | Phase 3 (Shell Layer) | Pending |
-| SHEL-05 | Phase 3 (Shell Layer) | Pending |
-| SHEL-06 | Phase 3 (Shell Layer) | Pending |
-| SHEL-07 | Phase 3 (Shell Layer) | Pending |
-| SHEL-08 | Phase 3 (Shell Layer) | Pending |
-| SHEL-09 | Phase 3 (Shell Layer) | Pending |
-| SHEL-10 | Phase 3 (Shell Layer) | Pending |
-| SHEL-11 | Phase 3 (Shell Layer) | Pending |
-| SHEL-12 | Phase 3 (Shell Layer) | Pending |
-| IDNT-01 | Phase 4 (Identity Layer) | Pending |
-| IDNT-02 | Phase 4 (Identity Layer) | Pending |
-| IDNT-03 | Phase 4 (Identity Layer) | Pending |
-| IDNT-04 | Phase 4 (Identity Layer) | Pending |
-| IDNT-05 | Phase 4 (Identity Layer) | Pending |
-| IDNT-06 | Phase 4 (Identity Layer) | Pending |
-| IDNT-07 | Phase 4 (Identity Layer) | Pending |
-| IDNT-08 | Phase 4 (Identity Layer) | Pending |
-| PKGS-01 | Phase 5 (Packages Layer) | Pending |
-| PKGS-02 | Phase 5 (Packages Layer) | Pending |
-| PKGS-03 | Phase 5 (Packages Layer) | Pending |
-| PKGS-04 | Phase 5 (Packages Layer) | Pending |
-| PKGS-05 | Phase 5 (Packages Layer) | Pending |
-| VRFY-01 | Phase 5 (Packages Layer) | Pending |
-| VRFY-02 | Phase 5 (Packages Layer) | Pending |
-| VRFY-03 | Phase 5 (Packages Layer) | Pending |
-| VRFY-04 | Phase 5 (Packages Layer) | Pending |
-| OSCF-01 | Phase 6 (OS Defaults) | Pending |
-| OSCF-02 | Phase 6 (OS Defaults) | Pending |
-| OSCF-03 | Phase 6 (OS Defaults) | Pending |
-| OSCF-04 | Phase 6 (OS Defaults) | Pending |
-| OSCF-05 | Phase 6 (OS Defaults) | Pending |
-| CLDE-01 | Phase 7 (Claude + Configs) | Complete |
-| CLDE-02 | Phase 7 (Claude + Configs) | Complete |
-| CLDE-03 | Phase 7 (Claude + Configs) | Complete |
-| CLDE-04 | Phase 7 (Claude + Configs) | Complete |
-| TOOL-01 | Phase 7 (Claude + Configs) | Complete |
-| TOOL-02 | Phase 7 (Claude + Configs) | Complete |
-| TOOL-03 | Phase 7 (Claude + Configs) | Complete |
-| TOOL-04 | Phase 7 (Claude + Configs) | Complete |
-| TEST-01 | Phase 7 (Claude + Configs) | Complete |
-| TEST-02 | Phase 7 (Claude + Configs) | Complete |
-| DOCS-01 | Phase 8 (Validation + Cutover) | Pending |
-| DOCS-02 | Phase 3 (Shell Layer) | Pending |
-| DOCS-03 | Phase 1 (Manifest Engine + Skeleton) | Pending |
-| DOCS-04 | Phase 1 (Manifest Engine + Skeleton) | Pending |
-| DOCS-05 | Phase 8 (Validation + Cutover) | Pending |
-| DOCS-06 | Phase 8 (Validation + Cutover) | Pending |
-| DOCS-07 | Phase 2 (Install Engine) | Pending |
-| DOCS-08 | Phase 8 (Validation + Cutover) | Pending |
-| CUTV-01 | Phase 8 (Validation + Cutover) | Pending |
-| CUTV-02 | Phase 8 (Validation + Cutover) | Pending |
-| CUTV-03 | Phase 8 (Validation + Cutover) | Pending |
-| CUTV-04 | Phase 8 (Validation + Cutover) | Pending |
-| CUTV-05 | Phase 8 (Validation + Cutover) | Pending |
-| CUTV-06 | Phase 8 (Validation + Cutover) | Pending |
-| CUTV-07 | Phase 8 (Validation + Cutover) | Pending |
-| CUTV-08 | Phase 8 (Validation + Cutover) | Pending |
-
-**Coverage:**
-
-- v1 requirements: 83 total (MFST: 9, BTSP: 6, LINT: 8, SHEL: 12, IDNT: 8, PKGS: 5, VRFY: 4, OSCF: 5, CLDE: 4, TOOL: 4, TEST: 2, DOCS: 8, CUTV: 8)
-- Mapped to phases: 83
-- Unmapped: 0
-
-**Per-phase requirement counts:**
-
-| Phase | Count | Categories |
-|-------|-------|------------|
-| 1 — Manifest Engine + Skeleton | 11 | MFST-01..09, DOCS-03, DOCS-04 |
-| 2 — Install Engine | 15 | BTSP-01..06, LINT-01..08, DOCS-07 |
-| 3 — Shell Layer | 13 | SHEL-01..12, DOCS-02 |
-| 4 — Identity Layer | 8 | IDNT-01..08 |
-| 5 — Packages Layer | 9 | PKGS-01..05, VRFY-01..04 |
-| 6 — OS Defaults | 5 | OSCF-01..05 |
-| 7 — Claude + Configs | 10 | CLDE-01..04, TOOL-01..04, TEST-01..02 |
-| 8 — Validation + Cutover | 12 | CUTV-01..08, DOCS-01, DOCS-05, DOCS-06, DOCS-08 |
-
----
-
-*Requirements defined: 2026-05-13*
-*Last updated: 2026-05-13 after testing/verification expansion (VRFY, TOOL-04, BTSP-06, CUTV-07/08, TEST, DOCS-08)*
+| REQ-ID | Phase | Plan |
+|--------|-------|------|
+| AUDIT-01..05 | (TBD by roadmapper) | — |
+| PORT-01..03 | (TBD by roadmapper) | — |
+| RMV-01..07 | (TBD by roadmapper) | — |
+| SURF-01..04 | (TBD by roadmapper) | — |
+| REVW-01..06 | (TBD by roadmapper) | — |
+| TRIM-01..05 | (TBD by roadmapper) | — |
