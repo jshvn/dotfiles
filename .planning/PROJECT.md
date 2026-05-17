@@ -8,6 +8,21 @@ Greenfield rewrite of the personal dotfiles repo at `/Users/josh/Git/personal/do
 
 A single declarative manifest per machine makes the complete install state legible to both humans and AI agents — no inference from filename suffixes, no hidden profile branching, no hostname-based guessing.
 
+## Current Milestone: v2.1 Cleanup
+
+**Goal:** Make the v2 dotfiles repo lean, correct, and self-contained — port any silently-dropped v1 features, remove v1 entirely, redesign the public task surface, eliminate code/comment bloat and dead code, and ensure the test surface validates what each component actually delivers.
+
+**Target features:**
+
+- v1-drop audit — Read-only investigation across every v1 leftover file (`taskfiles/common.yml`, `taskfiles/profile.yml`, `taskfiles/brew.yml`, `taskfiles/profile-tasks.yml`, `taskfiles/*-stub.yml`, `taskfiles/macos.v1.yml.bak`, `zsh/`, `install/Brewfile*`) producing a keep/drop classification of every v1 feature absent from v2.
+- v1-drop remediation — Port the "keep" items from the audit into v2 (driver: `/etc/zshenv` writing currently breaks fresh-machine installs).
+- v1 removal — Delete v1 leftover files, the `zsh/` directory, `install/Brewfile*`, and the cutover infrastructure (`install/cutover-gate.zsh`, `task cutover:ack`, `docs/CUTOVER.md`). Drop the per-machine 7-day-soak model.
+- Task surface redesign — Audit every exposed go-task task; rename/remove/expose-or-internal-only based on actual use.
+- Code review + dead-code cleanup — Repo-wide review for duplicated logic, dead code, unused helpers, simplification opportunities.
+- Comment/doc trim — Strip excess inline commentary from taskfiles; simplify docs; prefer self-documenting code.
+
+**Key context:** Live finding from fresh-machine install: `/etc/zshenv` writing was a v1 `common.yml` task that v2 silently dropped, breaking the shell layer on fresh machines. Phase 1 audit must find any siblings of this issue before phase 3 deletes the v1 files that contain the source-of-truth for what was dropped.
+
 ## Requirements
 
 ### Validated
@@ -187,4 +202,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-05-16 after Phase 7 (claude-tool-configs-smoke-tests) completion -- claude/ task suite landed, 7 tool configs ported, hook smoke-test surface wired (task test = 19/19 green)*
+*Last updated: 2026-05-17 -- Milestone v2.1 (Cleanup) started after v1.0 shipped (8 phases: manifest engine, install engine, shell layer, identity, packages, OS defaults, claude/tool-configs, validation+cutover). v2.1 prioritizes v1-drop audit before v1 removal after fresh-machine install surfaced silently-dropped /etc/zshenv writing.*
