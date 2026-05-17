@@ -72,14 +72,16 @@ vars:
 
   # WR-03 fallback: emit a stderr warning when resolved.json is missing so
   # consumers of {{.MANIFEST.features.macos-*}} fail loudly rather than
-  # evaluating against an empty {}.
+  # evaluating against an empty {}. The stub includes an empty `features`
+  # map so `{{if index .MANIFEST.features "<key>"}}` evaluates to false
+  # instead of erroring out at template-parse time on a fresh machine.
   MANIFEST_JSON:
     sh: |
       if [[ -s '{{.RESOLVED_JSON_PATH}}' ]]; then
         cat '{{.RESOLVED_JSON_PATH}}'
       else
         echo "warning: {{.RESOLVED_JSON_PATH}} missing or empty -- run 'task setup -- <machine>' first" >&2
-        echo '{}'
+        echo '{"features":{}}'
       fi
 
   # fromJson ref pattern (matches taskfiles/manifest.yml + identity.yml +

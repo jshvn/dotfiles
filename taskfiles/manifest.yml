@@ -38,11 +38,19 @@ vars:
   XDG_STATE_HOME:
     sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
 
-  # Resolve DOTFILEDIR from the directory containing this taskfile's parent.
-  # `$TASKFILE` is the absolute path of the taskfile being invoked (go-task 3.x).
-  # dirname twice: taskfiles/manifest.yml -> taskfiles/ -> repo root.
+  # Resolve DOTFILEDIR from this taskfile's parent directory.
+  # go-task 3.37+ provides {{.TASKFILE_DIR}} as the directory containing
+  # the invoked taskfile. For taskfiles/manifest.yml, dirname once goes
+  # from <repo>/taskfiles to <repo>.
+  # NOTE: the prior `dirname dirname realpath ${TASKFILE:-$0}` pattern
+  # silently fell back to cwd when $TASKFILE is not exported (it is not
+  # exported by go-task; only the {{.TASKFILE}} template var is). The
+  # double-dirname of cwd produced a path one segment above the repo
+  # root, which broke resolver.zsh invocation on fresh machines that had
+  # no XDG_STATE/resolved.json cache to short-circuit the task. This sh:
+  # pattern matches lint.yml:59 and links.yml:61.
   DOTFILEDIR:
-    sh: dirname "$(dirname "$(realpath "${TASKFILE:-$0}")")"
+    sh: dirname "{{.TASKFILE_DIR}}"
 
   DOTFILES_MESSAGES: |
     source '{{.DOTFILEDIR}}/install/messages.zsh'
@@ -77,13 +85,19 @@ vars:
   # evaluating to <no value> against an empty {} fallback. The
   # fromJson ref still needs valid JSON so the {} fallback is kept,
   # but the warning surfaces the misconfiguration to the user.
+  # The fallback stub includes an empty `features` map so
+  # `{{if index .MANIFEST.features "<key>"}}` evaluates to false (nil zero
+  # value) instead of erroring out with `index of untyped nil` at
+  # template-parse time on a fresh machine where resolved.json has not yet
+  # been written. Deeper paths (.identity.git, .packages.brew.*) remain
+  # unset so consumers still fail loudly if accessed before setup.
   MANIFEST_JSON:
     sh: |
       if [[ -s '{{.RESOLVED_JSON_PATH}}' ]]; then
         cat '{{.RESOLVED_JSON_PATH}}'
       else
         echo "warning: {{.RESOLVED_JSON_PATH}} missing or empty -- run 'task setup -- <machine>' first" >&2
-        echo '{}'
+        echo '{"features":{}}'
       fi
 
   # fromJson ref: verified syntax (RESEARCH §6.1, PATTERNS Pattern 2).

@@ -123,7 +123,12 @@ tasks:
     cmds:
       - task: zsh
       - task: antidote
-      - task: identity:install
+      # Leading-colon absolute form: when this file is loaded as the `links:`
+      # namespace from the root Taskfile.yml, a bare `task: identity:install`
+      # resolves relative to the current namespace and tries `links:identity:install`
+      # (which does not exist). Same fix pattern as commit d94168e applied to
+      # identity.yml's [:manifest:resolve] dep.
+      - task: :identity:install
       - task: claude
       - task: configs
 

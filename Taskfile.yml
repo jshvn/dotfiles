@@ -59,15 +59,20 @@ vars:
   # Path to compiled manifest (P1 resolver writes here).
   RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
 
-  # MANIFEST_JSON cats the resolved.json or echoes {} with a stderr warning
-  # so taskfiles that ref: MANIFEST never crash on a fresh checkout.
+  # MANIFEST_JSON cats the resolved.json or echoes a stub with a stderr
+  # warning so taskfiles that ref: MANIFEST never crash on a fresh checkout.
+  # The stub includes an empty `features` map so template expressions like
+  # `{{if index .MANIFEST.features "<key>"}}` evaluate to false (nil zero
+  # value) instead of erroring out with `index of untyped nil` at parse
+  # time. Deeper paths (.identity.git, .packages.brew.*) intentionally
+  # remain unset so consumers fail loudly when accessed without setup.
   MANIFEST_JSON:
     sh: |
       if [[ -f "{{.RESOLVED_JSON_PATH}}" ]]; then
         cat "{{.RESOLVED_JSON_PATH}}"
       else
         echo "warn: resolved.json not found (run 'task setup -- <machine>')" >&2
-        echo '{}'
+        echo '{"features":{}}'
       fi
   MANIFEST:
     ref: 'fromJson .MANIFEST_JSON'
@@ -123,9 +128,26 @@ tasks:
   # lint-allow: cmds-without-status
   default:
     desc: "List available tasks"
-    status: [true]
+    # status: [false] forces the cmd to run every invocation. With status:
+    # [true] the task is considered up-to-date and skipped, so `task` alone
+    # would print nothing instead of listing tasks.
+    status: [false]
     cmds:
       - task --list
+
+  # lint-allow: cmds-without-status
+  # Top-level alias for `manifest:setup`. Every doc and operator-facing
+  # error message says `task setup -- <machine-name>` (bootstrap.zsh,
+  # docs/CUTOVER.md, docs/MIGRATION.md, CLAUDE.md, manifest:resolve's own
+  # precondition msg). Without this alias those instructions fail with
+  # `Task "setup" does not exist`. Forwarding CLI_ARGS preserves the
+  # `-- <name>` calling convention.
+  setup:
+    desc: "Persist active machine selection: task setup -- <machine-name>"
+    status: [false]
+    cmds:
+      - task: manifest:setup
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
 
   # lint-allow: cmds-without-status
   test:
