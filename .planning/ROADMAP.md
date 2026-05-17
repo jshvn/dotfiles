@@ -274,7 +274,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. OS Defaults — macOS Configuration | 0/4 | Planned | - |
 | 7. Claude + Tool Configs + Smoke Tests | 6/6 | Complete   | 2026-05-16 |
 | 8. Validation + Cutover Readiness | 6/6 | Complete   | 2026-05-16 |
-| 9. v1-Drop Audit | 1/5 | In Progress|  |
+| 9. v1-Drop Audit | 4/5 | In Progress|  |
 | 10. v1-Drop Remediation | 0/TBD | Not started (v2.1) | - |
 | 11. v1 Removal | 0/TBD | Not started (v2.1) | - |
 | 12. Task Surface Redesign | 0/TBD | Not started (v2.1) | - |
