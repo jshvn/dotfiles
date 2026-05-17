@@ -1,23 +1,25 @@
 # AUDIT.md -- v1-Drop Audit Report
 
 **Phase:** 09-v1-drop-audit
-**Status:** In progress
+**Status:** Complete (Phase 9 closed, ready for Phase 10)
 **Last updated:** 2026-05-17
 
 ## Summary
 
 | Metric | Count |
 |--------|-------|
-| Tasks audited | TBD |
-| Keep | TBD |
-| Drop | TBD |
-| Already-ported | TBD |
+| Tasks audited | 102 |
+| Keep | 3 |
+| Drop | 99 |
+| Already-ported | 70 |
 
 ### Keep List (Phase 10 queue)
 
-_The bullets below are the Phase 10 implementation queue (D-04). One bullet per keep row; each names its source location and its v2 owner file._
+_The bullets below are the Phase 10 implementation queue (D-04). One bullet per keep row; each names its source location and its v2 owner file. Section split mirrors leftover category per D-01; every row uses the locked six-column shape per D-03._
 
-- TBD (filled in by plan 09-05 after Wave 2 section shards land)
+- `taskfiles/common.yml:36-57` → **taskfiles/shell.yml** — Write `export ZDOTDIR="$HOME/.config/zsh"` to /etc/zshenv via sudo (idempotent grep-and-append)
+- `taskfiles/common.yml:63-88` → **taskfiles/shell.yml** — Validate XDG dirs and the /etc/zshenv ZDOTDIR line are present
+- `install/Brewfile-personal.rb:72` → **manifests/machines/personal-laptop.toml** — mas 'Things' (id 904280696) declared in v1 personal-profile Brewfile
 
 ## Taskfiles
 
@@ -87,7 +89,7 @@ _Rows are written by plan 09-02 (Brewfiles per-machine effective-set diff, plus 
 
 ## zsh/ Tree
 
-_Rows are written by plan 09-03 (six startup files + 24 functions + aliases per-profile-effective-set + configs/styles diffs) from shards/zsh-tree.md._
+_Rows are written by plan 09-03 (six startup files + 24 functions + aliases per-profile-effective-set + configs/styles diffs) from shards/zsh-tree.md. Function-file presence-plus-diff comparison per D-05; alias per-profile-effective-set diff per D-06; configs/styles body-level diff per D-07; six startup files one-row-per-file with block-level rationale per D-08._
 
 | file:line | purpose | v2 status | keep/drop | rationale | v2 owner |
 |-----------|---------|-----------|-----------|-----------|----------|
