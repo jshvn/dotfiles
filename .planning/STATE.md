@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Cleanup
 status: planning
-last_updated: "2026-05-17T18:22:52.108Z"
+last_updated: "2026-05-17T19:00:00.000Z"
 last_activity: 2026-05-17
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,23 +17,23 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-13)
+See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** A single declarative manifest per machine makes the complete install state legible to both humans and AI agents — no inference from filename suffixes, no hidden profile branching, no hostname-based guessing.
-**Current focus:** Milestone complete
+**Current focus:** v2.1 Cleanup — Phase 9 v1-Drop Audit ready for planning
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 9 (v1-Drop Audit)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-17 — Milestone v2.1 started
+Status: Phase 9 ready for /gsd:discuss-phase or /gsd:plan-phase
+Last activity: 2026-05-17 — v2.1 roadmap created (6 phases, 9-14, 30 requirements mapped)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 30
+- Total plans completed: 30 (v1.0 milestone — Phases 1-8)
 - Average duration: —
 - Total execution time: —
 
@@ -41,8 +41,9 @@ Last activity: 2026-05-17 — Milestone v2.1 started
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| — | — | — | — |
+| 01 | 4 | - | - |
 | 02 | 6 | - | - |
+| 04 | 7 | - | - |
 | 05 | 8 | - | - |
 | 06 | 4 | - | - |
 | 07 | 6 | - | - |
@@ -50,27 +51,22 @@ Last activity: 2026-05-17 — Milestone v2.1 started
 
 **Recent Trend:**
 
-- Last 5 plans: —
-- Trend: —
+- Last 5 plans: Phase 8 (08-01 through 08-06)
+- Trend: v1.0 milestone closed 2026-05-16; v2.1 planning started 2026-05-17
 
 *Updated after each plan completion*
-| Phase 07 P01 | 10m | 3 tasks | 3 files |
-| Phase 07 P02 | 173 | 3 tasks | 2 files |
-| Phase 07 P04 | 30m | 3 tasks | 5 files |
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+
 Recent decisions affecting current work:
 
-- Pre-Phase-1: Use **yq** throughout for TOML/JSON parsing (not dasel) — already in Brewfile, jq-compatible syntax, full TOML roundtrip since v4.52.1
-- Pre-Phase-1: Deep-merge semantics are **maps deep-merge, scalars/arrays replace, `extra_packages` concatenates** — write test fixtures before resolver implementation
-- Pre-Phase-1: Replace Antigen with **antidote** and Powerlevel10k with **Starship** in Phase 3 (Antigen archived since Jan 2018; p10k on author-declared life support)
-- [Phase ?]: 07-01
-- [Phase ?]: 07-01
-- [Phase ?]: TEST-02 single-command Tier-3 entry point
+- v2.1 milestone: audit-first ordering — Phase 9 enumerates every v1 leftover BEFORE Phase 11 deletes anything; v1 files are the source-of-truth for what was dropped
+- v2.1 phase numbering: continues from v1.0's last phase (8); v2.1 is Phases 9-14, no reset
+- v2.1 driver: live finding that v1 `taskfiles/common.yml` `zdotdir:` task wrote `/etc/zshenv` and v2 silently dropped this — produces a non-functional first shell on fresh machines; PORT-01 in Phase 10 implements this; REVW-05 in Phase 13 fixes the related `links:*` target-match status bug
 
 ### Pending Todos
 
@@ -78,9 +74,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- **Linux bootstrap sequencing** (Phase 2): yq must be installed before the resolver runs, but on a fresh Linux server Homebrew may not yet be present — bootstrap needs an explicit "install yq from apt/dnf/binary if Homebrew unavailable" step
-- **Deep-merge implementation** (Phase 1): ARCHITECTURE.md's `jq -s '.[0] * .[1]'` is a shallow merge and will drop nested table keys — replace with `yq eval-all '. as $i ireduce ({}; . * $i)'` or a recursive jq function, verified against hand-computed fixtures
-- **`go-task ref:` syntax** (Phase 1): ARCHITECTURE.md uses `ref: 'fromJson .MANIFEST'` — verify this is valid in go-task v3.50 before adopting Pattern B manifest loading
+None known. Phase 9 is read-only investigation; the gating risk for the milestone is incomplete audit coverage (mitigated by AUDIT-04 + the cross-reference grep success criterion).
 
 ## Deferred Items
 
@@ -92,6 +86,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-16T20:27:25.307Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-validation-cutover-readiness/08-CONTEXT.md
+Last session: 2026-05-17T19:00:00.000Z
+Stopped at: v2.1 roadmap created — Phase 9 awaiting plan
+Resume file: .planning/ROADMAP.md (Phase 9 details under `## v2.1 Milestone Phases`)

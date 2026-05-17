@@ -25,6 +25,17 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Claude + Tool Configs + Smoke Tests** - Claude integration with bug-fixed hooks, GSD sentinel, marketplace status check, tool config symlinks, hardened `_:check-link`, hook smoke tests, root `task test` (completed 2026-05-16)
 - [x] **Phase 8: Validation + Cutover Readiness** - Composed `task validate`, two-mode links reconcile, install-time orphan warning, per-machine cutover register + fresh-machine procedure, top-level README, MIGRATION.md, MACHINES.md (completed 2026-05-16)
 
+## v2.1 Milestone Phases
+
+Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numbered 9 through 14 — there is no reset. v2.1 is a cleanup milestone: no net-new features, six phases ordered audit-first so the v1 leftover files (the source-of-truth for what was dropped) are read in full before any deletion happens. The driving live finding is the `/etc/zshenv` `ZDOTDIR` write — v1 `taskfiles/common.yml` `zdotdir:` task wrote `export ZDOTDIR="$HOME/.config/zsh"` to `/etc/zshenv` via sudo; v2 silently dropped this, producing a non-functional first shell on fresh machines. Phase 9 audits for siblings of this bug class; Phase 10 implements every keep; Phase 11 then removes the v1 files; Phases 12–14 polish the resulting surface.
+
+- [ ] **Phase 9: v1-Drop Audit** - Read-only enumeration of every v1 leftover taskfile, install asset, `zsh/` tree content, and doc; produces `AUDIT.md` keep/drop classification with v2 owner column
+- [ ] **Phase 10: v1-Drop Remediation** - Implement every "keep" from `AUDIT.md`; `/etc/zshenv` `ZDOTDIR` write lands first; fresh-machine install produces a fully-functional first shell
+- [ ] **Phase 11: v1 Removal** - Delete v1 leftover taskfiles, `zsh/` tree, `install/Brewfile*`, cutover infrastructure; simplify `Taskfile.yml`; purge v1 references from docs
+- [ ] **Phase 12: Task Surface Redesign** - Audit every `task --list` entry; classify keep/rename/internal/remove; apply renames; mark internal tasks `internal: true`
+- [ ] **Phase 13: Code Review + Dead-Code Cleanup** - Language-aware repo-wide review (zsh shellcheck, taskfile lint, TOML schema); HIGH fixed; dead code removed; duplicated logic consolidated; `links:*` target-match bug fixed
+- [ ] **Phase 14: Comment + Doc Trim** - Strip excess inline taskfile comments to WHY-only; slim per-file header banners; dedupe `README.md` / `CLAUDE.md` / `.claude/CLAUDE.md`; remove obsolete docs
+
 ## Phase Details
 
 ### Phase 1: Manifest Engine + Repository Skeleton
@@ -177,10 +188,81 @@ Decimal phases appear between their surrounding integers in numeric order.
   - [x] 08-05-PLAN.md — docs/MIGRATION.md (per-concept + rollback + archive) + root README.md replacement (DOCS-01, DOCS-05)
   - [x] 08-06-PLAN.md — Per-machine cutover execution + 7-day soak per machine + v1 archive (CUTV-04, CUTV-05, CUTV-06) — autonomous: false
 
+### Phase 9: v1-Drop Audit
+**Goal**: Every v1 leftover file (taskfile, install asset, `zsh/` tree content, doc) is read in full and every dropped feature is classified keep/drop/already-ported in a single `AUDIT.md` report with v2 owner column — read-only investigation; zero code changes in this phase
+**Depends on**: Phase 8
+**Requirements**: AUDIT-01, AUDIT-02, AUDIT-03, AUDIT-04, AUDIT-05
+**Success Criteria** (what must be TRUE):
+  1. `.planning/phases/09-v1-drop-audit/AUDIT.md` exists and enumerates every task defined in every v1 leftover taskfile (`taskfiles/common.yml`, `taskfiles/profile.yml`, `taskfiles/brew.yml`, `taskfiles/profile-tasks.yml`, `taskfiles/claude-stub.yml`, `taskfiles/brew-stub.yml`, `taskfiles/links-stub.yml`, `taskfiles/macos.v1.yml.bak`) with: source file:line range, task purpose (one sentence), v2 status (ported / partially-ported / dropped), keep/drop classification, rationale, and v2 owner file
+  2. Every v1 install asset (`install/Brewfile*`, plus any `install/*.zsh` not part of the v2 set) is enumerated in `AUDIT.md` with the same six-column shape; the live `/etc/zshenv` `ZDOTDIR` finding from `taskfiles/common.yml:36-57` is captured as a "keep" item with `taskfiles/shell.yml` (or equivalent) as the proposed v2 owner
+  3. The v1 `zsh/` tree is compared file-by-file against v2 `shell/`; any alias file, function file, theme line, or `.zshrc` block present in v1 and absent from v2 is captured as a row in `AUDIT.md` — comparison is verified by `diff -rq zsh/ shell/` (interpreted, not raw) and a manual `zsh/aliases/` walkthrough cross-referenced against `shell/aliases/`
+  4. Every v1-only doc fragment (notes in v1 READMEs, `install/README.md`, `docs/` content not present in v2 `docs/`) is reviewed; substantive content the v2 docs do not carry is logged in `AUDIT.md` for Phase 10 / Phase 14 disposition
+  5. Cross-reference grep proves no v1 feature is missed: `grep -rh '^[[:space:]]*[a-z][a-z0-9:-]*:' taskfiles/common.yml taskfiles/profile.yml taskfiles/brew.yml taskfiles/profile-tasks.yml taskfiles/*-stub.yml taskfiles/macos.v1.yml.bak` produces a task-name list, and every name in that list appears in `AUDIT.md` (the audit is a superset of the grep output)
+**Plans**: TBD
+
+### Phase 10: v1-Drop Remediation
+**Goal**: Every "keep" item from Phase 9's `AUDIT.md` is implemented in v2 in the file the audit named as the v2 owner; fresh-machine install produces a fully-functional first shell (prompt, theme, aliases, functions, MOTD, `_dotfiles_feature`) without manual remediation
+**Depends on**: Phase 9
+**Requirements**: PORT-01, PORT-02, PORT-03
+**Success Criteria** (what must be TRUE):
+  1. A v2 task writes `/etc/zshenv` with `export ZDOTDIR="$HOME/.config/zsh"` during `task install`; the task has a working `status:` block that exits zero when the line is already present (no re-running on every invocation); a fresh `task install` on a machine without `/etc/zshenv` writes the file via `sudo` and re-running is a no-op
+  2. Every "keep" row in `AUDIT.md` has a corresponding committed change in the v2 owner file; the `AUDIT.md` row is annotated with the commit SHA (or PLAN reference) that implemented it; zero "keep" rows remain unimplemented when Phase 10 closes
+  3. A fresh-machine smoke procedure (run on a clean macOS machine OR a documented synthetic equivalent) confirms: a brand-new terminal opens, `$ZDOTDIR` is exported, the antidote prompt renders, `alias` lists the ported aliases, `which _dotfiles_feature` resolves, `motd` prints, and no v1 fallback is needed at any step — procedure and pass result recorded in `.planning/phases/10-v1-drop-remediation/10-SMOKE.md`
+  4. No PORT item is outstanding when Phase 10 closes: `AUDIT.md`'s keep-list and the implemented-set match exactly; this is the gate before Phase 11 deletes the v1 source-of-truth files
+**Plans**: TBD
+
+### Phase 11: v1 Removal
+**Goal**: Every v1 leftover is removed from the repo after Phase 10 proves no live dependency remains; `Taskfile.yml` is simplified; cutover infrastructure (gate, ack task, docs) is retired; `task install` on a clean machine succeeds without any cutover-ack step
+**Depends on**: Phase 10
+**Requirements**: RMV-01, RMV-02, RMV-03, RMV-04, RMV-05, RMV-06, RMV-07
+**Success Criteria** (what must be TRUE):
+  1. The eight v1 leftover taskfiles are deleted from the repo: `taskfiles/common.yml`, `taskfiles/profile.yml`, `taskfiles/brew.yml`, `taskfiles/profile-tasks.yml`, `taskfiles/claude-stub.yml`, `taskfiles/brew-stub.yml`, `taskfiles/links-stub.yml`, `taskfiles/macos.v1.yml.bak` — verified by `ls taskfiles/` showing only v2 files
+  2. The v1 `zsh/` directory is deleted (`shell/` is the only shell-content tree); `install/Brewfile*` files are deleted (`packages/<purpose>.rb` is the only Brewfile source); verified by `test ! -d zsh/` and `find install -name 'Brewfile*' -print` returning empty
+  3. Cutover infrastructure is fully removed: `install/cutover-gate.zsh` is deleted, the `cutover:ack` task is removed from `Taskfile.yml`, the `cutover_gate_check` precondition is removed from the `install` task, `docs/CUTOVER.md` is deleted, and `docs/MIGRATION.md` either deletes its cutover-specific sections or is itself removed (final form decided per AUDIT-05 in Phase 9); the per-machine 7-day-soak model is retired entirely
+  4. `Taskfile.yml` is simplified: the "v1 leftover taskfiles" comment block (`Taskfile.yml:22-26` at v2.1 start) is removed; the include list contains only real v2 taskfiles; no v1 file path appears anywhere in the file
+  5. `git grep -E '\bv1\b|profile_suffix|DOTFILES_PROFILE|cutover'` returns only references the operator has deliberately kept (e.g., a single "what changed from v1" doc line, if any); the project-level `CLAUDE.md`, `.claude/CLAUDE.md`, top-level `README.md`, and `docs/` tree carry no operational v1 references
+  6. `task install` on a clean machine (or a documented synthetic equivalent) succeeds end-to-end with no `cutover:ack` step, no manual gate, no v1 path reference, and no missing-file error from a deleted v1 leftover
+**Plans**: TBD
+
+### Phase 12: Task Surface Redesign
+**Goal**: Every task listed by `task --list` is reviewed and curated; renames are applied across all included taskfiles and docs; internal-only tasks are hidden via `internal: true`; the bare `task` invocation prints the final curated surface
+**Depends on**: Phase 11
+**Requirements**: SURF-01, SURF-02, SURF-03, SURF-04
+**Success Criteria** (what must be TRUE):
+  1. A written classification table (committed under `.planning/phases/12-task-surface-redesign/`) records every task currently listed by `task --list` with a verdict — keep-as-is / rename-to-X / mark-internal / remove — and a one-line rationale per row; no task is left unclassified
+  2. Every "rename" verdict is applied: the task name is changed in its source taskfile, every call site in `Taskfile.yml` / included taskfiles / shell aliases is updated to the new name, every doc reference (README, CLAUDE.md, docs/*) is updated, and `task --list` after the change reflects the new name
+  3. Every "mark-internal" verdict applies `internal: true` to the task; running `task --list` does not show those tasks; running them directly (`task <internal-name>`) is documented in the source taskfile as "internal — invoked by <caller>" but is not surfaced to the operator
+  4. The bare `task` invocation prints the final curated list with operator-friendly descriptions (no leaked internals, no v1 names); the top-level `README.md` and project `CLAUDE.md` reference the canonical surface as the single source-of-truth for "what can I run"
+**Plans**: TBD
+
+### Phase 13: Code Review + Dead-Code Cleanup
+**Goal**: A repo-wide code review run by language-aware reviewers produces a HIGH/MEDIUM/LOW finding list; HIGH is fixed in this phase, dead code is removed, duplicated logic is consolidated, and the `links:*` target-match status-block bug is fixed before Phase 14 touches `links.yml`
+**Depends on**: Phase 12
+**Requirements**: REVW-01, REVW-02, REVW-03, REVW-04, REVW-05, REVW-06
+**Success Criteria** (what must be TRUE):
+  1. A review report (committed at `.planning/phases/13-code-review/REVIEW.md`) enumerates every finding with file:line, severity (HIGH/MEDIUM/LOW), category (correctness / portability / security / clarity / dead-code / duplication), and a one-line remediation; review uses language-aware reviewers (zsh / shellcheck, taskfile lint, TOML schema) per global instruction "Always use the language-specific reviewer agent if exists"
+  2. Every HIGH-severity finding in `REVIEW.md` is fixed in this phase; the finding row is annotated with the commit SHA or PLAN reference that closed it; MEDIUM and LOW findings each carry a verdict — "fix now" / "defer with rationale" — with explicit rationale for each defer
+  3. Dead code is removed: unused functions, dead branches, unreachable code, helpers with zero call sites — verified by `grep -r '<symbol>' --include='*.zsh' --include='*.yml'` returning zero hits for every removed symbol; the removal commit lists each symbol it dropped
+  4. The `links:*` status blocks verify each symlink's target (`readlink -f` equals the manifest-expected source path), not just its existence; after the fix, a deliberately corrupted symlink (pointing to a wrong source) forces a re-link on next `task install` — verified via a manual test recorded in `.planning/phases/13-code-review/13-SMOKE.md`
+  5. `task lint`, `task lint:taskfile`, every `shellcheck` invocation, and `task test` (manifest fixtures + hook fixtures) all pass green after every fix lands; any test fixture exercising removed v1 code is updated or removed (no orphan fixtures left behind)
+**Plans**: TBD
+
+### Phase 14: Comment + Doc Trim
+**Goal**: Inline taskfile comments are reduced to WHY-only; per-file header banners are slimmed to purpose + dependencies + side effects; READMEs (`README.md`, `CLAUDE.md`, `.claude/CLAUDE.md`) are deduped so each piece of info has a single canonical home; obsolete docs are removed; the codebase reads cleanly for a new contributor with zero v2-history context
+**Depends on**: Phase 13
+**Requirements**: TRIM-01, TRIM-02, TRIM-03, TRIM-04, TRIM-05
+**Success Criteria** (what must be TRUE):
+  1. Inline taskfile comments are reduced to essential WHY only: the comment-to-code ratio across `Taskfile.yml` and `taskfiles/*.yml` falls measurably (recorded pre/post by `wc -l` on commented vs code lines per file in `.planning/phases/14-comment-doc-trim/14-METRICS.md`); redundant restatements of what the code does are gone
+  2. Per-file header banners across taskfiles and `.zsh` scripts are slimmed to three elements — purpose (one or two lines), key dependencies, side effects — with verbose change-history annotations moved to git history; banner shape is consistent across files
+  3. The `docs/` directory is reviewed; obsolete docs are removed (e.g., `CUTOVER.md` is gone per Phase 11 RMV-04 and stays gone; `MIGRATION.md` is either removed or rewritten as a single-page "what changed from v1" summary per Phase 9's AUDIT-05 decision); every doc remaining in `docs/` has a clear, current purpose
+  4. Top-level `README.md`, project `CLAUDE.md`, and `.claude/CLAUDE.md` are deduped: each piece of info (manifest model, task surface, conventions, where to add things) lives in exactly one canonical home; cross-references replace duplication; running `diff <(grep '^##' README.md) <(grep '^##' CLAUDE.md)` shows minimal overlap
+  5. After trim, the codebase reads cleanly for a new contributor with zero v2-history context: no "v1 macos:shell:145 bug class" references, no "Gap 2 brew-info pivot" references, no historical commit-hash references in code comments; `git grep -E 'v1 (bug|finding|leftover)|Gap [0-9]+|D-[0-9]+|UAT [Gg]ap'` returns zero matches in code (only `.planning/` history retains those references, which is correct)
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -192,3 +274,9 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 6. OS Defaults — macOS Configuration | 0/4 | Planned | - |
 | 7. Claude + Tool Configs + Smoke Tests | 6/6 | Complete   | 2026-05-16 |
 | 8. Validation + Cutover Readiness | 6/6 | Complete   | 2026-05-16 |
+| 9. v1-Drop Audit | 0/TBD | Planned (v2.1) | - |
+| 10. v1-Drop Remediation | 0/TBD | Not started (v2.1) | - |
+| 11. v1 Removal | 0/TBD | Not started (v2.1) | - |
+| 12. Task Surface Redesign | 0/TBD | Not started (v2.1) | - |
+| 13. Code Review + Dead-Code Cleanup | 0/TBD | Not started (v2.1) | - |
+| 14. Comment + Doc Trim | 0/TBD | Not started (v2.1) | - |

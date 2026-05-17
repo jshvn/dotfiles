@@ -1,14 +1,14 @@
 # Requirements: Dotfiles v2.1 Cleanup
 
 **Defined:** 2026-05-17
-**Last updated:** 2026-05-17 (milestone start)
+**Last updated:** 2026-05-17 (roadmap created — phase mappings applied)
 **Core Value:** A single declarative manifest per machine makes the complete install state legible to both humans and AI agents.
 
 ## Milestone v2.1 Requirements
 
 Requirements scoped to the v2.1 Cleanup milestone. v1.0 (the v2 refactor itself) shipped across 8 phases ending 2026-05-16; its requirements are preserved in git history and PROJECT.md's Validated section.
 
-**Audit-first ordering note:** Phase 1 (audit) must complete before Phase 3 (v1 removal). The audit report (`AUDIT.md`) classifies every v1-only feature as keep / drop / already-ported. Phase 2 implements every "keep" item before Phase 3 deletes the v1 files that contain the source-of-truth.
+**Audit-first ordering note:** Phase 9 (audit) must complete before Phase 11 (v1 removal). The audit report (`AUDIT.md`) classifies every v1-only feature as keep / drop / already-ported. Phase 10 implements every "keep" item before Phase 11 deletes the v1 files that contain the source-of-truth.
 
 ### Audit (v1-drop investigation)
 
@@ -91,9 +91,33 @@ Explicit exclusions with reasoning:
 
 | REQ-ID | Phase | Plan |
 |--------|-------|------|
-| AUDIT-01..05 | (TBD by roadmapper) | — |
-| PORT-01..03 | (TBD by roadmapper) | — |
-| RMV-01..07 | (TBD by roadmapper) | — |
-| SURF-01..04 | (TBD by roadmapper) | — |
-| REVW-01..06 | (TBD by roadmapper) | — |
-| TRIM-01..05 | (TBD by roadmapper) | — |
+| AUDIT-01 | Phase 9 | TBD |
+| AUDIT-02 | Phase 9 | TBD |
+| AUDIT-03 | Phase 9 | TBD |
+| AUDIT-04 | Phase 9 | TBD |
+| AUDIT-05 | Phase 9 | TBD |
+| PORT-01 | Phase 10 | TBD |
+| PORT-02 | Phase 10 | TBD |
+| PORT-03 | Phase 10 | TBD |
+| RMV-01 | Phase 11 | TBD |
+| RMV-02 | Phase 11 | TBD |
+| RMV-03 | Phase 11 | TBD |
+| RMV-04 | Phase 11 | TBD |
+| RMV-05 | Phase 11 | TBD |
+| RMV-06 | Phase 11 | TBD |
+| RMV-07 | Phase 11 | TBD |
+| SURF-01 | Phase 12 | TBD |
+| SURF-02 | Phase 12 | TBD |
+| SURF-03 | Phase 12 | TBD |
+| SURF-04 | Phase 12 | TBD |
+| REVW-01 | Phase 13 | TBD |
+| REVW-02 | Phase 13 | TBD |
+| REVW-03 | Phase 13 | TBD |
+| REVW-04 | Phase 13 | TBD |
+| REVW-05 | Phase 13 | TBD |
+| REVW-06 | Phase 13 | TBD |
+| TRIM-01 | Phase 14 | TBD |
+| TRIM-02 | Phase 14 | TBD |
+| TRIM-03 | Phase 14 | TBD |
+| TRIM-04 | Phase 14 | TBD |
+| TRIM-05 | Phase 14 | TBD |
