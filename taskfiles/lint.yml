@@ -194,8 +194,6 @@ tasks:
         while IFS= read -r f; do
           # Self-exemption: lint.yml tasks are intentionally always-re-run.
           [[ "$f" == *"lint.yml" ]] && continue
-          # Also skip commit-task1.yml if present (temporary executor helper)
-          [[ "$f" == *"commit-task"* ]] && continue
           while IFS= read -r task_name; do
             [[ -z "$task_name" ]] && continue
             # Skip internal: true tasks
