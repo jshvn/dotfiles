@@ -6,6 +6,7 @@
 # status: block per LINT-01 / LINT-03a).
 #
 # Includes:
+#   - audit    (P12, real)
 #   - manifest (P1, real)
 #   - lint     (P2, real)
 #   - links    (P3, real)
@@ -67,6 +68,7 @@ vars:
     ref: 'fromJson .MANIFEST_JSON'
 
 includes:
+  audit:    ./taskfiles/audit.yml
   # manifest needs the root's DOTFILEDIR + XDG_STATE_HOME explicitly forwarded;
   # its DOTFILEDIR sh:dirname-twice pattern resolves to the wrong path when
   # invoked as an included taskfile.
@@ -192,7 +194,7 @@ tasks:
     status: [false]
     deps: [manifest:resolve]
     cmds:
-      - task: links:all
+      - task: links:install
       - task: packages:install
       - task: claude:install
       - task: macos:defaults
@@ -211,7 +213,7 @@ tasks:
       # orphans contract for CI use; this entry only invokes warn-only.
       # No `ignore_error: true` needed here -- the task's mode dispatch
       # swallows the non-zero exit internally.
-      - task: links:reconcile
+      - task: audit:links
         vars: { CLI_ARGS: "--warn-only" }
       - |
         # Source messages.zsh via TASKFILE_DIR (NOT DOTFILES_MESSAGES):
