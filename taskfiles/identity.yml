@@ -125,8 +125,9 @@ tasks:
   # features.server-include).
   # ---------------------------------------------------------------------------
 
-  git:
+  install-git:
     desc: "Link git identity files; materialize server-include.config on servers"
+    internal: true
     vars:
       # Computed once at task-eval time. `ls` output is newline-separated;
       # go-task `for: { var, split: "\n" }` iterates over each name.
@@ -218,8 +219,9 @@ tasks:
   # and (if it has a pub key) identity/ssh/keys/<name>.pub.
   # ---------------------------------------------------------------------------
 
-  ssh:
+  install-ssh:
     desc: "Link SSH identity files; swap active symlink to manifest value"
+    internal: true
     vars:
       SSH_IDENTITY_NAMES:
         sh: ls "{{.DOTFILEDIR}}/identity/ssh/identities" 2>/dev/null
@@ -287,8 +289,9 @@ tasks:
   # `true` when the feature is off; cmds never runs in that case).
   # ---------------------------------------------------------------------------
 
-  one-password-agent:
+  install-one-password-agent:
     desc: "Link 1Password SSH agent config (gated on one-password-ssh feature)"
+    internal: true
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/agent.toml", TARGET: "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml" }
@@ -306,6 +309,7 @@ tasks:
   # lint-allow: cmds-without-status
   validate:
     desc: "Validate identity layer: symlinks, git config, ssh-add, keys/ contents"
+    internal: true
     cmds:
       - task: validate:symlinks
       - task: validate:git
