@@ -31,7 +31,7 @@ set -euo pipefail
 # guard; under set -u that would abort. Pre-initialize the guard variable and
 # the caller-supplied DOTFILEDIR var so this script is safe to source from a
 # `set -euo pipefail` taskfile heredoc (matches install/resolver.zsh +
-# install/compose-brewfile.zsh + install/cutover-gate.zsh pattern).
+# install/compose-brewfile.zsh pattern).
 : "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task macos:*' or export it manually}"
 : "${DOTFILES_MESSAGES_LOADED:=}"
 if [[ -z "$DOTFILES_MESSAGES_LOADED" ]]; then
