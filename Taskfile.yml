@@ -122,13 +122,32 @@ tasks:
 
   # lint-allow: cmds-without-status
   default:
-    desc: "List available tasks"
+    desc: "Print curated task surface"
     # status: [false] forces the cmd to run every invocation. With status:
     # [true] the task is considered up-to-date and skipped, so `task` alone
-    # would print nothing instead of listing tasks.
+    # would print nothing instead of rendering the banner.
     status: [false]
     cmds:
-      - task --list
+      - |
+        # Source messages.zsh via TASKFILE_DIR (NOT the DOTFILES_MESSAGES var)
+        # per the documented DOTFILEDIR pollution workaround -- same pattern
+        # as install: and validate: above. Banner stays render-stable
+        # regardless of include-merge ordering.
+        source '{{.TASKFILE_DIR}}/install/messages.zsh'
+        header "Dotfiles -- common tasks"
+        echo
+        info "  install     Install dotfiles for the active machine"
+        info "  setup       Set the active machine: task setup -- <machine-name>"
+        info "  validate    Validate full installation state"
+        info "  test        Run all smoke tests"
+        info "  lint        Run all lint checks"
+        echo
+        header "Diagnostics"
+        info "  task show:*      Inspect current state (manifest, claude)"
+        info "  task audit:*     Detect drift (manifest, packages, links)"
+        info "  task refresh:*   Manually refresh a layer (claude)"
+        echo
+        echo "Run 'task --list' for the full task graph."
 
   # lint-allow: cmds-without-status
   # Top-level alias for `manifest:setup`. Every doc and operator-facing
