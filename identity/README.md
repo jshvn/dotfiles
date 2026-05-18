@@ -2,7 +2,7 @@
 
 Phase 4 owns git + SSH identity. Manifest-driven: per-machine TOML files
 declare `identity.git` and `identity.ssh` from the enum
-`personal | work | server-1 | server-2 | none`, plus the gates
+`personal | work | atium | server-2 | none`, plus the gates
 `features.one-password-ssh` and `features.one-password-signing`. macOS-only
 in v1 (Apple Silicon + Intel); the model carries cleanly to v2's Linux work
 because no logic branches on platform here -- only on identity. Symlinks
@@ -18,7 +18,7 @@ identity is selected by a single symlink swap rather than profile-file-exec.
   is a silent no-op).
 - `git/ignore` -- global gitignore, referenced via `core.excludesfile = ignore`.
 - `git/identities/<name>` -- flat per-identity overlays (personal, work,
-  server-1, server-2, none). Workstation overlays are loaded via the
+  atium, server-2, none). Workstation overlays are loaded via the
   `[includeIf gitdir/i:...]` blocks; server overlays are loaded via the
   `server-include.config` wildcard that `taskfiles/identity.yml` materializes
   on server machines only.

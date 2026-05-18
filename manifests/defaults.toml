@@ -52,7 +52,7 @@ casks    = []
 mas      = []
 
 [identity]
-# Allowed values: "personal" | "work" | "server-1" | "server-2" | "none". Drives Phase 4 git+SSH
+# Allowed values: "personal" | "work" | "atium" | "server-2" | "none". Drives Phase 4 git+SSH
 # identity selection.
 git = "none"
 ssh = "none"

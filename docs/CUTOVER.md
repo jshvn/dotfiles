@@ -69,7 +69,7 @@ failure against the referenced source-of-truth doc and re-run that step.
    summary table at the end. All six rows must show `check` or `n/a` on a
    freshly installed machine. Currently only `claude:validate` emits the
    `feature disabled -- skipped` sentinel substring that the aggregator
-   renders as `n/a` (when `claude-marketplace` is false, e.g., on server-1
+   renders as `n/a` (when `claude-marketplace` is false, e.g., on atium
    and server-2). The other per-component validates return `check` even
    when their feature flags are off because the underlying validates
    internally no-op feature-gated work rather than emitting a separate skip
@@ -108,5 +108,5 @@ section "Deferred Ideas").
 |---------|--------|--------------|--------------------|------------|-------|
 | personal-laptop | planning | - | - | - | primary dev box; Apple Silicon |
 | work-laptop | planning | - | - | - | work identity; GUI + dev environment |
-| server-1 | planning | - | - | - | headless ops; macos-security only |
+| atium | planning | - | - | - | headless ops; macos-security only |
 | server-2 | planning | - | - | - | headless ops; macos-security only |

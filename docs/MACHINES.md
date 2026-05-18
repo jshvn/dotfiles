@@ -51,14 +51,14 @@ changes, not when a feature flag flips.
 - See `manifests/machines/work-laptop.toml` for declarative state
   (features, identity, package bundles).
 
-## server-1
+## atium
 
-- Purpose: Mac server-1, headless ops machine, core packages only.
+- Purpose: Mac atium, headless ops machine, core packages only.
 - Hardware: Apple Silicon or Intel -- arch detected by the resolver via
-  `uname -m` because `[platform].arch` is absent in the server-1 TOML.
+  `uname -m` because `[platform].arch` is absent in the atium TOML.
 - Role narrative: headless operations machine. Runs only the `core`
   Brewfile bundle (CLI tooling); no GUI bundle, no extra casks, no MAS
-  apps. The server-1 git/ssh identity isolates this machine's commits and
+  apps. The atium git/ssh identity isolates this machine's commits and
   remote access from the personal and work identities so logs and
   authorized-key sets stay attributable. `claude-marketplace` is off
   because the machine has no interactive Claude Code surface; the GUI
@@ -69,7 +69,7 @@ changes, not when a feature flag flips.
   `one-password-ssh` feature is off because a headless server cannot
   prompt for the 1Password TouchID approval. Intended workload is light
   CLI ops; nothing on this machine should require a graphical session.
-- See `manifests/machines/server-1.toml` for declarative state (features,
+- See `manifests/machines/atium.toml` for declarative state (features,
   identity, package bundles).
 
 ## server-2
@@ -78,14 +78,14 @@ changes, not when a feature flag flips.
 - Hardware: Apple Silicon or Intel -- arch detected by the resolver via
   `uname -m` because `[platform].arch` is absent in the server-2 TOML.
 - Role narrative: second headless operations machine, structurally
-  mirroring `server-1`. Runs only the `core` Brewfile bundle; no GUI
+  mirroring `atium`. Runs only the `core` Brewfile bundle; no GUI
   bundle, no extra casks, no MAS apps. The server-2 git/ssh identity is
-  distinct from server-1 so the two machines remain individually
+  distinct from atium so the two machines remain individually
   attributable in commit logs, authorized-key sets, and audit trails
   even when their workload is interchangeable. `claude-marketplace` and
   the GUI feature flags are all off; `macos-security` is the only macOS
   defaults concern that runs.
-- Special handling: same shape as `server-1` -- SSH-only access,
+- Special handling: same shape as `atium` -- SSH-only access,
   `one-password-ssh` off, headless workload. Operating two server
   machines with separate identities is intentional: it keeps the
   blast-radius of a compromised key bounded to a single host.

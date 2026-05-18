@@ -45,7 +45,7 @@ Path mapping:
 | Old (v1) | New (v2) |
 |----------|----------|
 | `Brewfile-personal.rb` | `packages/core.rb` + `packages/gui.rb` listed in `[packages.brew].bundles` of `manifests/machines/personal-laptop.toml`; one-offs go in `extra_packages` of the same TOML |
-| `zsh/aliases/server.zsh` (per-profile dir) | `shell/aliases/<topic>.zsh` (flat layout), gated by feature flag in `manifests/machines/server-1.toml` |
+| `zsh/aliases/server.zsh` (per-profile dir) | `shell/aliases/<topic>.zsh` (flat layout), gated by feature flag in `manifests/machines/atium.toml` |
 | `DOTFILES_PROFILE=personal` env var | `task setup -- personal-laptop` (writes `$XDG_STATE_HOME/dotfiles/machine`) |
 | `VALID_PROFILES=(personal work server test)` | `manifests/machines/*.toml` (file presence is the canonical machine list) |
 
@@ -94,7 +94,7 @@ Path mapping:
 | Old (v1) | New (v2) |
 |----------|----------|
 | `install/Brewfile-personal.rb` | `packages/core.rb` + `packages/gui.rb` (listed in `bundles` of `manifests/machines/personal-laptop.toml`); machine-specific casks go in `extra_packages.casks` |
-| `install/Brewfile-server.rb` | `packages/core.rb` only -- the `gui` bundle is declined via the bundles list in `manifests/machines/server-1.toml` |
+| `install/Brewfile-server.rb` | `packages/core.rb` only -- the `gui` bundle is declined via the bundles list in `manifests/machines/atium.toml` |
 | Profile-keyed branch in install code to pick a Brewfile | `task packages:install` reads `resolved.json`, composes a single Brewfile from `bundles` + `extra_packages` |
 
 ## zsh/ -> shell/ (flat layout)

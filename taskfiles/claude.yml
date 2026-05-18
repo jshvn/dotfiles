@@ -11,7 +11,7 @@ version: '3'
 # Feature gate:
 #   The `install` aggregator is gated on `features.claude-marketplace` in
 #   resolved.json (kebab-case index form required -- CLAUDE.md / CF-02).
-#   Machines with `claude-marketplace = false` (e.g., server-1.toml) skip
+#   Machines with `claude-marketplace = false` (e.g., atium.toml) skip
 #   `claude:install` at the feature-gate level; `task install` still calls
 #   `claude:install` but the `{{if}}` guard no-ops the body.
 #

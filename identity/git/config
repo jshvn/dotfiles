@@ -4,7 +4,7 @@
 #   Workstation identities (personal, work) are loaded via [includeIf gitdir/i:]
 #   blocks that match the project directory prefix. Server identities are loaded
 #   via the unconditional [include] path = server-include.config block; that file
-#   is materialized by `task identity:server-include` when identity.git is server-1
+#   is materialized by `task identity:server-include` when identity.git is atium
 #   or server-2, and is absent (silent no-op) on workstations (Pattern 2 / D-08).
 #
 # Schema reference: docs/MANIFEST.md identity.git enum.

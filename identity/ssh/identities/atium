@@ -1,0 +1,15 @@
+# identity/ssh/identities/atium -- atium SSH identity.
+#
+# Symlinked as ~/.ssh/identities/active when identity.ssh = "atium".
+# Included via the Include directive in identity/ssh/config -> ~/.ssh/config.
+# Side effects: uses the local system ssh-agent (not 1Password). The deploy key
+#   id_ed25519_atium is generated locally on the server at first install and is
+#   never committed to this repo.
+
+# atium uses the system ssh-agent (not 1Password)
+# Deploy key for github.com is managed locally and loaded into ssh-agent
+
+Host github.com
+    IdentityFile ~/.ssh/id_ed25519_atium
+    IdentitiesOnly yes
+    AddKeysToAgent yes

@@ -2,7 +2,7 @@
 #
 # Identity selection model:
 #   The Include line below points at ~/.ssh/identities/active, which is a symlink
-#   to one of identities/{personal,work,server-1,server-2,none}. The symlink is
+#   to one of identities/{personal,work,atium,server-2,none}. The symlink is
 #   created and updated by `task identity:ssh` in taskfiles/identity.yml based on
 #   the identity.ssh value from the resolved machine manifest.
 #

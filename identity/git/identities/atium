@@ -1,14 +1,14 @@
-# identity/git/identities/server-1 -- server-1 git identity overlay.
+# identity/git/identities/atium -- atium git identity overlay.
 #
-# Loaded via server-include.config when identity.git = "server-1".
+# Loaded via server-include.config when identity.git = "atium".
 # server-include.config is materialized by `task identity:server-include` at install time;
 # it is absent on workstations (silent no-op per Pattern 2 / D-08).
 # Overrides: [user] name, email; [github] user; [commit] gpgsign.
 # Side effects: disables commit signing (servers do not have 1Password).
 
 [user]
-    name = Server-1
-    email = server-1@jgrid.net
+    name = Atium
+    email = atium@jgrid.net
 
 [github]
     user = jshvn

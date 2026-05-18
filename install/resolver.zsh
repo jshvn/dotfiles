@@ -193,7 +193,7 @@ validate_manifest() {
     errors=$(( errors + 1 ))
   fi
 
-  # identity.git / identity.ssh enum: personal|work|server-1|server-2|none.
+  # identity.git / identity.ssh enum: personal|work|atium|server-2|none.
   local ident_key ident_val
   for ident_key in git ssh; do
     ident_val=$(yq -r ".identity.${ident_key} // \"\"" "$machine_file" 2>/dev/null || echo "")
@@ -201,8 +201,8 @@ validate_manifest() {
       continue  # already counted above as missing/empty
     fi
     case "$ident_val" in
-      personal|work|server-1|server-2|none) ;;
-      *) error "identity.${ident_key} must be one of personal|work|server-1|server-2|none; got: ${ident_val}"
+      personal|work|atium|server-2|none) ;;
+      *) error "identity.${ident_key} must be one of personal|work|atium|server-2|none; got: ${ident_val}"
          errors=$(( errors + 1 )) ;;
     esac
   done

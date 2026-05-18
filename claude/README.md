@@ -65,7 +65,7 @@ same live directory.
 
 `task claude:install` is gated on `features.claude-marketplace` in
 `manifests/defaults.toml`. Machines with `claude-marketplace = false`
-(e.g., `manifests/machines/server-1.toml`) skip the install step entirely.
+(e.g., `manifests/machines/atium.toml`) skip the install step entirely.
 
 `task claude:update` is NOT in the `task install` call graph. It is an
 explicit refresh command -- run it when you want fresh GSD artifacts,

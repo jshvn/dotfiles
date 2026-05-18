@@ -93,8 +93,8 @@ supply a value -- silent inheritance of required fields is the drift class being
 | `platform.os` | string | `"darwin"` | v1 only; v2 will add `"linux"` |
 | `features` | table | any key-value pairs | May be empty `{}`; each key is kebab-case |
 | `packages.brew.bundles` | array of strings | non-empty; must include `"core"` | Maps to `packages/<name>.rb` files (Phase 5) |
-| `identity.git` | string | `"personal"` \| `"work"` \| `"server-1"` \| `"server-2"` \| `"none"` | Drives Phase 4 git config selection |
-| `identity.ssh` | string | `"personal"` \| `"work"` \| `"server-1"` \| `"server-2"` \| `"none"` | Drives Phase 4 SSH config selection |
+| `identity.git` | string | `"personal"` \| `"work"` \| `"atium"` \| `"server-2"` \| `"none"` | Drives Phase 4 git config selection |
+| `identity.ssh` | string | `"personal"` \| `"work"` \| `"atium"` \| `"server-2"` \| `"none"` | Drives Phase 4 SSH config selection |
 
 ### Optional fields
 
@@ -381,7 +381,7 @@ See that task for the implementation details.
 
 ## Adding a New Machine
 
-1. Choose a kebab-case name (e.g., `server-1`, `work-laptop`). Machine names must match
+1. Choose a kebab-case name (e.g., `atium`, `work-laptop`). Machine names must match
    the regex `^[a-z0-9][a-z0-9-]*$`.
 
 2. Create `manifests/machines/<name>.toml`. Copy an existing machine file as a starting

@@ -134,7 +134,7 @@ tasks:
       - sh: |
           v='{{.MANIFEST.identity.git}}'
           case "$v" in
-            personal|work|server-1|server-2|none) exit 0 ;;
+            personal|work|atium|server-2|none) exit 0 ;;
             *) exit 1 ;;
           esac
         msg: 'identity.git = "{{.MANIFEST.identity.git}}" is not a known identity'
@@ -148,7 +148,7 @@ tasks:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/identities/work", TARGET: "{{.GIT_CONFIG_DIR}}/identities/work" }
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/identities/server-1", TARGET: "{{.GIT_CONFIG_DIR}}/identities/server-1" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/identities/atium", TARGET: "{{.GIT_CONFIG_DIR}}/identities/atium" }
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/identities/server-2", TARGET: "{{.GIT_CONFIG_DIR}}/identities/server-2" }
       - task: _:safe-link
@@ -159,13 +159,13 @@ tasks:
       - test -L "{{.GIT_CONFIG_DIR}}/ignore"
       - test -L "{{.GIT_CONFIG_DIR}}/identities/personal"
       - test -L "{{.GIT_CONFIG_DIR}}/identities/work"
-      - test -L "{{.GIT_CONFIG_DIR}}/identities/server-1"
+      - test -L "{{.GIT_CONFIG_DIR}}/identities/atium"
       - test -L "{{.GIT_CONFIG_DIR}}/identities/server-2"
       - test -L "{{.GIT_CONFIG_DIR}}/identities/none"
 
   # ---------------------------------------------------------------------------
   # server-include -- internal generator (D-08).
-  # On server-1/server-2 machines: materialize ~/.config/git/server-include.config
+  # On atium/server-2 machines: materialize ~/.config/git/server-include.config
   # with a [includeIf "gitdir:~/"] block pointing at the active server identity.
   # On workstations: ensure the file is absent (silent no-op).
   # ---------------------------------------------------------------------------
@@ -178,7 +178,7 @@ tasks:
         {{.DOTFILES_MESSAGES}}
         identity="{{.MANIFEST.identity.git}}"
         case "$identity" in
-          server-1|server-2)
+          atium|server-2)
             mkdir -p "{{.GIT_CONFIG_DIR}}"
             printf '[includeIf "gitdir:~/"]\n    path = identities/%s\n' "$identity" > "{{.SERVER_INCLUDE_CONFIG}}"
             check "server-include.config materialized for $identity"
@@ -193,11 +193,11 @@ tasks:
     status:
       # WR-07: exact-match check against the canonical two-line content the
       # cmd writes. A loose grep would pass on stale-content cases (e.g.,
-      # a file containing both server-1 and server-2 path lines from a
+      # a file containing both atium and server-2 path lines from a
       # prior buggy append) and skip the rewrite that fixes them.
       - |
         case "{{.MANIFEST.identity.git}}" in
-          server-1|server-2)
+          atium|server-2)
             test -f "{{.SERVER_INCLUDE_CONFIG}}" || exit 1
             diff <(printf '[includeIf "gitdir:~/"]\n    path = identities/%s\n' "{{.MANIFEST.identity.git}}") "{{.SERVER_INCLUDE_CONFIG}}" >/dev/null
             ;;
@@ -226,7 +226,7 @@ tasks:
       - sh: |
           v='{{.MANIFEST.identity.ssh}}'
           case "$v" in
-            personal|work|server-1|server-2|none) exit 0 ;;
+            personal|work|atium|server-2|none) exit 0 ;;
             *) exit 1 ;;
           esac
         msg: 'identity.ssh = "{{.MANIFEST.identity.ssh}}" is not a known identity'
@@ -238,7 +238,7 @@ tasks:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/identities/work", TARGET: "{{.SSH_IDENTITIES_DIR}}/work" }
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/identities/server-1", TARGET: "{{.SSH_IDENTITIES_DIR}}/server-1" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/identities/atium", TARGET: "{{.SSH_IDENTITIES_DIR}}/atium" }
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/identities/server-2", TARGET: "{{.SSH_IDENTITIES_DIR}}/server-2" }
       - task: _:safe-link
@@ -246,7 +246,7 @@ tasks:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/keys/personal.pub", TARGET: "{{.SSH_KEYS_DIR}}/personal.pub" }
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/keys/server-1.pub", TARGET: "{{.SSH_KEYS_DIR}}/server-1.pub" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/keys/atium.pub", TARGET: "{{.SSH_KEYS_DIR}}/atium.pub" }
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/keys/server-2.pub", TARGET: "{{.SSH_KEYS_DIR}}/server-2.pub" }
       - task: _:safe-link
@@ -259,11 +259,11 @@ tasks:
       - test -L "{{.SSH_DIR}}/config"
       - test -L "{{.SSH_IDENTITIES_DIR}}/personal"
       - test -L "{{.SSH_IDENTITIES_DIR}}/work"
-      - test -L "{{.SSH_IDENTITIES_DIR}}/server-1"
+      - test -L "{{.SSH_IDENTITIES_DIR}}/atium"
       - test -L "{{.SSH_IDENTITIES_DIR}}/server-2"
       - test -L "{{.SSH_IDENTITIES_DIR}}/none"
       - test -L "{{.SSH_KEYS_DIR}}/personal.pub"
-      - test -L "{{.SSH_KEYS_DIR}}/server-1.pub"
+      - test -L "{{.SSH_KEYS_DIR}}/atium.pub"
       - test -L "{{.SSH_KEYS_DIR}}/server-2.pub"
       - test -L "{{.SSH_IDENTITIES_DIR}}/cloudflared.zsh"
       - test -L "{{.SSH_IDENTITIES_DIR}}/active"
@@ -335,7 +335,7 @@ tasks:
             fi
             probe_dir=$(dirname "$dotgit")
             ;;
-          server-1|server-2)
+          atium|server-2)
             probe_dir="$HOME"
             expected_email=$(git config -f "{{.DOTFILEDIR}}/identity/git/identities/${identity}" user.email 2>/dev/null || echo "")
             ;;

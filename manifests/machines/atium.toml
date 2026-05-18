@@ -1,4 +1,4 @@
-# manifests/machines/server-1.toml -- Mac server-1.
+# manifests/machines/atium.toml -- Mac atium (headless ops server).
 #
 # Headless ops machine, core packages only; no GUI feature flags.
 # See docs/MANIFEST.md for the schema reference and field semantics.
@@ -6,7 +6,7 @@
 schema_version = 1
 
 [meta]
-description = "Mac server-1 -- headless ops machine, core packages only"
+description = "Mac atium -- headless ops machine, core packages only"
 
 [platform]
 os = "darwin"
@@ -27,5 +27,5 @@ casks    = []
 mas      = []
 
 [identity]
-git = "server-1"
-ssh = "server-1"
+git = "atium"
+ssh = "atium"
