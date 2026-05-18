@@ -1,3 +1,17 @@
+# identity/ssh/agent.toml -- 1Password SSH agent configuration.
+#
+# Symlinked to ~/.config/1Password/ssh/agent.toml by
+# `task identity:one-password-agent` when features.one-password-ssh = true.
+# Controls which SSH keys 1Password offers to remote servers and in what
+# order. The 1Password agent reads this file at startup, so restart the
+# 1Password app after editing.
+#
+# Schema reference: https://developer.1password.com/docs/ssh/agent/config
+# Callers: taskfiles/identity.yml via _:safe-link to
+#   ~/.config/1Password/ssh/agent.toml
+# Side effects: the 1Password agent process reads this file once at
+#   startup to determine which vault items to offer to SSH.
+
 # This is the 1Password SSH agent config file, which allows you to customize the
 # behavior of the SSH agent running on this machine.
 #
@@ -30,7 +44,7 @@
 #  https://developer.1password.com/docs/ssh/agent/config
 
 
-# Personal 
+# Personal
 [[ssh-keys]]
 item = "id_ed25519_personal"
 vault = "Personal"

@@ -114,6 +114,7 @@ tasks:
     cmds:
       - task: git
       - task: ssh
+      - task: one-password-agent
 
   # ---------------------------------------------------------------------------
   # Git side -- two static symlinks (config, ignore) plus a filesystem-driven
@@ -278,6 +279,22 @@ tasks:
       - test "$(readlink "{{.SSH_IDENTITIES_DIR}}/active")" = "{{.MANIFEST.identity.ssh}}" || test "$(readlink "{{.SSH_IDENTITIES_DIR}}/active")" = "{{.SSH_IDENTITIES_DIR}}/{{.MANIFEST.identity.ssh}}"
 
   # ---------------------------------------------------------------------------
+  # one-password-agent -- link the 1Password SSH agent config (agent.toml).
+  # Isolated as its own sub-task with a feature-gated status block so the
+  # `_:safe-link` call is never invoked when features.one-password-ssh = false.
+  # Mirrors the configs:ghostty pattern in taskfiles/links.yml (status returns
+  # `true` when the feature is off; cmds never runs in that case).
+  # ---------------------------------------------------------------------------
+
+  one-password-agent:
+    desc: "Link 1Password SSH agent config (gated on one-password-ssh feature)"
+    cmds:
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/agent.toml", TARGET: "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml" }
+    status:
+      - '{{if not (index .MANIFEST.features "one-password-ssh")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"{{end}}'
+
+  # ---------------------------------------------------------------------------
   # validate -- always-re-run diagnostic. Four assertion blocks:
   #   (a) symlink presence
   #   (b) git config user.email match (skip when gitdir absent / identity=none)
@@ -294,9 +311,10 @@ tasks:
       - task: validate:ssh-add
       - task: validate:keys
 
-  # (a) Symlink presence -- four canonical checks via _:check-link.
+  # (a) Symlink presence -- four canonical checks via _:check-link, plus the
+  # feature-gated 1Password agent.toml link (validate:one-password-agent).
   validate:symlinks:
-    desc: "validate (a): symlink presence for git config, ssh config, active, cloudflared"
+    desc: "validate (a): symlink presence for git config, ssh config, active, cloudflared, 1Password agent"
     internal: true
     cmds:
       - task: _:check-link
@@ -307,6 +325,19 @@ tasks:
         vars: { TARGET: "{{.SSH_IDENTITIES_DIR}}/active", NAME: "ssh active identity" }
       - task: _:check-link
         vars: { TARGET: "{{.SSH_IDENTITIES_DIR}}/cloudflared.zsh", NAME: "ssh cloudflared wrapper" }
+      - task: validate:one-password-agent
+
+  # (a-sub) 1Password agent.toml link presence -- feature-gated. Status block
+  # returns 0 when features.one-password-ssh = false, so the cmds: never runs
+  # on machines without 1Password.
+  validate:one-password-agent:
+    desc: "validate (a-sub): 1Password agent.toml symlink presence (gated)"
+    internal: true
+    cmds:
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml", NAME: "1Password SSH agent config" }
+    status:
+      - '{{if not (index .MANIFEST.features "one-password-ssh")}}true{{else}}false{{end}}'
 
   # (b) git config user.email assertion -- skips silently when gitdir absent.
   validate:git:
