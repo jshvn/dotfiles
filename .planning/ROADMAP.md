@@ -209,7 +209,8 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
   2. Every "keep" row in `AUDIT.md` has a corresponding committed change in the v2 owner file; the `AUDIT.md` row is annotated with the commit SHA (or PLAN reference) that implemented it; zero "keep" rows remain unimplemented when Phase 10 closes
   3. A fresh-machine smoke procedure (run on a clean macOS machine OR a documented synthetic equivalent) confirms: a brand-new terminal opens, `$ZDOTDIR` is exported, the antidote prompt renders, `alias` lists the ported aliases, `which _dotfiles_feature` resolves, `motd` prints, and no v1 fallback is needed at any step — procedure and pass result recorded in `.planning/phases/10-v1-drop-remediation/10-SMOKE.md`
   4. No PORT item is outstanding when Phase 10 closes: `AUDIT.md`'s keep-list and the implemented-set match exactly; this is the gate before Phase 11 deletes the v1 source-of-truth files
-**Plans**: TBD
+**Plans**: 1 plan
+  - [ ] 10-01-PLAN.md — Phase 10 single-plan implementation: PORT-01 (links.yml zdotdir task + outer status extension), PORT-02 (shell.yml validate task + Taskfile.yml dual-alias include + aggregator wiring), AUDIT.md row 3 amend (D-07), 10-SMOKE.md (PORT-03)
 
 ### Phase 11: v1 Removal
 **Goal**: Every v1 leftover is removed from the repo after Phase 10 proves no live dependency remains; `Taskfile.yml` is simplified; cutover infrastructure (gate, ack task, docs) is retired; `task install` on a clean machine succeeds without any cutover-ack step
