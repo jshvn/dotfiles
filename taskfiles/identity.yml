@@ -110,11 +110,12 @@ tasks:
   # lint-allow: cmds-without-status
   install:
     desc: "Install identity layer (git + ssh)"
+    internal: true
     deps: [":manifest:resolve"]
     cmds:
-      - task: git
-      - task: ssh
-      - task: one-password-agent
+      - task: install-git
+      - task: install-ssh
+      - task: install-one-password-agent
 
   # ---------------------------------------------------------------------------
   # Git side -- two static symlinks (config, ignore) plus a filesystem-driven
