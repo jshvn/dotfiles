@@ -18,6 +18,29 @@ no hostname inference, no hidden branching. macOS only in v1 (Apple Silicon and 
 
 Schema reference: `docs/MANIFEST.md`
 
+## Common Tasks (operator surface)
+
+Bare `task` prints the curated two-tier banner. The canonical operator
+surface is exactly five top-level commands:
+
+| Command          | Purpose                                                      |
+|------------------|--------------------------------------------------------------|
+| `task install`   | Install dotfiles for the active machine                      |
+| `task setup`     | Set the active machine: `task setup -- <machine-name>`       |
+| `task validate`  | Validate full installation state                             |
+| `task test`      | Run all smoke tests                                          |
+| `task lint`      | Run all lint checks                                          |
+
+Three diagnostic namespaces:
+
+- `task show:*` -- inspect current state (`show:manifest`, `show:claude`)
+- `task audit:*` -- detect drift (`audit:manifest`, `audit:packages`, `audit:links`)
+- `task refresh:*` -- explicit manual refresh (`refresh:claude`)
+
+`task --list` shows the full curated graph (every public task; internals
+hidden). Per-component install / validate tasks are intentionally
+internal -- they are pipeline steps, not operator commands.
+
 ## Rules
 
 ### Manifests are the source of truth for install state

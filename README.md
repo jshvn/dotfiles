@@ -37,6 +37,27 @@ task install
 For the list of accepted `<machine-name>` values and the per-machine
 purpose, hardware, and special-handling notes, see `docs/MACHINES.md`.
 
+## Common Tasks
+
+Run `task` (no arguments) to see the curated task surface with
+operator-friendly descriptions. The five top-level commands are:
+
+| Command          | Purpose                                                      |
+|------------------|--------------------------------------------------------------|
+| `task install`   | Install dotfiles for the active machine                      |
+| `task setup`     | Set the active machine: `task setup -- <machine-name>`       |
+| `task validate`  | Validate full installation state                             |
+| `task test`      | Run all smoke tests                                          |
+| `task lint`      | Run all lint checks                                          |
+
+Three diagnostic namespaces surface state, drift, and explicit refresh:
+
+- `task show:*` -- inspect current state (manifest, claude)
+- `task audit:*` -- detect drift (manifest, packages, links)
+- `task refresh:*` -- manually refresh a layer (claude)
+
+Run `task --list` for the full task graph.
+
 ## Where to Add Things
 
 | Adding | Where | Naming |
