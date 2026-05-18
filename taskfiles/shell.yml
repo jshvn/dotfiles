@@ -8,13 +8,14 @@ version: '3'
 #   Currently a single-task file; future plans may extend.
 #
 # Tasks:
-#   - shell -- SHEL-12 cold interactive startup gate via hyperfine
-#     (invoked as `task perf:shell` from the root Taskfile.yml via the
-#     `perf: ./taskfiles/shell.yml` include).
+#   - startup-time -- SHEL-12 cold interactive startup gate via hyperfine
+#     (invoked as `task shell:startup-time`).
+#   - validate -- PORT-02 shell-layer validation (internal; joins the root
+#     `task validate` aggregator).
 #
 # Self-exemption (LINT-03a):
-#   `shell` is a measurement task; always-re-run is correct -- the cold-start
-#   number changes every invocation. The task is marked with
+#   `startup-time` is a measurement task; always-re-run is correct -- the
+#   cold-start number changes every invocation. The task is marked with
 #   `# lint-allow: cmds-without-status` so LINT-03a skips it.
 #
 # Dependencies:
@@ -32,7 +33,7 @@ includes:
 
 # =============================================================================
 # Vars block -- self-contained so direct invocation
-#   task -t taskfiles/shell.yml shell
+#   task -t taskfiles/shell.yml startup-time
 # works without the root Taskfile.yml being loaded.
 # =============================================================================
 
@@ -58,7 +59,7 @@ tasks:
   # ---------------------------------------------------------------------------
 
   # lint-allow: cmds-without-status
-  shell:
+  startup-time:
     desc: "Measure cold interactive zsh startup time (fails if > 200ms -- SHEL-12)"
     cmds:
       - |
@@ -95,6 +96,7 @@ tasks:
 
   validate:
     desc: "Validate shell layer (XDG dirs, ZDOTDIR dir, /etc/zshenv ZDOTDIR line, DOTFILES_MACHINE state)"
+    internal: true
     status: [false]
     cmds:
       - |

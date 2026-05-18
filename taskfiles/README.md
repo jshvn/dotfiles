@@ -21,9 +21,9 @@ task is idempotent (`status:` block) and every symlink goes through
   `lint:portability`, `lint:syntax`, `lint:test-fixtures`. Enforces
   LINT-01..LINT-07.
 - **Phase 3 (real).** `links.yml` -- shell + antidote symlinks via
-  `_:safe-link` plus the zdotdir step. `shell.yml` -- `task perf:shell`
-  (SHEL-12 cold-start gate) plus `task shell:validate` (PORT-02 first-
-  shell guarantee).
+  `_:safe-link` plus the zdotdir step. `shell.yml` exposes
+  `task shell:startup-time` (SHEL-12 cold-start gate); `shell:validate`
+  is internal-only (invoked by root `task validate`).
 - **Smoke-test fixtures.** `test/` -- lint-fixture taskfiles consumed by
   `task lint:test-fixtures` (Phase 2 D-08).
 
@@ -43,7 +43,7 @@ task is idempotent (`status:` block) and every symlink goes through
   alias). Update the includes comment table at the top of `Taskfile.yml`
   to add a `#   - <alias>   (P<n>, real)` line. The first invocation from
   the root namespace becomes `task <alias>:<task>` (for example,
-  `task perf:shell`).
+  `task shell:startup-time`).
 - **A new symlink.** Add a `_:safe-link` invocation to `links.yml` (or
   the appropriate links subtask) with `SOURCE` and `TARGET` vars resolved
   from the root `Taskfile.yml` vars block. Add a matching `test -L` line
