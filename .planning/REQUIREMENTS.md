@@ -24,9 +24,9 @@ Read-only investigation across every v1 leftover file. Produces a single classif
 
 Implement every "keep" item from `AUDIT.md` into v2's existing task and file structure.
 
-- [ ] **PORT-01**: A v2 task writes `/etc/zshenv` with `export ZDOTDIR="$HOME/.config/zsh"` during `task install` so a fresh-machine install produces a working shell on first new terminal (driver: the live finding that broke the fresh machine).
-- [ ] **PORT-02**: Every "keep" item from `AUDIT.md` is implemented in v2 in the v2 file that should own it (per the audit's owner column). No PORT items remain outstanding before Phase 3 runs.
-- [ ] **PORT-03**: A fresh-machine install from clean state produces a fully-functional first shell: prompt, theme, aliases, functions, MOTD, and `_dotfiles_feature` are all available without manual remediation. Verified via real fresh-machine install OR a documented smoke procedure that exercises the startup chain.
+- [x] **PORT-01**: A v2 task writes `/etc/zshenv` with `export ZDOTDIR="$HOME/.config/zsh"` during `task install` so a fresh-machine install produces a working shell on first new terminal (driver: the live finding that broke the fresh machine).
+- [x] **PORT-02**: Every "keep" item from `AUDIT.md` is implemented in v2 in the v2 file that should own it (per the audit's owner column). No PORT items remain outstanding before Phase 3 runs.
+- [x] **PORT-03**: A fresh-machine install from clean state produces a fully-functional first shell: prompt, theme, aliases, functions, MOTD, and `_dotfiles_feature` are all available without manual remediation. Verified via real fresh-machine install OR a documented smoke procedure that exercises the startup chain.
 
 ### Removal (v1 deletion)
 

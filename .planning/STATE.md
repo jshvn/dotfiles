@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Cleanup
-status: executing
-stopped_at: Phase 10 context gathered
-last_updated: "2026-05-18T01:46:07.911Z"
+status: ready_to_plan
+stopped_at: Phase 10 complete (1/1) — ready to discuss Phase 11
+last_updated: 2026-05-18T03:50:20.242Z
 last_activity: 2026-05-18 -- Phase 10 execution started
 progress:
   total_phases: 14
   completed_phases: 1
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 7
 ---
 
@@ -21,20 +21,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** A single declarative manifest per machine makes the complete install state legible to both humans and AI agents — no inference from filename suffixes, no hidden profile branching, no hostname-based guessing.
-**Current focus:** Phase 10 — v1-drop-remediation
+**Current focus:** Phase 11 — v1 removal
 
 ## Current Position
 
-Phase: 10 (v1-drop-remediation) — EXECUTING
-Plan: 1 of 1
-Status: Executing Phase 10
-Last activity: 2026-05-18 -- Phase 10 execution started
+Phase: 11
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-05-18
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 35 (v1.0 milestone — Phases 1-8)
+- Total plans completed: 36 (v1.0 milestone — Phases 1-8)
 - Average duration: —
 - Total execution time: —
 
@@ -50,6 +50,7 @@ Last activity: 2026-05-18 -- Phase 10 execution started
 | 07 | 6 | - | - |
 | 08 | 6 | - | - |
 | 09 | 5 | - | - |
+| 10 | 1 | - | - |
 
 **Recent Trend:**
 

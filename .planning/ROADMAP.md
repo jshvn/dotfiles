@@ -276,7 +276,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Claude + Tool Configs + Smoke Tests | 6/6 | Complete   | 2026-05-16 |
 | 8. Validation + Cutover Readiness | 6/6 | Complete   | 2026-05-16 |
 | 9. v1-Drop Audit | 5/5 | Complete   | 2026-05-17 |
-| 10. v1-Drop Remediation | 1/1 | Complete   | 2026-05-18 |
+| 10. v1-Drop Remediation | 1/1 | Complete    | 2026-05-18 |
 | 11. v1 Removal | 0/TBD | Not started (v2.1) | - |
 | 12. Task Surface Redesign | 0/TBD | Not started (v2.1) | - |
 | 13. Code Review + Dead-Code Cleanup | 0/TBD | Not started (v2.1) | - |
