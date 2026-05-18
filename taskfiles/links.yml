@@ -434,11 +434,16 @@ tasks:
   #   - parent_dirs deduplication uses word-split-safe `while IFS= read -r`
   #     pattern (NOT `array=($(...))` which is vulnerable to word-splitting
   #     on paths containing spaces and is not shellcheck-clean)
+  #
+  # Public path: audit:links (via taskfiles/audit.yml delegate). This task
+  # remains as the implementation; the audit: delegate is the operator-facing
+  # surface (D-02).
   # ---------------------------------------------------------------------------
 
   # lint-allow: cmds-without-status
   reconcile:
     desc: "Detect orphan symlinks (default: exit non-zero); -- --remove for interactive cleanup"
+    internal: true
     deps: [":manifest:resolve"]
     status: [false]
     cmds:

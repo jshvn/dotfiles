@@ -1,0 +1,24 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/audit.yml -- Phase 12 public diagnostics: drift detection.
+#
+# Purpose: Public delegates for diagnostic audit operations across all namespaces.
+# Callers: Invoked directly by operator; included by Taskfile.yml.
+# Side effects: Read-only -- these tasks print state or detect drift; no mutations.
+# Tasks:
+#   - links -- delegate to :links:reconcile (orphan symlink detection; D-02)
+# =============================================================================
+
+vars:
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+tasks:
+  # lint-allow: cmds-without-status
+  links:
+    desc: "Audit symlink drift (detect orphans); -- --remove for interactive cleanup"
+    status: [false]
+    cmds:
+      - task: :links:reconcile
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
