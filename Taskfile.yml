@@ -129,8 +129,8 @@ tasks:
   # lint-allow: cmds-without-status
   # Top-level alias for `manifest:setup`. Every doc and operator-facing
   # error message says `task setup -- <machine-name>` (bootstrap.zsh,
-  # docs/CUTOVER.md, docs/MIGRATION.md, CLAUDE.md, manifest:resolve's own
-  # precondition msg). Without this alias those instructions fail with
+  # README.md, CLAUDE.md, manifest:resolve's own precondition msg).
+  # Without this alias those instructions fail with
   # `Task "setup" does not exist`. Forwarding CLI_ARGS preserves the
   # `-- <name>` calling convention.
   setup:
