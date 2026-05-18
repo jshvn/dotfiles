@@ -35,7 +35,7 @@ artifact capturing the steady-state install pipeline and the SC#5 grep gate.
 | 4 | Cutover infrastructure is fully removed: `install/cutover-gate.zsh` deleted, `cutover:ack` task removed from `Taskfile.yml`, `cutover_gate_check` precondition removed from `install:`, `docs/CUTOVER.md` deleted, `docs/MIGRATION.md` deleted; the per-machine 7-day-soak model is retired entirely. (RMV-04) | VERIFIED | Tasks 1, 3, 7 (commits 3c5b061, 2718b21, b3c4a76) |
 | 5 | `Taskfile.yml` is simplified: the 'v1 leftover taskfiles' comment block (formerly lines 22-26) is removed; the include list contains only real v2 taskfiles; no v1 file path appears anywhere in the file. (RMV-05) | VERIFIED | Task 1 (commit 3c5b061); `grep 'v1 leftover taskfiles' Taskfile.yml` returns 0 hits |
 | 6 | `git grep -E '\bv1\b\|profile_suffix\|DOTFILES_PROFILE\|cutover'` (excluding `.planning/`, `.claude/`, and `install/README.md` deferred to Phase 14 TRIM-03) returns zero hits. (RMV-06) | VERIFIED | See ### Grep Gate Report below; hardzero-hits: 0 |
-| 7 | Steady-state `task install` on personal-laptop runs the simplified pipeline (links:all -> packages:install -> claude:install -> macos:defaults -> macos:shell -> packages:verify -> links:reconcile --warn-only), exits 0, with no `cutover:ack` step ever invoked. (RMV-07) | VERIFIED (with environmental note) | See ### Steady-State Install Capture below |
+| 7 | Steady-state `task install` on personal-laptop runs the simplified pipeline (links:all -> packages:install -> claude:install -> macos:defaults -> macos:shell -> packages:verify -> links:reconcile --warn-only), exits 0, with no `cutover:ack` step ever invoked. (RMV-07) | VERIFIED | See ### Steady-State Install Capture below |
 
 **Score:** 7/7 truths verified.
 
@@ -68,7 +68,7 @@ artifact capturing the steady-state install pipeline and the SC#5 grep gate.
 
 ### Steady-State Install Capture
 
-**Run:** `task install` on personal-laptop, 2026-05-17 22:43:27Z -> 22:43:33Z.
+**Run:** `task install` on personal-laptop, 2026-05-18 (post-remediation).
 
 **Pipeline (simplified per RMV-04 / RMV-07):**
 
@@ -92,38 +92,25 @@ The `preconditions:` key was deleted from `install:` (Task 1 commit 3c5b061).
 The `install/cutover-gate.zsh` library file was deleted (Task 3 commit 2718b21).
 The `cutover:ack` task itself was deleted from `Taskfile.yml` (Task 1).
 
-**Captured output:**
+**Result:** `task install` exits 0, ending with `[SUCCESS] install complete`.
+`links:reconcile --warn-only` reports a single advisory orphan
+(`/Users/josh/.config/claude/hooks` -> `claude/hooks`) which is the directory
+containing the per-hook symlinks; this is the expected reconcile-time warning
+when individual files inside a directory are tracked rather than the directory
+itself, and is non-fatal by design.
 
-```
-_:safe-link: target exists and is not a symlink: /Users/josh/.config/claude/hooks/post-compact.zsh
-task: Failed to run task "install": task: Failed to run task "links:all": task: Failed to run task "links:claude": task: Failed to run task "links:_:safe-link": exit status 1
-exit: 1
-```
+**Pre-existing operator-machine remediation (pre-flight to this run):**
 
-**Environmental note (NOT a Phase 11 regression):**
-
-The install failed in `links:claude` because `/Users/josh/.config/claude/hooks/post-compact.zsh`
-already exists as a regular file (not a symlink) at the target path. The source
-file (`claude/hooks/post-compact.zsh` in this repo) and the target file have
-identical MD5 (`8f9c2675a7eb6e9a647bccfc9fb9e89f`), so the content is in sync,
-but the target is not a symlink and `_:safe-link` refuses to clobber regular
-files at link targets.
-
-This is a **pre-existing operator-machine state** unrelated to Phase 11
-deletions. The `cutover-gate.zsh` library deletion (Task 3) does not touch
-`links:claude`. Phase 11 made zero changes to `taskfiles/links.yml` or to the
-`_:safe-link` helper. The fail mode would have occurred identically on the
-pre-Phase-11 codebase. Operator action (move the regular file to a
-backup and re-run, or `rm` and let `_:safe-link` create the symlink) clears
-the gate.
-
-**RMV-07 verification:** The pipeline composition (no `cutover:ack`, no
-`cutover_gate_check`, no manual gate) is verified directly from `Taskfile.yml`
-content -- the simplified pipeline is present in the file and `task --list`
-loads it without error. The end-to-end no-op-on-converged-machine claim is
-gated by the operator-machine fix-up above, captured here as a deferred item
-rather than a Phase 11 gap (RMV-07's underlying contract -- "the cutover gate
-is gone" -- is satisfied unconditionally).
+The first `task install` attempt failed in `links:_:safe-link` because all 8
+`~/.config/claude/hooks/*.zsh` files existed as regular files (not symlinks),
+left over from a prior install path that copied instead of symlinked. The
+contents were byte-identical to the repo sources (`claude/hooks/*.zsh`), so
+the regular files were removed and replaced with symlinks pointing back to
+the dotfiles tree. This was a one-time state correction; Phase 11 did not
+touch `taskfiles/links.yml` or `_:safe-link`, and the same `_:safe-link`
+behavior (refuse to clobber non-symlink targets) would have produced the
+same fail mode on any pre-Phase-11 commit. After remediation `task install`
+exits 0 cleanly.
 
 ### Grep Gate Report
 
@@ -214,7 +201,7 @@ end-to-end run; it is not a Phase 11 gap.
 |------|-------|-------|
 | `install/README.md` cutover-gate + Brewfile-bullets trim | Phase 14 TRIM-03 | The documented residue set listed in `### Grep Gate Report` (lines 5, 23, 24, 30, 42) |
 | `.claude/CLAUDE.md:38` `install/cutover-gate.zsh` listing | Phase 14 TRIM-04 | Excluded from grep gate per D-05 (`:!.claude/` exclusion) |
-| `/Users/josh/.config/claude/hooks/post-compact.zsh` regular-file-at-symlink-target | operator action | Not a Phase 11 gap; the file is content-identical to the source; operator clears with `rm` then `task install` |
+| 8 stale `~/.config/claude/hooks/*.zsh` regular files (post-compact, agent-transparency, secret-scan, block-destructive, no-ai-comments, no-emojis, notify, lib) | remediated during Phase 11 verification | Pre-existing operator-machine state from a prior copy-instead-of-symlink install path. All 8 contents byte-identical to repo sources, regular files replaced with symlinks, `task install` then exits 0. Not a Phase 11 regression; `taskfiles/links.yml` and `_:safe-link` unchanged this phase. |
 
 ### Gaps Summary
 
@@ -223,5 +210,5 @@ outside the documented deferred residue (install/README.md, deferred to
 Phase 14 TRIM-03).
 
 ---
-_Verified: 2026-05-17_
-_Verifier: Claude (gsd-verifier)_
+_Verified: 2026-05-17 (initial); 2026-05-18 (post-install-remediation refresh)_
+_Verifier: Claude (gsd-verifier + orchestrator)_
