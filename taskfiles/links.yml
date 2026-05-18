@@ -135,7 +135,7 @@ tasks:
   # ---------------------------------------------------------------------------
 
   zsh:
-    desc: "Link zsh configuration files"
+    desc: "Link zsh configuration files and configure /etc/zshenv ZDOTDIR"
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zshenv", TARGET: "{{.ZDOTDIR}}/.zshenv" }
@@ -147,12 +147,53 @@ tasks:
         vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zlogin", TARGET: "{{.ZDOTDIR}}/.zlogin" }
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zlogout", TARGET: "{{.ZDOTDIR}}/.zlogout" }
+      - task: zdotdir
     status:
       - test -L "{{.ZDOTDIR}}/.zshenv"
       - test -L "{{.ZDOTDIR}}/.zprofile"
       - test -L "{{.ZDOTDIR}}/.zshrc"
       - test -L "{{.ZDOTDIR}}/.zlogin"
       - test -L "{{.ZDOTDIR}}/.zlogout"
+      - grep -qF 'export ZDOTDIR="{{.ZDOTDIR}}"' /etc/zshenv 2>/dev/null
+
+  # ---------------------------------------------------------------------------
+  # PORT-01: ZDOTDIR write to /etc/zshenv (sudo, idempotent).
+  #
+  # Direct port of v1 taskfiles/common.yml:36-57 with the LINT-02 hardening
+  # from D-04: status block uses the {{.ZDOTDIR}} template var rather than a
+  # shell $ZDOTDIR reference, so the idempotency check evaluates correctly at
+  # task-graph build time (not the v1 macos:shell:145 bug class).
+  #
+  # Three-branch cmd body mirrors v1 verbatim: file-absent -> `sudo tee` to
+  # create; line-absent -> `sudo tee -a` to append; line-present -> info no-op.
+  # /etc/zshenv is world-readable on macOS so the grep -qF check in status
+  # runs without sudo and re-runs never prompt (D-03).
+  #
+  # Marked internal: true to keep it out of `task --list`; dispatched via
+  # `task: zdotdir` from the outer `zsh:` task (precedent: configs:ghostty
+  # extraction at lines 269-277 below).
+  # ---------------------------------------------------------------------------
+
+  zdotdir:
+    desc: "Configure ZDOTDIR in /etc/zshenv (sudo write, idempotent)"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        ZDOTDIR_EXPORT='export ZDOTDIR="{{.ZDOTDIR}}"'
+        if [[ ! -f /etc/zshenv ]]; then
+          info "Creating /etc/zshenv with ZDOTDIR export..."
+          echo "$ZDOTDIR_EXPORT" | sudo tee /etc/zshenv > /dev/null
+          success "ZDOTDIR configured in /etc/zshenv"
+        elif ! grep -qF "$ZDOTDIR_EXPORT" /etc/zshenv; then
+          info "Adding ZDOTDIR export to /etc/zshenv..."
+          echo "$ZDOTDIR_EXPORT" | sudo tee -a /etc/zshenv > /dev/null
+          success "ZDOTDIR added to /etc/zshenv"
+        else
+          info "ZDOTDIR already configured in /etc/zshenv"
+        fi
+    status:
+      - grep -qF 'export ZDOTDIR="{{.ZDOTDIR}}"' /etc/zshenv 2>/dev/null
 
   # ---------------------------------------------------------------------------
   # Claude config tree (CLDE-01) -- feature-gated on claude-marketplace.
