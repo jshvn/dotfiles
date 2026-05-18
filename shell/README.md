@@ -40,8 +40,8 @@ see `../.planning/ROADMAP.md` for the deferred migration cost.
 ## Performance budget
 
 Cold interactive shell start: <= 200ms (SHEL-12). Measured via
-`task perf:shell`, which runs `hyperfine --warmup 1 --runs 5 'zsh -lic
-exit'` and fails non-zero when the 5-run mean exceeds the budget.
+`task shell:startup-time`, which runs `hyperfine --warmup 1 --runs 5 'zsh
+-lic exit'` and fails non-zero when the 5-run mean exceeds the budget.
 Re-measure on every plugin change or startup-file edit.
 
 ## References
