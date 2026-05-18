@@ -12,9 +12,9 @@ version: '3'
 # - LINT-05: portability hints for future-Linux v2 (warn-only, always exit 0)
 # - LINT-07: zsh -n parse errors + task --list-all --json YAML parse baseline
 #
-# LINT-08 is DEPRECATED per decision D-11 (5s timing test removed; structural
-# status: checks via LINT-01/LINT-03a are the idempotency guarantee). No
-# implementation.
+# LINT-08 is REUSED per D-13: banner-parity check (default:'s cmd block must
+# list every non-internal top-level task). The original LINT-08 (5s timing
+# test) was deprecated per D-11; the rule number was free to reclaim.
 #
 # Self-exemption: taskfiles/lint.yml tasks intentionally omit status: blocks
 # (lint is always-re-run by design). Each task body is marked with
@@ -30,6 +30,7 @@ version: '3'
 #   task lint:taskfile            -- LINT-01..LINT-07 enforcement
 #   task lint:shell-headers       -- shell-header banner enforcement
 #   task lint:portability         -- portability + set -euo pipefail
+#   task lint:banner-parity       -- LINT-08 banner-vs-public-task parity (D-13)
 #   task lint:test-fixtures       -- fixture-pair pass/fail evaluation
 # =============================================================================
 
@@ -76,11 +77,25 @@ tasks:
   # lint-allow: cmds-without-status
   default:
     desc: "Run all lint checks (LINT-06 aggregator)"
+    # Each sub-check carries ignore_error: true so the aggregator runs every
+    # check regardless of prior failures (run-all-aggregate semantics, mirrors
+    # the root validate: aggregator at Taskfile.yml:177-190). Without this,
+    # one early failure (e.g., a pre-existing LINT-02 baseline in
+    # manifest.yml) aborts the pipeline and downstream checks like
+    # LINT-08 banner-parity never execute. Per-check exit codes are visible
+    # in the inline check/cross output; this aggregator does not surface a
+    # cross-check summary.
     cmds:
       - task: syntax
+        ignore_error: true
       - task: taskfile
+        ignore_error: true
       - task: shell-headers
+        ignore_error: true
       - task: portability
+        ignore_error: true
+      - task: banner-parity
+        ignore_error: true
 
   # ---------------------------------------------------------------------------
   # LINT-07: zsh -n parse errors + task --list-all --json YAML parse baseline
@@ -264,6 +279,41 @@ tasks:
         exit 0
 
   # ---------------------------------------------------------------------------
+  # LINT-08 (NEW per D-13): banner-parity check -- default:'s cmd block must
+  # list every non-internal top-level task (no `:` in the name). Catches drift
+  # the moment someone adds a public top-level task without updating the banner.
+  # The LINT-08 rule number was deprecated (see file header) and is reused here.
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  banner-parity:
+    desc: "Banner parity check: default:'s cmd block lists every public top-level task (LINT-08 -- D-13)"
+    internal: true
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # The root Taskfile.yml `default:` task is the curated operator surface
+        # banner; every non-internal top-level task (no `:` in the name) MUST
+        # appear in its cmd block, otherwise operators miss commands rendered
+        # by `task --list` but not by bare `task`.
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        ROOT_TASKFILE="{{.DOTFILEDIR}}/Taskfile.yml"
+        public_top_tasks=$(yq '.tasks | to_entries | .[] | select(.value.internal // false | not) | .key | select(test("^[^:]+$"))' "$ROOT_TASKFILE")
+        banner_body=$(yq '.tasks.default.cmds[0]' "$ROOT_TASKFILE")
+        for task_name in $public_top_tasks; do
+          # Skip the `default` task itself -- it cannot reference itself in its own banner.
+          [[ "$task_name" == "default" ]] && continue
+          if ! echo "$banner_body" | ggrep -qF "$task_name"; then
+            cross "LINT-08: 'task $task_name' is public but missing from default:'s banner -- update Taskfile.yml"
+            failures=$(( failures + 1 ))
+          else
+            check "LINT-08: $task_name in banner"
+          fi
+        done
+        exit "$failures"
+
+  # ---------------------------------------------------------------------------
   # Self-test runner (Plan 02-05 will replace this body)
   # ---------------------------------------------------------------------------
 
@@ -338,6 +388,26 @@ tasks:
                 actual=pass
               else
                 actual=fail
+              fi
+              ;;
+            08*)
+              # LINT-08 (D-13): banner-parity check against THIS fixture's
+              # Taskfile.yml (not the project root). Replicates the
+              # banner-parity rule body: extract public top-level tasks
+              # (no `:` in name; internal: true excluded), grep each name
+              # against default.cmds[0]. fail if any missing.
+              file=$(ls "$fix"/Taskfile.yml 2>/dev/null)
+              if [[ -z "$file" ]]; then
+                actual=unknown
+              else
+                public_top=$(yq '.tasks | to_entries | .[] | select(.value.internal // false | not) | .key | select(test("^[^:]+$"))' "$file" 2>/dev/null)
+                banner_body=$(yq '.tasks.default.cmds[0] // ""' "$file" 2>/dev/null)
+                any_miss=0
+                for tn in $public_top; do
+                  [[ "$tn" == "default" ]] && continue
+                  if ! echo "$banner_body" | ggrep -qF "$tn"; then any_miss=1; fi
+                done
+                if [[ "$any_miss" -eq 1 ]]; then actual=fail; else actual=pass; fi
               fi
               ;;
             *) actual=unknown ;;
