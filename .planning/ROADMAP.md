@@ -257,7 +257,7 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
   5. `task lint`, `task lint:taskfile`, every `shellcheck` invocation, and `task test` (manifest fixtures + hook fixtures) all pass green after every fix lands; any test fixture exercising removed v1 code is updated or removed (no orphan fixtures left behind)
 **Plans**: 6 plans
   - [x] 13-01-PLAN.md — Review pass: four parallel ecc:code-reviewer spawns (zsh/YAML/TOML/aux); merge into 13-REVIEW.md; amend ROADMAP SC#1/SC#4 path (REVW-01)
-  - [ ] 13-02-PLAN.md — HIGH-severity fixes: apply remediations per REVIEW.md HIGH rows; annotate with closing short-SHAs (REVW-02, REVW-06)
+  - [x] 13-02-PLAN.md — HIGH-severity fixes: apply remediations per REVIEW.md HIGH rows; annotate with closing short-SHAs (REVW-02, REVW-06)
   - [ ] 13-03-PLAN.md — Dead-code removal: Class A preserved, Class B strict per D-08; orphan fixtures per D-10; grep-verified zero hits (REVW-03, REVW-06)
   - [ ] 13-04-PLAN.md — Duplication consolidation: rule-of-three per D-09; new helpers in taskfiles/helpers.yml or install/messages.zsh (REVW-04, REVW-06)
   - [ ] 13-05-PLAN.md — links:* readlink -f target-match fix (helper path preferred via pre-flight); 13-SMOKE.md manual procedure per D-07 (REVW-05, REVW-06)
@@ -294,5 +294,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 10. v1-Drop Remediation | 1/1 | Complete    | 2026-05-18 |
 | 11. v1 Removal | 1/1 | Complete   | 2026-05-18 |
 | 12. Task Surface Redesign | 8/8 | Complete    | 2026-05-18 |
-| 13. Code Review + Dead-Code Cleanup | 1/6 | In Progress|  |
+| 13. Code Review + Dead-Code Cleanup | 2/6 | In Progress|  |
 | 14. Comment + Doc Trim | 0/TBD | Not started (v2.1) | - |
