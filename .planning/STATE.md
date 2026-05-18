@@ -1,7 +1,7 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.1
-milestone_name: Milestone Phases
+milestone_name: Cleanup
 status: completed
 stopped_at: Phase 11 context gathered
 last_updated: "2026-05-18T05:53:45.492Z"
