@@ -1,12 +1,10 @@
 # taskfiles
 
 Modular taskfile concerns wired into `../Taskfile.yml` via go-task
-`includes:`. One taskfile per concern: manifest, lint, links, shell, brew,
-macos, claude, common, profile, helpers. Every install-style task is
-idempotent (`status:` block) and every symlink goes through `_:safe-link`
-in `helpers.yml`. The `*-stub.yml` files are intentional Phase 2
-placeholders that lint-fixture tests reference; each matching real
-`<concern>.yml` lands as the owning phase ships its content.
+`includes:`. One taskfile per concern: manifest, lint, links, shell,
+identity, packages, macos, claude, test, helpers. Every install-style
+task is idempotent (`status:` block) and every symlink goes through
+`_:safe-link` in `helpers.yml`.
 
 ## Key files
 
@@ -22,16 +20,10 @@ placeholders that lint-fixture tests reference; each matching real
 - **Phase 2 (real).** `lint.yml` -- `lint:taskfile`, `lint:shell-headers`,
   `lint:portability`, `lint:syntax`, `lint:test-fixtures`. Enforces
   LINT-01..LINT-07.
-- **Phase 3 (real).** `common.yml` -- XDG + ZDOTDIR install.
-  `links.yml` -- shell + antidote symlinks via `_:safe-link`.
-  `shell.yml` -- `task perf:shell` (SHEL-12 cold-start gate via
-  hyperfine). `profile.yml`, `profile-tasks.yml` -- v1 leftovers retained
-  for the cutover window; Phase 8 retires them.
-- **Phase 4-7 (stubs).** `brew-stub.yml`, `claude-stub.yml`,
-  `macos-stub.yml`, `links-stub.yml` -- Phase 2 placeholders. Each
-  phase that owns the concern replaces the stub with a real
-  `<concern>.yml` and flips the `Taskfile.yml` include from
-  `<concern>-stub.yml` to `<concern>.yml`.
+- **Phase 3 (real).** `links.yml` -- shell + antidote symlinks via
+  `_:safe-link` plus the zdotdir step. `shell.yml` -- `task perf:shell`
+  (SHEL-12 cold-start gate) plus `task shell:validate` (PORT-02 first-
+  shell guarantee).
 - **Smoke-test fixtures.** `test/` -- lint-fixture taskfiles consumed by
   `task lint:test-fixtures` (Phase 2 D-08).
 

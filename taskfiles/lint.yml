@@ -20,8 +20,8 @@ version: '3'
 # (lint is always-re-run by design). Each task body is marked with
 # "# lint-allow: cmds-without-status" so LINT-03a skips this file.
 #
-# Read-only: no manifest dependency, no resolved.json dependency, no
-# cutover-ack gate (per D-09). Runs without task setup -- <machine>.
+# Read-only: no manifest dependency, no resolved.json dependency.
+# Runs without task setup -- <machine>.
 #
 # Callable as:
 #   task lint                     # run all checks (default aggregator)
