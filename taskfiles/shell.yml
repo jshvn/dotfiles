@@ -80,3 +80,85 @@ tasks:
             exit 1
         fi
         check "shell start within budget"
+
+  # ---------------------------------------------------------------------------
+  # PORT-02: shell-layer validation (XDG dirs, ZDOTDIR dir, /etc/zshenv ZDOTDIR
+  # line, DOTFILES_MACHINE state). Joins the root `task validate` aggregator.
+  #
+  # Implementation note (RESEARCH.md Landmine 4): does NOT use _:check-dir
+  # because that helper always exits 0 (the `&&` / `||` chain ends on `cross`
+  # which itself exits 0). Inlines the per-check `[[ -d ... ]]` test and
+  # tallies a `failures` counter, then `exit "$failures"` so the root
+  # aggregator's exit-code capture (Taskfile.yml:219) sees a real non-zero on
+  # any failed assertion. Mirrors the pattern at taskfiles/links.yml:382.
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  validate:
+    desc: "Validate shell layer (XDG dirs, ZDOTDIR dir, /etc/zshenv ZDOTDIR line, DOTFILES_MACHINE state)"
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+
+        # Four XDG base directories.
+        if [[ -d "{{.XDG_CONFIG_HOME}}" ]]; then
+          check "XDG config home exists"
+        else
+          cross "XDG config home missing"
+          failures=$(( failures + 1 ))
+        fi
+
+        if [[ -d "{{.XDG_DATA_HOME}}" ]]; then
+          check "XDG data home exists"
+        else
+          cross "XDG data home missing"
+          failures=$(( failures + 1 ))
+        fi
+
+        if [[ -d "{{.XDG_STATE_HOME}}" ]]; then
+          check "XDG state home exists"
+        else
+          cross "XDG state home missing"
+          failures=$(( failures + 1 ))
+        fi
+
+        if [[ -d "{{.XDG_CACHE_HOME}}" ]]; then
+          check "XDG cache home exists"
+        else
+          cross "XDG cache home missing"
+          failures=$(( failures + 1 ))
+        fi
+
+        # ZDOTDIR directory ($XDG_CONFIG_HOME/zsh).
+        if [[ -d "{{.ZDOTDIR}}" ]]; then
+          check "ZDOTDIR directory exists"
+        else
+          cross "ZDOTDIR directory missing"
+          failures=$(( failures + 1 ))
+        fi
+
+        # /etc/zshenv ZDOTDIR line (the PORT-01 milestone driver).
+        # Embed the template var directly in the literal grep pattern so the
+        # status equivalent of this check never references a shell var
+        # (LINT-02 hygiene; mirrors the zdotdir task in taskfiles/links.yml).
+        ZDOTDIR_EXPORT='export ZDOTDIR="{{.ZDOTDIR}}"'
+        if [[ -f /etc/zshenv ]] && grep -qF "$ZDOTDIR_EXPORT" /etc/zshenv; then
+          check "ZDOTDIR configured in /etc/zshenv"
+        else
+          cross "ZDOTDIR not configured in /etc/zshenv"
+          failures=$(( failures + 1 ))
+        fi
+
+        # DOTFILES_MACHINE state file (D-08 discretionary fresh-install check
+        # per RESEARCH.md `### PORT-02 -- shell:validate`): operator forgetting
+        # `task setup` would leave $DOTFILES_MACHINE unset in shell/.zshenv.
+        if [[ -r "{{.XDG_STATE_HOME}}/dotfiles/machine" ]]; then
+          check "DOTFILES_MACHINE state file present"
+        else
+          cross "DOTFILES_MACHINE state file missing -- run: task setup -- <machine-name>"
+          failures=$(( failures + 1 ))
+        fi
+
+        exit "$failures"
