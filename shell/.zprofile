@@ -31,16 +31,14 @@
 #   http://zsh.sourceforge.net/Doc/Release/Files.html
 # -----------------------------------------------------------------------------
 
-# MacOS
-if [[ "$(uname)" == "Darwin" ]]; then
-    if [[ "$(uname -m)" == "arm64" ]]; then
-        DIRECTORY="/opt/homebrew/bin/brew"
-    else
-        DIRECTORY="/usr/local/bin/brew"
-    fi
+# MacOS -- v1 targets darwin only (PROJECT.md "Out of Scope" defers Linux to v2+).
+# Every machine TOML enforces platform.os = "darwin", so the previous Linux
+# (linuxbrew) else-branch was unreachable; re-introduce it when a Linux
+# machine TOML is added.
+if [[ "$(uname -m)" == "arm64" ]]; then
+    DIRECTORY="/opt/homebrew/bin/brew"
 else
-# Linux
-    DIRECTORY="/home/linuxbrew/.linuxbrew/bin/brew"
+    DIRECTORY="/usr/local/bin/brew"
 fi
 
 # ensure Homebrew is inserted into $PATH, $MANPATH, $INFOPATH
