@@ -70,20 +70,30 @@ ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 DOTFILEDIR="$(dirname "$ZSHDIR")"
 export DOTFILEDIR
 
-# antidote: static bundle, lazy-rebuilt (D-01..D-05, SHEL-04).
-# Source: configs/antidote/zsh_plugins.txt (committed; Plan 01)
-# Cache:  $XDG_CACHE_HOME/antidote/zsh_plugins.zsh (machine-local, never committed)
-local _antidote_src="${DOTFILEDIR}/configs/antidote/zsh_plugins.txt"
-local _antidote_cache="${XDG_CACHE_HOME}/antidote/zsh_plugins.zsh"
-if [[ -n "$HOMEBREW_PREFIX" && -f "${HOMEBREW_PREFIX}/share/antidote/antidote.zsh" ]]; then
-    source "${HOMEBREW_PREFIX}/share/antidote/antidote.zsh"
-    if [[ ! -f "$_antidote_cache" || "$_antidote_src" -nt "$_antidote_cache" ]]; then
-        mkdir -p "${_antidote_cache:h}"
-        antidote bundle < "$_antidote_src" > "$_antidote_cache"
-    fi
-    source "$_antidote_cache"
+# antigen plugin manager (reverted from antidote — antidote's static bundle did
+# NOT replicate antigen's `antigen use ohmyzsh/ohmyzsh` which implicitly sources
+# all of OMZ's lib/*.zsh files providing setopt prompt_subst, git_prompt_info,
+# git_prompt_status, the `l` alias, history/completion defaults, etc.).
+export ADOTDIR="$XDG_CONFIG_HOME/antigen"
+if [[ -n "$HOMEBREW_PREFIX" && -f "$HOMEBREW_PREFIX/share/antigen/antigen.zsh" ]]; then
+    source "$HOMEBREW_PREFIX/share/antigen/antigen.zsh"
+
+    # load the oh-my-zsh framework (sources lib/*.zsh — prompt_subst, git
+    # prompt helpers, directory aliases, history, completion, key-bindings).
+    antigen use ohmyzsh/ohmyzsh
+
+    # plugins (verbatim from v1 zsh/.zshrc:60-66)
+    antigen bundle ohmyzsh/ohmyzsh git
+    antigen bundle ohmyzsh/ohmyzsh colorize
+    antigen bundle ohmyzsh/ohmyzsh kubectl
+    antigen bundle ohmyzsh/ohmyzsh plugins/extract
+    antigen bundle zsh-users/zsh-syntax-highlighting
+    antigen bundle zsh-users/zsh-completions
+    antigen bundle zsh-users/zsh-autosuggestions
+
+    antigen apply
 else
-    echo "$(tput setaf 3)Warning: antidote not found. Run 'task install' to complete setup.$(tput sgr0)" >&2
+    echo "$(tput setaf 3)Warning: antigen not found. Run 'task install' to complete setup.$(tput sgr0)" >&2
 fi
 
 # lazy conda initialization - wrapper replaces itself after performing hook, then re-runs original command
@@ -106,15 +116,18 @@ fi
 # otherwise some functions/scripts like 'which' will not be found in the
 # correct spots, and that causes errors in aliases and functions
 
-# Load functions FIRST (flat layout; one function per file). Source-time gates in shell/aliases/*.zsh (D-08, e.g. jgrid.zsh) call _dotfiles_feature, so the helper function must be defined before the aliases glob runs.
+# load common ZSH custom themes FIRST so theme.zsh's `alias highlight=...`
+# is defined before functions are sourced. Zsh expands aliases at function
+# PARSE time, so functions that pipe through `highlight` (aliaslist,
+# functionlist) need the alias in scope when their body is sourced.
+source "${DOTFILEDIR}/shell/theme.zsh"
+
+# Load functions SECOND (flat layout; one function per file). Source-time gates in shell/aliases/*.zsh (D-08, e.g. jgrid.zsh) call _dotfiles_feature, so the helper function must be defined before the aliases glob runs.
 for file in "${DOTFILEDIR}/shell/functions/"*.zsh(.N); do
     source "$file"
 done
 
-# load common ZSH custom themes
-source "${DOTFILEDIR}/shell/theme.zsh"
-
-# Load aliases SECOND (flat layout; per-file source-time or wrapper-function gates handle features per D-09). Functions glob above has already defined _dotfiles_feature, so D-08 source-time gates evaluate correctly.
+# Load aliases THIRD (flat layout; per-file source-time or wrapper-function gates handle features per D-09). Functions glob above has already defined _dotfiles_feature, so D-08 source-time gates evaluate correctly.
 for file in "${DOTFILEDIR}/shell/aliases/"*.zsh(.N); do
     source "$file"
 done

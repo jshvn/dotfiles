@@ -20,8 +20,10 @@
 #     default appdir (/Applications).
 #
 # Notable surgery vs v1 install/Brewfile.rb:
-#   - Drops the v1 zsh plugin manager line (Phase 3 swapped it for antidote).
-#   - Adds  `brew 'antidote'`    (the v2 plugin manager wired in Phase 3).
+#   - Carries forward `brew 'antigen'` from v1 (v2 reverted Phase 3 D-01's
+#     antidote experiment because antidote's static-bundle did not replicate
+#     antigen's `antigen use ohmyzsh/ohmyzsh` lib-loading; the prompt and
+#     several OMZ helpers broke without it).
 #   - Adds  `cask '1password-cli'` (binary-only cask: Homebrew lists this as a
 #                                   cask that ships the `op` binary to
 #                                   /opt/homebrew/bin -- no /Applications/.app
@@ -58,5 +60,5 @@ brew 'onefetch'
 brew 'bottom'
 brew 'coreutils'
 brew 'mas'
-brew 'antidote'
+brew 'antigen'
 cask '1password-cli'

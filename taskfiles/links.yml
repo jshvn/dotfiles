@@ -7,7 +7,7 @@ version: '3'
 #   Replaces taskfiles/links-stub.yml as the real implementation of links:all.
 #   P3 + P4 currently included; later phases extend the `all:` aggregator with
 #   their own subtasks:
-#     - P3 shell startup files + the antidote plugin bundle source (already wired)
+#     - P3 shell startup files (already wired)
 #     - P4 git/ssh/identity (already wired via `task: identity:install`)
 #     - P5 adds packages/brew (none in links.yml; package install lives in brew.yml)
 #     - P6 adds macos (none in links.yml; defaults live in macos.yml)
@@ -65,7 +65,7 @@ vars:
 
   # ---------------------------------------------------------------------------
   # EXPECTED_TARGETS (D-08) -- single source of truth for every symlink target
-  # owned by this taskfile. The 27 entries below cover the zsh + antidote +
+  # owned by this taskfile. The entries below cover the zsh +
   # claude + tool-configs sub-tasks; identity-layer symlinks
   # ({{.GIT_CONFIG_DIR}}/config, {{.SSH_DIR}}/config) are intentionally
   # EXCLUDED -- they live in taskfiles/identity.yml's EXPECTED_TARGETS
@@ -85,7 +85,6 @@ vars:
     {{.ZDOTDIR}}/.zshrc
     {{.ZDOTDIR}}/.zlogin
     {{.ZDOTDIR}}/.zlogout
-    {{.ZDOTDIR}}/.zsh_plugins.txt
     {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md{{end}}
     {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/settings.json{{end}}
     {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/agents{{end}}
@@ -122,7 +121,6 @@ tasks:
     desc: "Create all symlinks (P3+P4+P7: shell + identity + claude + configs)"
     cmds:
       - task: zsh
-      - task: antidote
       # Leading-colon absolute form: when this file is loaded as the `links:`
       # namespace from the root Taskfile.yml, a bare `task: identity:install`
       # resolves relative to the current namespace and tries `links:identity:install`
@@ -155,18 +153,6 @@ tasks:
       - test -L "{{.ZDOTDIR}}/.zshrc"
       - test -L "{{.ZDOTDIR}}/.zlogin"
       - test -L "{{.ZDOTDIR}}/.zlogout"
-
-  # ---------------------------------------------------------------------------
-  # Antidote plugin manifest -- static bundle file (SHEL-09 / -11 dependency).
-  # ---------------------------------------------------------------------------
-
-  antidote:
-    desc: "Link antidote plugin manifest"
-    cmds:
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/antidote/zsh_plugins.txt", TARGET: "{{.ZDOTDIR}}/.zsh_plugins.txt" }
-    status:
-      - test -L "{{.ZDOTDIR}}/.zsh_plugins.txt"
 
   # ---------------------------------------------------------------------------
   # Claude config tree (CLDE-01) -- feature-gated on claude-marketplace.
@@ -304,7 +290,7 @@ tasks:
       #
       # The TARGET -> SOURCE mapping uses a single case statement keyed on
       # target path patterns. This is the SAME mapping the links:zsh,
-      # links:antidote, links:claude, and links:configs cmds: blocks use
+      # links:claude, and links:configs cmds: blocks use
       # when creating the links -- changing one mapping requires editing
       # this case statement AND the corresponding cmds: entry, but the
       # mappings are mechanical (target path under XDG -> equivalent path
@@ -315,7 +301,7 @@ tasks:
         failures=0
 
         # Resolve the expected SOURCE for a given TARGET. Mirrors the literal
-        # pairings used by links:zsh, links:antidote, links:claude,
+        # pairings used by links:zsh, links:claude,
         # links:configs (and configs:ghostty) when materializing the links.
         resolve_source() {
           local target="$1"
@@ -328,7 +314,6 @@ tasks:
             "$zdotdir/.zshrc")             printf '%s\n' "$dotfiledir/shell/.zshrc" ;;
             "$zdotdir/.zlogin")            printf '%s\n' "$dotfiledir/shell/.zlogin" ;;
             "$zdotdir/.zlogout")           printf '%s\n' "$dotfiledir/shell/.zlogout" ;;
-            "$zdotdir/.zsh_plugins.txt")   printf '%s\n' "$dotfiledir/configs/antidote/zsh_plugins.txt" ;;
             "$xdg/claude/CLAUDE.md")       printf '%s\n' "$dotfiledir/claude/CLAUDE.md" ;;
             "$xdg/claude/settings.json")   printf '%s\n' "$dotfiledir/claude/settings.json" ;;
             "$xdg/claude/agents")          printf '%s\n' "$dotfiledir/claude/agents" ;;
