@@ -40,8 +40,8 @@ reference: `docs/MANIFEST.md`.
   `.zlogin`, `.zlogout`, `theme.zsh`); aliases under
   `shell/aliases/<topic>.zsh`; functions under `shell/functions/<name>.zsh`.
   See `shell/README.md`.
-- `configs/<tool>/` -- tool configs (currently `configs/antidote/zsh_plugins.txt`;
-  Phase 7 moves ghostty/glow/trippy/tlrc/conda/eza/motd in).
+- `configs/<tool>/` -- tool configs (Phase 7 moves
+  ghostty/glow/trippy/tlrc/conda/eza/motd in).
 - `claude/` -- Claude Code config (`CLAUDE.md`, `settings.json`, `hooks/`,
   `agents/`, `commands/`, `skills/`). See `claude/README.md`.
 - `packages/<purpose>.rb` -- per-purpose Brewfile bundles (Phase 5 ships;
@@ -109,9 +109,10 @@ reference: `docs/MANIFEST.md`.
    must stay minimal (non-interactive contexts source this too).
 3. `.zprofile` -- `brew shellenv`, `SSH_AUTH_SOCK` gated on
    `features.one-password-ssh` from `resolved.json` (login only).
-4. `.zshrc` -- antidote bundle-cache load, `compinit` daily-rebuild cache
-   (SHEL-10), functions glob, theme, aliases glob (interactive only).
-5. `.zlogin` -- MOTD dispatch (cached, 24h TTL; SHEL-11) (login only).
+4. `.zshrc` -- antigen plugin load (sources OMZ lib/* + bundles),
+   `compinit` daily-rebuild cache (SHEL-10), theme, functions glob,
+   aliases glob (interactive only).
+5. `.zlogin` -- MOTD dispatch (always-fresh `tput cols` render) (login only).
 6. `.zlogout` -- history flush via `fc -W` (login exit).
 
 ## Safety
