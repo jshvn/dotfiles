@@ -34,6 +34,7 @@ macos-screenshots = false # gates os/defaults/screenshots.zsh + macos:defaults:s
 macos-security = false    # gates os/defaults/security.zsh + macos:defaults:security (P6)
 ghostty = false           # gates shell/aliases/ghostty.zsh
 jgrid-net = false         # gates shell/aliases/jgrid.zsh
+server-include = false    # gates identity:server-include (materializes ~/.config/git/server-include.config); set true on headless server machines
 
 [packages.brew]
 # Bundle names map to packages/<name>.rb (Phase 5).
@@ -52,7 +53,8 @@ casks    = []
 mas      = []
 
 [identity]
-# Allowed values: "personal" | "work" | "atium" | "server-2" | "none". Drives Phase 4 git+SSH
-# identity selection.
+# Allowed values: any name with overlay files at identity/git/identities/<name>
+# AND identity/ssh/identities/<name>. The resolver checks for file presence at
+# validation time; no enum to maintain here. Drives Phase 4 git+SSH selection.
 git = "none"
 ssh = "none"

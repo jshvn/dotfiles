@@ -71,23 +71,3 @@ changes, not when a feature flag flips.
   CLI ops; nothing on this machine should require a graphical session.
 - See `manifests/machines/atium.toml` for declarative state (features,
   identity, package bundles).
-
-## server-2
-
-- Purpose: Mac server-2, headless ops machine, core packages only.
-- Hardware: Apple Silicon or Intel -- arch detected by the resolver via
-  `uname -m` because `[platform].arch` is absent in the server-2 TOML.
-- Role narrative: second headless operations machine, structurally
-  mirroring `atium`. Runs only the `core` Brewfile bundle; no GUI
-  bundle, no extra casks, no MAS apps. The server-2 git/ssh identity is
-  distinct from atium so the two machines remain individually
-  attributable in commit logs, authorized-key sets, and audit trails
-  even when their workload is interchangeable. `claude-marketplace` and
-  the GUI feature flags are all off; `macos-security` is the only macOS
-  defaults concern that runs.
-- Special handling: same shape as `atium` -- SSH-only access,
-  `one-password-ssh` off, headless workload. Operating two server
-  machines with separate identities is intentional: it keeps the
-  blast-radius of a compromised key bounded to a single host.
-- See `manifests/machines/server-2.toml` for declarative state (features,
-  identity, package bundles).

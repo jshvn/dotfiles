@@ -93,8 +93,8 @@ supply a value -- silent inheritance of required fields is the drift class being
 | `platform.os` | string | `"darwin"` | v1 only; v2 will add `"linux"` |
 | `features` | table | any key-value pairs | May be empty `{}`; each key is kebab-case |
 | `packages.brew.bundles` | array of strings | non-empty; must include `"core"` | Maps to `packages/<name>.rb` files (Phase 5) |
-| `identity.git` | string | `"personal"` \| `"work"` \| `"atium"` \| `"server-2"` \| `"none"` | Drives Phase 4 git config selection |
-| `identity.ssh` | string | `"personal"` \| `"work"` \| `"atium"` \| `"server-2"` \| `"none"` | Drives Phase 4 SSH config selection |
+| `identity.git` | string | basename of a file under `identity/git/identities/` | Drives Phase 4 git config selection; resolver rejects names with no overlay file |
+| `identity.ssh` | string | basename of a file under `identity/ssh/identities/` | Drives Phase 4 SSH config selection; resolver rejects names with no overlay file |
 
 ### Optional fields
 
@@ -417,6 +417,44 @@ See that task for the implementation details.
    ```zsh
    task install
    ```
+
+## Adding a New Identity
+
+Identities are filesystem-driven: the valid set for `identity.git` and `identity.ssh`
+is the basenames of files under `identity/git/identities/` and
+`identity/ssh/identities/`. No enum to update; the resolver and `taskfiles/identity.yml`
+discover identities at evaluation time.
+
+1. Drop a git overlay at `identity/git/identities/<name>` (gitconfig include
+   fragment — see existing files for shape).
+
+2. Drop an SSH overlay at `identity/ssh/identities/<name>` (Host blocks — see
+   existing files for shape).
+
+3. If the identity carries its own SSH key (not 1Password-managed), drop the
+   public key at `identity/ssh/keys/<name>.pub`. Private keys never go in the repo.
+
+4. For a **headless server** identity, set `features.server-include = true` on
+   the machine manifest that uses it. The `server-include.config` is then
+   materialized at install time with an unconditional `[includeIf "gitdir:~/"]`
+   block, so the identity loads from `$HOME` directly.
+
+5. For a **workstation** identity, add an `[includeIf "gitdir/i:~/git/<name>/"]`
+   block to `identity/git/config` so the gitconfig overlay loads when working
+   inside `~/git/<name>/`. This is the one manual step that's not yet automated;
+   if you skip it, the symlink still materializes but `validate:git` will report
+   no repo found.
+
+6. Reference the new identity from a machine manifest:
+
+   ```toml
+   [identity]
+   git = "<name>"
+   ssh = "<name>"
+   ```
+
+7. Validate: `task -t taskfiles/manifest.yml manifest:validate -- --machine <machine>`.
+   A typo in `<name>` is rejected with an error naming the missing overlay file.
 
 ## CLI Reference
 

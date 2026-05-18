@@ -1,13 +1,17 @@
 # identity/git/config -- main git config; symlinked to ~/.config/git/config.
 #
 # Identity selection model:
-#   Workstation identities (personal, work) are loaded via [includeIf gitdir/i:]
-#   blocks that match the project directory prefix. Server identities are loaded
-#   via the unconditional [include] path = server-include.config block; that file
-#   is materialized by `task identity:server-include` when identity.git is atium
-#   or server-2, and is absent (silent no-op) on workstations (Pattern 2 / D-08).
+#   Workstation identities are loaded via [includeIf gitdir/i:] blocks below
+#   that match a project directory prefix. Server identities are loaded via
+#   the unconditional [include] path = server-include.config block; that file
+#   is materialized by `task identity:server-include` when
+#   features.server-include = true, and is absent (silent no-op) on
+#   workstations (Pattern 2 / D-08).
 #
-# Schema reference: docs/MANIFEST.md identity.git enum.
+# Adding a new workstation identity: add a matching [includeIf
+# "gitdir/i:~/git/<name>/"] block below (mirrors the personal/work pattern).
+#
+# Schema reference: docs/MANIFEST.md "Adding a new identity".
 # Callers: taskfiles/identity.yml via _:safe-link to ~/.config/git/config
 
 [user]

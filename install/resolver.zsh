@@ -193,18 +193,23 @@ validate_manifest() {
     errors=$(( errors + 1 ))
   fi
 
-  # identity.git / identity.ssh enum: personal|work|atium|server-2|none.
-  local ident_key ident_val
+  # identity.git / identity.ssh: filesystem-driven. The value must be the
+  # basename of an existing overlay file under identity/<kind>/identities/.
+  # Adding a new identity = drop the overlay files; no edits here. The valid
+  # set is computed for the error message so the operator sees what's available.
+  local ident_key ident_val ident_file ident_dir valid
   for ident_key in git ssh; do
     ident_val=$(yq -r ".identity.${ident_key} // \"\"" "$machine_file" 2>/dev/null || echo "")
     if [[ -z "$ident_val" ]]; then
       continue  # already counted above as missing/empty
     fi
-    case "$ident_val" in
-      personal|work|atium|server-2|none) ;;
-      *) error "identity.${ident_key} must be one of personal|work|atium|server-2|none; got: ${ident_val}"
-         errors=$(( errors + 1 )) ;;
-    esac
+    ident_dir="${DOTFILEDIR}/identity/${ident_key}/identities"
+    ident_file="${ident_dir}/${ident_val}"
+    if [[ ! -f "$ident_file" ]]; then
+      valid=$(ls "$ident_dir" 2>/dev/null | tr '\n' '|' | sed 's/|$//')
+      error "identity.${ident_key} = '${ident_val}' has no overlay file at ${ident_file} (available: ${valid:-<none>})"
+      errors=$(( errors + 1 ))
+    fi
   done
 
   # D-16: cross-field rules. identity.ssh in {personal, work} requires features.one-password-ssh = true;

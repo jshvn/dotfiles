@@ -116,139 +116,145 @@ tasks:
       - task: ssh
 
   # ---------------------------------------------------------------------------
-  # Git side -- seven static symlinks (config, ignore, five identity files)
-  # plus a server-include.config materialization sub-task (D-08).
+  # Git side -- two static symlinks (config, ignore) plus a filesystem-driven
+  # loop over every overlay file in identity/git/identities/. Adding a new
+  # identity = drop a file in that directory; no edits to this task.
+  # Followed by server-include.config materialization (gated by
+  # features.server-include).
   # ---------------------------------------------------------------------------
 
   git:
     desc: "Link git identity files; materialize server-include.config on servers"
+    vars:
+      # Computed once at task-eval time. `ls` output is newline-separated;
+      # go-task `for: { var, split: "\n" }` iterates over each name.
+      GIT_IDENTITY_NAMES:
+        sh: ls "{{.DOTFILEDIR}}/identity/git/identities" 2>/dev/null
     # CR-02: MANIFEST_JSON falls back to '{}' when resolved.json is missing,
     # which renders {{.MANIFEST.identity.git}} as the literal string
     # "<no value>". Refuse to install against the empty fallback rather
-    # than silently materializing broken state.
+    # than silently materializing broken state. The second precondition is
+    # the filesystem-driven enum check: the value must name an existing
+    # overlay file.
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
         msg: |
           resolved.json missing or empty; cannot resolve identity.git
             run: task setup -- <machine-name>
-      - sh: |
-          v='{{.MANIFEST.identity.git}}'
-          case "$v" in
-            personal|work|atium|server-2|none) exit 0 ;;
-            *) exit 1 ;;
-          esac
-        msg: 'identity.git = "{{.MANIFEST.identity.git}}" is not a known identity'
+      - sh: test -f '{{.DOTFILEDIR}}/identity/git/identities/{{.MANIFEST.identity.git}}'
+        msg: |
+          identity.git = "{{.MANIFEST.identity.git}}" has no overlay file at
+          identity/git/identities/{{.MANIFEST.identity.git}}.
+          Drop a file there or pick an existing identity (see `ls identity/git/identities/`).
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/config", TARGET: "{{.GIT_CONFIG_DIR}}/config" }
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/ignore", TARGET: "{{.GIT_CONFIG_DIR}}/ignore" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/identities/personal", TARGET: "{{.GIT_CONFIG_DIR}}/identities/personal" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/identities/work", TARGET: "{{.GIT_CONFIG_DIR}}/identities/work" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/identities/atium", TARGET: "{{.GIT_CONFIG_DIR}}/identities/atium" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/identities/server-2", TARGET: "{{.GIT_CONFIG_DIR}}/identities/server-2" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/identities/none", TARGET: "{{.GIT_CONFIG_DIR}}/identities/none" }
+      # Filesystem-discovered identity overlays: one symlink per file in
+      # identity/git/identities/. Adding an identity = a new file; this loop
+      # picks it up automatically. No edits to this task or the resolver.
+      - for: { var: GIT_IDENTITY_NAMES, split: "\n" }
+        task: _:safe-link
+        vars:
+          SOURCE: '{{.DOTFILEDIR}}/identity/git/identities/{{.ITEM}}'
+          TARGET: '{{.GIT_CONFIG_DIR}}/identities/{{.ITEM}}'
       - task: server-include
     status:
       - test -L "{{.GIT_CONFIG_DIR}}/config"
       - test -L "{{.GIT_CONFIG_DIR}}/ignore"
-      - test -L "{{.GIT_CONFIG_DIR}}/identities/personal"
-      - test -L "{{.GIT_CONFIG_DIR}}/identities/work"
-      - test -L "{{.GIT_CONFIG_DIR}}/identities/atium"
-      - test -L "{{.GIT_CONFIG_DIR}}/identities/server-2"
-      - test -L "{{.GIT_CONFIG_DIR}}/identities/none"
+      # Per-identity symlink presence is checked by iterating the source dir;
+      # a missing target for any overlay file triggers a re-run.
+      - |
+        for f in "{{.DOTFILEDIR}}/identity/git/identities/"*; do
+          [[ -e "$f" ]] || continue
+          test -L "{{.GIT_CONFIG_DIR}}/identities/$(basename "$f")" || exit 1
+        done
 
   # ---------------------------------------------------------------------------
   # server-include -- internal generator (D-08).
-  # On atium/server-2 machines: materialize ~/.config/git/server-include.config
-  # with a [includeIf "gitdir:~/"] block pointing at the active server identity.
-  # On workstations: ensure the file is absent (silent no-op).
+  # Gated by features.server-include in resolved.json (kebab-case index form).
+  # When on: materialize ~/.config/git/server-include.config with a
+  # [includeIf "gitdir:~/"] block pointing at the active identity.git.
+  # When off: ensure the file is absent (silent no-op on workstations).
   # ---------------------------------------------------------------------------
 
   server-include:
-    desc: "Materialize ~/.config/git/server-include.config when identity is a server (D-08)"
+    desc: "Materialize ~/.config/git/server-include.config when features.server-include = true (D-08)"
     internal: true
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
+        {{if index .MANIFEST.features "server-include"}}
         identity="{{.MANIFEST.identity.git}}"
-        case "$identity" in
-          atium|server-2)
-            mkdir -p "{{.GIT_CONFIG_DIR}}"
-            printf '[includeIf "gitdir:~/"]\n    path = identities/%s\n' "$identity" > "{{.SERVER_INCLUDE_CONFIG}}"
-            check "server-include.config materialized for $identity"
-            ;;
-          *)
-            if [[ -f "{{.SERVER_INCLUDE_CONFIG}}" ]]; then
-              rm -f "{{.SERVER_INCLUDE_CONFIG}}"
-              info "removed stale server-include.config (identity.git = $identity)"
-            fi
-            ;;
-        esac
+        mkdir -p "{{.GIT_CONFIG_DIR}}"
+        printf '[includeIf "gitdir:~/"]\n    path = identities/%s\n' "$identity" > "{{.SERVER_INCLUDE_CONFIG}}"
+        check "server-include.config materialized for $identity"
+        {{else}}
+        if [[ -f "{{.SERVER_INCLUDE_CONFIG}}" ]]; then
+          rm -f "{{.SERVER_INCLUDE_CONFIG}}"
+          info "removed stale server-include.config (features.server-include = false)"
+        fi
+        {{end}}
     status:
       # WR-07: exact-match check against the canonical two-line content the
       # cmd writes. A loose grep would pass on stale-content cases (e.g.,
-      # a file containing both atium and server-2 path lines from a
-      # prior buggy append) and skip the rewrite that fixes them.
+      # a file containing the wrong identity path from a prior install) and
+      # skip the rewrite that fixes them.
       - |
-        case "{{.MANIFEST.identity.git}}" in
-          atium|server-2)
-            test -f "{{.SERVER_INCLUDE_CONFIG}}" || exit 1
-            diff <(printf '[includeIf "gitdir:~/"]\n    path = identities/%s\n' "{{.MANIFEST.identity.git}}") "{{.SERVER_INCLUDE_CONFIG}}" >/dev/null
-            ;;
-          *)
-            test ! -f "{{.SERVER_INCLUDE_CONFIG}}"
-            ;;
-        esac
+        {{if index .MANIFEST.features "server-include"}}
+        test -f "{{.SERVER_INCLUDE_CONFIG}}" || exit 1
+        diff <(printf '[includeIf "gitdir:~/"]\n    path = identities/%s\n' "{{.MANIFEST.identity.git}}") "{{.SERVER_INCLUDE_CONFIG}}" >/dev/null
+        {{else}}
+        test ! -f "{{.SERVER_INCLUDE_CONFIG}}"
+        {{end}}
 
   # ---------------------------------------------------------------------------
-  # SSH side -- main config, five flat identities, three pub keys, the
-  # cloudflared wrapper, and the active symlink swap (D-12).
+  # SSH side -- main config, filesystem-driven loops over identity overlays
+  # and public keys, the cloudflared wrapper, and the active symlink swap
+  # (D-12). Adding an identity = drop a file under identity/ssh/identities/
+  # and (if it has a pub key) identity/ssh/keys/<name>.pub.
   # ---------------------------------------------------------------------------
 
   ssh:
     desc: "Link SSH identity files; swap active symlink to manifest value"
+    vars:
+      SSH_IDENTITY_NAMES:
+        sh: ls "{{.DOTFILEDIR}}/identity/ssh/identities" 2>/dev/null
+      SSH_KEY_NAMES:
+        sh: ls "{{.DOTFILEDIR}}/identity/ssh/keys" 2>/dev/null | grep '\.pub$' || true
     # CR-02: MANIFEST_JSON falls back to '{}' when resolved.json is missing,
     # which renders {{.MANIFEST.identity.ssh}} as the literal string
     # "<no value>". Without these preconditions the active-symlink swap
     # below would create ~/.ssh/identities/active -> .../<no value>
-    # (silent corruption of the active SSH identity).
+    # (silent corruption of the active SSH identity). The second precondition
+    # is the filesystem-driven enum check.
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
         msg: |
           resolved.json missing or empty; cannot resolve identity.ssh
             run: task setup -- <machine-name>
-      - sh: |
-          v='{{.MANIFEST.identity.ssh}}'
-          case "$v" in
-            personal|work|atium|server-2|none) exit 0 ;;
-            *) exit 1 ;;
-          esac
-        msg: 'identity.ssh = "{{.MANIFEST.identity.ssh}}" is not a known identity'
+      - sh: test -f '{{.DOTFILEDIR}}/identity/ssh/identities/{{.MANIFEST.identity.ssh}}'
+        msg: |
+          identity.ssh = "{{.MANIFEST.identity.ssh}}" has no overlay file at
+          identity/ssh/identities/{{.MANIFEST.identity.ssh}}.
+          Drop a file there or pick an existing identity (see `ls identity/ssh/identities/`).
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/config", TARGET: "{{.SSH_DIR}}/config" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/identities/personal", TARGET: "{{.SSH_IDENTITIES_DIR}}/personal" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/identities/work", TARGET: "{{.SSH_IDENTITIES_DIR}}/work" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/identities/atium", TARGET: "{{.SSH_IDENTITIES_DIR}}/atium" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/identities/server-2", TARGET: "{{.SSH_IDENTITIES_DIR}}/server-2" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/identities/none", TARGET: "{{.SSH_IDENTITIES_DIR}}/none" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/keys/personal.pub", TARGET: "{{.SSH_KEYS_DIR}}/personal.pub" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/keys/atium.pub", TARGET: "{{.SSH_KEYS_DIR}}/atium.pub" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/keys/server-2.pub", TARGET: "{{.SSH_KEYS_DIR}}/server-2.pub" }
+      # Filesystem-discovered identity overlays. One symlink per file.
+      - for: { var: SSH_IDENTITY_NAMES, split: "\n" }
+        task: _:safe-link
+        vars:
+          SOURCE: '{{.DOTFILEDIR}}/identity/ssh/identities/{{.ITEM}}'
+          TARGET: '{{.SSH_IDENTITIES_DIR}}/{{.ITEM}}'
+      # Filesystem-discovered public keys. Iterated separately because not
+      # every identity has a pub key (work uses 1Password agent; none has none).
+      - for: { var: SSH_KEY_NAMES, split: "\n" }
+        task: _:safe-link
+        vars:
+          SOURCE: '{{.DOTFILEDIR}}/identity/ssh/keys/{{.ITEM}}'
+          TARGET: '{{.SSH_KEYS_DIR}}/{{.ITEM}}'
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/cloudflared.zsh", TARGET: "{{.SSH_IDENTITIES_DIR}}/cloudflared.zsh" }
       # Active-identity swap (D-12): relink at install time; readlink resolves
@@ -257,14 +263,16 @@ tasks:
         vars: { SOURCE: "{{.SSH_IDENTITIES_DIR}}/{{.MANIFEST.identity.ssh}}", TARGET: "{{.SSH_IDENTITIES_DIR}}/active" }
     status:
       - test -L "{{.SSH_DIR}}/config"
-      - test -L "{{.SSH_IDENTITIES_DIR}}/personal"
-      - test -L "{{.SSH_IDENTITIES_DIR}}/work"
-      - test -L "{{.SSH_IDENTITIES_DIR}}/atium"
-      - test -L "{{.SSH_IDENTITIES_DIR}}/server-2"
-      - test -L "{{.SSH_IDENTITIES_DIR}}/none"
-      - test -L "{{.SSH_KEYS_DIR}}/personal.pub"
-      - test -L "{{.SSH_KEYS_DIR}}/atium.pub"
-      - test -L "{{.SSH_KEYS_DIR}}/server-2.pub"
+      - |
+        for f in "{{.DOTFILEDIR}}/identity/ssh/identities/"*; do
+          [[ -e "$f" ]] || continue
+          test -L "{{.SSH_IDENTITIES_DIR}}/$(basename "$f")" || exit 1
+        done
+      - |
+        for f in "{{.DOTFILEDIR}}/identity/ssh/keys/"*.pub; do
+          [[ -e "$f" ]] || continue
+          test -L "{{.SSH_KEYS_DIR}}/$(basename "$f")" || exit 1
+        done
       - test -L "{{.SSH_IDENTITIES_DIR}}/cloudflared.zsh"
       - test -L "{{.SSH_IDENTITIES_DIR}}/active"
       - test "$(readlink "{{.SSH_IDENTITIES_DIR}}/active")" = "{{.MANIFEST.identity.ssh}}" || test "$(readlink "{{.SSH_IDENTITIES_DIR}}/active")" = "{{.SSH_IDENTITIES_DIR}}/{{.MANIFEST.identity.ssh}}"
@@ -309,45 +317,38 @@ tasks:
         {{.DOTFILES_MESSAGES}}
         identity="{{.MANIFEST.identity.git}}"
 
-        # Resolve the probe source per identity. Workstation identities
-        # (personal, work) require a REAL git repo under ~/git/<identity>/
-        # so the [includeIf gitdir/i:~/git/<identity>/] block in
-        # identity/git/config can fire and load the per-identity overlay.
-        # Server identities use unconditional [include] server-include.config
-        # so they probe from $HOME directly.
+        # `none` is the explicit no-identity sentinel; skip silently.
+        if [[ "$identity" == "none" ]]; then
+          info "identity.git = none -- skipping email assertion"
+          exit 0
+        fi
+
+        expected_email=$(git config -f "{{.DOTFILEDIR}}/identity/git/identities/${identity}" user.email 2>/dev/null || echo "")
+
+        # Resolve the probe source. Two patterns based on features.server-include:
+        # - server-include = true: server-include.config carries an unconditional
+        #   [includeIf gitdir:~/] block, so the identity loads from $HOME directly.
+        # - server-include = false: workstation pattern. identity/git/config has
+        #   [includeIf gitdir/i:~/git/<identity>/] blocks; we need to probe inside
+        #   a real git repo under $HOME/git/<identity>/ so the includeIf fires.
         #
-        # WR-08 fix (UAT gap 4): the previous implementation used the
-        # parent directory $HOME/git/<identity> as the probe source,
-        # which is not a git repo, so the gitdir-conditioned includeIf
-        # never fired and `git config user.email` returned empty.
-        case "$identity" in
-          personal|work)
-            root="$HOME/git/$identity"
-            expected_email=$(git config -f "{{.DOTFILEDIR}}/identity/git/identities/$identity" user.email 2>/dev/null || echo "")
-            # Locate the first .git directory under the identity root
-            # (depth 2 = standard clone layout: $root/<repo>/.git).
-            # -print -quit returns the FIRST match and exits; no-match
-            # is silent and exit 0.
-            dotgit=$(find "$root" -maxdepth 2 -name .git -type d -print -quit 2>/dev/null || true)
-            if [[ -z "$dotgit" ]]; then
-              info "no git repo found under $root -- skipping email assertion"
-              exit 0
-            fi
-            probe_dir=$(dirname "$dotgit")
-            ;;
-          atium|server-2)
-            probe_dir="$HOME"
-            expected_email=$(git config -f "{{.DOTFILEDIR}}/identity/git/identities/${identity}" user.email 2>/dev/null || echo "")
-            ;;
-          none)
-            info "identity.git = none -- skipping email assertion"
-            exit 0
-            ;;
-          *)
-            cross "identity.git = $identity is unexpected; skipping"
-            exit 0
-            ;;
-        esac
+        # WR-08 fix (UAT gap 4): the previous implementation used the parent
+        # directory $HOME/git/<identity> as the probe source, which is not a
+        # git repo, so the gitdir-conditioned includeIf never fired.
+        {{if index .MANIFEST.features "server-include"}}
+        probe_dir="$HOME"
+        {{else}}
+        root="$HOME/git/$identity"
+        # Locate the first .git directory under the identity root (depth 2 =
+        # standard clone layout: $root/<repo>/.git). -print -quit returns the
+        # FIRST match and exits; no-match is silent and exit 0.
+        dotgit=$(find "$root" -maxdepth 2 -name .git -type d -print -quit 2>/dev/null || true)
+        if [[ -z "$dotgit" ]]; then
+          info "no git repo found under $root -- skipping email assertion"
+          exit 0
+        fi
+        probe_dir=$(dirname "$dotgit")
+        {{end}}
 
         if [[ -z "$expected_email" ]]; then
           info "expected git user.email for identity.git=$identity is empty -- skipping"

@@ -16,6 +16,7 @@ one-password-ssh = false
 motd = true
 claude-marketplace = false
 macos-security = true  # P6 D-04: server runs security defaults + shell-registration only
+server-include = true  # headless server: materialize ~/.config/git/server-include.config
 # macos-dock, macos-finder, macos-input, macos-screenshots absent -> inherited false
 
 [packages.brew]

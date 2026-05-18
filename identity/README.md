@@ -1,9 +1,11 @@
 # identity
 
 Phase 4 owns git + SSH identity. Manifest-driven: per-machine TOML files
-declare `identity.git` and `identity.ssh` from the enum
-`personal | work | atium | server-2 | none`, plus the gates
-`features.one-password-ssh` and `features.one-password-signing`. macOS-only
+declare `identity.git` and `identity.ssh` as the basename of any file under
+`identity/git/identities/` and `identity/ssh/identities/` respectively
+(filesystem-driven enum — drop a file, the resolver picks it up).
+The gates `features.one-password-ssh`, `features.one-password-signing`, and
+`features.server-include` further shape per-machine behavior. macOS-only
 in v1 (Apple Silicon + Intel); the model carries cleanly to v2's Linux work
 because no logic branches on platform here -- only on identity. Symlinks
 deploy via `taskfiles/identity.yml` and `_:safe-link`; the active SSH
@@ -17,11 +19,10 @@ identity is selected by a single symlink swap rather than profile-file-exec.
   `[include] path = server-include.config` hook (D-08; absent on workstations
   is a silent no-op).
 - `git/ignore` -- global gitignore, referenced via `core.excludesfile = ignore`.
-- `git/identities/<name>` -- flat per-identity overlays (personal, work,
-  atium, server-2, none). Workstation overlays are loaded via the
-  `[includeIf gitdir/i:...]` blocks; server overlays are loaded via the
-  `server-include.config` wildcard that `taskfiles/identity.yml` materializes
-  on server machines only.
+- `git/identities/<name>` -- flat per-identity overlays. Workstation overlays
+  are loaded via the `[includeIf gitdir/i:...]` blocks in `git/config`; server
+  overlays are loaded via the `server-include.config` wildcard that
+  `taskfiles/identity.yml` materializes when `features.server-include = true`.
 - `ssh/config` -- main SSH config; symlinked to `~/.ssh/config`. Contains a
   single `Include ~/.ssh/identities/active` directive (D-10); no `Match exec`
   blocks. Identity is resolved at install time, not connection time.

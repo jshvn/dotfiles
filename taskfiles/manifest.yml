@@ -440,7 +440,9 @@ tasks:
           failures=$(( failures + 1 ))
         fi
 
-        # _invalid-bad-identity: expanded enum (D-05); stderr must contain "atium|server-2|none".
+        # _invalid-bad-identity: identity values are filesystem-validated against
+        # identity/{git,ssh}/identities/*. A bogus identity name (e.g. "alice")
+        # must trigger a rejection naming the missing overlay file.
         neg_dir="${fix_dir}/_invalid-bad-identity"
         tmp_neg="{{.MACHINES_DIR}}/_invalid-bad-identity.toml"
         neg_copies+=("$tmp_neg")
@@ -449,10 +451,10 @@ tasks:
           zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
           --validate-only --machine _invalid-bad-identity 2>&1 >/dev/null || true)
         rm -f "$tmp_neg"
-        if echo "$neg_stderr" | grep -q 'atium|server-2|none'; then
-          check "fixture: _invalid-bad-identity -- correctly rejected (expanded enum in stderr)"
+        if echo "$neg_stderr" | grep -q 'no overlay file at'; then
+          check "fixture: _invalid-bad-identity -- correctly rejected (missing overlay file in stderr)"
         else
-          cross "fixture: _invalid-bad-identity -- expected rejection with 'atium|server-2|none' in stderr"
+          cross "fixture: _invalid-bad-identity -- expected rejection naming a missing overlay file in stderr"
           echo "stderr was: $neg_stderr" >&2
           failures=$(( failures + 1 ))
         fi
