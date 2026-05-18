@@ -30,7 +30,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numbered 9 through 14 — there is no reset. v2.1 is a cleanup milestone: no net-new features, six phases ordered audit-first so the v1 leftover files (the source-of-truth for what was dropped) are read in full before any deletion happens. The driving live finding is the `/etc/zshenv` `ZDOTDIR` write — v1 `taskfiles/common.yml` `zdotdir:` task wrote `export ZDOTDIR="$HOME/.config/zsh"` to `/etc/zshenv` via sudo; v2 silently dropped this, producing a non-functional first shell on fresh machines. Phase 9 audits for siblings of this bug class; Phase 10 implements every keep; Phase 11 then removes the v1 files; Phases 12–14 polish the resulting surface.
 
 - [x] **Phase 9: v1-Drop Audit** - Read-only enumeration of every v1 leftover taskfile, install asset, `zsh/` tree content, and doc; produces `AUDIT.md` keep/drop classification with v2 owner column (completed 2026-05-17)
-- [ ] **Phase 10: v1-Drop Remediation** - Implement every "keep" from `AUDIT.md`; `/etc/zshenv` `ZDOTDIR` write lands first; fresh-machine install produces a fully-functional first shell
+- [x] **Phase 10: v1-Drop Remediation** - Implement every "keep" from `AUDIT.md`; `/etc/zshenv` `ZDOTDIR` write lands first; fresh-machine install produces a fully-functional first shell (completed 2026-05-18)
 - [ ] **Phase 11: v1 Removal** - Delete v1 leftover taskfiles, `zsh/` tree, `install/Brewfile*`, cutover infrastructure; simplify `Taskfile.yml`; purge v1 references from docs
 - [ ] **Phase 12: Task Surface Redesign** - Audit every `task --list` entry; classify keep/rename/internal/remove; apply renames; mark internal tasks `internal: true`
 - [ ] **Phase 13: Code Review + Dead-Code Cleanup** - Language-aware repo-wide review (zsh shellcheck, taskfile lint, TOML schema); HIGH fixed; dead code removed; duplicated logic consolidated; `links:*` target-match bug fixed
@@ -210,7 +210,7 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
   3. A fresh-machine smoke procedure (run on a clean macOS machine OR a documented synthetic equivalent) confirms: a brand-new terminal opens, `$ZDOTDIR` is exported, the antidote prompt renders, `alias` lists the ported aliases, `which _dotfiles_feature` resolves, `motd` prints, and no v1 fallback is needed at any step — procedure and pass result recorded in `.planning/phases/10-v1-drop-remediation/10-SMOKE.md`
   4. No PORT item is outstanding when Phase 10 closes: `AUDIT.md`'s keep-list and the implemented-set match exactly; this is the gate before Phase 11 deletes the v1 source-of-truth files
 **Plans**: 1 plan
-  - [ ] 10-01-PLAN.md — Phase 10 single-plan implementation: PORT-01 (links.yml zdotdir task + outer status extension), PORT-02 (shell.yml validate task + Taskfile.yml dual-alias include + aggregator wiring), AUDIT.md row 3 amend (D-07), 10-SMOKE.md (PORT-03)
+  - [x] 10-01-PLAN.md — Phase 10 single-plan implementation: PORT-01 (links.yml zdotdir task + outer status extension), PORT-02 (shell.yml validate task + Taskfile.yml dual-alias include + aggregator wiring), AUDIT.md row 3 amend (D-07), 10-SMOKE.md (PORT-03)
 
 ### Phase 11: v1 Removal
 **Goal**: Every v1 leftover is removed from the repo after Phase 10 proves no live dependency remains; `Taskfile.yml` is simplified; cutover infrastructure (gate, ack task, docs) is retired; `task install` on a clean machine succeeds without any cutover-ack step
@@ -276,7 +276,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Claude + Tool Configs + Smoke Tests | 6/6 | Complete   | 2026-05-16 |
 | 8. Validation + Cutover Readiness | 6/6 | Complete   | 2026-05-16 |
 | 9. v1-Drop Audit | 5/5 | Complete   | 2026-05-17 |
-| 10. v1-Drop Remediation | 0/TBD | Not started (v2.1) | - |
+| 10. v1-Drop Remediation | 1/1 | Complete   | 2026-05-18 |
 | 11. v1 Removal | 0/TBD | Not started (v2.1) | - |
 | 12. Task Surface Redesign | 0/TBD | Not started (v2.1) | - |
 | 13. Code Review + Dead-Code Cleanup | 0/TBD | Not started (v2.1) | - |
