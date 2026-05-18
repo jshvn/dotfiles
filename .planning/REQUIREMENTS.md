@@ -44,7 +44,7 @@ Delete every v1 leftover from the repo after PORT verifies no live dependencies 
 
 Audit every public go-task task; curate names and visibility.
 
-- [ ] **SURF-01**: Every task listed by `task --list` is reviewed and classified (keep-as-is / rename / mark-internal / remove).
+- [x] **SURF-01**: Every task listed by `task --list` is reviewed and classified (keep-as-is / rename / mark-internal / remove).
 - [x] **SURF-02**: Renames are applied to `Taskfile.yml` and every included taskfile; references in docs are updated; `task --list` output reflects the new surface.
 - [x] **SURF-03**: Tasks marked internal-only carry `internal: true` and are absent from `task --list` output.
 - [x] **SURF-04**: `task` (bare invocation) prints the curated task list. Top-level `README.md` and `CLAUDE.md` document the canonical task surface.
