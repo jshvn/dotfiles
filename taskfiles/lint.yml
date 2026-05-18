@@ -23,13 +23,14 @@ version: '3'
 # Read-only: no manifest dependency, no resolved.json dependency.
 # Runs without task setup -- <machine>.
 #
-# Callable as:
-#   task lint                     # run all checks (default aggregator)
-#   task lint:syntax              # YAML parse + zsh -n
-#   task lint:taskfile            # LINT-02 + LINT-03a + LINT-03b
-#   task lint:shell-headers       # LINT-04
-#   task lint:portability         # LINT-05 (warn-only)
-#   task lint:test-fixtures       # self-test against fixtures (Plan 02-05)
+# Public surface:
+#   task lint                     -- run all checks (default aggregator)
+# Internal sub-checks (invoked by lint:default; hidden from `task --list`):
+#   task lint:syntax              -- LINT-syntax checks
+#   task lint:taskfile            -- LINT-01..LINT-07 enforcement
+#   task lint:shell-headers       -- shell-header banner enforcement
+#   task lint:portability         -- portability + set -euo pipefail
+#   task lint:test-fixtures       -- fixture-pair pass/fail evaluation
 # =============================================================================
 
 includes:
@@ -88,6 +89,7 @@ tasks:
   # lint-allow: cmds-without-status
   syntax:
     desc: "YAML parse + zsh -n syntax checks (LINT-07)"
+    internal: true
     cmds:
       - |
         # lint-allow: cmds-without-status
@@ -128,6 +130,7 @@ tasks:
   # lint-allow: cmds-without-status
   taskfile:
     desc: 'Taskfile convention checks: $VAR in status:, cmds: without status:, bare symlink outside helpers (LINT-02 + LINT-03a + LINT-03b)'
+    internal: true
     cmds:
       - |
         # lint-allow: cmds-without-status
@@ -207,6 +210,7 @@ tasks:
   # lint-allow: cmds-without-status
   shell-headers:
     desc: "Executable .zsh files have set -euo pipefail (LINT-04)"
+    internal: true
     cmds:
       - |
         # lint-allow: cmds-without-status
@@ -236,6 +240,7 @@ tasks:
   # lint-allow: cmds-without-status
   portability:
     desc: "Portability hints for future-Linux v2 (warn-only, exit 0; LINT-05)"
+    internal: true
     cmds:
       - |
         # lint-allow: cmds-without-status
@@ -265,6 +270,7 @@ tasks:
   # lint-allow: cmds-without-status
   test-fixtures:
     desc: "Self-test the lint suite against fixtures (positive + negative cases)"
+    internal: true
     cmds:
       - |
         # lint-allow: cmds-without-status
