@@ -5,9 +5,7 @@
 macOS dotfiles managed with go-task, manifest-driven per-machine
 configuration via TOML, and an XDG base directory layout throughout.
 New contributors and AI agents working on this repo should read this
-README and `docs/MANIFEST.md` to understand the v2 manifest model;
-`docs/MIGRATION.md` documents what the v2 layout replaced for anyone
-arriving from the prior layout.
+README and `docs/MANIFEST.md` to understand the v2 manifest model.
 
 A single TOML file per machine under `manifests/machines/<name>.toml`
 inherits from a shared baseline at `manifests/defaults.toml`. The
@@ -23,26 +21,21 @@ files (sections, types, deep-merge rules, worked examples) lives in
 
 ## Fresh Machine Setup
 
-Run these commands in order on a clean Mac. The `task cutover:ack` step
-is required, not optional -- `task install` declares a `cutover_gate_check`
-precondition that hard-fails once a machine has been selected but the
-cutover-ack sentinel is missing. `bootstrap.zsh` itself completes cleanly
-on a fresh machine (no machine file yet) so the user reaches the next-step
-hint without manual intervention.
+Run these commands in order on a clean Mac. `bootstrap.zsh` acquires
+Homebrew, go-task, and yq and then prints the next-step hint.
+`task setup` writes the active machine name to
+`$XDG_STATE_HOME/dotfiles/machine`; `task install` runs the full install
+pipeline (links + packages + claude + macos + verify + reconcile).
 
 ```zsh
 git clone <repo-url>
 ./bootstrap.zsh
 task setup -- <machine-name>
-task cutover:ack -- <machine-name>
 task install
 ```
 
-For the full per-machine procedure including the 7-day soak window and
-the post-install state tracking, see `docs/CUTOVER.md` section
-"Fresh-machine verification". For the list of accepted `<machine-name>`
-values and the per-machine purpose, hardware, and special-handling
-notes, see `docs/MACHINES.md`.
+For the list of accepted `<machine-name>` values and the per-machine
+purpose, hardware, and special-handling notes, see `docs/MACHINES.md`.
 
 ## Where to Add Things
 
@@ -61,7 +54,5 @@ notes, see `docs/MACHINES.md`.
 
 - `docs/MANIFEST.md` -- manifest schema, inheritance rules, worked examples
 - `docs/SECURITY.md` -- bootstrap trust chain and SSH key handling
-- `docs/CUTOVER.md` -- per-machine cutover procedure and state table
-- `docs/MIGRATION.md` -- v1-to-v2 mapping per concept and rollback procedure
 - `docs/MACHINES.md` -- per-machine purpose, hardware, and role narrative
 - `.claude/CLAUDE.md` -- Claude Code project rules for working in this repo

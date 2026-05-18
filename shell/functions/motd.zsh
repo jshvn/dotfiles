@@ -50,7 +50,7 @@ function motd() {    # motd() will display a Tron-themed message of the day with
     
     # System info via fastfetch
     echo "${cyan}${bold}⚡ SYSTEM INFORMATION${reset}"
-    local ff_config="${DOTFILEDIR}/zsh/configs/motd_sysinfo.jsonc"
+    local ff_config="${DOTFILEDIR}/configs/motd/motd_sysinfo.jsonc"
     if [[ -f "$ff_config" ]]; then
         fastfetch --config "$ff_config" 2>/dev/null | sed "s/^/   /; s/› /› ${orange}/; s/$/${reset}/"
     else
@@ -74,7 +74,7 @@ function motd() {    # motd() will display a Tron-themed message of the day with
     fi
     
     # Random Tron quote
-    local quotes_file="${DOTFILEDIR}/zsh/configs/motd_tron.txt"
+    local quotes_file="${DOTFILEDIR}/configs/motd/motd_tron.txt"
     if [[ -f "$quotes_file" ]]; then
         local quote=$(shuf -n 1 "$quotes_file" 2>/dev/null || sort -R "$quotes_file" | head -1)
         echo "${cyan}${bold}💭 TRANSMISSION${reset}"

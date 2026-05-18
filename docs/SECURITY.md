@@ -13,9 +13,13 @@ script acquires (Homebrew, go-task, yq) and the audit signals the
 script emits before doing so. SSH key handling is deferred to Phase 4
 (identity layer); Claude hook secret-scanning is deferred to Phase 7
 hardening; per-machine credential management is documented in
-`docs/MACHINES.md` (Phase 8). The cutover-ack gate (`task cutover:ack`)
-referenced by the gate library is owned by Phase 8 CUTV-03 and is
-described in `docs/CUTOVER.md` (also Phase 8).
+`docs/MACHINES.md` (Phase 8).
+
+The repository's per-machine security boundary is the manifest model
+itself: every install action keys off the machine name written to
+`$XDG_STATE_HOME/dotfiles/machine` by `task setup`, so an install never
+proceeds on the basis of hostname inference or environment-variable
+sniffing.
 
 ---
 

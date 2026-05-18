@@ -5,11 +5,6 @@
 # (D-10 -- install IS update; re-run idempotent by every subtask having a
 # status: block per LINT-01 / LINT-03a).
 #
-# Cutover-ack gate enforced via preconditions on install (D-09 defense-in-depth
-# with bootstrap.zsh's own gate). Read-only tasks (lint, manifest:show,
-# manifest:test, manifest:validate) are NOT gated -- they can run on a
-# not-yet-cut-over machine for inspection.
-#
 # Includes:
 #   - manifest (P1, real)
 #   - lint     (P2, real)
@@ -17,13 +12,8 @@
 #   - perf     (P3, real)
 #   - identity (P4, real)
 #   - packages (P5, real)
-#   - claude   (stub; P7 wires real bodies)
+#   - claude   (P7, real)
 #   - macos    (P6, real)
-#
-# v1 leftover taskfiles (common.yml, profile.yml, brew.yml, claude.yml,
-# links.yml, profile-tasks.yml) are NOT included by v2. They remain on
-# disk and will be removed/replaced phase-by-phase. (v1 macos.yml is now
-# parked at taskfiles/macos.v1.yml.bak pending P8 cutover deletion.)
 # =============================================================================
 
 version: '3'
@@ -139,8 +129,8 @@ tasks:
   # lint-allow: cmds-without-status
   # Top-level alias for `manifest:setup`. Every doc and operator-facing
   # error message says `task setup -- <machine-name>` (bootstrap.zsh,
-  # docs/CUTOVER.md, docs/MIGRATION.md, CLAUDE.md, manifest:resolve's own
-  # precondition msg). Without this alias those instructions fail with
+  # README.md, CLAUDE.md, manifest:resolve's own precondition msg).
+  # Without this alias those instructions fail with
   # `Task "setup" does not exist`. Forwarding CLI_ARGS preserves the
   # `-- <name>` calling convention.
   setup:
@@ -233,83 +223,6 @@ tasks:
         done
         exit "$failures"
 
-  # ---------------------------------------------------------------------------
-  # cutover:ack (CUTV-03) -- per-machine cutover sentinel writer.
-  #
-  # Writes a single line "<machine-name> <ISO-8601-UTC-timestamp>" to
-  # $XDG_STATE_HOME/dotfiles/cutover-ack. The reader (install/cutover-gate.zsh
-  # cutover_gate_check, wired into install: preconditions below) checks this
-  # file before allowing `task install` to run on a fresh machine.
-  #
-  # Without this task, the v2-only branch cannot be installed on any fresh
-  # machine -- task install hard-fails on the cutover-gate precondition.
-  # Shipping cutover:ack unblocks the per-machine cutover runbook (P6 docs).
-  #
-  # CRITICAL (Pitfall 7 chicken-and-egg avoidance): this task MUST NOT have
-  # `cutover_gate_check` in its preconditions. The install: task has that
-  # precondition; cutover:ack runs BEFORE install to satisfy it. Adding the
-  # gate would create a circular dep: cannot run install without ack, cannot
-  # run ack without install.
-  #
-  # Security:
-  #   - Machine-name input passed via env (CLI_ARGS_ENV) per Pattern 6 to
-  #     prevent apostrophe/metacharacter injection from user input
-  #     templated into shell-quoted text (mirrors manifest:setup line 118-119)
-  #   - Regex validation `^[a-z0-9_][a-z0-9_-]*$` (matches manifest:setup line
-  #     129; allows underscore-prefix for fixture machines)
-  #   - Active-machine match enforcement: the sentinel can only be written
-  #     for the machine the user actually selected via `task setup`
-  # ---------------------------------------------------------------------------
-
-  # lint-allow: cmds-without-status
-  cutover:ack:
-    desc: "Acknowledge per-machine cutover to v2: task cutover:ack -- <machine-name>"
-    requires:
-      vars: [CLI_ARGS]
-    # Pattern 6: pass CLI_ARGS via env so apostrophes / shell metacharacters
-    # in user input cannot break the rendered shell parse (proven idiom from
-    # taskfiles/manifest.yml setup: lines 118-119).
-    env:
-      CLI_ARGS_ENV: '{{.CLI_ARGS}}'
-    preconditions:
-      - sh: |
-          name="${CLI_ARGS_ENV}"
-          # Step 1: regex validation -- same regex as manifest:setup line 129;
-          # allows underscore-prefix for _addmachine-test fixtures.
-          [[ "$name" =~ ^[a-z0-9_][a-z0-9_-]*$ ]] || exit 1
-          # Step 2: active-machine match -- read state file (single line by
-          # contract) and trim only leading/trailing whitespace (NOT embedded;
-          # IN-02 fix from manifest.yml line 65-69). Mismatch is a hard fail.
-          machine_file="{{.XDG_STATE_HOME}}/dotfiles/machine"
-          test -f "$machine_file" || exit 1
-          active=$(head -n1 "$machine_file" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-          [[ "$name" == "$active" ]] || exit 1
-        msg: |
-          cutover:ack requires the machine name to match the active machine.
-            - Name must match regex: ^[a-z0-9_][a-z0-9_-]*$
-            - Name must equal the contents of $XDG_STATE_HOME/dotfiles/machine
-          usage: task cutover:ack -- <machine-name>
-    status: [false]
-    cmds:
-      - mkdir -p "{{.XDG_STATE_HOME}}/dotfiles"
-      - |
-        # Source messages.zsh via TASKFILE_DIR (NOT DOTFILES_MESSAGES):
-        # root DOTFILEDIR var gets polluted to dirname(TASKFILE_DIR)
-        # after include-merge because some included taskfiles (lint.yml:59,
-        # links.yml:61) define DOTFILEDIR via sh-dirname of TASKFILE_DIR
-        # and that definition leaks back to root scope, stripping the
-        # worktree agent segment. TASKFILE_DIR is per-task and not subject
-        # to that pollution. Same pattern as validate: line 178 and
-        # install: line 213. Documented in 08-02-SUMMARY decisions.
-        source '{{.TASKFILE_DIR}}/install/messages.zsh'
-        # ISO-8601 UTC timestamp via `date -u` (built-in; portable).
-        ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-        # Write sentinel: single line "<name> <ts>" per the reader's
-        # `read -r ack_machine ack_ts < "$ack_file"` parser
-        # (install/cutover-gate.zsh line 50).
-        printf '%s %s\n' "${CLI_ARGS_ENV}" "$ts" > "{{.XDG_STATE_HOME}}/dotfiles/cutover-ack"
-        success "Machine ${CLI_ARGS_ENV} cut over at $ts. Update docs/CUTOVER.md table."
-
   # lint-allow: cmds-without-status
   install:
     desc: "Install dotfiles for active machine (canonical entry)"
@@ -317,15 +230,6 @@ tasks:
       task install IS task update -- there is no separate update pipeline.
       Re-running is a no-op (every subtask has a status: block per LINT-01).
     status: [false]
-    preconditions:
-      - sh: |
-          # Use TASKFILE_DIR directly: included taskfiles (manifest.yml, lint.yml)
-          # have broken DOTFILEDIR sh: vars that stomp the root's var on include
-          # merge. TASKFILE_DIR is a go-task built-in -- always correct.
-          export DOTFILEDIR="{{.TASKFILE_DIR}}"
-          source "${DOTFILEDIR}/install/cutover-gate.zsh"
-          cutover_gate_check
-        msg: "cutover-ack gate failed -- see error above"
     deps: [manifest:resolve]
     cmds:
       - task: links:all
@@ -356,6 +260,6 @@ tasks:
         # links.yml:61) define DOTFILEDIR via sh-dirname of TASKFILE_DIR
         # and that definition leaks back to root scope. TASKFILE_DIR is
         # per-task and not subject to that pollution. Same pattern as
-        # validate: line 202 and cutover:ack: line 303.
+        # validate: above.
         source '{{.TASKFILE_DIR}}/install/messages.zsh'
         success "install complete"
