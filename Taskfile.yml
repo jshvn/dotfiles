@@ -9,7 +9,6 @@
 #   - manifest (P1, real)
 #   - lint     (P2, real)
 #   - links    (P3, real)
-#   - perf     (P3, real)
 #   - identity (P4, real)
 #   - packages (P5, real)
 #   - claude   (P7, real)
@@ -79,8 +78,7 @@ includes:
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   lint:     ./taskfiles/lint.yml
   links:    ./taskfiles/links.yml
-  perf:     ./taskfiles/shell.yml   # legacy alias: task perf:shell (SHEL-12 cold-start gate)
-  shell:    ./taskfiles/shell.yml   # primary alias: task shell:validate (PORT-02)
+  shell:    ./taskfiles/shell.yml   # Phase-3 shell layer (startup-time gate + validate)
   # identity needs the root's DOTFILEDIR + XDG_STATE_HOME explicitly forwarded
   # since it also reads resolved.json via fromJson (mirrors manifest:).
   identity:
