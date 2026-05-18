@@ -236,7 +236,7 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
   3. Every "mark-internal" verdict applies `internal: true` to the task; running `task --list` does not show those tasks; running them directly (`task <internal-name>`) is documented in the source taskfile as "internal — invoked by <caller>" but is not surfaced to the operator
   4. The bare `task` invocation prints the final curated list with operator-friendly descriptions (no leaked internals, no v1 names); the top-level `README.md` and project `CLAUDE.md` reference the canonical surface as the single source-of-truth for "what can I run"
 **Plans**: 8 plans
-  - [ ] 12-01-PLAN.md — Author SURFACE.md classification table (SURF-01 deliverable; six-column shape; pre-populated callsites)
+  - [x] 12-01-PLAN.md — Author SURFACE.md classification table (SURF-01 deliverable; six-column shape; pre-populated callsites)
   - [ ] 12-02-PLAN.md — Drop perf: include alias + rename shell:shell -> shell:startup-time + mark shell:validate internal (D-05/06/07)
   - [ ] 12-03-PLAN.md — Rename links:all -> links:install + sub-targets to install-<target> + audit:links delegate via new taskfiles/audit.yml (D-09/10/02)
   - [ ] 12-04-PLAN.md — Rename identity sub-targets to install-<target> + mark all internal (D-01/10/11)
@@ -287,6 +287,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 9. v1-Drop Audit | 5/5 | Complete   | 2026-05-17 |
 | 10. v1-Drop Remediation | 1/1 | Complete    | 2026-05-18 |
 | 11. v1 Removal | 1/1 | Complete   | 2026-05-18 |
-| 12. Task Surface Redesign | 0/TBD | Not started (v2.1) | - |
+| 12. Task Surface Redesign | 1/8 | In Progress|  |
 | 13. Code Review + Dead-Code Cleanup | 0/TBD | Not started (v2.1) | - |
 | 14. Comment + Doc Trim | 0/TBD | Not started (v2.1) | - |
