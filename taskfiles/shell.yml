@@ -93,7 +93,6 @@ tasks:
   # any failed assertion. Mirrors the pattern at taskfiles/links.yml:382.
   # ---------------------------------------------------------------------------
 
-  # lint-allow: cmds-without-status
   validate:
     desc: "Validate shell layer (XDG dirs, ZDOTDIR dir, /etc/zshenv ZDOTDIR line, DOTFILES_MACHINE state)"
     status: [false]

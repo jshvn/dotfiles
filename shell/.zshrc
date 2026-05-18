@@ -23,9 +23,11 @@
 #       export HISTFILE=~/.zsh_history
 #   - Completion and shells helpers (interactive):
 #       autoload -Uz compinit && compinit
-#   - Plugin managers and interactive hooks (antidote, zinit, oh-my-zsh):
-#       source $HOMEBREW_PREFIX/share/antidote/antidote.zsh
-#       antidote bundle < $ZDOTDIR/.zsh_plugins.txt > $cache
+#   - Plugin managers and interactive hooks (antigen, zinit, oh-my-zsh):
+#       source $HOMEBREW_PREFIX/share/antigen/antigen.zsh
+#       antigen use ohmyzsh/ohmyzsh
+#       antigen bundle ohmyzsh/ohmyzsh git
+#       antigen apply
 #   - Aliases and functions (interactive conveniences):
 #       alias ll='ls -la'
 #       function myfunc() { echo "interactive only" }
