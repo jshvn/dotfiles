@@ -240,7 +240,7 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
   - [x] 12-02-PLAN.md — Drop perf: include alias + rename shell:shell -> shell:startup-time + mark shell:validate internal (D-05/06/07)
   - [x] 12-03-PLAN.md — Rename links:all -> links:install + sub-targets to install-<target> + audit:links delegate via new taskfiles/audit.yml (D-09/10/02)
   - [x] 12-04-PLAN.md — Rename identity sub-targets to install-<target> + mark all internal (D-01/10/11)
-  - [ ] 12-05-PLAN.md — Add macos:install aggregator + rename macos:defaults -> apply-defaults + macos:shell -> install-shell + collapse install body (D-09/10)
+  - [x] 12-05-PLAN.md — Add macos:install aggregator + rename macos:defaults -> apply-defaults + macos:shell -> install-shell + collapse install body (D-09/10)
   - [ ] 12-06-PLAN.md — Mark packages + claude tasks internal + add audit:packages / show:claude / refresh:claude delegates (D-01/02/03)
   - [ ] 12-07-PLAN.md — Mark manifest tasks internal + move manifest:test* -> taskfiles/test.yml as test:manifest + test:add-machine + mark test/lint sub-checks internal + doc updates (D-01/02/03/04)
   - [ ] 12-08-PLAN.md — Rewrite default: banner to two-tier curated surface + add lint:banner-parity check + paired fixtures (D-12/13)
@@ -287,6 +287,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 9. v1-Drop Audit | 5/5 | Complete   | 2026-05-17 |
 | 10. v1-Drop Remediation | 1/1 | Complete    | 2026-05-18 |
 | 11. v1 Removal | 1/1 | Complete   | 2026-05-18 |
-| 12. Task Surface Redesign | 4/8 | In Progress|  |
+| 12. Task Surface Redesign | 5/8 | In Progress|  |
 | 13. Code Review + Dead-Code Cleanup | 0/TBD | Not started (v2.1) | - |
 | 14. Comment + Doc Trim | 0/TBD | Not started (v2.1) | - |
