@@ -148,7 +148,7 @@ tasks:
   test:
     desc: "Run all smoke tests (manifest fixtures + hook fixtures)"
     cmds:
-      - task: manifest:test
+      - task: test:manifest
       - task: test:hooks
 
   # lint-allow: cmds-without-status

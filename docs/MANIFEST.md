@@ -466,10 +466,9 @@ discover identities at evaluation time.
 | Command | Description |
 |---------|-------------|
 | `task setup -- <name>` | Persist machine selection; runs validate and resolve |
-| `task manifest:resolve` | (Re)compile `resolved.json` from defaults + active machine TOML |
-| `task manifest:show [-- --machine <name>]` | Print resolved manifest (active machine by default) |
-| `task manifest:validate [-- --machine <name>]` | Schema check -- required fields + unknown-key warnings |
-| `task manifest:test` | Run the six golden-output fixture tests |
+| `task show:manifest [-- --machine <name>]` | Print resolved manifest (active machine by default) |
+| `task audit:manifest [-- --machine <name>]` | Schema check -- required fields + unknown-key warnings |
+| `task test:manifest` | Run the six golden-output fixture tests |
 
 ## State Files
 

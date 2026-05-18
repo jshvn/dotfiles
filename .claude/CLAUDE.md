@@ -16,8 +16,7 @@ reference: `docs/MANIFEST.md`.
 - Validate: `task validate`
 - Show tasks: `task --list`
 - Set machine: `task setup -- <machine-name>` (BTSP-04; writes `$XDG_STATE_HOME/dotfiles/machine`)
-- Resolve manifest: `task manifest:resolve` (recomputes `$XDG_STATE_HOME/dotfiles/resolved.json`)
-- Show manifest: `task manifest:show` (prints the post-merge structure for debugging)
+- Show manifest: `task show:manifest` (prints the post-merge structure for debugging)
 
 ## Structure
 
