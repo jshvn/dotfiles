@@ -113,29 +113,32 @@ vars:
 tasks:
 
   # ---------------------------------------------------------------------------
-  # Aggregator -- P3 + P4 wired; later phases extend this list.
+  # Aggregator (D-09 internal: <ns>:install pattern; D-01 per-component install internal).
+  # P3 + P4 wired; later phases extend this list.
   # ---------------------------------------------------------------------------
 
   # lint-allow: cmds-without-status
-  all:
+  install:
     desc: "Create all symlinks (P3+P4+P7: shell + identity + claude + configs)"
+    internal: true
     cmds:
-      - task: zsh
+      - task: install-zsh
       # Leading-colon absolute form: when this file is loaded as the `links:`
       # namespace from the root Taskfile.yml, a bare `task: identity:install`
       # resolves relative to the current namespace and tries `links:identity:install`
       # (which does not exist). Same fix pattern as commit d94168e applied to
       # identity.yml's [:manifest:resolve] dep.
       - task: :identity:install
-      - task: claude
-      - task: configs
+      - task: install-claude
+      - task: install-configs
 
   # ---------------------------------------------------------------------------
   # Shell startup files (SHEL-03) -- five files in zsh's documented order.
   # ---------------------------------------------------------------------------
 
-  zsh:
+  install-zsh:
     desc: "Link zsh configuration files and configure /etc/zshenv ZDOTDIR"
+    internal: true
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zshenv", TARGET: "{{.ZDOTDIR}}/.zshenv" }
@@ -202,8 +205,9 @@ tasks:
   # the status: block mirrors the gate so status checks also no-op.
   # ---------------------------------------------------------------------------
 
-  claude:
+  install-claude:
     desc: "Link claude config tree (files, dirs, hooks)"
+    internal: true
     deps: [":manifest:resolve"]
     cmds:
       - task: _:safe-link
@@ -253,8 +257,9 @@ tasks:
   # motd intentionally absent -- D-08 (runtime read from DOTFILEDIR).
   # ---------------------------------------------------------------------------
 
-  configs:
+  install-configs:
     desc: "Link tool config files (ghostty, glow, trippy, tlrc, conda, eza)"
+    internal: true
     deps: [":manifest:resolve"]
     cmds:
       - task: configs:ghostty
@@ -310,6 +315,7 @@ tasks:
   # lint-allow: cmds-without-status
   validate:
     desc: "Validate all P3+P4+P7 symlinks (strict-mode SOURCE check per TOOL-04)"
+    internal: true
     deps: [":manifest:resolve"]
     status: [false]
     cmds:

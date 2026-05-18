@@ -192,7 +192,7 @@ tasks:
     status: [false]
     deps: [manifest:resolve]
     cmds:
-      - task: links:all
+      - task: links:install
       - task: packages:install
       - task: claude:install
       - task: macos:defaults
