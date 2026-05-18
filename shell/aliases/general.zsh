@@ -20,7 +20,13 @@ alias fsa='ncdu'
 alias perms='permissions'
 
 # shorthands for directory listing
-alias ls="$(command -v eza) --time-style long-iso"
+# Lazy expansion (single quotes) + presence guard: when eza is absent,
+# the alias is not defined and the system `ls` falls through. Eager
+# `$(command -v eza)` expansion at source time was masking the system
+# `ls` entirely when eza was uninstalled (Plan 13-02 REVIEW.md row 13).
+if command -v eza >/dev/null 2>&1; then
+    alias ls='eza --time-style long-iso'
+fi
 alias ll='ls -alh'
 
 # show last time macOS was installed
