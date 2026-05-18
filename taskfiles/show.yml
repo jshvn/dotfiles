@@ -1,0 +1,23 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/show.yml -- Phase 12 public diagnostics: state inspection.
+#
+# Purpose: Public delegates for diagnostic show operations across all namespaces.
+# Callers: Invoked directly by operator; included by Taskfile.yml.
+# Side effects: Read-only -- these tasks print state or detect drift; no mutations.
+# Tasks:
+#   - claude -- delegate to :claude:status (marketplaces + plugins listing; D-02)
+# =============================================================================
+
+vars:
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+tasks:
+  # lint-allow: cmds-without-status
+  claude:
+    desc: "Show installed marketplaces + plugins (diagnostic)"
+    status: [false]
+    cmds:
+      - task: :claude:status

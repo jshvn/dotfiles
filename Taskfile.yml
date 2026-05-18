@@ -12,8 +12,10 @@
 #   - links    (P3, real)
 #   - identity (P4, real)
 #   - packages (P5, real)
+#   - refresh  (P12, real)
 #   - claude   (P7, real)
 #   - macos    (P6, real)
+#   - show     (P12, real)
 # =============================================================================
 
 version: '3'
@@ -101,7 +103,9 @@ includes:
       XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
       XDG_CACHE_HOME: '{{.XDG_CACHE_HOME}}'
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
+  refresh:  ./taskfiles/refresh.yml          # P12 public refresh: namespace (D-03)
   claude:   ./taskfiles/claude.yml           # P7 real bodies
+  show:     ./taskfiles/show.yml             # P12 public show: namespace (D-02)
   # test needs the root's DOTFILEDIR + DOTFILES_MESSAGES explicitly forwarded;
   # its DOTFILEDIR sh:dirname pattern resolves to the wrong path when
   # invoked as an included taskfile (same issue as manifest: and identity:).

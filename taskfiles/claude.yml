@@ -98,6 +98,7 @@ tasks:
 
   install:
     desc: "Install Claude Code marketplaces, plugins, and get-shit-done-cc"
+    internal: true
     deps: [":manifest:resolve"]
     status:
       - '{{if index .MANIFEST.features "claude-marketplace"}}false{{else}}true{{end}}'
@@ -203,6 +204,7 @@ tasks:
   # lint-allow: cmds-without-status
   update:
     desc: "Refresh marketplaces + plugins + GSD (explicit; not in task install)"
+    internal: true
     deps: ["ensure-cli", ":manifest:resolve"]
     status: [false]
     cmds:
@@ -226,6 +228,7 @@ tasks:
   # lint-allow: cmds-without-status
   status:
     desc: "Show installed marketplaces + plugins (diagnostic)"
+    internal: true
     status: [false]
     cmds:
       - claude plugin marketplace list
@@ -242,6 +245,7 @@ tasks:
   # lint-allow: cmds-without-status
   validate:
     desc: "Validate Claude install state (composed into root task validate in P8)"
+    internal: true
     deps: [":manifest:resolve"]
     status: [false]
     cmds:
