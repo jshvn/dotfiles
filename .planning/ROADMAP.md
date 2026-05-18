@@ -256,7 +256,7 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
   4. The `links:*` status blocks verify each symlink's target (`readlink -f` equals the manifest-expected source path), not just its existence; after the fix, a deliberately corrupted symlink (pointing to a wrong source) forces a re-link on next `task install` — verified via a manual test recorded in `.planning/phases/13-code-review-dead-code-cleanup/13-SMOKE.md`
   5. `task lint`, `task lint:taskfile`, every `shellcheck` invocation, and `task test` (manifest fixtures + hook fixtures) all pass green after every fix lands; any test fixture exercising removed v1 code is updated or removed (no orphan fixtures left behind)
 **Plans**: 6 plans
-  - [ ] 13-01-PLAN.md — Review pass: four parallel ecc:code-reviewer spawns (zsh/YAML/TOML/aux); merge into 13-REVIEW.md; amend ROADMAP SC#1/SC#4 path (REVW-01)
+  - [x] 13-01-PLAN.md — Review pass: four parallel ecc:code-reviewer spawns (zsh/YAML/TOML/aux); merge into 13-REVIEW.md; amend ROADMAP SC#1/SC#4 path (REVW-01)
   - [ ] 13-02-PLAN.md — HIGH-severity fixes: apply remediations per REVIEW.md HIGH rows; annotate with closing short-SHAs (REVW-02, REVW-06)
   - [ ] 13-03-PLAN.md — Dead-code removal: Class A preserved, Class B strict per D-08; orphan fixtures per D-10; grep-verified zero hits (REVW-03, REVW-06)
   - [ ] 13-04-PLAN.md — Duplication consolidation: rule-of-three per D-09; new helpers in taskfiles/helpers.yml or install/messages.zsh (REVW-04, REVW-06)
@@ -294,5 +294,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 10. v1-Drop Remediation | 1/1 | Complete    | 2026-05-18 |
 | 11. v1 Removal | 1/1 | Complete   | 2026-05-18 |
 | 12. Task Surface Redesign | 8/8 | Complete    | 2026-05-18 |
-| 13. Code Review + Dead-Code Cleanup | 0/TBD | Not started (v2.1) | - |
+| 13. Code Review + Dead-Code Cleanup | 1/6 | In Progress|  |
 | 14. Comment + Doc Trim | 0/TBD | Not started (v2.1) | - |
