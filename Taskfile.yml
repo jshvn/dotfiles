@@ -197,8 +197,7 @@ tasks:
       - task: links:install
       - task: packages:install
       - task: claude:install
-      - task: macos:defaults
-      - task: macos:shell
+      - task: macos:install
       # VRFY-04 + D-10 + ROADMAP P5 success criterion #6:
       # packages:verify is the LAST FATAL task-call in the install pipeline.
       # A missing bin or missing /Applications/<App>.app fails the entire

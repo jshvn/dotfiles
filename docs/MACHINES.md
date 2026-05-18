@@ -64,7 +64,7 @@ changes, not when a feature flag flips.
   because the machine has no interactive Claude Code surface; the GUI
   feature flags (`macos-dock`, `macos-finder`, `macos-input`,
   `macos-screenshots`) are absent and inherit `false`, so only the
-  `macos-security` defaults concern runs as part of `task macos:defaults`.
+  `macos-security` defaults concern runs as part of `task macos:apply-defaults`.
 - Special handling: remote access flows through SSH; the
   `one-password-ssh` feature is off because a headless server cannot
   prompt for the 1Password TouchID approval. Intended workload is light

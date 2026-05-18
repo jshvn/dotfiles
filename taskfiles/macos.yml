@@ -14,18 +14,18 @@ version: '3'
 #   - :manifest:resolve (deps) -- ensures resolved.json is current before any
 #     gate read.
 #   - install/messages.zsh -- sourced via {{.DOTFILES_MESSAGES}} for check/cross.
-#   - os/defaults/<concern>.zsh -- sourced by each macos:defaults:<concern>.
-#   - os/shell-registration.zsh -- sourced by macos:shell.
+#   - os/defaults/<concern>.zsh -- sourced by each macos:apply-defaults:<concern>.
+#   - os/shell-registration.zsh -- sourced by macos:install-shell.
 #
 # Status-block convention (LINT-02 enforcement):
 #   Every install / verify task's `status:` uses `{{.X}}` template vars ONLY --
 #   never `$X` shell vars (the v1 macos:shell:145 bug class). Aggregator-style
-#   tasks (defaults, validate) intentionally omit `status:` and carry the
+#   tasks (install, apply-defaults, validate) intentionally omit `status:` and carry the
 #   `# lint-allow: cmds-without-status` marker on the line immediately above
 #   the task key (LINT-01/03a aggregator exemption).
 #
 # Per-concern feature-gate pattern (RESEARCH Pattern 2):
-#   Each macos:defaults:<concern> task uses a SINGLE-SHELL-BLOCK status: the
+#   Each macos:apply-defaults:<concern> task uses a SINGLE-SHELL-BLOCK status: the
 #   heredoc renders `{{if not (index .MANIFEST.features "macos-<concern>")}}exit 0{{end}}`
 #   at template build time as the SECOND line of the block. When the feature
 #   is off, the line renders to literal `exit 0` and the block short-circuits
@@ -110,15 +110,36 @@ vars:
 tasks:
 
   # ---------------------------------------------------------------------------
-  # defaults -- aggregator. Calls each macos:defaults:<concern> in declared
-  # order (matches OSCF-01: dock -> finder -> input -> screenshots -> security).
-  # No status: block; cmds: are all task: delegations -- LINT-01/03a auto-exempt.
-  # Carries the # lint-allow: cmds-without-status marker per convention.
+  # install -- macOS aggregator (D-09 <ns>:install pattern).
+  # Replaces the two-call pattern in Taskfile.yml install: body
+  # (macos:apply-defaults + macos:install-shell).
+  # Internal per D-01 (per-component install is internal); platforms: [darwin]
+  # matches the sub-tasks.
   # ---------------------------------------------------------------------------
 
   # lint-allow: cmds-without-status
-  defaults:
+  install:
+    desc: "Apply macOS defaults + register Homebrew zsh as login shell"
+    internal: true
+    platforms: [darwin]
+    deps: [":manifest:resolve"]
+    cmds:
+      - task: apply-defaults
+      - task: install-shell
+
+  # ---------------------------------------------------------------------------
+  # apply-defaults -- aggregator (was: defaults; renamed per D-10 -- macOS uses
+  # apply- for non-install actions). Calls each macos:apply-defaults:<concern>
+  # in declared order (matches OSCF-01: dock -> finder -> input -> screenshots
+  # -> security). No status: block; cmds: are all task: delegations --
+  # LINT-01/03a auto-exempt. Carries the # lint-allow: cmds-without-status
+  # marker per convention.
+  # ---------------------------------------------------------------------------
+
+  # lint-allow: cmds-without-status
+  apply-defaults:
     desc: "Apply macOS system defaults (per-concern, feature-gated)"
+    internal: true
     platforms: [darwin]
     deps: [":manifest:resolve"]
     preconditions:
@@ -127,19 +148,21 @@ tasks:
           resolved.json missing or empty; cannot resolve features.macos-*
             run: task setup -- <machine-name>
     cmds:
-      - task: defaults:dock
-      - task: defaults:finder
-      - task: defaults:input
-      - task: defaults:screenshots
-      - task: defaults:security
+      - task: apply-defaults:dock
+      - task: apply-defaults:finder
+      - task: apply-defaults:input
+      - task: apply-defaults:screenshots
+      - task: apply-defaults:security
 
   # ---------------------------------------------------------------------------
-  # defaults:<concern> -- five per-concern tasks, identical shape.
+  # apply-defaults:<concern> -- five per-concern tasks, identical shape (was:
+  # defaults:<concern>; renamed in lockstep with the apply-defaults parent per
+  # B-9 / D-10 verb-first consistency).
   # RESEARCH Pattern 2: single-shell-block status with template-time short-circuit.
   # internal: true -- aggregator dispatches; not shown in `task --list`.
   # ---------------------------------------------------------------------------
 
-  defaults:dock:
+  apply-defaults:dock:
     desc: "Apply Dock defaults (gated on macos-dock)"
     internal: true
     platforms: [darwin]
@@ -153,7 +176,7 @@ tasks:
         {{if not (index .MANIFEST.features "macos-dock")}}exit 0{{end}}
         DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/dock.zsh"; verify_dock > /dev/null 2>&1'
 
-  defaults:finder:
+  apply-defaults:finder:
     desc: "Apply Finder defaults (gated on macos-finder)"
     internal: true
     platforms: [darwin]
@@ -167,7 +190,7 @@ tasks:
         {{if not (index .MANIFEST.features "macos-finder")}}exit 0{{end}}
         DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/finder.zsh"; verify_finder > /dev/null 2>&1'
 
-  defaults:input:
+  apply-defaults:input:
     desc: "Apply Input defaults (gated on macos-input)"
     internal: true
     platforms: [darwin]
@@ -181,7 +204,7 @@ tasks:
         {{if not (index .MANIFEST.features "macos-input")}}exit 0{{end}}
         DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/input.zsh"; verify_input > /dev/null 2>&1'
 
-  defaults:screenshots:
+  apply-defaults:screenshots:
     desc: "Apply Screenshots defaults (gated on macos-screenshots)"
     internal: true
     platforms: [darwin]
@@ -195,7 +218,7 @@ tasks:
         {{if not (index .MANIFEST.features "macos-screenshots")}}exit 0{{end}}
         DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/screenshots.zsh"; verify_screenshots > /dev/null 2>&1'
 
-  defaults:security:
+  apply-defaults:security:
     desc: "Apply Security defaults (gated on macos-security)"
     internal: true
     platforms: [darwin]
@@ -210,8 +233,9 @@ tasks:
         DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/security.zsh"; verify_security > /dev/null 2>&1'
 
   # ---------------------------------------------------------------------------
-  # shell -- always-on (no feature gate). Adds Homebrew zsh to /etc/shells and
-  # runs chsh. RESEARCH Pattern 5 -- the structural LINT-02 fix:
+  # install-shell -- always-on (was: shell; renamed per D-10 -- shell
+  # registration IS an install action). No feature gate. Adds Homebrew zsh to
+  # /etc/shells and runs chsh. RESEARCH Pattern 5 -- the structural LINT-02 fix:
   #   vars.BREW_ZSH renders {{.HOMEBREW_PREFIX}}/bin/zsh at task-graph build time;
   #   cmds heredoc exports BREW_ZSH so the shell-registration.zsh :? assertion
   #     does not abort; status: uses {{.BREW_ZSH}} template var in BOTH entries.
@@ -219,8 +243,9 @@ tasks:
   # no $VAR in status:, and this task is the canonical correct shape.
   # ---------------------------------------------------------------------------
 
-  shell:
+  install-shell:
     desc: "Register Homebrew zsh as login shell (/etc/shells + chsh)"
+    internal: true
     platforms: [darwin]
     vars:
       BREW_ZSH: '{{.HOMEBREW_PREFIX}}/bin/zsh'
@@ -256,6 +281,7 @@ tasks:
   # lint-allow: cmds-without-status
   validate:
     desc: "Validate macOS defaults match in-script expected values"
+    internal: true
     platforms: [darwin]
     deps: [":manifest:resolve"]
     status: [false]
