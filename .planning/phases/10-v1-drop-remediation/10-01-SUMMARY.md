@@ -3,8 +3,8 @@ phase: 10
 plan: 01
 subsystem: v1-drop-remediation
 tags: [PORT-01, PORT-02, PORT-03, AUDIT-amend, shell-layer, /etc/zshenv, ZDOTDIR]
-status: partial
-checkpoint_pending: task-6-human-verify
+status: complete
+checkpoint_resolved: task-6-human-verify-passed
 requires:
   - .planning/phases/09-v1-drop-audit/AUDIT.md (keep rows #1, #2, #3 per Phase 9)
 provides:
@@ -37,8 +37,7 @@ decisions:
 metrics:
   duration: ~25min execution (read + edit + verify per task)
   completed: 2026-05-17
-  tasks_completed: 5
-  tasks_pending_checkpoint: 1
+  tasks_completed: 6
   files_modified: 4
   files_created: 1
 ---
@@ -46,9 +45,11 @@ metrics:
 # Phase 10 Plan 01: v1-Drop Remediation Summary
 
 PORT-01 ZDOTDIR write to /etc/zshenv + PORT-02 shell:validate + AUDIT.md
-row-3 reclassification + PORT-03 fresh-shell smoke procedure — five tasks
-landed, the Task 6 human-verify checkpoint awaits the operator running three
-sudo / fresh-terminal checks.
+row-3 reclassification + PORT-03 fresh-shell smoke procedure -- five tasks
+landed atomically, Task 6 human-verify checkpoint passed after operator ran
+PORT-01 fresh-write + idempotency, PORT-02 negative test + aggregator-row
+check, and PORT-03 seven-assertion fresh-shell smoke. PORT-03 PASS required
+two prerequisite `fix:` commits on main (recorded under "Deviations" below).
 
 ## One-line summary
 
@@ -233,3 +234,46 @@ smoke-procedure result also lands in 10-SMOKE.md's Run Log table.
 `"approved"` signal from the operator after they run the three checks and
 update 10-SMOKE.md's Run Log. If any assertion fails, operator describes the
 failure (which assertion, what was observed) and which task to revisit.
+
+### Resolved (operator-recorded, 2026-05-17)
+
+- **PORT-01 fresh-write + idempotency:** PASS. From the worktree, `sudo rm -f /etc/zshenv && task links:zsh` prompted for sudo once and emitted `[INFO] Creating /etc/zshenv with ZDOTDIR export...` followed by `[SUCCESS] ZDOTDIR configured in /etc/zshenv`. The second `task links:zsh` invocation was silent (no sudo prompt) -- the new `zdotdir` task's `grep -qF 'export ZDOTDIR="{{.ZDOTDIR}}"' /etc/zshenv` status block short-circuited cleanly. D-04 template-var-in-status compliance confirmed in practice, not just lint.
+- **PORT-02 negative test + aggregator wiring:** PASS. With `/etc/zshenv` moved aside, `task shell:validate` printed `cross ZDOTDIR not configured in /etc/zshenv` and exited 1 (go-task wrapper exit 201). After restore, the full `task validate` summary from inside the worktree listed `shell` as the seventh component row (`manifest`, `identity`, `links`, `macos`, `packages`, `claude`, `shell`) -- D-05 aggregator wiring honored on both for-loops (line 215 + line 222 of Taskfile.yml).
+- **PORT-03 fresh-shell smoke:** PASS. All seven assertions tick in a fresh terminal launched after the prerequisite fixes shipped on main (see Deviations). `echo "$ZDOTDIR"` resolves to `/Users/josh/.config/zsh`; `echo "$DOTFILES_MACHINE"` prints `personal-laptop`; alanpeabody-derived prompt renders both sides with `git_prompt_status` glyphs and branch token; `type _dotfiles_feature` confirms the function; `alias` lists `reload`, `path`, `ll`, `t`, and `l`; `motd` renders fresh at current terminal width; no command-not-found errors during shell init.
+
+## Deviations from plan
+
+Two regressions surfaced by the PORT-03 smoke procedure required prerequisite
+`fix:` commits on main before PORT-03 could pass. These are NOT part of plan
+10-01's scope (which is locked to PORT-01/02/03 + AUDIT amend + SMOKE doc),
+but were necessary preconditions for the smoke procedure to evaluate the
+shell layer honestly. Both are reverts of earlier-phase decisions, not new
+v2 features.
+
+1. **`ef3d236` -- revert antigen->antidote port (Phase 3 D-01).** v1's
+   `antigen use ohmyzsh/ohmyzsh` line implicitly sourced all of OMZ's
+   `lib/*.zsh` files (`setopt prompt_subst`, `git_prompt_info`,
+   `git_prompt_status`, the `l` alias, history/completion defaults).
+   Phase 3 D-01 ported only the seven `antigen bundle` lines into
+   `configs/antidote/zsh_plugins.txt` and silently dropped the load-bearing
+   `antigen use` line -- antidote has no equivalent and requires each lib
+   file enumerated as a `path:` entry. The PORT-03 prompt-renders
+   assertion failed before this revert. SHEL-04 / D-01 / CF-03 should be
+   re-evaluated; cold-shell budget vs SHEL-12 must be re-measured.
+
+2. **`54b0e38` -- revert motd 24h-TTL cache (Phase 3 SHEL-11).** v1's
+   `motd()` recomputed `tput cols` on every call and rendered at the
+   current terminal width. Phase 3 wrapped this in a 24h cache at
+   `$XDG_CACHE_HOME/dotfiles/motd.cache` to amortize render cost. The
+   cache writes output sized to whichever terminal first populated it;
+   any later shell opened at a different width displays stale output
+   (overflows or comes up short). The PORT-03 motd-fits-width assertion
+   failed before this revert. Drops SHEL-11.
+
+These reverts were committed to main (the orchestrator branch), not to
+this plan's worktree, because they cross plan-10-01 scope. The worktree
+forked before these fixes; the standard wave-merge picks them up.
+
+## Decisions honored
+
+- D-01..D-08 (CONTEXT.md): all honored verbatim. See `decisions:` in frontmatter.

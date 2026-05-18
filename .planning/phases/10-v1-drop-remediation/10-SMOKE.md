@@ -1,7 +1,7 @@
 # Phase 10: First-Shell Smoke Procedure
 
-**Recorded:** <date>
-**Procedure run on:** <machine-name> (existing v2-cut-over machine, NOT a real fresh install)
+**Recorded:** <2026-05-17>
+**Procedure run on:** <personal-laptop> (existing v2-cut-over machine, NOT a real fresh install)
 **Result:** PASS / FAIL
 
 ## What this is
@@ -48,4 +48,4 @@ RESEARCH.md Landmine 3) in the Notes column.
 
 | Date | Machine | Result | Notes |
 |------|---------|--------|-------|
-| <date> | <machine> | PASS / FAIL | <any deviations> |
+| 2026-05-17 | personal-laptop | PASS | All 7 first-shell assertions tick. PORT-01 fresh-write + idempotency PASS from worktree (sudo prompted once on rm-then-relink; second run silent). PORT-02 negative test PASS (cross line + exit 1 when /etc/zshenv missing; `task validate` summary shows `shell` row when run from worktree). PORT-03 PASS after two prerequisite `fix:` commits on main (ef3d236 revert antigen->antidote port to restore OMZ lib/* loading -- prompt_subst, git_prompt_info, git_prompt_status, `l` alias; 54b0e38 revert motd 24h-TTL cache to restore v1 always-fresh `tput cols` render). |
