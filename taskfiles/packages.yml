@@ -107,6 +107,7 @@ tasks:
 
   install:
     desc: "Install packages: compose per-machine Brewfile then run brew bundle install"
+    internal: true
     deps: [":manifest:resolve"]
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
@@ -158,6 +159,7 @@ tasks:
 
   compose:
     desc: "Compose per-machine Brewfile from manifest -> $XDG_CACHE_HOME/dotfiles/Brewfile"
+    internal: true
     deps: [":manifest:resolve"]
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
@@ -208,6 +210,7 @@ tasks:
   # lint-allow: cmds-without-status
   verify:
     desc: "Verify declared packages: brew bundle check (Layer 1) + brew info artifact probe (Layer 2)"
+    internal: true
     silent: false
     deps: [":manifest:resolve"]
     preconditions:
@@ -433,6 +436,7 @@ tasks:
   # while preserving always-rerun semantics; matches verify above.
   audit:
     desc: "Audit installed brew formulae/casks/mas vs declared. Non-blocking; --strict exits non-zero."
+    internal: true
     deps: [":manifest:resolve"]
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
@@ -535,5 +539,6 @@ tasks:
   # lint-allow: cmds-without-status
   validate:
     desc: "Validate packages layer (wraps packages:verify; composed into root task validate in P8)"
+    internal: true
     cmds:
       - task: verify

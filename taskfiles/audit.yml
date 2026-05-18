@@ -8,6 +8,7 @@ version: '3'
 # Side effects: Read-only -- these tasks print state or detect drift; no mutations.
 # Tasks:
 #   - links -- delegate to :links:reconcile (orphan symlink detection; D-02)
+#   - packages -- delegate to :packages:audit (brew/cask/mas drift detection; D-02)
 # =============================================================================
 
 vars:
@@ -21,4 +22,12 @@ tasks:
     status: [false]
     cmds:
       - task: :links:reconcile
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  # lint-allow: cmds-without-status
+  packages:
+    desc: "Audit brew formulae/casks/mas vs declared (D-11). Non-blocking; --strict exits non-zero."
+    status: [false]
+    cmds:
+      - task: :packages:audit
         vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
