@@ -31,7 +31,7 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
 
 - [x] **Phase 9: v1-Drop Audit** - Read-only enumeration of every v1 leftover taskfile, install asset, `zsh/` tree content, and doc; produces `AUDIT.md` keep/drop classification with v2 owner column (completed 2026-05-17)
 - [x] **Phase 10: v1-Drop Remediation** - Implement every "keep" from `AUDIT.md`; `/etc/zshenv` `ZDOTDIR` write lands first; fresh-machine install produces a fully-functional first shell (completed 2026-05-18)
-- [ ] **Phase 11: v1 Removal** - Delete v1 leftover taskfiles, `zsh/` tree, `install/Brewfile*`, cutover infrastructure; simplify `Taskfile.yml`; purge v1 references from docs
+- [x] **Phase 11: v1 Removal** - Delete v1 leftover taskfiles, `zsh/` tree, `install/Brewfile*`, cutover infrastructure; simplify `Taskfile.yml`; purge v1 references from docs (completed 2026-05-18)
 - [ ] **Phase 12: Task Surface Redesign** - Audit every `task --list` entry; classify keep/rename/internal/remove; apply renames; mark internal tasks `internal: true`
 - [ ] **Phase 13: Code Review + Dead-Code Cleanup** - Language-aware repo-wide review (zsh shellcheck, taskfile lint, TOML schema); HIGH fixed; dead code removed; duplicated logic consolidated; `links:*` target-match bug fixed
 - [ ] **Phase 14: Comment + Doc Trim** - Strip excess inline taskfile comments to WHY-only; slim per-file header banners; dedupe `README.md` / `CLAUDE.md` / `.claude/CLAUDE.md`; remove obsolete docs
@@ -224,7 +224,7 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
   5. `git grep -E '\bv1\b|profile_suffix|DOTFILES_PROFILE|cutover'` returns only references the operator has deliberately kept (e.g., a single "what changed from v1" doc line, if any); the project-level `CLAUDE.md`, `.claude/CLAUDE.md`, top-level `README.md`, and `docs/` tree carry no operational v1 references
   6. `task install` on a clean machine (or a documented synthetic equivalent) succeeds end-to-end with no `cutover:ack` step, no manual gate, no v1 path reference, and no missing-file error from a deleted v1 leftover
 **Plans**: 1 plan
-  - [ ] 11-01-PLAN.md — Single-plan v1 removal: simplify Taskfile.yml + bootstrap.zsh (RMV-04/05), delete install/cutover-gate.zsh + 8 v1 taskfiles + zsh/ tree + 4 v1 Brewfiles + docs/CUTOVER.md + docs/MIGRATION.md (RMV-01..04), rewrite README.md fresh-install (RMV-06/D-09), scrub doc drift in docs/SECURITY.md + taskfiles/lint.yml + taskfiles/README.md (D-08), rewrite LINT-05 citations in 6 os/*.zsh files (D-06), write 11-VERIFICATION.md with steady-state install capture + SC#5 grep gate report (RMV-07/D-05)
+  - [x] 11-01-PLAN.md — Single-plan v1 removal: simplify Taskfile.yml + bootstrap.zsh (RMV-04/05), delete install/cutover-gate.zsh + 8 v1 taskfiles + zsh/ tree + 4 v1 Brewfiles + docs/CUTOVER.md + docs/MIGRATION.md (RMV-01..04), rewrite README.md fresh-install (RMV-06/D-09), scrub doc drift in docs/SECURITY.md + taskfiles/lint.yml + taskfiles/README.md (D-08), rewrite LINT-05 citations in 6 os/*.zsh files (D-06), write 11-VERIFICATION.md with steady-state install capture + SC#5 grep gate report (RMV-07/D-05)
 
 ### Phase 12: Task Surface Redesign
 **Goal**: Every task listed by `task --list` is reviewed and curated; renames are applied across all included taskfiles and docs; internal-only tasks are hidden via `internal: true`; the bare `task` invocation prints the final curated surface
@@ -278,7 +278,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Validation + Cutover Readiness | 6/6 | Complete   | 2026-05-16 |
 | 9. v1-Drop Audit | 5/5 | Complete   | 2026-05-17 |
 | 10. v1-Drop Remediation | 1/1 | Complete    | 2026-05-18 |
-| 11. v1 Removal | 0/1 | Planned (v2.1) | - |
+| 11. v1 Removal | 1/1 | Complete   | 2026-05-18 |
 | 12. Task Surface Redesign | 0/TBD | Not started (v2.1) | - |
 | 13. Code Review + Dead-Code Cleanup | 0/TBD | Not started (v2.1) | - |
 | 14. Comment + Doc Trim | 0/TBD | Not started (v2.1) | - |

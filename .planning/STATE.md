@@ -4,8 +4,8 @@ milestone: v2.1
 milestone_name: Cleanup
 status: executing
 stopped_at: Phase 11 context gathered
-last_updated: "2026-05-18T05:29:27.071Z"
-last_activity: 2026-05-18 -- Phase 11 planning complete
+last_updated: "2026-05-18T05:31:51.360Z"
+last_activity: 2026-05-18 -- Phase 11 execution started
 progress:
   total_phases: 14
   completed_phases: 2
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** A single declarative manifest per machine makes the complete install state legible to both humans and AI agents — no inference from filename suffixes, no hidden profile branching, no hostname-based guessing.
-**Current focus:** Phase 11 — v1 removal
+**Current focus:** Phase 11 — v1-removal
 
 ## Current Position
 
-Phase: 11
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-18 -- Phase 11 planning complete
+Phase: 11 (v1-removal) — EXECUTING
+Plan: 1 of 1
+Status: Executing Phase 11
+Last activity: 2026-05-18 -- Phase 11 execution started
 
 ## Performance Metrics
 
