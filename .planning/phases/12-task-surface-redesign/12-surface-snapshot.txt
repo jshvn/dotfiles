@@ -1,0 +1,47 @@
+task: Available tasks for this project:
+* default:                           List available tasks
+* install:                           Install dotfiles for active machine (canonical entry)
+* setup:                             Persist active machine selection: task setup -- <machine-name>
+* test:                              Run all smoke tests (manifest fixtures + hook fixtures)
+* validate:                          Validate full installation state (all components; run-all-aggregate)
+* claude:install:                    Install Claude Code marketplaces, plugins, and get-shit-done-cc
+* claude:status:                     Show installed marketplaces + plugins (diagnostic)
+* claude:update:                     Refresh marketplaces + plugins + GSD (explicit; not in task install)
+* claude:validate:                   Validate Claude install state (composed into root task validate in P8)
+* identity:git:                      Link git identity files; materialize server-include.config on servers
+* identity:install:                  Install identity layer (git + ssh)
+* identity:one-password-agent:       Link 1Password SSH agent config (gated on one-password-ssh feature)
+* identity:ssh:                      Link SSH identity files; swap active symlink to manifest value
+* identity:validate:                 Validate identity layer: symlinks, git config, ssh-add, keys/ contents
+* links:all:                         Create all symlinks (P3+P4+P7: shell + identity + claude + configs)
+* links:claude:                      Link claude config tree (files, dirs, hooks)
+* links:configs:                     Link tool config files (ghostty, glow, trippy, tlrc, conda, eza)
+* links:reconcile:                   Detect orphan symlinks (default: exit non-zero); -- --remove for interactive cleanup
+* links:validate:                    Validate all P3+P4+P7 symlinks (strict-mode SOURCE check per TOOL-04)
+* links:zsh:                         Link zsh configuration files and configure /etc/zshenv ZDOTDIR
+* lint:default:                      Run all lint checks (LINT-06 aggregator)      (aliases: lint)
+* lint:portability:                  Portability hints for future-Linux v2 (warn-only, exit 0; LINT-05)
+* lint:shell-headers:                Executable .zsh files have set -euo pipefail (LINT-04)
+* lint:syntax:                       YAML parse + zsh -n syntax checks (LINT-07)
+* lint:taskfile:                     Taskfile convention checks: $VAR in status:, cmds: without status:, bare symlink outside helpers (LINT-02 + LINT-03a + LINT-03b)
+* lint:test-fixtures:                Self-test the lint suite against fixtures (positive + negative cases)
+* macos:defaults:                    Apply macOS system defaults (per-concern, feature-gated)
+* macos:shell:                       Register Homebrew zsh as login shell (/etc/shells + chsh)
+* macos:validate:                    Validate macOS defaults match in-script expected values
+* manifest:resolve:                  Compile defaults + active machine TOML to resolved.json (idempotent)
+* manifest:setup:                    Persist active machine selection: task setup -- <machine-name>
+* manifest:show:                     Print resolved manifest (default: active machine; -- [--machine] NAME for any machine)
+* manifest:test:                     Run deep-merge fixtures (positive + negative) — MFST-05
+* manifest:test:add-machine:         Smoke test: adding a new machine is one TOML + task setup (MFST-09)
+* manifest:validate:                 Validate active (or -- [--machine] NAME) manifest schema
+* packages:audit:                    Audit installed brew formulae/casks/mas vs declared. Non-blocking; --strict exits non-zero.
+* packages:compose:                  Compose per-machine Brewfile from manifest -> $XDG_CACHE_HOME/dotfiles/Brewfile
+* packages:install:                  Install packages: compose per-machine Brewfile then run brew bundle install
+* packages:validate:                 Validate packages layer (wraps packages:verify; composed into root task validate in P8)
+* packages:verify:                   Verify declared packages: brew bundle check (Layer 1) + brew info artifact probe (Layer 2)
+* perf:shell:                        Measure cold interactive zsh startup time (fails if > 200ms -- SHEL-12)
+* perf:validate:                     Validate shell layer (XDG dirs, ZDOTDIR dir, /etc/zshenv ZDOTDIR line, DOTFILES_MACHINE state)
+* shell:shell:                       Measure cold interactive zsh startup time (fails if > 200ms -- SHEL-12)
+* shell:validate:                    Validate shell layer (XDG dirs, ZDOTDIR dir, /etc/zshenv ZDOTDIR line, DOTFILES_MACHINE state)
+* test:default:                      Run hook smoke tests (CLDE-02 named hooks)
+* test:hooks:                        Run Claude hook smoke tests via install/test-hooks.zsh (TEST-01)

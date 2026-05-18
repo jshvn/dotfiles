@@ -235,7 +235,15 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
   2. Every "rename" verdict is applied: the task name is changed in its source taskfile, every call site in `Taskfile.yml` / included taskfiles / shell aliases is updated to the new name, every doc reference (README, CLAUDE.md, docs/*) is updated, and `task --list` after the change reflects the new name
   3. Every "mark-internal" verdict applies `internal: true` to the task; running `task --list` does not show those tasks; running them directly (`task <internal-name>`) is documented in the source taskfile as "internal — invoked by <caller>" but is not surfaced to the operator
   4. The bare `task` invocation prints the final curated list with operator-friendly descriptions (no leaked internals, no v1 names); the top-level `README.md` and project `CLAUDE.md` reference the canonical surface as the single source-of-truth for "what can I run"
-**Plans**: TBD
+**Plans**: 8 plans
+  - [ ] 12-01-PLAN.md — Author SURFACE.md classification table (SURF-01 deliverable; six-column shape; pre-populated callsites)
+  - [ ] 12-02-PLAN.md — Drop perf: include alias + rename shell:shell -> shell:startup-time + mark shell:validate internal (D-05/06/07)
+  - [ ] 12-03-PLAN.md — Rename links:all -> links:install + sub-targets to install-<target> + audit:links delegate via new taskfiles/audit.yml (D-09/10/02)
+  - [ ] 12-04-PLAN.md — Rename identity sub-targets to install-<target> + mark all internal (D-01/10/11)
+  - [ ] 12-05-PLAN.md — Add macos:install aggregator + rename macos:defaults -> apply-defaults + macos:shell -> install-shell + collapse install body (D-09/10)
+  - [ ] 12-06-PLAN.md — Mark packages + claude tasks internal + add audit:packages / show:claude / refresh:claude delegates (D-01/02/03)
+  - [ ] 12-07-PLAN.md — Mark manifest tasks internal + move manifest:test* -> taskfiles/test.yml as test:manifest + test:add-machine + mark test/lint sub-checks internal + doc updates (D-01/02/03/04)
+  - [ ] 12-08-PLAN.md — Rewrite default: banner to two-tier curated surface + add lint:banner-parity check + paired fixtures (D-12/13)
 
 ### Phase 13: Code Review + Dead-Code Cleanup
 **Goal**: A repo-wide code review run by language-aware reviewers produces a HIGH/MEDIUM/LOW finding list; HIGH is fixed in this phase, dead code is removed, duplicated logic is consolidated, and the `links:*` target-match status-block bug is fixed before Phase 14 touches `links.yml`
