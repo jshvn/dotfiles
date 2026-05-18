@@ -202,12 +202,21 @@ end-to-end run; it is not a Phase 11 gap.
 | `install/README.md` cutover-gate + Brewfile-bullets trim | Phase 14 TRIM-03 | The documented residue set listed in `### Grep Gate Report` (lines 5, 23, 24, 30, 42) |
 | `.claude/CLAUDE.md:38` `install/cutover-gate.zsh` listing | Phase 14 TRIM-04 | Excluded from grep gate per D-05 (`:!.claude/` exclusion) |
 | 8 stale `~/.config/claude/hooks/*.zsh` regular files (post-compact, agent-transparency, secret-scan, block-destructive, no-ai-comments, no-emojis, notify, lib) | remediated during Phase 11 verification | Pre-existing operator-machine state from a prior copy-instead-of-symlink install path. All 8 contents byte-identical to repo sources, regular files replaced with symlinks, `task install` then exits 0. Not a Phase 11 regression; `taskfiles/links.yml` and `_:safe-link` unchanged this phase. |
+| 7 stale tool-config symlinks pointing into deleted `zsh/configs/` and `zsh/styles/` paths: `~/.config/{ghostty/config, glow/glow.yml, glow/glow_style.json, trippy/trippy.toml, tlrc/config.toml, conda/condarc, eza/theme.yaml}` | remediated during Phase 11 verification; root cause deferred to Phase 13 REVW-05 | After Phase 7 moved configs from `zsh/configs/<tool>` to `configs/<tool>/`, operator-machine symlinks were never repointed because `_:safe-link`'s status check is `test -L` (is-a-symlink) without `readlink` target-match validation. Phase 11's deletion of the `zsh/` tree turned stale-but-resolving pointers into broken-or-deleted-target pointers; the install pipeline still skipped them because the status check still returned 0. Operator-visible symptom: ghostty (and glow, trippy, tlrc, conda, eza) silently running on defaults. Remediation: removed all 7 symlinks, re-ran `task install`, all 7 now point to `configs/<tool>/...`. Root-cause fix (status-block target-match) tracked as REVW-05 in Phase 13. |
 
 ### Gaps Summary
 
-No gaps. All 7 must-have truths verified; SC#5 grep gate shows ZERO hits
-outside the documented deferred residue (install/README.md, deferred to
-Phase 14 TRIM-03).
+No requirement gaps. All 7 must-have truths verified; SC#5 grep gate shows
+ZERO hits outside the documented deferred residue (install/README.md,
+deferred to Phase 14 TRIM-03).
+
+**Verification-coverage gap surfaced post-merge:** Phase 11's must-haves
+exercised file existence, Taskfile structure, and grep gates, but did not
+exercise "do operator-machine symlinks for preserved tool configs still
+resolve to live sources after the `zsh/` tree is deleted." Two remediations
+required (claude hooks + 7 tool configs) before `task install` produced a
+genuine no-op and before tools loaded their configs in a fresh shell. The
+underlying `_:safe-link` target-match bug is Phase 13 REVW-05.
 
 ---
 _Verified: 2026-05-17 (initial); 2026-05-18 (post-install-remediation refresh)_
