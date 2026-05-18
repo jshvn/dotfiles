@@ -89,7 +89,8 @@ includes:
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   lint:     ./taskfiles/lint.yml
   links:    ./taskfiles/links.yml
-  perf:     ./taskfiles/shell.yml
+  perf:     ./taskfiles/shell.yml   # legacy alias: task perf:shell (SHEL-12 cold-start gate)
+  shell:    ./taskfiles/shell.yml   # primary alias: task shell:validate (PORT-02)
   # identity needs the root's DOTFILEDIR + XDG_STATE_HOME explicitly forwarded
   # since it also reads resolved.json via fromJson (mirrors manifest:).
   identity:
@@ -212,14 +213,14 @@ tasks:
         # `trap` ensures cleanup even if a validate explodes catastrophically.
         cache_dir=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-validate-XXXXXX")
         trap 'rm -rf "$cache_dir"' EXIT
-        for component in manifest identity links macos packages claude; do
+        for component in manifest identity links macos packages claude shell; do
           # `tee` writes the validate output to terminal AND tempfile in
           # one pass. PIPESTATUS[0] is the `task` exit code, not tee's.
           task "${component}:validate" 2>&1 | tee "${cache_dir}/${component}"
           eval "rc_${component}=\${PIPESTATUS[0]}"
         done
         header "Validation Summary"
-        for component in manifest identity links macos packages claude; do
+        for component in manifest identity links macos packages claude shell; do
           eval "rc=\$rc_${component}"
           if grep -q "feature disabled -- skipped" "${cache_dir}/${component}"; then
             info "n/a   ${component}"
