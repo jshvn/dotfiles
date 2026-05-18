@@ -255,7 +255,13 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
   3. Dead code is removed: unused functions, dead branches, unreachable code, helpers with zero call sites — verified by `grep -r '<symbol>' --include='*.zsh' --include='*.yml'` returning zero hits for every removed symbol; the removal commit lists each symbol it dropped
   4. The `links:*` status blocks verify each symlink's target (`readlink -f` equals the manifest-expected source path), not just its existence; after the fix, a deliberately corrupted symlink (pointing to a wrong source) forces a re-link on next `task install` — verified via a manual test recorded in `.planning/phases/13-code-review/13-SMOKE.md`
   5. `task lint`, `task lint:taskfile`, every `shellcheck` invocation, and `task test` (manifest fixtures + hook fixtures) all pass green after every fix lands; any test fixture exercising removed v1 code is updated or removed (no orphan fixtures left behind)
-**Plans**: TBD
+**Plans**: 6 plans
+  - [ ] 13-01-PLAN.md — Review pass: four parallel ecc:code-reviewer spawns (zsh/YAML/TOML/aux); merge into 13-REVIEW.md; amend ROADMAP SC#1/SC#4 path (REVW-01)
+  - [ ] 13-02-PLAN.md — HIGH-severity fixes: apply remediations per REVIEW.md HIGH rows; annotate with closing short-SHAs (REVW-02, REVW-06)
+  - [ ] 13-03-PLAN.md — Dead-code removal: Class A preserved, Class B strict per D-08; orphan fixtures per D-10; grep-verified zero hits (REVW-03, REVW-06)
+  - [ ] 13-04-PLAN.md — Duplication consolidation: rule-of-three per D-09; new helpers in taskfiles/helpers.yml or install/messages.zsh (REVW-04, REVW-06)
+  - [ ] 13-05-PLAN.md — links:* readlink -f target-match fix (helper path preferred via pre-flight); 13-SMOKE.md manual procedure per D-07 (REVW-05, REVW-06)
+  - [ ] 13-06-PLAN.md — MEDIUM/LOW triage: fix-now annotated with SHA; defer per D-11(a) Phase 14 TRIM-NN or D-11(b) needs-new-infra + ROADMAP backlog (REVW-02, REVW-06)
 
 ### Phase 14: Comment + Doc Trim
 **Goal**: Inline taskfile comments are reduced to WHY-only; per-file header banners are slimmed to purpose + dependencies + side effects; READMEs (`README.md`, `CLAUDE.md`, `.claude/CLAUDE.md`) are deduped so each piece of info has a single canonical home; obsolete docs are removed; the codebase reads cleanly for a new contributor with zero v2-history context
