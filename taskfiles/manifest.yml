@@ -118,6 +118,7 @@ tasks:
 
   setup:
     desc: "Persist active machine selection: task setup -- <machine-name>"
+    internal: true
     # requires: is a hard-fail when the var is absent (no arg passed).
     requires:
       vars: [CLI_ARGS]
@@ -161,6 +162,7 @@ tasks:
 
   resolve:
     desc: "Compile defaults + active machine TOML to resolved.json (idempotent)"
+    internal: true
     # D-16: missing-state = hard fail with actionable error (PATTERNS Pattern 5).
     preconditions:
       - sh: test -f "{{.STATE_FILE}}"
@@ -187,6 +189,7 @@ tasks:
 
   show:
     desc: "Print resolved manifest (default: active machine; -- [--machine] NAME for any machine)"
+    internal: true
     # No preconditions -- resolver hard-fails with actionable error if no state.
     # No status -- this is a read/print task; always re-run.
     # CR-03 fix: pass CLI_ARGS via env so apostrophes / shell metacharacters
@@ -235,6 +238,7 @@ tasks:
 
   validate:
     desc: "Validate active (or -- [--machine] NAME) manifest schema"
+    internal: true
     # CR-03 fix: pass CLI_ARGS via env so apostrophes / shell metacharacters
     # in user input cannot break the rendered shell parse.
     env:

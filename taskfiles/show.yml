@@ -8,6 +8,7 @@ version: '3'
 # Side effects: Read-only -- these tasks print state or detect drift; no mutations.
 # Tasks:
 #   - claude -- delegate to :claude:status (marketplaces + plugins listing; D-02)
+#   - manifest -- delegate to :manifest:show (resolved manifest printout; D-02)
 # =============================================================================
 
 vars:
@@ -21,3 +22,11 @@ tasks:
     status: [false]
     cmds:
       - task: :claude:status
+
+  # lint-allow: cmds-without-status
+  manifest:
+    desc: "Print resolved manifest (default: active machine; -- [--machine] NAME for any machine)"
+    status: [false]
+    cmds:
+      - task: :manifest:show
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }

@@ -9,6 +9,7 @@ version: '3'
 # Tasks:
 #   - links -- delegate to :links:reconcile (orphan symlink detection; D-02)
 #   - packages -- delegate to :packages:audit (brew/cask/mas drift detection; D-02)
+#   - manifest -- delegate to :manifest:validate (schema check; D-03)
 # =============================================================================
 
 vars:
@@ -30,4 +31,12 @@ tasks:
     status: [false]
     cmds:
       - task: :packages:audit
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  # lint-allow: cmds-without-status
+  manifest:
+    desc: "Validate active (or -- [--machine] NAME) manifest schema"
+    status: [false]
+    cmds:
+      - task: :manifest:validate
         vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
