@@ -9,8 +9,8 @@
 | Metric | Count |
 |--------|-------|
 | Tasks audited | 102 |
-| Keep | 3 |
-| Drop | 99 |
+| Keep | 2 |
+| Drop | 100 |
 | Already-ported | 70 |
 
 ### Keep List (Phase 10 queue)
@@ -19,7 +19,6 @@ _The bullets below are the Phase 10 implementation queue (D-04). One bullet per 
 
 - `taskfiles/common.yml:36-57` → **taskfiles/shell.yml** — Write `export ZDOTDIR="$HOME/.config/zsh"` to /etc/zshenv via sudo (idempotent grep-and-append)
 - `taskfiles/common.yml:63-88` → **taskfiles/shell.yml** — Validate XDG dirs and the /etc/zshenv ZDOTDIR line are present
-- `install/Brewfile-personal.rb:72` → **manifests/machines/personal-laptop.toml** — mas 'Things' (id 904280696) declared in v1 personal-profile Brewfile
 
 ## Taskfiles
 
@@ -76,7 +75,7 @@ _Rows are written by plan 09-02 (Brewfiles per-machine effective-set diff, plus 
 | install/Brewfile-personal.rb:58 | cask 'cloudflare-warp' declared in v1 personal-profile Brewfile | ported | drop | v2 personal-laptop manifest carries `{ name = "cloudflare-warp" }` in `[packages.brew.extra_packages.casks]`; resolver diff confirms identical on personal-laptop. | manifests/machines/personal-laptop.toml |
 | install/Brewfile-personal.rb:61 | cask 'miniconda' declared in v1 personal-profile Brewfile | ported | drop | v2 personal-laptop and work-laptop manifests carry `{ name = "miniconda" }` in `[packages.brew.extra_packages.casks]`; resolver diff confirms identical on both laptops. | manifests/machines/personal-laptop.toml |
 | install/Brewfile-personal.rb:62 | cask 'docker-desktop' declared in v1 personal-profile Brewfile | ported | drop | v2 personal-laptop and work-laptop manifests carry `{ name = "docker-desktop" }` in `[packages.brew.extra_packages.casks]`; resolver diff confirms identical on both laptops. | manifests/machines/personal-laptop.toml |
-| install/Brewfile-personal.rb:72 | mas 'Things' (id 904280696) declared in v1 personal-profile Brewfile | partially-ported | keep | v2 personal-laptop manifest declares `{ id = 904280696, name = "Things3" }` -- same MAS id (904280696), but name drifted from 'Things' (v1) to 'Things3' (v2). Per-machine effective-set diff flags Things as missing from v2 effective set. The id is what `mas` resolves on; functional install is correct, but the audit-display name should be reconciled. Phase 10 should normalize the v2 manifest name to match v1 ('Things') for the audit-trail and AUDIT.md row alignment. | manifests/machines/personal-laptop.toml |
+| install/Brewfile-personal.rb:72 | mas 'Things' (id 904280696) declared in v1 personal-profile Brewfile | ported | drop | Ported under canonical App Store name -- v1 used short name 'Things'; v2 uses canonical 'Things3' (the name `mas list` returns for id 904280696). The install primitive is the id (904280696), which is unchanged across v1 and v2 manifests; mas-list-name drift is a display-string concern, not an install concern. Functional install is correct on both. Phase 10 (D-07) chose to leave the v2 manifest name as the canonical 'Things3' rather than revert to the v1 short name. | manifests/machines/personal-laptop.toml |
 | install/Brewfile-server.rb:14 | cask 'dropbox' declared in v1 server-profile Brewfile (loaded on server-1, server-2) | dropped | drop | v2 server-1 and server-2 manifests omit the `gui` bundle and declare no casks -- v2 design intent is headless servers carry no GUI apps. Per-machine effective-set diff confirms cask 'dropbox' absent from v2 server effective set. The v1 server-profile assumption that servers needed dropbox was a v1 misfeature; v2 servers are intentionally headless. | manifests/machines/server-1.toml |
 | install/Brewfile-server.rb:15 | cask 'appcleaner' declared in v1 server-profile Brewfile (loaded on server-1, server-2) | dropped | drop | v2 server-1 and server-2 manifests omit the `gui` bundle and declare no casks -- v2 design intent is headless servers carry no GUI apps. appcleaner is a UI-only utility with no headless purpose. | manifests/machines/server-1.toml |
 | install/Brewfile-server.rb:16 | cask '1password' declared in v1 server-profile Brewfile (loaded on server-1, server-2) | dropped | drop | v2 server-1 and server-2 manifests omit the `gui` bundle and have `one-password-ssh = false` -- v2 servers use the system ssh-agent, not 1Password (zsh/.zprofile profile-string check is replaced by manifest feature flag). Per-machine effective-set diff confirms cask '1password' absent from v2 server effective set by design. | manifests/machines/server-1.toml |
