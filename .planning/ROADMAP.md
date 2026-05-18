@@ -32,7 +32,7 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
 - [x] **Phase 9: v1-Drop Audit** - Read-only enumeration of every v1 leftover taskfile, install asset, `zsh/` tree content, and doc; produces `AUDIT.md` keep/drop classification with v2 owner column (completed 2026-05-17)
 - [x] **Phase 10: v1-Drop Remediation** - Implement every "keep" from `AUDIT.md`; `/etc/zshenv` `ZDOTDIR` write lands first; fresh-machine install produces a fully-functional first shell (completed 2026-05-18)
 - [x] **Phase 11: v1 Removal** - Delete v1 leftover taskfiles, `zsh/` tree, `install/Brewfile*`, cutover infrastructure; simplify `Taskfile.yml`; purge v1 references from docs (completed 2026-05-18)
-- [ ] **Phase 12: Task Surface Redesign** - Audit every `task --list` entry; classify keep/rename/internal/remove; apply renames; mark internal tasks `internal: true`
+- [x] **Phase 12: Task Surface Redesign** - Audit every `task --list` entry; classify keep/rename/internal/remove; apply renames; mark internal tasks `internal: true` (completed 2026-05-18)
 - [ ] **Phase 13: Code Review + Dead-Code Cleanup** - Language-aware repo-wide review (zsh shellcheck, taskfile lint, TOML schema); HIGH fixed; dead code removed; duplicated logic consolidated; `links:*` target-match bug fixed
 - [ ] **Phase 14: Comment + Doc Trim** - Strip excess inline taskfile comments to WHY-only; slim per-file header banners; dedupe `README.md` / `CLAUDE.md` / `.claude/CLAUDE.md`; remove obsolete docs
 
@@ -243,7 +243,7 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
   - [x] 12-05-PLAN.md — Add macos:install aggregator + rename macos:defaults -> apply-defaults + macos:shell -> install-shell + collapse install body (D-09/10)
   - [x] 12-06-PLAN.md — Mark packages + claude tasks internal + add audit:packages / show:claude / refresh:claude delegates (D-01/02/03)
   - [x] 12-07-PLAN.md — Mark manifest tasks internal + move manifest:test* -> taskfiles/test.yml as test:manifest + test:add-machine + mark test/lint sub-checks internal + doc updates (D-01/02/03/04)
-  - [ ] 12-08-PLAN.md — Rewrite default: banner to two-tier curated surface + add lint:banner-parity check + paired fixtures (D-12/13)
+  - [x] 12-08-PLAN.md — Rewrite default: banner to two-tier curated surface + add lint:banner-parity check + paired fixtures (D-12/13)
 
 ### Phase 13: Code Review + Dead-Code Cleanup
 **Goal**: A repo-wide code review run by language-aware reviewers produces a HIGH/MEDIUM/LOW finding list; HIGH is fixed in this phase, dead code is removed, duplicated logic is consolidated, and the `links:*` target-match status-block bug is fixed before Phase 14 touches `links.yml`
@@ -287,6 +287,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 9. v1-Drop Audit | 5/5 | Complete   | 2026-05-17 |
 | 10. v1-Drop Remediation | 1/1 | Complete    | 2026-05-18 |
 | 11. v1 Removal | 1/1 | Complete   | 2026-05-18 |
-| 12. Task Surface Redesign | 7/8 | In Progress|  |
+| 12. Task Surface Redesign | 8/8 | Complete   | 2026-05-18 |
 | 13. Code Review + Dead-Code Cleanup | 0/TBD | Not started (v2.1) | - |
 | 14. Comment + Doc Trim | 0/TBD | Not started (v2.1) | - |

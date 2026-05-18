@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Cleanup
-status: executing
+status: verifying
 stopped_at: Phase 12 context gathered
-last_updated: "2026-05-18T21:40:11.074Z"
+last_updated: "2026-05-18T21:53:31.147Z"
 last_activity: 2026-05-18
 progress:
   total_phases: 14
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 15
-  completed_plans: 14
-  percent: 21
+  completed_plans: 15
+  percent: 29
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 
 Phase: 12 (task-surface-redesign) — EXECUTING
 Plan: 8 of 8
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-05-18
 
 ## Performance Metrics
@@ -61,6 +61,7 @@ Last activity: 2026-05-18
 | Phase 12 P05 | ~5 minutes | 1 tasks | 3 files |
 | Phase 12 P06 | ~10 minutes | 2 tasks | 6 files |
 | Phase 12 P07 | 16m | 4 tasks | 8 files |
+| Phase 12 P08 | 8m | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,7 @@ Recent decisions affecting current work:
 - v2.1 driver: live finding that v1 `taskfiles/common.yml` `zdotdir:` task wrote `/etc/zshenv` and v2 silently dropped this — produces a non-functional first shell on fresh machines; PORT-01 in Phase 10 implements this; REVW-05 in Phase 13 fixes the related `links:*` target-match status bug
 - [Phase ?]: Phase 12 P06: applied D-01 to packages + claude namespaces (9 tasks total); bootstrapped show:/refresh: namespaces via new taskfiles/show.yml + taskfiles/refresh.yml; extended audit:/ with audit:packages
 - [Phase ?]: Phase 12 Plan 07: manifest/test/lint namespace rename pass shipped in 4 commits (W-1 split). manifest:test* moved to test:manifest + test:add-machine; lint sub-checks internal-only; show:manifest + audit:manifest delegates public.
+- [Phase ?]: Phase 12 P08: bare task prints curated two-tier banner (D-12); lint:banner-parity (LINT-08 reclaimed per D-13) enforces drift detection with paired 08a/08b fixtures; lint:default now run-all-aggregate via ignore_error: true; README.md + CLAUDE.md gained Common Tasks sections; W-7 task install idempotent re-run rc=0; Phase 12 SURF-01..SURF-04 complete.
 
 ### Pending Todos
 
@@ -94,6 +96,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-18T21:39:42.783Z
+Last session: 2026-05-18T21:53:23.591Z
 Stopped at: Phase 12 context gathered
 Resume file: None
