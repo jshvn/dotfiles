@@ -27,16 +27,12 @@
 
 set -euo pipefail
 
-# messages.zsh references a bare $DOTFILES_MESSAGES_LOADED in its double-source
-# guard; under set -u that would abort. Pre-initialize the guard variable and
-# the caller-supplied DOTFILEDIR var so this script is safe to source from a
-# `set -euo pipefail` taskfile heredoc (matches install/resolver.zsh +
-# install/compose-brewfile.zsh pattern).
+# Source the messages library. messages.zsh handles its own set -u-safe
+# double-source guard via the `:-` default expansion on
+# $DOTFILES_MESSAGES_LOADED (see messages.zsh `set -u contract` block);
+# a bare source is sufficient and idempotent under `set -euo pipefail`.
 : "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task macos:*' or export it manually}"
-: "${DOTFILES_MESSAGES_LOADED:=}"
-if [[ -z "$DOTFILES_MESSAGES_LOADED" ]]; then
-  source "${DOTFILEDIR}/install/messages.zsh"
-fi
+source "${DOTFILEDIR}/install/messages.zsh"
 
 # ---------------------------------------------------------------------------
 # DOCK_DEFAULTS -- single source of truth (D-02).

@@ -41,12 +41,10 @@ DOTFILEDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 export DOTFILEDIR
 
 # --- Source messages library
-# Pre-initialize the double-source guard variable so source under set -u
-# does not abort on an unbound reference (mirrors install/resolver.zsh:36-40).
-: "${DOTFILES_MESSAGES_LOADED:=}"
-if [[ -z "$DOTFILES_MESSAGES_LOADED" ]]; then
-  source "${DOTFILEDIR}/install/messages.zsh"
-fi
+# messages.zsh handles its own set -u-safe double-source guard via the `:-`
+# default expansion on $DOTFILES_MESSAGES_LOADED (see messages.zsh `set -u
+# contract` block). A bare source is sufficient and idempotent.
+source "${DOTFILEDIR}/install/messages.zsh"
 
 header "Dotfiles v2 Bootstrap"
 

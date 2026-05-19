@@ -294,11 +294,10 @@ tasks:
       - |
         DOTFILEDIR={{.DOTFILEDIR}} BREW_ZSH={{.HOMEBREW_PREFIX}}/bin/zsh zsh -c '
           set -euo pipefail
-          # set-u-safe messages.zsh source (Plan 02 prelude pattern).
-          : "${DOTFILES_MESSAGES_LOADED:=}"
-          if [[ -z "$DOTFILES_MESSAGES_LOADED" ]]; then
-            source "${DOTFILEDIR}/install/messages.zsh"
-          fi
+          # messages.zsh self-guards under set -u via the `:-` default
+          # expansion on $DOTFILES_MESSAGES_LOADED; a bare source is
+          # sufficient and idempotent.
+          source "${DOTFILEDIR}/install/messages.zsh"
 
           failed=0
 

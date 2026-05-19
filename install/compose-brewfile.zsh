@@ -34,15 +34,12 @@ set -euo pipefail
 #   cask '<name>'                              (bare cask; verify is data-driven from brew info)
 #   mas  '<name>', id: <id>                    (Mac App Store entry)
 
-# Source the messages library, but only if not already loaded by a parent
-# taskfile context. messages.zsh references a bare $DOTFILES_MESSAGES_LOADED
-# in its double-source guard; under `set -u` that would abort, so we
-# pre-initialize the variable before sourcing.
+# Source the messages library. messages.zsh handles its own set -u-safe
+# double-source guard via the `:-` default expansion on
+# $DOTFILES_MESSAGES_LOADED (see messages.zsh `set -u contract` block);
+# a bare source is sufficient and idempotent under `set -euo pipefail`.
 : "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task packages:*' or export it manually}"
-: "${DOTFILES_MESSAGES_LOADED:=}"
-if [[ -z "$DOTFILES_MESSAGES_LOADED" ]]; then
-  source "${DOTFILEDIR}/install/messages.zsh"
-fi
+source "${DOTFILEDIR}/install/messages.zsh"
 
 # -----------------------------------------------------------------------------
 # Paths
