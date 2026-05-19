@@ -115,11 +115,15 @@ tasks:
       - |
         DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
           zsh "{{.DOTFILEDIR}}/install/resolver.zsh"
-    # Idempotency via BSD-find mtime check.
+    # Idempotency via BSD-find mtime check. resolved.json must be at least
+    # as fresh as defaults.toml AND any machine TOML AND any shared-bundle
+    # TOML -- a change to manifests/shared/<bundle>.toml must trigger
+    # regeneration the same way a defaults/machine change does, since the
+    # resolver folds shared-bundle buckets into the resolved typed extras.
     status:
       - test -f "{{.RESOLVED_JSON_PATH}}"
       - |
-        out=$(find "{{.DOTFILEDIR}}/manifests" \( -name 'defaults.toml' -o -path '*/machines/*.toml' \) -newer "{{.RESOLVED_JSON_PATH}}" -print -quit 2>/dev/null)
+        out=$(find "{{.DOTFILEDIR}}/manifests" \( -name 'defaults.toml' -o -path '*/machines/*.toml' -o -path '*/shared/*.toml' \) -newer "{{.RESOLVED_JSON_PATH}}" -print -quit 2>/dev/null)
         [ -z "$out" ]
 
   show:

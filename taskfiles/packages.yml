@@ -69,10 +69,10 @@ tasks:
         msg: "brew not on PATH -- run bootstrap.zsh first"
     # Three-condition status (all must pass to skip cmds):
     #   1. Composed Brewfile exists on disk.
-    #   2. Composed Brewfile is at least as fresh as ALL composer inputs
-    #      (resolved.json AND every $DOTFILEDIR/packages/*.rb bundle file).
-    #      Pulling a manifest change OR a bundle change (e.g. via `git pull`)
-    #      must trigger a recompose.
+    #   2. Composed Brewfile is at least as fresh as resolved.json. The
+    #      resolver itself depends on defaults.toml + machines/*.toml +
+    #      shared/*.toml (see :manifest:resolve status), so any upstream
+    #      manifest change propagates to resolved.json before reaching here.
     #   3. brew bundle check passes against the composed Brewfile.
     # Without the freshness check, `brew bundle check` against a stale Brewfile
     # passes when the previously-declared packages happen to be installed, so
@@ -81,7 +81,7 @@ tasks:
     status:
       - test -f "{{.COMPOSED_BREWFILE}}"
       - |
-        out=$(find "{{.RESOLVED_JSON_PATH}}" "{{.DOTFILEDIR}}/packages" -newer "{{.COMPOSED_BREWFILE}}" -print -quit 2>/dev/null)
+        out=$(find "{{.RESOLVED_JSON_PATH}}" -newer "{{.COMPOSED_BREWFILE}}" -print -quit 2>/dev/null)
         [ -z "$out" ]
       - brew bundle check --file="{{.COMPOSED_BREWFILE}}" --no-upgrade
     cmds:
@@ -103,12 +103,14 @@ tasks:
         msg: |
           resolved.json missing or empty; cannot compose packages.brew.bundles
             run: task setup -- <machine-name>
-    # Brewfile exists AND is at least as fresh as all composer inputs --
-    # same freshness-check rationale as packages:install.
+    # Brewfile exists AND is at least as fresh as resolved.json -- same
+    # freshness-check rationale as packages:install. resolved.json itself
+    # depends on defaults.toml + machines/*.toml + shared/*.toml via the
+    # :manifest:resolve status block, so upstream manifest changes propagate.
     status:
       - test -f "{{.COMPOSED_BREWFILE}}"
       - |
-        out=$(find "{{.RESOLVED_JSON_PATH}}" "{{.DOTFILEDIR}}/packages" -newer "{{.COMPOSED_BREWFILE}}" -print -quit 2>/dev/null)
+        out=$(find "{{.RESOLVED_JSON_PATH}}" -newer "{{.COMPOSED_BREWFILE}}" -print -quit 2>/dev/null)
         [ -z "$out" ]
     cmds:
       - DOTFILEDIR="{{.DOTFILEDIR}}" XDG_CACHE_HOME="{{.XDG_CACHE_HOME}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" zsh "{{.DOTFILEDIR}}/install/compose-brewfile.zsh"
