@@ -41,25 +41,29 @@ vars:
 tasks:
 
   apply:
-    desc: "Apply system hostname from state file (no-op if file missing or already matches)"
+    desc: "Ensure hostname state file + system are in sync (auto-captures live hostname if state missing)"
     internal: true
     platforms: [darwin]
-    # status: short-circuits in TWO cases (LINT-01 + LINT-02 -- all
-    # template vars, no $VAR):
-    #   1. state file missing -- nothing to apply; exit 0 (skip).
-    #   2. state file contents == live LocalHostName -- already converged;
-    #      exit 0 (skip).
-    # Returns non-zero (run cmds) when the state file exists AND its
-    # contents disagree with the live hostname.
+    # status: short-circuits ONLY when the state file exists AND its contents
+    # match the live LocalHostName (already converged). All other cases run
+    # cmds, which branches on state-file presence:
+    #   - state file missing -> capture live LocalHostName into state file
+    #     (self-heal: a previously-installed machine whose hostname was set
+    #     via the legacy `sethostname` shell function gets back-filled on
+    #     the next `task install`).
+    #   - state file present AND mismatch -> apply state -> system.
+    # LINT-01 + LINT-02 -- the only template var in status is
+    # {{.HOSTNAME_STATE_FILE}}; the rest is shell inside the nested zsh -c
+    # body (same false-positive baseline class accepted in manifest.yml).
     status:
       - |
         if [[ ! -f "{{.HOSTNAME_STATE_FILE}}" ]]; then
-          exit 0
+          exit 1
         fi
         DOTFILEDIR={{.DOTFILEDIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
           set -euo pipefail
           source "${DOTFILEDIR}/os/hostname.zsh"
-          desired=$(read_hostname_state_file) || exit 0
+          desired=$(read_hostname_state_file) || exit 1
           verify_hostname "$desired" > /dev/null 2>&1
         '
     cmds:
@@ -68,8 +72,30 @@ tasks:
           set -euo pipefail
           source "${DOTFILEDIR}/install/messages.zsh"
           source "${DOTFILEDIR}/os/hostname.zsh"
-          if [[ ! -f "$(hostname_state_file)" ]]; then
-            warn "hostname state file not found: {{.HOSTNAME_STATE_FILE}} -- run '\''task hostname:set -- <name>'\'' to initialize"
+          file="$(hostname_state_file)"
+          if [[ ! -f "$file" ]]; then
+            # Self-heal: capture live LocalHostName into the state file.
+            # A fresh machine has a default like "Joshs-MacBook-Pro" which
+            # passes the regex; an already-installed machine that ran
+            # `sethostname JMBP` interactively also gets captured here.
+            # After capture the operator can rename via `task hostname:set
+            # -- <name>`; subsequent `task install` runs are no-ops.
+            live=$(read_local_hostname) || {
+              warn "could not read LocalHostName; skipping hostname capture"
+              exit 0
+            }
+            if [[ -z "$live" ]]; then
+              warn "LocalHostName is unset; run '\''task hostname:set -- <name>'\''"
+              exit 0
+            fi
+            if ! validate_hostname_name "$live" 2>/dev/null; then
+              warn "live LocalHostName '\''${live}'\'' does not match validation regex; not captured"
+              warn "  set explicitly: task hostname:set -- <name>"
+              exit 0
+            fi
+            write_hostname_state_file "$live"
+            info "hostname state file initialized from live LocalHostName: ${live}"
+            info "  to rename: task hostname:set -- <name>"
             exit 0
           fi
           desired=$(read_hostname_state_file) || {
@@ -142,7 +168,7 @@ tasks:
           source "${DOTFILEDIR}/os/hostname.zsh"
           file="$(hostname_state_file)"
           if [[ ! -f "$file" ]]; then
-            cross "hostname state file missing -- run '\''task hostname:set -- <name>'\''"
+            cross "hostname state file missing -- run '\''task install'\'' (auto-captures live) or '\''task hostname:set -- <name>'\''"
             exit 1
           fi
           desired=$(read_hostname_state_file) || {
