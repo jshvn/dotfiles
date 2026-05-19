@@ -30,10 +30,10 @@ lives at the repo root as `bootstrap.zsh` (deviation Rule 3 -- path correction).
 | taskfiles/manifest.yml                          |        146 |          122 |            49 |   -73 |         59% |
 | taskfiles/test.yml                              |        190 |          108 |            54 |   -54 |         50% |
 | taskfiles/shell.yml                             |         73 |           68 |            19 |   -49 |         72% |
-| taskfiles/helpers.yml                           |         68 |           27 |           TBD |   TBD |         TBD |
-| taskfiles/audit.yml                             |         23 |           14 |           TBD |   TBD |         TBD |
-| taskfiles/show.yml                              |         16 |           12 |           TBD |   TBD |         TBD |
-| taskfiles/refresh.yml                           |         10 |           11 |           TBD |   TBD |         TBD |
+| taskfiles/helpers.yml                           |         68 |           27 |             9 |   -18 |         66% |
+| taskfiles/audit.yml                             |         23 |           14 |            12 |    -2 |         14% |
+| taskfiles/show.yml                              |         16 |           12 |            11 |    -1 |          8% |
+| taskfiles/refresh.yml                           |         10 |           11 |            10 |    -1 |          9% |
 | install/resolver.zsh                            |        392 |          183 |           TBD |   TBD |         TBD |
 | install/messages.zsh                            |         37 |           30 |           TBD |   TBD |         TBD |
 | bootstrap.zsh                                   |         54 |           51 |           TBD |   TBD |         TBD |

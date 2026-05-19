@@ -1,15 +1,13 @@
 version: '3'
 
 # =============================================================================
-# taskfiles/audit.yml -- Phase 12 public diagnostics: drift detection.
+# taskfiles/audit.yml -- public diagnostics: drift detection
 #
-# Purpose: Public delegates for diagnostic audit operations across all namespaces.
-# Callers: Invoked directly by operator; included by Taskfile.yml.
-# Side effects: Read-only -- these tasks print state or detect drift; no mutations.
-# Tasks:
-#   - links -- delegate to :links:reconcile (orphan symlink detection; D-02)
-#   - packages -- delegate to :packages:audit (brew/cask/mas drift detection; D-02)
-#   - manifest -- delegate to :manifest:validate (schema check; D-03)
+# Purpose:      Public delegates for diagnostic audit operations across all
+#               namespaces (links, packages, manifest).
+# Depends on:   included by Taskfile.yml; delegates to :links:reconcile,
+#               :packages:audit, :manifest:validate.
+# Side effects: read-only -- these tasks print state or detect drift.
 # =============================================================================
 
 vars:
@@ -27,7 +25,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   packages:
-    desc: "Audit brew formulae/casks/mas vs declared (D-11). Non-blocking; --strict exits non-zero."
+    desc: "Audit brew formulae/casks/mas vs declared. Non-blocking; --strict exits non-zero."
     status: [false]
     cmds:
       - task: :packages:audit
