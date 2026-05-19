@@ -8,10 +8,9 @@
 #               non-interactive contexts (scripts, scp, cron). Must stay tiny.
 # Depends on:   nothing.
 # Side effects: exports XDG_{CONFIG,DATA,STATE,CACHE}_HOME, XDG_{DATA,CONFIG}_DIRS,
-#               ZDOTDIR, HISTFILE, HIST_STAMPS, CLAUDE_CONFIG_DIR, EDITOR,
-#               VEDITOR, VISUAL, LANG, LC_ALL, BROWSER (gated), SHELL_SESSIONS_DISABLE,
-#               __CF_USER_TEXT_ENCODING, DOTFILES_MACHINE (gated); creates
-#               $HISTFILE parent dir; enables SHARE_HISTORY.
+#               ZDOTDIR, CLAUDE_CONFIG_DIR, EDITOR, VEDITOR, VISUAL, LANG, LC_ALL,
+#               BROWSER (gated), SHELL_SESSIONS_DISABLE, __CF_USER_TEXT_ENCODING,
+#               DOTFILES_MACHINE (gated).
 # =============================================================================
 
 # XDG Base Directory Specification (preserve any pre-set value).
@@ -26,13 +25,6 @@ export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 export XDG_CONFIG_DIRS="${XDG_CONFIG_DIRS:-/etc/xdg}"
 
 export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
-
-# HISTFILE set here, not .zshrc, so it is defined before VS Code shell
-# integration or other wrappers can write to the default path.
-export HISTFILE="$XDG_DATA_HOME/zsh/history"
-export HIST_STAMPS="%Y-%m-%d %I:%M:%S"
-mkdir -p "${HISTFILE%/*}"
-setopt SHARE_HISTORY
 
 # Claude Code: XDG-compliant config directory instead of ~/.claude.
 export CLAUDE_CONFIG_DIR="${XDG_CONFIG_HOME}/claude"
