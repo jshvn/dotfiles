@@ -14,8 +14,10 @@ in scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
 
 - `core.rb` -- server-safe CLI baseline. Every machine includes this
   (every machine TOML's `bundles = [...]` array contains `"core"`).
-  Roughly 30 formulas: shell tooling (zsh, antidote, go-task), text and
-  search (jq, yq, ripgrep-substitutes via bat/eza/fd, grep, glow,
+  Roughly 30 formulas: shell tooling (zsh, antigen, go-task; antidote
+  was evaluated in Phase 3 D-01 and reverted -- see `../shell/.zshrc:75`
+  comment for rationale), text and search (jq, yq, ripgrep-substitutes
+  via bat/eza/fd, grep, glow,
   highlight), system inspectors (htop, bottom, fastfetch, onefetch),
   network tools (cloudflared, doggo, whois, trippy), and the
   1Password command-line tool as a binary-only cask
