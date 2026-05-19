@@ -52,7 +52,7 @@ casks = [
 
 mas = [
   { id = 441258766, name = "Magnet" },
-  { id = 904280696, name = "Things 3" },
+  { id = 904280696, name = "Things3" },
 ]
 
 [identity]

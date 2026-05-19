@@ -212,7 +212,7 @@ tasks:
     desc: "Verify declared packages: brew bundle check (Layer 1) + brew info artifact probe (Layer 2)"
     internal: true
     silent: false
-    deps: [":manifest:resolve"]
+    deps: [":manifest:resolve", ":packages:compose"]
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
         msg: |
