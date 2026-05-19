@@ -1,55 +1,21 @@
 version: '3'
 
 # =============================================================================
-# taskfiles/identity.yml -- Phase 4 manifest-driven git + SSH identity layer.
+# taskfiles/identity.yml -- manifest-driven git + SSH identity layer
 #
-# Purpose:
-#   Reads identity.git, identity.ssh, features.one-password-ssh, and
-#   features.one-password-signing from resolved.json via `ref: fromJson` and
-#   composes the Phase-4 symlink topology. Materializes the universal
-#   server-include.config only on server machines (D-08).
-#
-# Dependencies:
-#   - manifest:resolve (deps on the install aggregator) -- ensures
-#     resolved.json is current before any symlink is created.
-#   - taskfiles/helpers.yml provides `_:safe-link` (mkdir -p + ln -sfn) and
-#     `_:check-link` (verifies -L and -e on the target symlink).
-#   - install/messages.zsh provides the colored output helpers (check, cross,
-#     info, warn, error); sourced via {{.DOTFILES_MESSAGES}}.
-#
-# Status-block convention (LINT-02 enforcement):
-#   Every install sub-task uses a `status:` block. Status blocks use `{{.X}}`
-#   template vars ONLY -- never `$X` shell vars. Aggregator-style tasks
-#   (`install`, `validate`) intentionally omit the `status:` block and carry
-#   the `# lint-allow: cmds-without-status` marker on the line immediately
-#   above the task key. Shell vars are allowed INSIDE rendered shell blocks
-#   (case switches that read {{.MANIFEST.identity.git}} into $identity).
-#
-# Symlink convention (LINT-03b enforcement):
-#   No bare `ln -s` lives here -- every symlink goes through `_:safe-link`
-#   in taskfiles/helpers.yml.
-#
-# Kebab-case feature keys:
-#   Use go-template `index` form OR a shell-level `jq` read against
-#   {{.RESOLVED_JSON_PATH}}. Dot-access does NOT work for keys with `-`.
-#
-# Aggregator placement (D-08 + RESEARCH Open Question 4):
-#   `identity:install` is invoked by `taskfiles/links.yml all:` (extended in
-#   Plan 04 Task 2), not by the root Taskfile.yml install body. The root's
-#   `task install` calls `task links:all` which now includes identity.
-#
-# When the root Taskfile.yml includes this module, its vars (DOTFILEDIR,
-# XDG_STATE_HOME, DOTFILES_MESSAGES) take precedence over the local
-# fallbacks defined below.
+# Purpose:      Reads identity.git, identity.ssh, features.one-password-ssh,
+#               features.one-password-signing from resolved.json; composes
+#               git+ssh symlink topology; materializes server-include.config
+#               on server machines.
+# Depends on:   taskfiles/helpers.yml; install/messages.zsh;
+#               :manifest:resolve (deps); identity/{git,ssh}/ overlay tree.
+# Side effects: writes symlinks under $XDG_CONFIG_HOME/git and $HOME/.ssh;
+#               writes $HOME/.config/git/server-include.config when the
+#               feature is on.
 # =============================================================================
 
 includes:
   _: ./helpers.yml
-
-# =============================================================================
-# Vars block -- self-contained so `task -t taskfiles/identity.yml ...` works
-# without the root Taskfile.yml being loaded.
-# =============================================================================
 
 vars:
   HOME: '{{.HOME}}'
@@ -60,17 +26,14 @@ vars:
   XDG_STATE_HOME:
     sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
 
-  # Resolve DOTFILEDIR from this taskfile's parent directory.
   DOTFILEDIR:
     sh: dirname "{{.TASKFILE_DIR}}"
 
   RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
 
-  # WR-03 fallback: emit a stderr warning when resolved.json is missing
-  # so consumers of {{.MANIFEST.identity.*}} fail loudly rather than
-  # evaluating against an empty {}. The stub includes an empty `features`
-  # map so `{{if index .MANIFEST.features "<key>"}}` evaluates to false
-  # instead of erroring out at template-parse time on a fresh machine.
+  # Empty-features stub on missing resolved.json -- consumers fail loudly
+  # on .identity.* but `{{if index .MANIFEST.features "<key>"}}` still
+  # evaluates to false at template-parse time on a fresh machine.
   MANIFEST_JSON:
     sh: |
       if [[ -s '{{.RESOLVED_JSON_PATH}}' ]]; then
@@ -80,32 +43,19 @@ vars:
         echo '{"features":{}}'
       fi
 
-  # fromJson ref pattern (matches taskfiles/manifest.yml).
-  # Downstream: {{.MANIFEST.identity.git}}, {{.MANIFEST.identity.ssh}}
-  # Kebab keys: {{index .MANIFEST.features "one-password-ssh"}}
   MANIFEST:
     ref: 'fromJson .MANIFEST_JSON'
 
   DOTFILES_MESSAGES: |
     source '{{.DOTFILEDIR}}/install/messages.zsh'
 
-  # Derived path vars
   GIT_CONFIG_DIR: '{{.XDG_CONFIG_HOME}}/git'
   SSH_DIR: '{{.HOME}}/.ssh'
   SSH_IDENTITIES_DIR: '{{.SSH_DIR}}/identities'
   SSH_KEYS_DIR: '{{.SSH_IDENTITIES_DIR}}/keys'
   SERVER_INCLUDE_CONFIG: '{{.GIT_CONFIG_DIR}}/server-include.config'
 
-# =============================================================================
-# Tasks
-# =============================================================================
-
 tasks:
-
-  # ---------------------------------------------------------------------------
-  # Aggregator -- composes git + ssh subtasks. Depends on manifest:resolve
-  # so resolved.json is current before any symlink decision.
-  # ---------------------------------------------------------------------------
 
   # lint-allow: cmds-without-status
   install:
@@ -117,28 +67,18 @@ tasks:
       - task: install-ssh
       - task: install-one-password-agent
 
-  # ---------------------------------------------------------------------------
-  # Git side -- two static symlinks (config, ignore) plus a filesystem-driven
-  # loop over every overlay file in identity/git/identities/. Adding a new
-  # identity = drop a file in that directory; no edits to this task.
-  # Followed by server-include.config materialization (gated by
-  # features.server-include).
-  # ---------------------------------------------------------------------------
-
   install-git:
     desc: "Link git identity files; materialize server-include.config on servers"
     internal: true
+    # Adding a new identity = drop a file in identity/git/identities/; no
+    # edits to this task or the resolver.
     vars:
-      # Computed once at task-eval time. `ls` output is newline-separated;
-      # go-task `for: { var, split: "\n" }` iterates over each name.
       GIT_IDENTITY_NAMES:
         sh: ls "{{.DOTFILEDIR}}/identity/git/identities" 2>/dev/null
-    # CR-02: MANIFEST_JSON falls back to '{}' when resolved.json is missing,
-    # which renders {{.MANIFEST.identity.git}} as the literal string
-    # "<no value>". Refuse to install against the empty fallback rather
-    # than silently materializing broken state. The second precondition is
-    # the filesystem-driven enum check: the value must name an existing
-    # overlay file.
+    # MANIFEST_JSON falls back to '{}' when resolved.json is missing, which
+    # renders {{.MANIFEST.identity.git}} as the literal string "<no value>".
+    # Refuse to install against the empty fallback rather than silently
+    # materializing broken state.
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
         msg: |
@@ -154,9 +94,6 @@ tasks:
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/config", TARGET: "{{.GIT_CONFIG_DIR}}/config" }
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/ignore", TARGET: "{{.GIT_CONFIG_DIR}}/ignore" }
-      # Filesystem-discovered identity overlays: one symlink per file in
-      # identity/git/identities/. Adding an identity = a new file; this loop
-      # picks it up automatically. No edits to this task or the resolver.
       - for: { var: GIT_IDENTITY_NAMES, split: "\n" }
         task: _:safe-link
         vars:
@@ -166,24 +103,16 @@ tasks:
     status:
       - test -L "{{.GIT_CONFIG_DIR}}/config"
       - test -L "{{.GIT_CONFIG_DIR}}/ignore"
-      # Per-identity symlink presence is checked by iterating the source dir;
-      # a missing target for any overlay file triggers a re-run.
+      # Per-identity symlink presence: a missing target for any overlay file
+      # triggers a re-run.
       - |
         for f in "{{.DOTFILEDIR}}/identity/git/identities/"*; do
           [[ -e "$f" ]] || continue
           test -L "{{.GIT_CONFIG_DIR}}/identities/$(basename "$f")" || exit 1
         done
 
-  # ---------------------------------------------------------------------------
-  # server-include -- internal generator (D-08).
-  # Gated by features.server-include in resolved.json (kebab-case index form).
-  # When on: materialize ~/.config/git/server-include.config with a
-  # [includeIf "gitdir:~/"] block pointing at the active identity.git.
-  # When off: ensure the file is absent (silent no-op on workstations).
-  # ---------------------------------------------------------------------------
-
   server-include:
-    desc: "Materialize ~/.config/git/server-include.config when features.server-include = true (D-08)"
+    desc: "Materialize ~/.config/git/server-include.config when features.server-include = true"
     internal: true
     cmds:
       - |
@@ -200,10 +129,10 @@ tasks:
         fi
         {{end}}
     status:
-      # WR-07: exact-match check against the canonical two-line content the
-      # cmd writes. A loose grep would pass on stale-content cases (e.g.,
-      # a file containing the wrong identity path from a prior install) and
-      # skip the rewrite that fixes them.
+      # Exact-match check against the canonical two-line content the cmd
+      # writes. A loose grep would pass on stale-content cases (e.g., a file
+      # containing the wrong identity path from a prior install) and skip the
+      # rewrite that fixes them.
       - |
         {{if index .MANIFEST.features "server-include"}}
         test -f "{{.SERVER_INCLUDE_CONFIG}}" || exit 1
@@ -211,13 +140,6 @@ tasks:
         {{else}}
         test ! -f "{{.SERVER_INCLUDE_CONFIG}}"
         {{end}}
-
-  # ---------------------------------------------------------------------------
-  # SSH side -- main config, filesystem-driven loops over identity overlays
-  # and public keys, the cloudflared wrapper, and the active symlink swap
-  # (D-12). Adding an identity = drop a file under identity/ssh/identities/
-  # and (if it has a pub key) identity/ssh/keys/<name>.pub.
-  # ---------------------------------------------------------------------------
 
   install-ssh:
     desc: "Link SSH identity files; swap active symlink to manifest value"
@@ -227,12 +149,11 @@ tasks:
         sh: ls "{{.DOTFILEDIR}}/identity/ssh/identities" 2>/dev/null
       SSH_KEY_NAMES:
         sh: ls "{{.DOTFILEDIR}}/identity/ssh/keys" 2>/dev/null | grep '\.pub$' || true
-    # CR-02: MANIFEST_JSON falls back to '{}' when resolved.json is missing,
-    # which renders {{.MANIFEST.identity.ssh}} as the literal string
-    # "<no value>". Without these preconditions the active-symlink swap
-    # below would create ~/.ssh/identities/active -> .../<no value>
-    # (silent corruption of the active SSH identity). The second precondition
-    # is the filesystem-driven enum check.
+    # MANIFEST_JSON falls back to '{}' when resolved.json is missing, which
+    # renders {{.MANIFEST.identity.ssh}} as the literal string "<no value>".
+    # Without these preconditions the active-symlink swap below would create
+    # ~/.ssh/identities/active -> .../<no value> (silent corruption of the
+    # active SSH identity).
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
         msg: |
@@ -246,14 +167,13 @@ tasks:
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/config", TARGET: "{{.SSH_DIR}}/config" }
-      # Filesystem-discovered identity overlays. One symlink per file.
       - for: { var: SSH_IDENTITY_NAMES, split: "\n" }
         task: _:safe-link
         vars:
           SOURCE: '{{.DOTFILEDIR}}/identity/ssh/identities/{{.ITEM}}'
           TARGET: '{{.SSH_IDENTITIES_DIR}}/{{.ITEM}}'
-      # Filesystem-discovered public keys. Iterated separately because not
-      # every identity has a pub key (work uses 1Password agent; none has none).
+      # Iterated separately because not every identity has a pub key (work
+      # uses 1Password agent; "none" identity has none).
       - for: { var: SSH_KEY_NAMES, split: "\n" }
         task: _:safe-link
         vars:
@@ -261,8 +181,8 @@ tasks:
           TARGET: '{{.SSH_KEYS_DIR}}/{{.ITEM}}'
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/cloudflared.zsh", TARGET: "{{.SSH_IDENTITIES_DIR}}/cloudflared.zsh" }
-      # Active-identity swap (D-12): relink at install time; readlink resolves
-      # to a short name like "personal" since SOURCE is given as a sibling path.
+      # Active-identity swap: relink at install time; readlink resolves to a
+      # short name like "personal" since SOURCE is given as a sibling path.
       - task: _:safe-link
         vars: { SOURCE: "{{.SSH_IDENTITIES_DIR}}/{{.MANIFEST.identity.ssh}}", TARGET: "{{.SSH_IDENTITIES_DIR}}/active" }
     status:
@@ -281,43 +201,33 @@ tasks:
       - test -L "{{.SSH_IDENTITIES_DIR}}/active"
       - test "$(readlink "{{.SSH_IDENTITIES_DIR}}/active")" = "{{.MANIFEST.identity.ssh}}" || test "$(readlink "{{.SSH_IDENTITIES_DIR}}/active")" = "{{.SSH_IDENTITIES_DIR}}/{{.MANIFEST.identity.ssh}}"
 
-  # ---------------------------------------------------------------------------
-  # one-password-agent -- link the 1Password SSH agent config (agent.toml).
-  # Isolated as its own sub-task with a feature-gated status block so the
-  # `_:safe-link` call is never invoked when features.one-password-ssh = false.
-  # Mirrors the configs:ghostty pattern in taskfiles/links.yml (status returns
-  # `true` when the feature is off; cmds never runs in that case).
-  # ---------------------------------------------------------------------------
-
   install-one-password-agent:
     desc: "Link 1Password SSH agent config (gated on one-password-ssh feature)"
     internal: true
+    # Isolated as its own sub-task with a feature-gated status block so the
+    # `_:safe-link` call is never invoked when features.one-password-ssh =
+    # false. Mirrors the configs:ghostty pattern in taskfiles/links.yml.
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/agent.toml", TARGET: "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml" }
     status:
       - '{{if not (index .MANIFEST.features "one-password-ssh")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"{{end}}'
 
-  # ---------------------------------------------------------------------------
-  # validate -- always-re-run diagnostic. Four assertion blocks:
-  #   (a) symlink presence
-  #   (b) git config user.email match (skip when gitdir absent / identity=none)
-  #   (c) ssh-add -L key match (skip when one-password-ssh=false / placeholder)
-  #   (d) identity/ssh/keys/ allowlist (no private keys committed)
-  # ---------------------------------------------------------------------------
-
   # lint-allow: cmds-without-status
   validate:
     desc: "Validate identity layer: symlinks, git config, ssh-add, keys/ contents"
     internal: true
+    # Four assertion blocks:
+    #   (a) symlink presence
+    #   (b) git config user.email match (skip when gitdir absent / identity=none)
+    #   (c) ssh-add -L key match (skip when one-password-ssh=false / placeholder)
+    #   (d) identity/ssh/keys/ allowlist (no private keys committed)
     cmds:
       - task: validate:symlinks
       - task: validate:git
       - task: validate:ssh-add
       - task: validate:keys
 
-  # (a) Symlink presence -- four canonical checks via _:check-link, plus the
-  # feature-gated 1Password agent.toml link (validate:one-password-agent).
   validate:symlinks:
     desc: "validate (a): symlink presence for git config, ssh config, active, cloudflared, 1Password agent"
     internal: true
@@ -332,19 +242,17 @@ tasks:
         vars: { TARGET: "{{.SSH_IDENTITIES_DIR}}/cloudflared.zsh", NAME: "ssh cloudflared wrapper" }
       - task: validate:one-password-agent
 
-  # (a-sub) 1Password agent.toml link presence -- feature-gated. Status block
-  # returns 0 when features.one-password-ssh = false, so the cmds: never runs
-  # on machines without 1Password.
   validate:one-password-agent:
     desc: "validate (a-sub): 1Password agent.toml symlink presence (gated)"
     internal: true
+    # Feature-gated. status returns 0 when features.one-password-ssh = false,
+    # so the cmds: never runs on machines without 1Password.
     cmds:
       - task: _:check-link
         vars: { TARGET: "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml", NAME: "1Password SSH agent config" }
     status:
       - '{{if not (index .MANIFEST.features "one-password-ssh")}}true{{else}}false{{end}}'
 
-  # (b) git config user.email assertion -- skips silently when gitdir absent.
   validate:git:
     desc: "validate (b): git user.email matches manifest identity"
     internal: true
@@ -362,22 +270,19 @@ tasks:
         expected_email=$(git config -f "{{.DOTFILEDIR}}/identity/git/identities/${identity}" user.email 2>/dev/null || echo "")
 
         # Resolve the probe source. Two patterns based on features.server-include:
-        # - server-include = true: server-include.config carries an unconditional
-        #   [includeIf gitdir:~/] block, so the identity loads from $HOME directly.
-        # - server-include = false: workstation pattern. identity/git/config has
-        #   [includeIf gitdir/i:~/git/<identity>/] blocks; we need to probe inside
-        #   a real git repo under $HOME/git/<identity>/ so the includeIf fires.
-        #
-        # WR-08 fix (UAT gap 4): the previous implementation used the parent
-        # directory $HOME/git/<identity> as the probe source, which is not a
-        # git repo, so the gitdir-conditioned includeIf never fired.
+        # - server-include = true:  server-include.config has an unconditional
+        #   [includeIf gitdir:~/] block; identity loads from $HOME directly.
+        # - server-include = false: identity/git/config uses
+        #   [includeIf gitdir/i:~/git/<identity>/] blocks; probe inside a real
+        #   git repo under $HOME/git/<identity>/ so the includeIf fires. The
+        #   parent directory is not a git repo, so the gitdir-conditioned
+        #   includeIf would never fire if probe_dir pointed there.
         {{if index .MANIFEST.features "server-include"}}
         probe_dir="$HOME"
         {{else}}
         root="$HOME/git/$identity"
         # Locate the first .git directory under the identity root (depth 2 =
-        # standard clone layout: $root/<repo>/.git). -print -quit returns the
-        # FIRST match and exits; no-match is silent and exit 0.
+        # standard clone layout: $root/<repo>/.git).
         dotgit=$(find "$root" -maxdepth 2 -name .git -type d -print -quit 2>/dev/null || true)
         if [[ -z "$dotgit" ]]; then
           info "no git repo found under $root -- skipping email assertion"
@@ -391,11 +296,9 @@ tasks:
           exit 0
         fi
 
-        # Verify $probe_dir is actually a git work tree before running
-        # config queries. Replaces the prior `[[ -d "$gitdir" ]]` guard
-        # which only checked directory existence, not git-repo-ness.
-        # Server branch ($probe_dir = $HOME) typically returns true on a
-        # developer machine; on a fresh server with no git history,
+        # Verify $probe_dir is actually a git work tree before running config
+        # queries. A `[[ -d "$gitdir" ]]` guard would only check directory
+        # existence, not git-repo-ness. On a fresh server with no git history,
         # rev-parse fails non-zero and we skip cleanly.
         if ! git -C "$probe_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
           info "$probe_dir is not a git work tree -- skipping email assertion"
@@ -410,7 +313,6 @@ tasks:
           exit 1
         fi
 
-  # (c) ssh-add -L assertion -- only when features.one-password-ssh = true.
   validate:ssh-add:
     desc: "validate (c): ssh-add -L lists expected pub key (when one-password-ssh = true)"
     internal: true
@@ -428,10 +330,10 @@ tasks:
           warn "expected pub-key file $expected_pub is missing or empty -- skipping (placeholder?)"
           exit 0
         fi
-        # WR-01: a real pub key starts with one of the SSH key-type
-        # identifiers. The placeholder shape (a leading `#` comment) would
-        # otherwise pass the `! -s` guard above and produce a misleading
-        # "ssh-add -L does not include expected pub key" error.
+        # A real pub key starts with one of the SSH key-type identifiers. The
+        # placeholder shape (a leading `#` comment) would otherwise pass the
+        # `! -s` guard above and produce a misleading "ssh-add -L does not
+        # include expected pub key" error.
         case "$(head -n1 "$expected_pub")" in
           ssh-ed25519*|ssh-rsa*|ecdsa-*|sk-*) ;;
           *)
@@ -439,11 +341,11 @@ tasks:
             exit 0
             ;;
         esac
-        # WR-06: anchor on $1 (must be a real key-type field) and `exit`
-        # after the first match so the extracted key body is always a
-        # single line. A bare `awk '{print $2}'` would emit one $2 per
-        # input line (including comments), producing a newline-containing
-        # string that breaks the line-oriented `grep -qF` below.
+        # Anchor on $1 (must be a real key-type field) and `exit` after the
+        # first match so the extracted key body is always a single line. A
+        # bare `awk '{print $2}'` would emit one $2 per input line (including
+        # comments), producing a newline-containing string that breaks the
+        # line-oriented `grep -qF` below.
         expected_body=$(awk '$1 ~ /^(ssh-|ecdsa-|sk-)/ {print $2; exit}' "$expected_pub" 2>/dev/null)
         if [[ -z "$expected_body" ]]; then
           warn "could not extract key body from $expected_pub -- skipping"
@@ -456,16 +358,15 @@ tasks:
           exit 1
         fi
 
-  # (d) keys/ allowlist -- only *.pub files and .gitignore allowed (IDNT-06).
   validate:keys:
     desc: "validate (d): identity/ssh/keys/ contains only *.pub files (no private keys)"
     internal: true
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
-        # WR-05: no -maxdepth -- a private key smuggled into a subdirectory
-        # of identity/ssh/keys/ would otherwise escape this validator
-        # (defense in depth for IDNT-06).
+        # No -maxdepth: a private key smuggled into a subdirectory of
+        # identity/ssh/keys/ would otherwise escape this validator
+        # (defense in depth -- the keys/ directory must contain pub keys only).
         bad=$(find "{{.DOTFILEDIR}}/identity/ssh/keys" -type f -not -name '*.pub' -not -name '.gitignore' 2>/dev/null)
         if [[ -z "$bad" ]]; then
           check "identity/ssh/keys/ allowlist clean (no private keys)"

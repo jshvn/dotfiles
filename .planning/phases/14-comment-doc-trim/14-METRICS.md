@@ -23,7 +23,7 @@ lives at the repo root as `bootstrap.zsh` (deviation Rule 3 -- path correction).
 | shell/.zlogout                                  |          1 |           53 |             9 |   -44 |         83% |
 | Taskfile.yml                                    |        132 |          102 |            67 |   -35 |         34% |
 | taskfiles/packages.yml                          |        294 |          202 |            78 |  -124 |         61% |
-| taskfiles/identity.yml                          |        272 |          167 |           TBD |   TBD |         TBD |
+| taskfiles/identity.yml                          |        272 |          167 |            76 |   -91 |         54% |
 | taskfiles/lint.yml                              |        258 |          142 |           TBD |   TBD |         TBD |
 | taskfiles/claude.yml                            |        180 |          141 |           TBD |   TBD |         TBD |
 | taskfiles/macos.yml                             |        170 |          130 |           TBD |   TBD |         TBD |
