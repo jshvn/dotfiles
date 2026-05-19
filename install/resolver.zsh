@@ -1,61 +1,36 @@
 #!/bin/zsh
-# -----------------------------------------------------------------------------
+
+# =============================================================================
 # install/resolver.zsh -- compile defaults + machine manifest into resolved.json
 #
-# Sourced from: taskfiles/manifest.yml (manifest:resolve, manifest:validate,
-#               manifest:show tasks). Also runnable directly via
-#               `zsh install/resolver.zsh [flags]`.
-#
-# Reads:        $DOTFILEDIR/manifests/defaults.toml
-#               $DOTFILEDIR/manifests/machines/<machine>.toml
-#               $XDG_STATE_HOME/dotfiles/machine    (resolve mode only)
-# Writes:       $XDG_STATE_HOME/dotfiles/resolved.json  (atomic via mktemp+mv)
-#               or stdout, when invoked with --stdout
-# Depends on:   yq (>= 4.52.1), jq (>= 1.7), zsh (>= 5)
-#
-# Modes:
-#   default              -- resolve mode: read state file, deep-merge defaults
-#                           + machine TOML, atomically write resolved.json
-#   --validate-only      -- requires --machine <name>; runs D-03 required-field
-#                           checks plus D-01 os enum plus D-04 unknown-key
-#                           warnings; exits 1 on hard errors
-#   --stdout             -- resolve to stdout instead of resolved.json (no
-#                           atomic-write contract; used by manifest:show)
-#
-# Hard-fails (exit 1) if $XDG_STATE_HOME/dotfiles/machine is missing in
-# resolve mode -- caller must run `task setup -- <machine-name>` first.
-# Hard-fails (exit 1) on any path-traversal attempt in --machine argument.
-# -----------------------------------------------------------------------------
+# Purpose:      Validate + deep-merge manifests/defaults.toml with the active
+#               machine's manifests/machines/<name>.toml, then atomically
+#               write the result to $XDG_STATE_HOME/dotfiles/resolved.json
+#               (or stdout).
+# Depends on:   yq (>= 4.52.1), jq (>= 1.7), zsh (>= 5); install/messages.zsh.
+# Side effects: writes $XDG_STATE_HOME/dotfiles/resolved.json (atomic via
+#               mktemp + mv); emits stderr warnings for unknown manifest keys.
+# =============================================================================
 
 set -euo pipefail
 
-# Source the messages library. messages.zsh handles its own set -u-safe
-# double-source guard via the `:-` default expansion on
-# $DOTFILES_MESSAGES_LOADED (see messages.zsh `set -u contract` block);
-# a bare source is sufficient and idempotent under `set -euo pipefail`.
+# messages.zsh self-guards under set -u via the `:-` default expansion on
+# $DOTFILES_MESSAGES_LOADED; a bare source is sufficient and idempotent.
 : "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task manifest:*' or export it manually}"
 source "${DOTFILEDIR}/install/messages.zsh"
 
-# -----------------------------------------------------------------------------
-# Paths
-# -----------------------------------------------------------------------------
 typeset -r DEFAULTS="${DOTFILEDIR}/manifests/defaults.toml"
 typeset -r MACHINES_DIR="${DOTFILEDIR}/manifests/machines"
 typeset -r STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
 typeset -r STATE_FILE="${STATE_DIR}/machine"
 typeset -r OUT="${STATE_DIR}/resolved.json"
 
-# Machine-name regex: kebab-case identifier; the first character may also
-# be an underscore so test/negative fixture names (e.g. _invalid-bad-os)
-# are accepted by --validate-only. Path-traversal characters (`/`, `.`,
-# `..`, spaces) remain rejected.
+# Machine-name regex: kebab-case identifier; the first character may also be
+# an underscore so test/negative fixture names (e.g. _invalid-bad-os) are
+# accepted by --validate-only. Path-traversal characters (`/`, `.`, `..`,
+# spaces) remain rejected.
 typeset -r MACHINE_NAME_RE='^[a-z0-9_][a-z0-9_-]*$'
 
-# -----------------------------------------------------------------------------
-# list_available_machines
-# Print a space-separated list of machine names derived from
-# manifests/machines/*.toml basenames. Prints empty string if no manifests.
-# -----------------------------------------------------------------------------
 list_available_machines() {
   local -a files
   files=("${MACHINES_DIR}"/*.toml(N))
@@ -65,26 +40,17 @@ list_available_machines() {
   fi
   local f names=""
   for f in "${files[@]}"; do
-    local base="${f:t:r}"  # basename without .toml
+    local base="${f:t:r}"
     names+="${base} "
   done
-  # trim trailing space
   echo "${names% }"
 }
 
-# -----------------------------------------------------------------------------
 # validate_manifest <machine_file>
-# Hand-rolled D-03 required-field validator + D-01 os enum + identity enum.
-# Uses yq has() + tag predicates (RESEARCH section 3.3).
-#
-# WR-07 fix: previously this function returned the error count via stdout
-# and the caller did errcount=$(validate_manifest ...). That pattern is
-# brittle -- any future addition that writes to stdout (an unwrapped
-# command, a stray echo) would corrupt the captured count and confuse the
-# subsequent (( errcount > 0 )) test. Now: the count is returned via the
-# global VALIDATE_ERRORS, and the function exit status is 0 when valid /
-# 1 when invalid. On any error, an `error` line is written to stderr.
-# -----------------------------------------------------------------------------
+# Hand-rolled required-field + enum validator. Returns the error count via
+# the global VALIDATE_ERRORS and exit status 0/1 -- NOT via stdout. Stdout
+# capture is brittle: any future addition that writes to stdout (an unwrapped
+# command, a stray echo) would corrupt the captured count.
 typeset -gi VALIDATE_ERRORS=0
 validate_manifest() {
   local machine_file="$1"
@@ -97,11 +63,7 @@ validate_manifest() {
     return 1
   fi
 
-  # Required scalar string fields: each must be present (has() == true)
-  # and non-empty. The loop below dynamically dispatches to yq calls of the
-  # form: yq '.meta | has("description")', '.platform | has("os")', etc.
-  #
-  # NOTE: the loop variable is `field_path`, not `path`. In zsh, `path` is a
+  # NOTE: the loop variable is `field_path`, NOT `path`. In zsh, `path` is a
   # tied special parameter that mirrors $PATH as an array; declaring
   # `local path` inside a function shadows $PATH and breaks all command
   # lookups for the function scope.
@@ -168,7 +130,7 @@ validate_manifest() {
     fi
   fi
 
-  # D-01: platform.os must equal "darwin" in v1.
+  # platform.os must equal "darwin" (v1 macOS-only).
   local os_value
   os_value=$(yq -r '.platform.os // ""' "$machine_file" 2>/dev/null || echo "")
   if [[ -n "$os_value" ]] && [[ "$os_value" != "darwin" ]]; then
@@ -176,10 +138,9 @@ validate_manifest() {
     errors=$(( errors + 1 ))
   fi
 
-  # WR-04: schema_version must be present and equal 1. The entire v2
-  # forward-compat story depends on this field; without an explicit
-  # check, a v1 resolver running against a v2 manifest would silently
-  # produce wrong output. Treat both absent and non-1 values as errors.
+  # schema_version must be present and equal 1. The entire v2 forward-compat
+  # story depends on this field; without an explicit check, a v1 resolver
+  # running against a v2 manifest would silently produce wrong output.
   local schema_value
   schema_value=$(yq -r '.schema_version // ""' "$machine_file" 2>/dev/null || echo "")
   if [[ -z "$schema_value" ]]; then
@@ -190,7 +151,7 @@ validate_manifest() {
     errors=$(( errors + 1 ))
   fi
 
-  # identity.git / identity.ssh: filesystem-driven. The value must be the
+  # identity.git / identity.ssh are filesystem-driven: the value must be the
   # basename of an existing overlay file under identity/<kind>/identities/.
   # Adding a new identity = drop the overlay files; no edits here. The valid
   # set is computed for the error message so the operator sees what's available.
@@ -198,7 +159,7 @@ validate_manifest() {
   for ident_key in git ssh; do
     ident_val=$(yq -r ".identity.${ident_key} // \"\"" "$machine_file" 2>/dev/null || echo "")
     if [[ -z "$ident_val" ]]; then
-      continue  # already counted above as missing/empty
+      continue
     fi
     ident_dir="${DOTFILEDIR}/identity/${ident_key}/identities"
     ident_file="${ident_dir}/${ident_val}"
@@ -209,8 +170,9 @@ validate_manifest() {
     fi
   done
 
-  # D-16: cross-field rules. identity.ssh in {personal, work} requires features.one-password-ssh = true;
-  # identity.git in {personal, work} requires features.one-password-signing = true
+  # Cross-field rules (see CLAUDE.md §Manifests as source of truth):
+  # identity.ssh in {personal, work} requires features.one-password-ssh = true;
+  # identity.git in {personal, work} requires features.one-password-signing = true.
   local identity_ssh identity_git
   identity_ssh=$(yq -r '.identity.ssh // ""' "$machine_file" 2>/dev/null || echo "")
   identity_git=$(yq -r '.identity.git // ""' "$machine_file" 2>/dev/null || echo "")
@@ -244,11 +206,9 @@ validate_manifest() {
   return 0
 }
 
-# -----------------------------------------------------------------------------
 # emit_unknown_key_warnings <machine_file>
 # Emit `unknown key: <path> at <file>:<line>` warnings to stderr for any
-# scalar leaf path not under the whitelist (D-04). Always exits 0.
-# -----------------------------------------------------------------------------
+# scalar leaf path not under the whitelist. Always exits 0 (advisory only).
 emit_unknown_key_warnings() {
   local machine_file="$1"
   [[ -f "$machine_file" ]] || return 0
@@ -286,12 +246,12 @@ emit_unknown_key_warnings() {
     done
     if (( matched == 0 )); then
       leaf="${found##*.}"
-      # WR-02 fix: only attempt the line-number heuristic when the leaf
-      # is a strict identifier (no quoted-key metacharacters). TOML
-      # permits keys like "a.b" or "a*b" which, if substituted into a
-      # regex, would be interpreted as metacharacters and yield a
-      # misleading line number. The warning still fires regardless;
-      # only the line: hint is omitted in the unsafe case.
+      # Only attempt the line-number heuristic when the leaf is a strict
+      # identifier (no quoted-key metacharacters). TOML permits keys like
+      # "a.b" or "a*b" which, if substituted into a regex, would be
+      # interpreted as metacharacters and yield a misleading line number.
+      # The warning still fires regardless; only the line: hint is omitted
+      # in the unsafe case.
       if [[ "$leaf" =~ ^[A-Za-z0-9_-]+$ ]]; then
         line_no=$("$grep_cmd" -n "^${leaf}[[:space:]]*=" "$machine_file" 2>/dev/null | head -1 | cut -d: -f1 || true)
       else
@@ -304,41 +264,35 @@ emit_unknown_key_warnings() {
   return 0
 }
 
-# -----------------------------------------------------------------------------
 # resolve_pipeline <defaults_path> <machine_path>
-# Run the three-pass merge pipeline (RESEARCH section 4.2 + section 5) and
-# emit the final JSON to stdout. Used by both atomic-file and stdout modes.
+# Three-pass merge: yq deep-merge + extra_packages union + arch backfill.
+# Emits the final JSON to stdout.
 #
-# Pass 2 supports TWO `extra_packages` shapes (dual-shape; D-03 typed-bucket
-# migration preserves backward-compat with the Phase 1 flat-array fixture 06):
+# Pass 2 supports TWO `extra_packages` shapes:
 #
-#   Typed-bucket (D-03; current canonical shape):
+#   Typed-bucket (current canonical shape):
 #     [packages.brew.extra_packages]
 #     formulae = [ "hugo" | { name, verify } ... ]
-#     casks    = [ { name } ... ]           # .verify optional and ignored post-Gap-2 pivot
-#     mas      = [ { id, name } ... ]       # D-06 name doubles as verify
+#     casks    = [ { name } ... ]
+#     mas      = [ { id, name } ... ]
 #
-#     Each sub-array gets an independent union+dedupe with the active machine's
-#     entries, keyed as follows:
+#     Per-sub-array dedupe rules:
 #       formulae -- string-value for bare strings; .name for objects; if a
 #                   bare and an object share the same name, the object wins
 #                   (carries verify metadata).
 #       casks    -- .name. Machine wins on conflict (last-write-wins).
-#       mas      -- .id (numeric Apple App Store ID). Machine wins on conflict.
+#       mas      -- .id. Machine wins on conflict.
 #
-#   Legacy flat-array (Phase 1 fixture 06; preserved for backward-compat):
+#   Legacy flat-array (backward-compat for old plain-list shape):
 #     [packages.brew]
 #     extra_packages = ["jq", "yq"]
 #
 #     Single `jq -s 'add | unique'` over the concatenated flat array.
 #
-# Detection: probe the tag of `.packages.brew.extra_packages` on either side.
-# If either side is `!!seq`, treat the merged shape as the legacy flat array
-# (since `yq . * .` REPLACES arrays, a one-sided seq plus a one-sided map
-# would mean the typed-bucket shape was bulldozed; we honor whichever side
-# the machine declares). If both sides are `!!map` (or one is `!!map` and
-# the other is absent), use the typed-bucket per-sub-array union.
-# -----------------------------------------------------------------------------
+# Detection: probe the tag of `.packages.brew.extra_packages` on either
+# side. If either side is `!!seq`, treat the merged shape as legacy flat
+# (yq `. * .` REPLACES arrays, so a one-sided seq plus a one-sided map
+# would mean the typed-bucket shape was bulldozed).
 resolve_pipeline() {
   local defaults_path="$1"
   local machine_path="$2"
@@ -347,8 +301,8 @@ resolve_pipeline() {
   local merged
   merged=$(yq eval-all '. as $i ireduce ({}; . * $i)' "$defaults_path" "$machine_path" -o json)
 
-  # Pass 2: union + dedupe extra_packages from both sides.
-  # Detect the canonical shape: typed-bucket (!!map) vs legacy flat (!!seq).
+  # Pass 2: union + dedupe extra_packages from both sides. Detect canonical
+  # shape: typed-bucket (!!map) vs legacy flat (!!seq).
   local def_tag mach_tag shape
   def_tag=$(yq '.packages.brew.extra_packages | tag' "$defaults_path" 2>/dev/null || echo "")
   mach_tag=$(yq '.packages.brew.extra_packages | tag' "$machine_path" 2>/dev/null || echo "")
@@ -358,9 +312,7 @@ resolve_pipeline() {
   fi
 
   if [[ "$shape" == "flat" ]]; then
-    # Legacy flat-array path (Phase 1 fixture 06 + any future plain-list
-    # `extra_packages = [...]` shape). `jq -s 'add | unique'` produces sorted
-    # output, matching fixture 06's expected.json.
+    # Legacy flat-array path. `jq -s 'add | unique'` produces sorted output.
     local def_extras mach_extras union_extras
     def_extras=$(yq -o=json '.packages.brew.extra_packages // []' "$defaults_path")
     mach_extras=$(yq -o=json '.packages.brew.extra_packages // []' "$machine_path")
@@ -373,7 +325,6 @@ resolve_pipeline() {
       arch=$(uname -m)
     fi
 
-    # Compose final JSON.
     printf '%s' "$merged" \
       | jq --argjson extras "$union_extras" --arg arch "$arch" \
           '.packages.brew.extra_packages = $extras
@@ -381,9 +332,9 @@ resolve_pipeline() {
     return 0
   fi
 
-  # Typed-bucket path (D-03 canonical shape; one sub-array per kind).
-  # Each sub-array is unioned independently with semantics tailored to its
-  # entry shape; see function-header comment.
+  # Typed-bucket path: one sub-array per kind. Each sub-array is unioned
+  # independently with semantics tailored to its entry shape; see the
+  # function-header comment.
   local def_formulae mach_formulae union_formulae
   local def_casks    mach_casks    union_casks
   local def_mas      mach_mas      union_mas
@@ -391,8 +342,8 @@ resolve_pipeline() {
   def_formulae=$(yq -o=json '.packages.brew.extra_packages.formulae // []'  "$defaults_path")
   mach_formulae=$(yq -o=json '.packages.brew.extra_packages.formulae // []' "$machine_path")
   # formulae dedupe: lift bare strings to { name: ., __bare: true }; group_by .name;
-  # within each group prefer an object (drops __bare) over a bare string; demote
-  # surviving __bare objects back to their string-name form.
+  # within each group prefer an object (drops __bare) over a bare string;
+  # demote surviving __bare objects back to their string-name form.
   union_formulae=$(printf '%s %s' "$def_formulae" "$mach_formulae" \
     | jq -s '
         add
@@ -407,26 +358,20 @@ resolve_pipeline() {
 
   def_casks=$(yq -o=json  '.packages.brew.extra_packages.casks // []' "$defaults_path")
   mach_casks=$(yq -o=json '.packages.brew.extra_packages.casks // []' "$machine_path")
-  # casks dedupe: keyed on .name; machine wins on conflict (last-write-wins).
   union_casks=$(printf '%s %s' "$def_casks" "$mach_casks" \
     | jq -s 'add | group_by(.name) | map(.[-1])')
 
   def_mas=$(yq -o=json  '.packages.brew.extra_packages.mas // []' "$defaults_path")
   mach_mas=$(yq -o=json '.packages.brew.extra_packages.mas // []' "$machine_path")
-  # mas dedupe: keyed on .id; machine wins on conflict (last-write-wins).
   union_mas=$(printf '%s %s' "$def_mas" "$mach_mas" \
     | jq -s 'add | group_by(.id) | map(.[-1])')
 
-  # Pass 3: backfill platform.arch via uname -m if machine omitted it.
   local arch
   arch=$(yq -r '.platform.arch // ""' "$machine_path")
   if [[ -z "$arch" ]]; then
     arch=$(uname -m)
   fi
 
-  # Compose final JSON. Inject three independent sub-arrays back under
-  # `.packages.brew.extra_packages.{formulae,casks,mas}` so downstream readers
-  # (composer; Plan 04 packages:verify) see the typed shape verbatim.
   printf '%s' "$merged" \
     | jq --argjson formulae "$union_formulae" \
          --argjson casks    "$union_casks" \
@@ -438,11 +383,8 @@ resolve_pipeline() {
          | .platform.arch = $arch'
 }
 
-# -----------------------------------------------------------------------------
 # resolve_manifest <defaults_path> <machine_path> <out_path>
-# Run the resolve pipeline and atomically write the result to out_path.
-# Uses mktemp + mv to ensure readers never see a partial file (T-MAN-03).
-# -----------------------------------------------------------------------------
+# mktemp + mv so readers never see a partial file.
 resolve_manifest() {
   local defaults_path="$1"
   local machine_path="$2"
@@ -453,12 +395,11 @@ resolve_manifest() {
   mkdir -p "$out_dir"
 
   tmp=$(mktemp "${out_path}.XXXXXX")
-  # WR-01 fix: register a signal trap before the pipeline so Ctrl-C
-  # (SIGINT), SIGTERM, or any other unhandled exit cleans up the tmp
-  # file. The previous { ... } || { rm -f "$tmp"; ... } only handled
-  # ordinary command failures -- repeated Ctrl-Cs during iteration
-  # would otherwise accumulate resolved.json.aBcDeF-style siblings
-  # in $XDG_STATE_HOME/dotfiles/. Clear the trap after a successful
+  # Register a signal trap BEFORE the pipeline so Ctrl-C (SIGINT), SIGTERM,
+  # or any other unhandled exit cleans up the tmp file. A `{ ... } || { rm
+  # -f "$tmp"; ... }` would only handle ordinary command failures --
+  # repeated Ctrl-Cs during iteration would otherwise accumulate
+  # resolved.json.aBcDeF-style siblings. Clear the trap after a successful
   # mv so the (now-renamed) path is not subsequently rm'd.
   trap 'rm -f "$tmp"' EXIT INT TERM
   {
@@ -472,13 +413,10 @@ resolve_manifest() {
   trap - EXIT INT TERM
 }
 
-# -----------------------------------------------------------------------------
 # resolve_machine_path <machine_name>
 # Validate the machine name against the kebab-case regex (path-traversal
-# guard, T-MAN-02), build the canonical manifest path, and verify the
-# resolved path equals the canonical form (no traversal). Prints the path
-# on stdout. Exits 1 on any guard failure.
-# -----------------------------------------------------------------------------
+# guard), build the canonical manifest path, and verify the resolved path
+# equals the canonical form (no traversal).
 resolve_machine_path() {
   local name="$1"
   if [[ -z "$name" ]]; then
@@ -490,7 +428,6 @@ resolve_machine_path() {
     return 1
   fi
   local path="${MACHINES_DIR}/${name}.toml"
-  # Equality check defends against any leakage from the regex.
   if [[ "$path" != "${MACHINES_DIR}/${name}.toml" ]]; then
     error "internal error: machine path mismatch for '${name}'"
     return 1
@@ -498,9 +435,6 @@ resolve_machine_path() {
   echo "$path"
 }
 
-# -----------------------------------------------------------------------------
-# CLI dispatch
-# -----------------------------------------------------------------------------
 main() {
   local mode="resolve"
   local machine_arg=""
@@ -555,10 +489,8 @@ USAGE
       error "machine manifest not found: ${machine_file}"
       return 1
     fi
-    # WR-07 fix: validate_manifest now signals failure via exit status
-    # plus the global VALIDATE_ERRORS, not via stdout. The `|| true`
-    # keeps `set -e` from aborting on a non-zero return so we can read
-    # the error count and emit a summary message.
+    # `|| true` keeps `set -e` from aborting on a non-zero return so we can
+    # read the error count and emit a summary message.
     validate_manifest "$machine_file" || true
     emit_unknown_key_warnings "$machine_file"
     if (( VALIDATE_ERRORS > 0 )); then
@@ -571,11 +503,9 @@ USAGE
   # Resolve mode.
   local machine_name machine_file
   if [[ -n "$machine_arg" ]]; then
-    # Ad-hoc resolve for a specific machine (D-17 manifest:show pattern).
     machine_name="$machine_arg"
     machine_file=$(resolve_machine_path "$machine_name") || return 1
   else
-    # Default: read active machine from state file.
     if [[ ! -f "$STATE_FILE" ]]; then
       local available
       available=$(list_available_machines)
@@ -584,13 +514,12 @@ USAGE
       error "  available: ${available:-(none -- populate manifests/machines/)}"
       return 1
     fi
-    # WR-08 fix: previously machine_name="${machine_name//[[:space:]]/}"
-    # stripped ALL whitespace (including any embedded), so a state file
-    # containing `bad name\n` would be silently rewritten to `badname`,
-    # which then either matched a real but unintended machine or failed
-    # the regex check confusingly. `read -r` trims only leading/trailing
-    # whitespace (and stops at the first newline), which is what the
-    # surrounding comments and single-line state-file contract expect.
+    # `read -r` trims only leading/trailing whitespace and stops at the
+    # first newline. A prior `machine_name="${machine_name//[[:space:]]/}"`
+    # stripped ALL whitespace (including embedded), so a state file
+    # containing "bad name\n" would be silently rewritten to "badname",
+    # which then either matched a real but unintended machine or failed the
+    # regex check confusingly.
     machine_name=""
     read -r machine_name < "$STATE_FILE" || true
     if [[ -z "$machine_name" ]]; then
@@ -613,7 +542,6 @@ USAGE
     resolve_pipeline "$DEFAULTS" "$machine_file"
   else
     resolve_manifest "$DEFAULTS" "$machine_file" "$OUT"
-    # D-04 advisory warnings on the active machine after a successful resolve.
     emit_unknown_key_warnings "$machine_file"
   fi
   return 0
