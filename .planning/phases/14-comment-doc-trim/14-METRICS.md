@@ -39,11 +39,11 @@ lives at the repo root as `bootstrap.zsh` (deviation Rule 3 -- path correction).
 | bootstrap.zsh                                   |         54 |           51 |            28 |   -23 |         45% |
 | install/compose-brewfile.zsh                    |        100 |          101 |            48 |   -53 |         52% |
 | install/test-hooks.zsh                          |         93 |           70 |            34 |   -36 |         51% |
-| os/defaults/dock.zsh                            |         18 |           37 |           TBD |   TBD |         TBD |
-| os/defaults/finder.zsh                          |         15 |           41 |           TBD |   TBD |         TBD |
-| os/defaults/input.zsh                           |         13 |           42 |           TBD |   TBD |         TBD |
-| os/defaults/screenshots.zsh                     |         16 |           54 |           TBD |   TBD |         TBD |
-| os/defaults/security.zsh                        |         48 |           92 |           TBD |   TBD |         TBD |
+| os/defaults/dock.zsh                            |         18 |           37 |            19 |   -18 |         49% |
+| os/defaults/finder.zsh                          |         15 |           41 |            15 |   -26 |         63% |
+| os/defaults/input.zsh                           |         13 |           42 |            16 |   -26 |         62% |
+| os/defaults/screenshots.zsh                     |         16 |           54 |            25 |   -29 |         54% |
+| os/defaults/security.zsh                        |         48 |           92 |            35 |   -57 |         62% |
 | os/shell-registration.zsh                       |         34 |           60 |           TBD |   TBD |         TBD |
 | identity/ssh/cloudflared.zsh                    |         16 |           15 |           TBD |   TBD |         TBD |
 | shell/.zshenv                                   |         25 |           47 |           TBD |   TBD |         TBD |

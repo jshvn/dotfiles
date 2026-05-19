@@ -1,106 +1,55 @@
 #!/bin/zsh
+
+# =============================================================================
 # os/defaults/security.zsh -- Security / privacy defaults
-# (gated on features.macos-security).
+#                             (gated on features.macos-security)
 #
-# Purpose:
-#   Declare the screensaver, hot-plug-image-capture, and guest-account
-#   posture this v2 fleet wants and provide apply / verify entry points
-#   that consume tuple-array sources of truth (D-02). This is the one
-#   concern servers also enable -- keys must stay server-safe (no GUI
-#   assumptions).
-#
-# Caller:
-#   taskfiles/macos.yml -- macos:defaults:security task (Plan 03). The
-#   task sources this file and invokes apply_security (cmds:) and
-#   verify_security (status:).
-#
-# Side effects:
-#   apply_security runs `defaults write` for each row of SECURITY_DEFAULTS
-#   (global plist), `defaults -currentHost write` for each row of
-#   SECURITY_DEFAULTS_CURRENTHOST (per-host plist under
-#   ~/Library/Preferences/ByHost/), and conditionally invokes
-#   `sudo sysadminctl -guestAccount off` -- but only after first checking
-#   the unprivileged `sysadminctl -guestAccount status` output, so sudo
-#   never prompts on a converged machine (RESEARCH Code Examples;
-#   CONTEXT Claude's Discretion option a).
-#   verify_security is unprivileged and read-only.
-#
-#   No killall: security keys take effect at next logout or screensaver
-#   activation; no relevant UI process to restart.
-#
-#   Two menu-bar-visibility keys from v1 `defaults-misc` (lines 102-105 of
-#   the v1 macos.yml -- the text-input-menu visibility and assistant-menu
-#   visibility toggles) are intentionally NOT ported here. They are
-#   personal-preference toggles, not security posture, and defer to a
-#   future preferences.zsh concern (CONTEXT Claude's Discretion +
-#   RESEARCH User-Constraints).
-#
-# Contract:
-#   Sourced-only. Carries `set -euo pipefail` by v2 convention (CF-06).
-#   Expects $DOTFILEDIR to be exported by the caller.
-#   Two tuple-arrays:
-#     SECURITY_DEFAULTS              -- global plist scope (default `defaults`)
-#     SECURITY_DEFAULTS_CURRENTHOST  -- per-host plist scope (`-currentHost`)
-#   RESEARCH Pitfall 3: addressing a `-currentHost`-scoped key with the
-#   default `defaults read` (no flag) returns `<unset>` even when the value
-#   is in fact set -- the loops below MUST use the matching scope flag.
+# Purpose:      Declare screensaver, hot-plug-image-capture, and guest-
+#               account posture; servers also enable this concern, so keys
+#               must stay server-safe (no GUI assumptions).
+# Depends on:   install/messages.zsh; os/defaults/_apply_verify.zsh;
+#               $DOTFILEDIR exported by caller.
+# Side effects: `defaults write` for global SECURITY_DEFAULTS + `defaults
+#               -currentHost write` for SECURITY_DEFAULTS_CURRENTHOST;
+#               conditionally `sudo sysadminctl -guestAccount off` (gated
+#               on an unprivileged status check so sudo never prompts on a
+#               converged machine). No killall.
+# =============================================================================
 
 set -euo pipefail
 
-# Source the messages library. messages.zsh handles its own set -u-safe
-# double-source guard via the `:-` default expansion on
-# $DOTFILES_MESSAGES_LOADED (see messages.zsh `set -u contract` block);
-# a bare source is sufficient and idempotent under `set -euo pipefail`.
 : "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task macos:*' or export it manually}"
 source "${DOTFILEDIR}/install/messages.zsh"
 
-# Shared apply / verify helpers (REVW-04: extracted in Plan 13-04).
 # _apply_defaults / _verify_defaults take an optional 3rd arg `scope_flag`
-# (e.g. "-currentHost") so the per-host plist family below uses the same
-# helper signature as the global-scope family above.
+# (e.g. "-currentHost") so the per-host plist family uses the same helper
+# signature as the global-scope family.
 source "${DOTFILEDIR}/os/defaults/_apply_verify.zsh"
 
-# ---------------------------------------------------------------------------
-# SECURITY_DEFAULTS -- global plist scope (D-02).
 # Tuple stride 4: (domain, key, expected_value, write_type).
-# Source: v1 taskfiles/macos.yml `defaults-general` (screensaver lines 29-38).
-# ---------------------------------------------------------------------------
 typeset -ga SECURITY_DEFAULTS=(
   "com.apple.screensaver"  "askForPassword"       "1"  "int"
   "com.apple.screensaver"  "askForPasswordDelay"  "0"  "int"
 )
 
-# ---------------------------------------------------------------------------
-# SECURITY_DEFAULTS_CURRENTHOST -- per-host plist scope (D-02).
 # Per-host plists live under ~/Library/Preferences/ByHost/<domain>.<UUID>.plist;
-# reads / writes MUST go through `defaults -currentHost` or the value is
-# invisible to the apply/verify loops (RESEARCH Pitfall 3).
-# Source: v1 taskfiles/macos.yml `defaults-misc` line 96.
-# ---------------------------------------------------------------------------
+# reads/writes MUST go through `defaults -currentHost` or the value is
+# invisible to the apply/verify loops.
 typeset -ga SECURITY_DEFAULTS_CURRENTHOST=(
   "com.apple.ImageCapture"  "disableHotPlug"  "true"  "bool"
 )
 
 apply_security() {
-  # --- global-scope tuples ------------------------------------------------
   _apply_defaults SECURITY_DEFAULTS
-  # --- currentHost-scope tuples ------------------------------------------
   _apply_defaults SECURITY_DEFAULTS_CURRENTHOST "" -currentHost
-  # --- guest account -----------------------------------------------------
-  # Check the unprivileged status first; sudo only fires when the guest
-  # account is actually enabled (RESEARCH Code Examples; CONTEXT
-  # Claude's Discretion option a).
-  # macOS sysadminctl output varies across versions; observed forms:
+  # Guest account: sysadminctl output varies across macOS versions; observed:
   #   "Guest account enabled." / "Guest account disabled."
   #   "Enabled = true" / "Enabled = false"
   #   "Enabled: Yes" / "Enabled: No"
   # A bare substring grep for "enabled" silently false-positives on
-  # "Enabled = false" (the v1 behavior) and a substring grep for
-  # "disabled" misses every variant that uses a boolean qualifier instead.
-  # The two-step parser below first checks for the disabled signals; only
-  # if disabled is NOT detected and enabled IS detected do we conclude
-  # the account is enabled and trigger sudo. Unknown output (empty / perm
-  # denied) is treated as not-enabled (no-op).
+  # "Enabled = false". The two-step parser checks disabled signals first;
+  # only if disabled is NOT detected and enabled IS detected do we conclude
+  # the account is enabled and trigger sudo. Unknown output is no-op.
   local guest_status guest_state=unknown
   guest_status=$(sysadminctl -guestAccount status 2>&1 || true)
   if printf '%s' "$guest_status" | grep -qiE '\bdisabled\b|enabled[[:space:]]*[:=][[:space:]]*(false|no|0)'; then
@@ -119,17 +68,12 @@ apply_security() {
 
 verify_security() {
   local failed=0
-  # --- global-scope tuples ------------------------------------------------
   _verify_defaults SECURITY_DEFAULTS security || failed=1
-  # --- currentHost-scope tuples ------------------------------------------
   # _verify_defaults appends ` (currentHost)` to its check / cross messages
-  # automatically when scope_flag is set, matching the prior inline output.
+  # automatically when scope_flag is set.
   _verify_defaults SECURITY_DEFAULTS_CURRENTHOST security -currentHost || failed=1
-  # --- guest account -----------------------------------------------------
-  # Mirrors apply_security's two-step parser. Disabled-signal short-circuit
-  # comes first so "Enabled = false" is correctly recognized as disabled.
-  # Surface the raw output in the cross message so field debugging is not
-  # misled by absence of a specific substring.
+  # Mirrors apply_security's two-step parser; raw output surfaced in the
+  # cross message so field debugging is not misled by a missing substring.
   local guest_status guest_state=unknown
   guest_status=$(sysadminctl -guestAccount status 2>&1 || true)
   if printf '%s' "$guest_status" | grep -qiE '\bdisabled\b|enabled[[:space:]]*[:=][[:space:]]*(false|no|0)'; then
