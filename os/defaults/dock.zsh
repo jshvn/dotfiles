@@ -34,6 +34,10 @@ set -euo pipefail
 : "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task macos:*' or export it manually}"
 source "${DOTFILEDIR}/install/messages.zsh"
 
+# Shared apply / verify helpers (REVW-04: extracted in Plan 13-04 from the
+# 5 near-identical per-concern apply_<X> / verify_<X> loops).
+source "${DOTFILEDIR}/os/defaults/_apply_verify.zsh"
+
 # ---------------------------------------------------------------------------
 # DOCK_DEFAULTS -- single source of truth (D-02).
 # Tuple stride 4: (domain, key, expected_value, write_type).
@@ -49,38 +53,9 @@ typeset -ga DOCK_DEFAULTS=(
 )
 
 apply_dock() {
-  local i domain key value type
-  for ((i = 1; i <= ${#DOCK_DEFAULTS[@]}; i += 4)); do
-    domain="${DOCK_DEFAULTS[$i]}"
-    key="${DOCK_DEFAULTS[$((i + 1))]}"
-    value="${DOCK_DEFAULTS[$((i + 2))]}"
-    type="${DOCK_DEFAULTS[$((i + 3))]}"
-    defaults write "$domain" "$key" "-${type}" "$value"
-  done
-  killall Dock 2>/dev/null || true
+  _apply_defaults DOCK_DEFAULTS Dock
 }
 
 verify_dock() {
-  local i domain key value type current expected_read failed=0
-  for ((i = 1; i <= ${#DOCK_DEFAULTS[@]}; i += 4)); do
-    domain="${DOCK_DEFAULTS[$i]}"
-    key="${DOCK_DEFAULTS[$((i + 1))]}"
-    value="${DOCK_DEFAULTS[$((i + 2))]}"
-    type="${DOCK_DEFAULTS[$((i + 3))]}"
-    current=$(defaults read "$domain" "$key" 2>/dev/null || echo "<unset>")
-    # `defaults write -bool true` round-trips to literal "1" on read; normalize
-    # the expected side so the comparison succeeds on converged machines
-    # (RESEARCH Pitfall 2).
-    case "$type" in
-      bool) [[ "$value" == "true" ]] && expected_read="1" || expected_read="0" ;;
-      *)    expected_read="$value" ;;
-    esac
-    if [[ "$current" == "$expected_read" ]]; then
-      check "dock.$key = $value"
-    else
-      cross "dock.$key: expected '$expected_read', got '$current'"
-      failed=1
-    fi
-  done
-  return $failed
+  _verify_defaults DOCK_DEFAULTS dock
 }
