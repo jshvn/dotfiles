@@ -188,7 +188,10 @@ tasks:
   # lint-allow: cmds-without-status
   show:
     desc: "Show hostname state file + live ComputerName/HostName/LocalHostName/NetBIOSName"
+    internal: true
     platforms: [darwin]
+    # Internal -- public delegate is `task show:hostname` (taskfiles/show.yml),
+    # mirroring the manifest:show / show:manifest split.
     # status: [false] -- diagnostic read; always re-run.
     status: [false]
     cmds:
