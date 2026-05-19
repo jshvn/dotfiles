@@ -49,8 +49,8 @@ lives at the repo root as `bootstrap.zsh` (deviation Rule 3 -- path correction).
 | shell/.zshenv                                   |         25 |           47 |            29 |   -18 |         38% |
 | shell/.zprofile                                 |         17 |           46 |            22 |   -24 |         52% |
 | shell/.zshrc                                    |         63 |           71 |            38 |   -33 |         46% |
-| shell/.zlogin                                   |          3 |           15 |           TBD |   TBD |         TBD |
-| shell/theme.zsh                                 |         56 |           26 |           TBD |   TBD |         TBD |
+| shell/.zlogin                                   |          3 |           15 |             9 |    -6 |         40% |
+| shell/theme.zsh                                 |         57 |           26 |            16 |   -10 |         38% |
 | claude/hooks/lib.zsh                            |         40 |           35 |           TBD |   TBD |         TBD |
 | claude/hooks/secret-scan.zsh                    |         13 |            5 |           TBD |   TBD |         TBD |
 | claude/hooks/no-emojis.zsh                      |         12 |            6 |           TBD |   TBD |         TBD |
