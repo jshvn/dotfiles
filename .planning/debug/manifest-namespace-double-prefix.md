@@ -1,9 +1,9 @@
 ---
-status: resolved
+status: verified-fixed
 trigger: "task manifest:resolve fails with 'Task does not exist'; task list shows manifest:manifest:resolve (double-prefixed). Asymmetry: identity:install / identity:validate appear single-prefixed."
 created: 2026-05-15T06:07:38Z
-updated: 2026-05-19T05:46:00Z
-resolution: "Resolved at v2.1 milestone close. Phase 12 (Task Surface Redesign) renamed the affected manifest tasks; the diagnosis served its purpose but no separate fix was landed. Closing without further action."
+updated: 2026-05-19T11:00:00Z
+resolution: "Verified fixed 2026-05-19 at v2.2 planning time. Phase 12 (Task Surface Redesign) collapsed the double-prefix by rewriting taskfiles/manifest.yml to declare bare task keys (setup:, resolve:, show:, validate:) — combined with the manifest: include alias, this produces clean canonical names. Public surface moved to show:manifest / audit:manifest delegates. No double-prefix remains in task --list."
 ---
 
 ## Current Focus

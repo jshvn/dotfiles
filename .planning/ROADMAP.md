@@ -38,9 +38,7 @@ Full details: `.planning/milestones/v2.1-ROADMAP.md`. Audit: `.planning/mileston
 
 ### v2.2 (planning)
 
-To be defined via `/gsd-new-milestone`. Open items carried into v2.2:
-
-- Three diagnosed-but-not-fixed bugs from v2.1 (closed at milestone boundary without separate fix): `manifest-namespace-double-prefix`, `resolver-warn-fallback-broken`, `validate-git-empty-useremail-after-install`. See `.planning/debug/` and the deferred section of `v2.1-MILESTONE-AUDIT.md`. Revisit if they still surface in v2.2 use.
+To be defined via `/gsd-new-milestone`. No bugs carried over from v2.1: the three v2.1 debug sessions (`manifest-namespace-double-prefix`, `resolver-warn-fallback-broken`, `validate-git-empty-useremail-after-install`) were verified fixed on 2026-05-19 by Phase 12-14 cleanup work — see `MILESTONES.md` "Diagnosed Bugs Resolved by v2.1 Cleanup" for details.
 
 ## Progress
 

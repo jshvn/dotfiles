@@ -1,9 +1,9 @@
 ---
-status: resolved
+status: verified-fixed
 trigger: "task identity:validate exits 201 on a converged personal-laptop with: 'git user.email mismatch: expected josh@vaughen.net, got '''. validate:symlinks passes (all four canonical symlinks present), but validate:git fails because git config --get user.email returns empty."
 created: 2026-05-14T23:30:00Z
-updated: 2026-05-19T05:46:00Z
-resolution: "Resolved at v2.1 milestone close without separate fix. Diagnosis preserved for reference; revisit in v2.2 if validate:git still mismatches."
+updated: 2026-05-19T11:00:00Z
+resolution: "Verified fixed 2026-05-19 at v2.2 planning time. taskfiles/identity.yml:283-291 now locates a real .git directory under $HOME/git/<identity>/ via find -maxdepth 2 -name .git -type d and probes git config from that directory's parent — so the [includeIf gitdir/i:~/git/<identity>/] block fires and the per-identity overlay loads. Adds a rev-parse --is-inside-work-tree guard, plus a features.server-include branch that probes from $HOME for servers using the unconditional gitdir:~/ include. Live verification: 'task validate' exits 0 with '✓ git user.email matches identity (josh@vaughen.net)' on personal-laptop. Resolved by deliberate code rewrite during v2.1 cleanup work."
 ---
 
 ## Current Focus

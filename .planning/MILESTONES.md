@@ -22,15 +22,15 @@
 - **End-to-end `task install && task validate` exits 0** on a converged personal-laptop after every commit and at milestone close.
 - **Two non-blocking tech-debt items recorded** (Plan 14-02 strip-manifest scope gap; LSP-only YAML schema noise on LINT-08 fixture taskfiles).
 
-### Deferred to v2.2
+### Diagnosed Bugs Resolved by v2.1 Cleanup
 
-Three diagnosed debug sessions closed at milestone boundary without separate code fix:
+Three debug sessions closed without a labeled fix at v2.1 milestone close; verified resolved in current code on 2026-05-19 before v2.2 planning:
 
-- `manifest-namespace-double-prefix` (diagnosed 2026-05-15; Phase 12 task surface redesign covered the affected `manifest:*` tasks).
-- `resolver-warn-fallback-broken` (diagnosed 2026-05-14; revisit if bare-slash warning still surfaces).
-- `validate-git-empty-useremail-after-install` (diagnosed 2026-05-14; revisit if `validate:git` still mismatches).
+- `manifest-namespace-double-prefix` — fixed by Phase 12 task surface redesign (`taskfiles/manifest.yml` now declares bare task keys; double-prefix gone).
+- `resolver-warn-fallback-broken` — fixed by Phase 13/14 template-dedup work (`RESOLVED_JSON_PATH` collapsed to a one-hop chain; bare-slash warning cannot reproduce).
+- `validate-git-empty-useremail-after-install` — fixed by `validate:git` probe-dir rewrite (locates a real `.git` under `~/git/<identity>/` and probes from there; `task validate` exits 0 with `✓ git user.email matches identity`).
 
-See `.planning/debug/` for the diagnosis transcripts and `.planning/milestones/v2.1-MILESTONE-AUDIT.md` for the full audit.
+See `.planning/debug/` for the diagnosis transcripts (now flagged `status: verified-fixed`) and `.planning/milestones/v2.1-MILESTONE-AUDIT.md` for the full audit.
 
 **Archive:** `.planning/milestones/v2.1-ROADMAP.md`, `.planning/milestones/v2.1-REQUIREMENTS.md`, `.planning/milestones/v2.1-MILESTONE-AUDIT.md`
 
