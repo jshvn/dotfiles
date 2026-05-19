@@ -47,7 +47,7 @@ lives at the repo root as `bootstrap.zsh` (deviation Rule 3 -- path correction).
 | os/shell-registration.zsh                       |         34 |           60 |            24 |   -36 |         60% |
 | identity/ssh/cloudflared.zsh                    |         16 |           15 |            14 |    -1 |          6% |
 | shell/.zshenv                                   |         25 |           47 |            29 |   -18 |         38% |
-| shell/.zprofile                                 |         17 |           46 |           TBD |   TBD |         TBD |
+| shell/.zprofile                                 |         17 |           46 |            22 |   -24 |         52% |
 | shell/.zshrc                                    |         63 |           71 |           TBD |   TBD |         TBD |
 | shell/.zlogin                                   |          3 |           15 |           TBD |   TBD |         TBD |
 | shell/theme.zsh                                 |         56 |           26 |           TBD |   TBD |         TBD |
