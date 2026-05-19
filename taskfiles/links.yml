@@ -151,12 +151,17 @@ tasks:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zlogout", TARGET: "{{.ZDOTDIR}}/.zlogout" }
       - task: zdotdir
+    # REVW-05 (Plan 13-05): every links:* install-style status block verifies
+    # the symlink TARGET via `readlink -f` against the manifest-expected source
+    # path, not just `test -L` existence. A corrupted symlink (wrong target)
+    # now forces a re-run of cmds: to repair the link. The grep -qF line for
+    # /etc/zshenv is unchanged -- it tests content, not a symlink.
     status:
-      - test -L "{{.ZDOTDIR}}/.zshenv"
-      - test -L "{{.ZDOTDIR}}/.zprofile"
-      - test -L "{{.ZDOTDIR}}/.zshrc"
-      - test -L "{{.ZDOTDIR}}/.zlogin"
-      - test -L "{{.ZDOTDIR}}/.zlogout"
+      - test -L "{{.ZDOTDIR}}/.zshenv"   && [[ "$(readlink -f "{{.ZDOTDIR}}/.zshenv")"   == "{{.DOTFILEDIR}}/shell/.zshenv"   ]]
+      - test -L "{{.ZDOTDIR}}/.zprofile" && [[ "$(readlink -f "{{.ZDOTDIR}}/.zprofile")" == "{{.DOTFILEDIR}}/shell/.zprofile" ]]
+      - test -L "{{.ZDOTDIR}}/.zshrc"    && [[ "$(readlink -f "{{.ZDOTDIR}}/.zshrc")"    == "{{.DOTFILEDIR}}/shell/.zshrc"    ]]
+      - test -L "{{.ZDOTDIR}}/.zlogin"   && [[ "$(readlink -f "{{.ZDOTDIR}}/.zlogin")"   == "{{.DOTFILEDIR}}/shell/.zlogin"   ]]
+      - test -L "{{.ZDOTDIR}}/.zlogout"  && [[ "$(readlink -f "{{.ZDOTDIR}}/.zlogout")"  == "{{.DOTFILEDIR}}/shell/.zlogout"  ]]
       - grep -qF 'export ZDOTDIR="{{.ZDOTDIR}}"' /etc/zshenv 2>/dev/null
 
   # ---------------------------------------------------------------------------
@@ -236,20 +241,25 @@ tasks:
         vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/notify.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh" }
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/lib.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh" }
+    # REVW-05 (Plan 13-05): inline readlink -f target-match check inside the
+    # feature-gate wrapper. The {{if not (index .MANIFEST.features "claude-marketplace")}}
+    # arm short-circuits to true when the flag is off (no claude install on this
+    # machine; status no-ops). The {{else}} arm verifies BOTH that the path is a
+    # symlink AND that its resolved target matches the manifest-expected source.
     status:
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md"{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/settings.json"{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/agents"{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/commands"{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/skills"{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh"{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh"{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh"{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh"{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh"{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh"{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh"{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh"{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md")" == "{{.DOTFILEDIR}}/claude/CLAUDE.md" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/settings.json" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/settings.json")" == "{{.DOTFILEDIR}}/claude/settings.json" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/agents" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/agents")" == "{{.DOTFILEDIR}}/claude/agents" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/commands" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/commands")" == "{{.DOTFILEDIR}}/claude/commands" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/skills" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/skills")" == "{{.DOTFILEDIR}}/claude/skills" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/post-compact.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/agent-transparency.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/secret-scan.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/block-destructive.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/no-ai-comments.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/no-emojis.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/notify.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/lib.zsh" ]]{{end}}'
 
   # ---------------------------------------------------------------------------
   # Tool configs (TOOL-01, TOOL-02) -- 7 symlinks; ghostty gated on ghostty
@@ -275,19 +285,22 @@ tasks:
         vars: { SOURCE: "{{.DOTFILEDIR}}/configs/conda/condarc", TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc" }
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/configs/eza/theme.yaml", TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml" }
+    # REVW-05 (Plan 13-05): readlink -f target-match verification per row.
+    # The ghostty row keeps its feature-gate wrapper; the 6 always-on rows
+    # are unconditional readlink -f checks.
     status:
       # CR-04: ghostty MUST appear in this status block. Without it, on a
       # ghostty=true machine where the ghostty link is broken but the
       # always-on configs are healthy, status returns 0 and go-task skips
       # the entire cmds block -- including `task: configs:ghostty`. The
       # gated entry mirrors the `claude:` pattern at lines 204-216.
-      - '{{if not (index .MANIFEST.features "ghostty")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/ghostty/config"{{end}}'
-      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow.yml"
-      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow_style.json"
-      - test -L "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"
-      - test -L "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"
-      - test -L "{{.XDG_CONFIG_HOME}}/conda/condarc"
-      - test -L "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"
+      - '{{if not (index .MANIFEST.features "ghostty")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/ghostty/config" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/ghostty/config")" == "{{.DOTFILEDIR}}/configs/ghostty/config" ]]{{end}}'
+      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow.yml"        && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/glow/glow.yml")"        == "{{.DOTFILEDIR}}/configs/glow/glow.yml"        ]]
+      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow_style.json" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/glow/glow_style.json")" == "{{.DOTFILEDIR}}/configs/glow/glow_style.json" ]]
+      - test -L "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"   && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml")"   == "{{.DOTFILEDIR}}/configs/trippy/trippy.toml"   ]]
+      - test -L "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"     && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/tlrc/config.toml")"     == "{{.DOTFILEDIR}}/configs/tlrc/config.toml"     ]]
+      - test -L "{{.XDG_CONFIG_HOME}}/conda/condarc"        && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/conda/condarc")"        == "{{.DOTFILEDIR}}/configs/conda/condarc"        ]]
+      - test -L "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"       && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/eza/theme.yaml")"       == "{{.DOTFILEDIR}}/configs/eza/theme.yaml"       ]]
 
   # ---------------------------------------------------------------------------
   # configs:ghostty -- ghostty config symlink isolated as its own sub-task so
@@ -305,8 +318,10 @@ tasks:
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/configs/ghostty/config", TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config" }
+    # REVW-05 (Plan 13-05): inline readlink -f target-match check inside the
+    # ghostty feature-gate wrapper.
     status:
-      - '{{if not (index .MANIFEST.features "ghostty")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/ghostty/config"{{end}}'
+      - '{{if not (index .MANIFEST.features "ghostty")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/ghostty/config" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/ghostty/config")" == "{{.DOTFILEDIR}}/configs/ghostty/config" ]]{{end}}'
 
   # ---------------------------------------------------------------------------
   # Validation -- always-re-run diagnostic output; no status: by design.
