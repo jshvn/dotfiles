@@ -1,0 +1,23 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/02d-local-assign-ok/Taskfile.yml
+#
+# Negative fixture for LINT-02: status: block references $out where `out` is
+# assigned in the SAME status entry. This is legitimate -- the assignment
+# and reference share a shell context, so the var is set when the reference
+# is read. The rule must NOT fire on this pattern (it's the manifest.yml /
+# packages.yml freshness-check shape).
+#
+# Expected outcome: LINT-02 does not fire (expect: pass)
+# =============================================================================
+
+tasks:
+  fixture-task:
+    desc: "fixture: $out used after local assignment in same status entry"
+    status:
+      - |
+        out=$(echo hello)
+        [ -n "$out" ]
+    cmds:
+      - echo run

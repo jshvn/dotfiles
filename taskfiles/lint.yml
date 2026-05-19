@@ -100,14 +100,55 @@ tasks:
         failures=0
 
         # LINT-02: $VAR-style shell vars inside status: blocks.
+        # Per-entry analysis (each .status[] item is its own shell context):
+        # a $VAR reference is OK if VAR is defined locally within the same
+        # entry via `VAR=` or `for VAR in`. These are real shell vars in the
+        # entry's execution context -- not misspelled go-task vars (the
+        # template `.VAR` form, wrapped in double braces, is the correct
+        # way to reach a go-task var; this rule guards against using $VAR
+        # by accident).
+        # Lines containing the substring `$(` or the template-open token
+        # are still dropped wholesale (existing semantics): `$(` masks the
+        # legitimate `out=$(cmd)` define-line, and the template open avoids
+        # matching template-rendered fragments.
         while IFS= read -r f; do
-          out=$(yq '.tasks[] | select(.status) | .status' "$f" 2>/dev/null \
-                | ggrep -nE '\$[A-Za-z_][A-Za-z0-9_]*' \
-                | ggrep -vE '\$\(' \
-                | ggrep -vE '\{\{' || true)
+          n=$(yq -o=json '[.tasks[] | select(.status) | .status[] | select(tag == "!!str")] | length' "$f" 2>/dev/null || echo 0)
+          out=""
+          for ((i=0; i<n; i++)); do
+            entry=$(yq -o=json "[.tasks[] | select(.status) | .status[] | select(tag == \"!!str\")][$i]" "$f" 2>/dev/null | jq -r .)
+            local_vars=$(printf '%s\n' "$entry" \
+              | ggrep -oE '(^|[[:space:];&|]+)[A-Za-z_][A-Za-z0-9_]*=' \
+              | sed -E 's/^[^A-Za-z_]+//; s/=$//' || true)
+            loop_vars=$(printf '%s\n' "$entry" \
+              | ggrep -oE '\bfor[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+in\b' \
+              | awk '{print $2}' || true)
+            allowed=$(printf '%s\n%s\n' "$local_vars" "$loop_vars" | sort -u | ggrep -v '^$' || true)
+            entry_hits=$(printf '%s\n' "$entry" \
+              | ggrep -nE '\$[A-Za-z_][A-Za-z0-9_]*' \
+              | ggrep -vE '\$\(' \
+              | ggrep -vE '\{\{' \
+              | awk -v allowed="$allowed" '
+                  BEGIN {
+                    nlines = split(allowed, arr, "\n")
+                    for (j = 1; j <= nlines; j++) if (arr[j] != "") locals[arr[j]] = 1
+                  }
+                  {
+                    ok = 1; rest = $0
+                    while (match(rest, /\$[A-Za-z_][A-Za-z0-9_]*/)) {
+                      v = substr(rest, RSTART + 1, RLENGTH - 1)
+                      if (!(v in locals)) { ok = 0; break }
+                      rest = substr(rest, RSTART + RLENGTH)
+                    }
+                    if (!ok) print $0
+                  }
+                ' || true)
+            if [[ -n "$entry_hits" ]]; then
+              out="${out}${entry_hits}"$'\n'
+            fi
+          done
           if [[ -n "$out" ]]; then
             cross "LINT-02: \$VAR in status: block -- $f"
-            echo "$out" >&2
+            printf '%s' "$out" >&2
             failures=$(( failures + 1 ))
           else
             check "LINT-02: $f"
@@ -253,11 +294,43 @@ tasks:
           actual=unknown
           case "$name" in
             02*|03a-*)
-              # LINT-02 / LINT-03a: scope to fixture's Taskfile.yml
-              lint02_hit=$( (cd "$fix" && yq '.tasks[] | select(.status) | .status' Taskfile.yml 2>/dev/null \
+              # LINT-02 / LINT-03a: scope to fixture's Taskfile.yml.
+              # LINT-02 per-entry local-vars allow-list mirrors the production
+              # rule (~line 102); fixtures 02d/02e exercise the new code paths.
+              lint02_hit=""
+              n02=$(cd "$fix" && yq -o=json '[.tasks[] | select(.status) | .status[] | select(tag == "!!str")] | length' Taskfile.yml 2>/dev/null || echo 0)
+              for ((k02=0; k02<n02; k02++)); do
+                entry=$(cd "$fix" && yq -o=json "[.tasks[] | select(.status) | .status[] | select(tag == \"!!str\")][$k02]" Taskfile.yml 2>/dev/null | jq -r .)
+                local_vars=$(printf '%s\n' "$entry" \
+                  | ggrep -oE '(^|[[:space:];&|]+)[A-Za-z_][A-Za-z0-9_]*=' \
+                  | sed -E 's/^[^A-Za-z_]+//; s/=$//' || true)
+                loop_vars=$(printf '%s\n' "$entry" \
+                  | ggrep -oE '\bfor[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+in\b' \
+                  | awk '{print $2}' || true)
+                allowed=$(printf '%s\n%s\n' "$local_vars" "$loop_vars" | sort -u | ggrep -v '^$' || true)
+                eh=$(printf '%s\n' "$entry" \
                   | ggrep -nE '\$[A-Za-z_][A-Za-z0-9_]*' \
                   | ggrep -vE '\$\(' \
-                  | ggrep -vE '\{\{') || true)
+                  | ggrep -vE '\{\{' \
+                  | awk -v allowed="$allowed" '
+                      BEGIN {
+                        nlines = split(allowed, arr, "\n")
+                        for (j = 1; j <= nlines; j++) if (arr[j] != "") locals[arr[j]] = 1
+                      }
+                      {
+                        ok = 1; rest = $0
+                        while (match(rest, /\$[A-Za-z_][A-Za-z0-9_]*/)) {
+                          v = substr(rest, RSTART + 1, RLENGTH - 1)
+                          if (!(v in locals)) { ok = 0; break }
+                          rest = substr(rest, RSTART + RLENGTH)
+                        }
+                        if (!ok) print $0
+                      }
+                    ' || true)
+                if [[ -n "$eh" ]]; then
+                  lint02_hit="${lint02_hit}${eh}"$'\n'
+                fi
+              done
               lint03a_hit=""
               while IFS= read -r task_name; do
                 [[ -z "$task_name" ]] && continue
