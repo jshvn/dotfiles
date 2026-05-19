@@ -27,7 +27,7 @@ lives at the repo root as `bootstrap.zsh` (deviation Rule 3 -- path correction).
 | taskfiles/lint.yml                              |        258 |          142 |            64 |   -78 |         54% |
 | taskfiles/claude.yml                            |        180 |          141 |            48 |   -93 |         65% |
 | taskfiles/macos.yml                             |        170 |          130 |            45 |   -85 |         65% |
-| taskfiles/manifest.yml                          |        146 |          122 |           TBD |   TBD |         TBD |
+| taskfiles/manifest.yml                          |        146 |          122 |            49 |   -73 |         59% |
 | taskfiles/test.yml                              |        190 |          108 |           TBD |   TBD |         TBD |
 | taskfiles/shell.yml                             |         73 |           68 |           TBD |   TBD |         TBD |
 | taskfiles/helpers.yml                           |         68 |           27 |           TBD |   TBD |         TBD |
