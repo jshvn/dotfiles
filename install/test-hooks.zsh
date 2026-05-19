@@ -42,7 +42,7 @@ test_secret_scan() {
     check "secret-scan.pass"
   else
     cross "secret-scan.pass: expected exit 0"
-    failed=1
+    failed=$((failed + 1))
   fi
 
   # Block scenario: content contains api_key='"<20+ chars>"' which matches the
@@ -55,7 +55,7 @@ test_secret_scan() {
     check "secret-scan.block"
   else
     cross "secret-scan.block: expected exit 2, got ${exit_code}"
-    failed=1
+    failed=$((failed + 1))
   fi
 }
 
@@ -78,7 +78,7 @@ test_no_emojis() {
     check "no-emojis.pass"
   else
     cross "no-emojis.pass: unexpected stderr: ${warn_stderr}"
-    failed=1
+    failed=$((failed + 1))
   fi
 
   # Warn scenario: inject emoji at runtime (U+1F600 GRINNING FACE).
@@ -91,7 +91,7 @@ test_no_emojis() {
     check "no-emojis.warn"
   else
     cross "no-emojis.warn: expected exit 0 + 'emoji' in stderr (exit=${exit_code}, stderr=${warn_stderr})"
-    failed=1
+    failed=$((failed + 1))
   fi
 }
 
@@ -115,7 +115,7 @@ test_no_ai_comments() {
     check "no-ai-comments.pass"
   else
     cross "no-ai-comments.pass: unexpected stderr: ${warn_stderr}"
-    failed=1
+    failed=$((failed + 1))
   fi
 
   # Warn scenario: the string below matches the co-authored-by:.*claude pattern.
@@ -127,7 +127,7 @@ test_no_ai_comments() {
     check "no-ai-comments.warn"
   else
     cross "no-ai-comments.warn: expected exit 0 + 'AI attribution' in stderr (exit=${exit_code}, stderr=${warn_stderr})"
-    failed=1
+    failed=$((failed + 1))
   fi
 }
 
@@ -152,7 +152,7 @@ test_agent_transparency() {
     check "agent-transparency.general-purpose"
   else
     cross "agent-transparency.general-purpose: expected exit 0 + 'Agent delegated ->' in output (exit=${exit_code})"
-    failed=1
+    failed=$((failed + 1))
   fi
 
   # Plugin-scoped scenario: exercises the plugin:agent resolution branch
@@ -165,7 +165,7 @@ test_agent_transparency() {
     check "agent-transparency.plugin-scoped"
   else
     cross "agent-transparency.plugin-scoped: expected exit 0 + type/task in output (exit=${exit_code}, output=${plugin_out})"
-    failed=1
+    failed=$((failed + 1))
   fi
 }
 
