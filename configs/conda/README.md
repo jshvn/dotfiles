@@ -19,9 +19,10 @@ Wired via the `_:safe-link` entry in `taskfiles/links.yml` `configs:` sub-task.
 
 ## Feature gate
 
-Always on -- no feature flag. Conda is declared in `packages/` for machines
-that use it; the condarc is lightweight enough to be always-on (it simply
-redirects data paths and disables telemetry).
+Always on -- no feature flag. `miniconda` is declared as a cask in
+`manifests/machines/<name>.toml [packages.brew.extra_packages]` for machines
+that use it (currently `personal-laptop`); the condarc is lightweight enough
+to be always-on (it simply redirects data paths and disables telemetry).
 
 ## References
 

@@ -19,7 +19,7 @@ Wired via the `_:safe-link` entry in `taskfiles/links.yml` `configs:` sub-task.
 ## Feature gate
 
 Always on -- no feature flag. Every machine that installs `trippy` (declared in
-`packages/`) gets this config symlinked automatically.
+`manifests/shared/core.toml`) gets this config symlinked automatically.
 
 ## References
 

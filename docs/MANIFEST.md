@@ -33,7 +33,7 @@ one-password-ssh = false
 claude-marketplace = true
 
 [packages.brew]
-# Bundle names map to packages/<name>.rb.
+# Bundle names map to manifests/shared/<name>.toml.
 bundles = ["core"]
 # Additive escape hatch -- resolver computes the dedupe union of defaults plus machine extras.
 extra_packages = []
@@ -90,7 +90,7 @@ supply a value -- silent inheritance of required fields is the drift class being
 | `meta.description` | string | any | Free-text purpose statement for the machine |
 | `platform.os` | string | `"darwin"` | v1 only; v2 will add `"linux"` |
 | `features` | table | any key-value pairs | May be empty `{}`; each key is kebab-case |
-| `packages.brew.bundles` | array of strings | non-empty; must include `"core"` | Maps to `packages/<name>.rb` files |
+| `packages.brew.bundles` | array of strings | non-empty; must include `"core"` | Each name N must have a `manifests/shared/N.toml` file; the resolver folds its `[packages.brew]` typed buckets (formulae/casks/mas) into the resolved extras |
 | `identity.git` | string | basename of a file under `identity/git/identities/` | Drives Phase 4 git config selection; resolver rejects names with no overlay file |
 | `identity.ssh` | string | basename of a file under `identity/ssh/identities/` | Drives Phase 4 SSH config selection; resolver rejects names with no overlay file |
 

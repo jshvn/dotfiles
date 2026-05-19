@@ -19,11 +19,12 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   Self-bootstrapping under `set -u` via the `${DOTFILES_MESSAGES_LOADED:-}`
   guard -- callers source it with a bare `source` line (see the `set -u
   contract` block at the top of the file).
-- `compose-brewfile.zsh` -- Reads `resolved.json` plus
-  `packages/<bundle>.rb` files and writes a composed
-  `$XDG_CACHE_HOME/dotfiles/Brewfile` (atomic mktemp+mv). Invoked by
-  `taskfiles/packages.yml :: packages:compose` and indirectly by
-  `packages:install`.
+- `compose-brewfile.zsh` -- Reads `resolved.json`'s typed buckets
+  (`packages.brew.extra_packages.{formulae,casks,mas}`, already folded
+  in by `resolver.zsh` from `manifests/shared/<bundle>.toml`) and writes
+  a composed `$XDG_CACHE_HOME/dotfiles/Brewfile` (atomic mktemp+mv).
+  Invoked by `taskfiles/packages.yml :: packages:compose` and indirectly
+  by `packages:install`.
 - `test-hooks.zsh` -- Tier-3 smoke-test runner for the four named Claude
   hooks (`secret-scan`, `no-emojis`, `no-ai-comments`, `agent-transparency`).
   Invoked by `taskfiles/test.yml :: test:hooks`; exit code is the count of
@@ -44,9 +45,11 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   output, add it to `messages.zsh` -- the existing self-bootstrap contract
   applies to new functions automatically. Otherwise create a new file
   under `install/` following the same conventions.
-- **A new Brew package.** Add packages to `packages/<purpose>.rb` (named
-  by role, not by profile) or to the machine manifest's `extra_packages`
-  typed sub-table (`formulae` / `casks` / `mas`) for one-offs.
+- **A new Brew package.** Add to a shared bundle at
+  `manifests/shared/<purpose>.toml` (named by role, not by profile -- a
+  shared bundle's `[packages.brew]` table accepts `formulae` / `casks` /
+  `mas` arrays with the same shape as machine extras) or to the machine
+  manifest's `extra_packages` typed sub-table for one-offs.
 
 ## References
 

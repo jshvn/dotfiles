@@ -61,15 +61,16 @@ rules to the `validate_manifest` block in `resolver.zsh`.
 - One function per `shell/functions/<name>.zsh`
 - One taskfile per concern (`taskfiles/<concern>.yml`)
 - One machine manifest per machine (`manifests/machines/<name>.toml`)
-- One Brewfile per purpose (`packages/<purpose>.rb`)
+- One shared bundle per purpose (`manifests/shared/<purpose>.toml`)
 - One macOS defaults concern per file (`os/defaults/<concern>.zsh`)
 
 ### Flat directories in v1
 
 No subdirectories inside `shell/aliases/` — all alias files live at the top of that directory.
-No `packages/brew/` subdirectory. No `os/darwin/` nesting. v1 targets macOS only, so the
-platform dimension collapses to a flat layout. When Linux enters scope in a future version, the
-directory structure will reshape — that migration cost is documented in `PROJECT.md` and accepted.
+No `manifests/shared/brew/` subdirectory; shared TOMLs are flat under `manifests/shared/`. No
+`os/darwin/` nesting. v1 targets macOS only, so the platform dimension collapses to a flat
+layout. When Linux enters scope in a future version, the directory structure will reshape —
+that migration cost is documented in `PROJECT.md` and accepted.
 
 ### kebab-case feature names need `index` access
 
@@ -164,7 +165,7 @@ antigen, `compinit` daily-rebuild cache, theme, functions, aliases) ->
 | An alias | `shell/aliases/<topic>.zsh` | kebab-case topic; one topic per file; flat (no subdir) |
 | A function | `shell/functions/<name>.zsh` | filename equals function name; lowercase |
 | A new machine | `manifests/machines/<name>.toml` + `task setup -- <name>` | kebab-case |
-| A brew package | `packages/<purpose>.rb` (or `extra_packages` in the machine manifest for one-offs) | by purpose, not by machine |
+| A brew package | `manifests/shared/<purpose>.toml` (or `extra_packages` in the machine manifest for one-offs) | by purpose, not by machine |
 | A macOS defaults concern | `os/defaults/<concern>.zsh` + feature flag in `defaults.toml` | one concern per file |
 | A feature flag | `manifests/defaults.toml [features]` block + consuming task in the appropriate taskfile | kebab-case key |
 | A tool config | `configs/<tool>/` + symlink entry in `taskfiles/links.yml` | use the tool's expected config filename |
@@ -198,8 +199,9 @@ antigen, `compinit` daily-rebuild cache, theme, functions, aliases) ->
   in `install/resolver.zsh`.
 - Don't create subdirectories under `shell/aliases/` — the v2 layout is flat. No `common/`,
   no `darwin/`, no profile subdirs. All alias files live directly in `shell/aliases/`.
-- Don't add a profile-suffixed file (e.g., `Brewfile-personal.rb`). Brewfiles are named by
-  purpose (`core.rb`, `gui.rb`, `dev.rb`), not by machine.
+- Don't add a profile-suffixed shared bundle (e.g., `manifests/shared/personal.toml`).
+  Shared bundles are named by purpose (`core.toml`, `gui.toml`, future `dev.toml`), not by
+  machine. Per-machine variation goes in `manifests/machines/<name>.toml [packages.brew.extra_packages]`.
 - Don't bypass `_:safe-link` when creating symlinks.
 - Don't use `$VAR` (shell variable) where `{{.VAR}}` (task template variable) is expected —
   especially inside `status:` blocks.
