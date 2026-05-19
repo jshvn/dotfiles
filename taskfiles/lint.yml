@@ -115,7 +115,17 @@ tasks:
         done < <(find {{.DOTFILEDIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
 
         # LINT-03b: bare ln -s outside taskfiles/helpers.yml.
-        violations=$(ggrep -rn -E '\bln[[:space:]]+-s' "{{.DOTFILEDIR}}/taskfiles/" \
+        # Scope:
+        #   --include='*.yml'    -- markdown docs that describe the rule
+        #                           (taskfiles/README.md mentions `ln -s`)
+        #                           must not trip it.
+        #   --exclude-dir='test' -- self-test fixtures intentionally contain
+        #                           bare ln -s to verify the rule fires (e.g.
+        #                           03b-bare-ln/Taskfile.yml); they belong to
+        #                           lint:test-fixtures, not production scan.
+        violations=$(ggrep -rn -E '\bln[[:space:]]+-s' \
+                      --include='*.yml' --exclude-dir='test' \
+                      "{{.DOTFILEDIR}}/taskfiles/" \
                       | ggrep -v 'helpers.yml' \
                       | ggrep -v ':[[:space:]]*#' || true)
         if [[ -n "$violations" ]]; then
@@ -264,13 +274,26 @@ tasks:
               fi
               ;;
             03b-*)
-              # LINT-03b: bare ln -s outside helpers.yml
-              file=$(ls "$fix"/*.yml 2>/dev/null | head -1)
-              base=$(basename "$file")
-              if ggrep -qE '\bln[[:space:]]+-s' "$file" && [[ "$base" != "helpers.yml" ]]; then
-                actual=fail
-              else
+              # LINT-03b: bare ln -s outside helpers.yml.
+              # Mirror production scope: scan *.yml only (production uses
+              # --include='*.yml' --exclude-dir='test'). A fixture with no
+              # .yml file (e.g. 03b-readme-ok/README.md) is out of scope and
+              # passes by construction -- exactly as the production rule
+              # treats taskfiles/README.md.
+              # `|| true` is required: under root errexit+pipefail
+              # (Taskfile.yml:15), an unmatched glob makes `ls` exit non-zero
+              # and pipefail propagates it through `head`, which would abort
+              # the script before the case branch runs.
+              file=$(ls "$fix"/*.yml 2>/dev/null | head -1 || true)
+              if [[ -z "$file" ]]; then
                 actual=pass
+              else
+                base=$(basename "$file")
+                if ggrep -qE '\bln[[:space:]]+-s' "$file" && [[ "$base" != "helpers.yml" ]]; then
+                  actual=fail
+                else
+                  actual=pass
+                fi
               fi
               ;;
             04*)
