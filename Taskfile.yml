@@ -124,9 +124,9 @@ tasks:
         info "  lint        Run all lint checks"
         echo
         header "Diagnostics"
-        info "  task show:*      Inspect current state (manifest, claude, hostname)"
-        info "  task audit:*     Detect drift (manifest, packages, links)"
-        info "  task refresh:*   Manually refresh a layer (claude)"
+        info "  task show:*                   Inspect current state (manifest, claude, hostname)"
+        info "  task audit:*                  Detect drift (manifest, packages, links)"
+        info "  task refresh:*                Manually refresh a layer (claude)"
         info "  task hostname:set -- <name>   Set the live hostname (requires sudo; self-heals on task install)"
         echo
         echo "Run 'task --list' for the full task graph."
