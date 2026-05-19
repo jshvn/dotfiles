@@ -20,7 +20,7 @@ lives at the repo root as `bootstrap.zsh` (deviation Rule 3 -- path correction).
 | file                                            | code_lines | comments_pre | comments_post | delta | % reduction |
 |-------------------------------------------------|-----------:|-------------:|--------------:|------:|------------:|
 | taskfiles/links.yml                             |        334 |          230 |            80 |  -150 |         65% |
-| shell/.zlogout                                  |          1 |           53 |           TBD |   TBD |         TBD |
+| shell/.zlogout                                  |          1 |           53 |             9 |   -44 |         83% |
 | Taskfile.yml                                    |        132 |          102 |           TBD |   TBD |         TBD |
 | taskfiles/packages.yml                          |        294 |          202 |           TBD |   TBD |         TBD |
 | taskfiles/identity.yml                          |        272 |          167 |           TBD |   TBD |         TBD |
