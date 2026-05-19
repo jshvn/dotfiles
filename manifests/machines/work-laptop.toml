@@ -19,7 +19,6 @@ macos-finder = true
 macos-input = true
 macos-screenshots = true
 macos-security = true
-motd = true
 claude-marketplace = true
 ghostty = true
 
