@@ -3,9 +3,9 @@
 # =============================================================================
 # install/compose-brewfile.zsh -- compose per-machine Brewfile from manifest
 #
-# Purpose:      Read $XDG_STATE_HOME/dotfiles/resolved.json + packages/<name>.rb
-#               bundle files and emit a composed per-machine Brewfile to
-#               $XDG_CACHE_HOME/dotfiles/Brewfile (atomic mktemp + mv).
+# Purpose:      Read $XDG_STATE_HOME/dotfiles/resolved.json and emit a
+#               composed per-machine Brewfile to $XDG_CACHE_HOME/dotfiles/
+#               Brewfile (atomic mktemp + mv).
 # Depends on:   jq (>= 1.7), zsh (>= 5); install/messages.zsh.
 # Side effects: writes $XDG_CACHE_HOME/dotfiles/Brewfile.
 # =============================================================================
@@ -15,9 +15,14 @@ set -euo pipefail
 # Output structure (composed Brewfile written to $XDG_CACHE_HOME/dotfiles/Brewfile):
 #   Line 1    -- AUTO-GENERATED header banner (ISO-8601 UTC timestamp)
 #   Lines 2-5 -- Machine: / Bundles: / Extras: counts / DO NOT EDIT notice
-#   Body      -- each declared bundle (packages/<name>.rb) concatenated
-#                verbatim in declared order, with section separators
-#   Tail      -- typed extras as Ruby DSL lines (formulae / casks / mas)
+#   Body      -- typed extras emitted as Ruby DSL lines, in fixed order:
+#                  formulae -> casks -> mas
+#
+# The resolver folds each shared-bundle's typed buckets (manifests/shared/
+# <bundle>.toml `.packages.brew.{formulae,casks,mas}`) into resolved.json's
+# packages.brew.extra_packages during resolve, so the composer no longer
+# concatenates per-bundle .rb files. `bundles` survives in resolved.json
+# for the header-banner trace; it does not gate any composer behavior.
 #
 # Extras line shapes (canonical; literal single-quotes around the name):
 #   brew '<name>'                              (formula -- string OR {name,...} object)
@@ -39,7 +44,6 @@ typeset -r RESOLVED_JSON="${STATE_DIR}/resolved.json"
 typeset -r MACHINE_FILE="${STATE_DIR}/machine"
 typeset -r CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
 typeset -r COMPOSED_OUT="${CACHE_DIR}/Brewfile"
-typeset -r BUNDLES_DIR="${DOTFILEDIR}/packages"
 
 # Literal single-quote (U+0027) injected as a jq --arg parameter so jq
 # filter strings can stay inside zsh single-quote wrapping with no brittle
@@ -97,22 +101,16 @@ compose() {
     echo "# DO NOT EDIT -- regenerated on every task install."
     echo ""
 
-    for b in "${bundles[@]}"; do
-      echo "# === bundle: ${b}.rb ==="
-      cat "${BUNDLES_DIR}/${b}.rb"
-      echo ""
-    done
-
     # Canonical jq emit forms. Both formula shapes (bare string OR
     # {name, ...} object) emit the same bare `brew '<name>'` line. SQ
     # passed as $q so the jq filter stays inside zsh single-quote wrapping.
-    echo "# === extras (formulae) ==="
+    echo "# === formulae ==="
     echo "$formulae_json" | jq -r --arg q "$SQ" '.[] | if type == "string" then "brew " + $q + . + $q else "brew " + $q + .name + $q end'
 
-    echo "# === extras (casks) ==="
+    echo "# === casks ==="
     echo "$casks_json" | jq -r --arg q "$SQ" '.[] | "cask " + $q + .name + $q'
 
-    echo "# === extras (mas) ==="
+    echo "# === mas ==="
     echo "$mas_json" | jq -r --arg q "$SQ" '.[] | "mas " + $q + .name + $q + ", id: " + (.id | tostring)'
   } > "$out_tmp"
 }
@@ -130,20 +128,6 @@ main() {
   formulae_json=$(jq -c '.packages.brew.extra_packages.formulae // []' "$RESOLVED_JSON")
   casks_json=$(jq -c    '.packages.brew.extra_packages.casks    // []' "$RESOLVED_JSON")
   mas_json=$(jq -c      '.packages.brew.extra_packages.mas      // []' "$RESOLVED_JSON")
-
-  # Validate bundle files exist BEFORE writing anything -- fail-fast keeps
-  # the cache directory free of half-composed Brewfile.* tmp files when a
-  # typo or missing bundle would abort mid-stream.
-  local -a bundles
-  bundles=( $(jq -r '.packages.brew.bundles[]' "$RESOLVED_JSON") )
-  local b
-  for b in "${bundles[@]}"; do
-    if [[ ! -f "${BUNDLES_DIR}/${b}.rb" ]]; then
-      error "bundle file not found: ${BUNDLES_DIR}/${b}.rb"
-      error "  declared in: ${RESOLVED_JSON} (.packages.brew.bundles)"
-      return 1
-    fi
-  done
 
   # Atomic write: mktemp in the same directory as the destination so `mv`
   # is an atomic rename across the same filesystem (POSIX rename(2)).
