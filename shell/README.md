@@ -13,8 +13,9 @@ see `../.planning/ROADMAP.md` for the deferred migration cost.
   login, `.zshrc` on interactive, `.zlogin` after `.zshrc` on login, and
   `.zlogout` on login-shell exit.
 - `theme.zsh` -- alanpeabody-based prompt; consumed by `.zshrc` after
-  antidote loads `omz-git` (the v1 prompt is small, fast, and not on
-  life support; no Starship swap in v1).
+  antigen loads `ohmyzsh/ohmyzsh git` (the v1 prompt is small, fast, and
+  not on life support; no Starship swap in v1). antidote was evaluated in
+  Phase 3 D-01 and reverted; see `.zshrc:75` comment for rationale.
 - `aliases/<topic>.zsh` -- flat layout, one topic per file. Gating
   happens inside the file: wrapper functions for 1-3 aliases (D-07);
   source-time `return 0` for bulk-alias loops (D-08).
