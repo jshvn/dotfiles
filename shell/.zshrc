@@ -10,10 +10,26 @@
 # Depends on:   .zshenv (XDG vars + DOTFILES_MACHINE); .zprofile (brew
 #               shellenv); antigen at $HOMEBREW_PREFIX/share/antigen/;
 #               shell/theme.zsh; shell/functions/*.zsh; shell/aliases/*.zsh.
-# Side effects: writes $XDG_CACHE_HOME/zsh/zcompcache; sources antigen +
-#               OMZ + plugin bundles; conditionally sources VS Code shell
+# Side effects: exports HISTFILE, HIST_STAMPS, HISTSIZE, SAVEHIST; creates
+#               HISTFILE parent dir; enables SHARE_HISTORY setopt; writes
+#               $XDG_CACHE_HOME/zsh/zcompcache; sources antigen + OMZ +
+#               plugin bundles; conditionally sources VS Code shell
 #               integration; prints stderr warning when no machine selected.
 # =============================================================================
+
+# HISTFILE must live in .zshrc, not .zshenv. Two sources clobber any .zshenv
+# assignment for interactive shells: Apple's /etc/zshrc (runs before user
+# .zshrc and sets HISTFILE=${ZDOTDIR:-$HOME}/.zsh_history) and VS Code's
+# shellIntegration-rc.zsh (sets HISTFILE=$USER_ZDOTDIR/.zsh_history before
+# sourcing the rest of this file). The .zshrc assignment below is the last
+# write and therefore wins. SHARE_HISTORY requires HISTFILE to be set before
+# any history I/O begins.
+export HISTFILE="$XDG_DATA_HOME/zsh/history"
+export HIST_STAMPS="%Y-%m-%d %I:%M:%S"
+export HISTSIZE=50000
+export SAVEHIST=50000
+mkdir -p "${HISTFILE%/*}"
+setopt SHARE_HISTORY
 
 # compinit daily-rebuild cache: skip security check (-C) when zcompdump is
 # fresh; full check (-d) once per day.
