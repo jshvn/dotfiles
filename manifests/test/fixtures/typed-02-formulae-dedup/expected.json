@@ -1,0 +1,37 @@
+{
+  "features": {},
+  "packages": {
+    "brew": {
+      "bundles": [
+        "core"
+      ],
+      "extra_packages": {
+        "formulae": [
+          "curl",
+          {
+            "name": "git",
+            "verify": "git --version"
+          },
+          {
+            "name": "ripgrep",
+            "verify": "rg --version"
+          }
+        ],
+        "casks": [],
+        "mas": []
+      }
+    }
+  },
+  "schema_version": 1,
+  "meta": {
+    "description": "typed-02-formulae-dedup fixture"
+  },
+  "platform": {
+    "os": "darwin",
+    "arch": "FROM_UNAME"
+  },
+  "identity": {
+    "git": "none",
+    "ssh": "none"
+  }
+}

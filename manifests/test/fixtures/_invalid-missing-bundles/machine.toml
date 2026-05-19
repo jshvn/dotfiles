@@ -1,0 +1,17 @@
+# negative fixture -- packages.brew.bundles absent; required field.
+
+schema_version = 1
+
+[meta]
+description = "missing-bundles negative fixture"
+
+[platform]
+os = "darwin"
+
+[features]
+
+[packages.brew]
+
+[identity]
+git = "none"
+ssh = "none"

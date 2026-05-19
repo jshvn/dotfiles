@@ -58,8 +58,7 @@ same live directory.
 
 | Task | When to run |
 |------|-------------|
-| `task claude:install` | Initial install (idempotent; re-run is safe) |
-| `task claude:update` | Explicit refresh of marketplaces, plugins, and GSD |
+| `task claude:install` | First-time install + every-run upgrade (called by `task install`) |
 | `task claude:status` | Diagnostic: show installed marketplaces and plugins |
 | `task claude:validate` | State check: check/cross for all components |
 
@@ -67,9 +66,10 @@ same live directory.
 `manifests/defaults.toml`. Machines with `claude-marketplace = false`
 (e.g., `manifests/machines/atium.toml`) skip the install step entirely.
 
-`task claude:update` is NOT in the `task install` call graph. It is an
-explicit refresh command -- run it when you want fresh GSD artifacts,
-updated marketplace indexes, or updated plugins.
+There is no separate update path. Every `task install` invocation runs
+the internal `claude:upgrade` step (`claude plugin marketplace update`
++ `claude plugin update <id>` + GSD sentinel bust) so marketplace,
+plugins, and GSD are always pulled to latest.
 
 ## GSD Sentinel (CLDE-03)
 
@@ -86,12 +86,12 @@ $XDG_STATE_HOME/dotfiles/gsd-installed
 ```
 
 `npx` runs only when the sentinel is absent. After a successful install, the
-sentinel is touched. To force a re-install without running a full
-`task claude:update`, delete the sentinel manually:
+sentinel is touched. To force a re-install, delete the sentinel and re-run
+`task install`:
 
 ```
 rm -f "$XDG_STATE_HOME/dotfiles/gsd-installed"
-task claude:gsd
+task install
 ```
 
 ## Hooks

@@ -3,8 +3,11 @@ version: '3'
 # =============================================================================
 # taskfiles/claude.yml -- Claude Code plugin management
 #
-# Purpose:      Install, update, and validate Claude Code marketplaces,
+# Purpose:      Install, upgrade, and validate Claude Code marketplaces,
 #               plugins, and the get-shit-done-cc (GSD) global installer.
+#               `claude:install` ensures presence (status-gated) AND pulls
+#               latest on every run via the internal `upgrade` step; there
+#               is no separate operator-facing update command.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh;
 #               :manifest:resolve (deps); claude + jq CLIs (ensure-cli gate).
 # Side effects: registers marketplaces; installs plugins; runs
@@ -31,7 +34,7 @@ vars:
 tasks:
 
   install:
-    desc: "Install Claude Code marketplaces, plugins, and get-shit-done-cc"
+    desc: "Install + upgrade Claude Code marketplaces, plugins, and get-shit-done-cc"
     internal: true
     deps: [":manifest:resolve"]
     # Feature gate via status: block, NOT split-cmd {{if}}/{{end}}. go-task
@@ -40,15 +43,25 @@ tasks:
     # `template: :1: unexpected EOF` on every install run regardless of
     # feature state. Idempotency for the feature-on path lives inside each
     # sub-task; this status block is purely a feature gate.
+    #
+    # Sequence:
+    #   1. marketplace -- status-gated; ensures marketplace+plugin are present
+    #      (first-time install, or repairs missing items).
+    #   2. upgrade     -- always-run; pulls latest marketplace index, updates
+    #      plugins to latest, and busts the GSD sentinel so step 3 re-fetches.
+    #   3. gsd         -- sentinel-gated; runs `npx -y get-shit-done-cc@latest`
+    #      iff sentinel missing (upgrade just removed it, so this re-runs).
+    # Net effect: `task install` ALWAYS pulls latest claude artifacts.
     status:
       - '{{if index .MANIFEST.features "claude-marketplace"}}false{{else}}true{{end}}'
     cmds:
       - task: ensure-cli
       - task: marketplace
+      - task: upgrade
       - task: gsd
       - |
         {{.DOTFILES_MESSAGES}}
-        success "Claude plugins installed"
+        success "Claude plugins installed + upgraded"
 
   marketplace:
     internal: true
@@ -100,6 +113,28 @@ tasks:
             claude plugin install "{{.ID}}"
           fi
 
+  # lint-allow: cmds-without-status
+  upgrade:
+    internal: true
+    desc: "Pull latest marketplace + plugins + bust GSD sentinel (always-run; called by install)"
+    deps: ["ensure-cli", ":manifest:resolve"]
+    # Always-runs by design -- this is the step that makes `task install`
+    # equivalent to `task update`. `claude plugin marketplace update` and
+    # `claude plugin update <id>` are upstream-no-op when already at latest,
+    # so cost on the happy path is two HTTP HEAD-ish checks. Removing the
+    # GSD sentinel last lets the subsequent `gsd` task re-fetch via npx.
+    status: [false]
+    cmds:
+      - claude plugin marketplace update
+      - for:
+          var: CLAUDE_PLUGINS
+          split: "\n"
+          as: ID
+        cmd: |
+          [[ -z "{{.ID}}" ]] && exit 0
+          claude plugin update "{{.ID}}"
+      - rm -f {{.GSD_SENTINEL}}
+
   gsd:
     internal: true
     desc: "Install get-shit-done-cc (presence-sentinel idempotent)"
@@ -116,25 +151,6 @@ tasks:
         mkdir -p "$(dirname {{.GSD_SENTINEL}})"
         touch {{.GSD_SENTINEL}}
         success "GSD installed; sentinel touched at {{.GSD_SENTINEL}}"
-
-  # lint-allow: cmds-without-status
-  update:
-    desc: "Refresh marketplaces + plugins + GSD (explicit; not in task install)"
-    internal: true
-    # Explicit refresh path -- NOT in `task install`'s call graph. Always-runs.
-    deps: ["ensure-cli", ":manifest:resolve"]
-    status: [false]
-    cmds:
-      - claude plugin marketplace update
-      - for:
-          var: CLAUDE_PLUGINS
-          split: "\n"
-          as: ID
-        cmd: |
-          [[ -z "{{.ID}}" ]] && exit 0
-          claude plugin update "{{.ID}}"
-      - rm -f {{.GSD_SENTINEL}}
-      - task: gsd
 
   # lint-allow: cmds-without-status
   status:

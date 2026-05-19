@@ -1,0 +1,33 @@
+{
+  "features": {},
+  "packages": {
+    "brew": {
+      "bundles": [
+        "core",
+        "util"
+      ],
+      "extra_packages": {
+        "formulae": [
+          "curl",
+          "git",
+          "jq",
+          "yq"
+        ],
+        "casks": [],
+        "mas": []
+      }
+    }
+  },
+  "schema_version": 1,
+  "meta": {
+    "description": "typed-01-baseline fixture"
+  },
+  "platform": {
+    "os": "darwin",
+    "arch": "FROM_UNAME"
+  },
+  "identity": {
+    "git": "none",
+    "ssh": "none"
+  }
+}

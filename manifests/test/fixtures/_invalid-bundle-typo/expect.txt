@@ -1,0 +1,2 @@
+no shared file
+typoed bundle name in stderr

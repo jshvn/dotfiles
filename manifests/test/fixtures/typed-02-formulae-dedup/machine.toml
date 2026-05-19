@@ -1,0 +1,29 @@
+# typed-02-formulae-dedup -- exercises bare-string vs object union for
+# formulae. Shared core declares "git" + "curl" as bare; machine
+# declares "git" as an object with verify metadata. Object wins.
+# ripgrep appears only in machine as object -- passes through.
+
+schema_version = 1
+
+[meta]
+description = "typed-02-formulae-dedup fixture"
+
+[platform]
+os = "darwin"
+
+[features]
+
+[packages.brew]
+bundles = ["core"]
+
+[packages.brew.extra_packages]
+formulae = [
+  { name = "git",     verify = "git --version" },
+  { name = "ripgrep", verify = "rg --version" },
+]
+casks = []
+mas = []
+
+[identity]
+git = "none"
+ssh = "none"

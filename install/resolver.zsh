@@ -19,9 +19,13 @@ set -euo pipefail
 : "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task manifest:*' or export it manually}"
 source "${DOTFILEDIR}/install/messages.zsh"
 
-typeset -r DEFAULTS="${DOTFILEDIR}/manifests/defaults.toml"
+# DEFAULTS and SHARED_DIR are overridable via --defaults and --shared-dir
+# CLI flags (testing only -- see main() arg parser). The runtime values are
+# the only ones referenced by validate_manifest / resolve_pipeline; the
+# initial assignment here is the production default.
+typeset DEFAULTS="${DOTFILEDIR}/manifests/defaults.toml"
+typeset SHARED_DIR="${DOTFILEDIR}/manifests/shared"
 typeset -r MACHINES_DIR="${DOTFILEDIR}/manifests/machines"
-typeset -r SHARED_DIR="${DOTFILEDIR}/manifests/shared"
 typeset -r STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
 typeset -r STATE_FILE="${STATE_DIR}/machine"
 typeset -r OUT="${STATE_DIR}/resolved.json"
@@ -277,7 +281,13 @@ emit_unknown_key_warnings() {
       fi
       warn "unknown key: ${found} at ${machine_file}:${line_no:-?}"
     fi
-  done < <(yq -r '[paths(scalars) | join(".")] | .[]' "$machine_file" 2>/dev/null || true)
+  # `paths(scalars)` is a jq builtin -- mikefarah yq does NOT support it
+  # (a prior all-yq pipeline silently failed via 2>/dev/null and emit_*
+  # never warned about anything). Pipe TOML -> JSON via yq, then jq for
+  # the path walk. Both stages must succeed; if jq fails on a malformed
+  # TOML the loop iterates zero paths and the function exits 0 (advisory).
+  done < <(yq -o json "$machine_file" 2>/dev/null \
+            | jq -r '[paths(scalars) | join(".")] | .[]' 2>/dev/null || true)
 
   return 0
 }
@@ -540,12 +550,34 @@ main() {
         use_stdout=1
         shift
         ;;
+      --defaults)
+        # Testing only: override path to defaults.toml.
+        if (( $# < 2 )); then
+          error "--defaults requires an argument"
+          return 1
+        fi
+        DEFAULTS="$2"
+        shift 2
+        ;;
+      --shared-dir)
+        # Testing only: override path to manifests/shared/ directory.
+        if (( $# < 2 )); then
+          error "--shared-dir requires an argument"
+          return 1
+        fi
+        SHARED_DIR="$2"
+        shift 2
+        ;;
       --help|-h)
         cat <<'USAGE'
 Usage:
   zsh install/resolver.zsh                              # resolve mode (default)
   zsh install/resolver.zsh --validate-only --machine <name>
   zsh install/resolver.zsh --machine <name> --stdout    # ad-hoc resolve to stdout
+
+Test-only flags (do not use in production):
+  --defaults <path>       override defaults.toml path
+  --shared-dir <path>     override manifests/shared/ directory
 
 Environment:
   DOTFILEDIR        repo root (required)

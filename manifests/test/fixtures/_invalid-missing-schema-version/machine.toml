@@ -1,0 +1,16 @@
+# negative fixture -- schema_version absent; v2 forward-compat depends on it.
+
+[meta]
+description = "missing-schema-version negative fixture"
+
+[platform]
+os = "darwin"
+
+[features]
+
+[packages.brew]
+bundles = ["core"]
+
+[identity]
+git = "none"
+ssh = "none"

@@ -1,0 +1,11 @@
+# Test shared bundle -- "core" for typed-bucket fixtures only.
+# NEVER referenced by real machine manifests under manifests/machines/;
+# selection happens via the resolver's --shared-dir flag in the test
+# runner. Keep contents stable -- fixture expected.json files lock in
+# the resolved output. Changing a package here cascades to every
+# typed-* fixture's expected output.
+
+[packages.brew]
+formulae = ["git", "curl"]
+casks = []
+mas = []

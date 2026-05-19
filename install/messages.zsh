@@ -35,7 +35,7 @@ function success() {
 }
 
 function warn() {
-    echo -e "${DOTFILES_YELLOW}[WARN]${DOTFILES_NC} $*"
+    echo -e "${DOTFILES_YELLOW}[WARN]${DOTFILES_NC} $*" >&2
 }
 
 function error() {

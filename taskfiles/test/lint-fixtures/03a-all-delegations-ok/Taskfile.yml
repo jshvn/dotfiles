@@ -1,0 +1,35 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/03a-all-delegations-ok/Taskfile.yml
+#
+# Negative fixture for LINT-03a: orchestrator task with cmds: that are ALL
+# `- task: X` delegations and no status: block. Delegations carry no shell
+# side effects -- the called tasks own their own status: checks -- so
+# LINT-03a must NOT flag this case.
+#
+# Guards the production yq query at lint.yml ~line 145
+# (`map(has("task")) | all`). The buggy `all(has("task"))` form silently
+# returns false via `|| echo false`, mis-flagging this fixture.
+#
+# Expected outcome: LINT-03a does not fire (expect: pass)
+# =============================================================================
+
+tasks:
+  orchestrator:
+    desc: "fixture: pure-delegation orchestrator without status (exempt from LINT-03a)"
+    cmds:
+      - task: leaf-a
+      - task: leaf-b
+
+  leaf-a:
+    desc: "fixture leaf with its own status:"
+    status: [true]
+    cmds:
+      - echo leaf-a
+
+  leaf-b:
+    desc: "fixture leaf with its own status:"
+    status: [true]
+    cmds:
+      - echo leaf-b

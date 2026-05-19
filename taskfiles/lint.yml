@@ -295,8 +295,16 @@ tasks:
           case "$name" in
             02*|03a-*)
               # LINT-02 / LINT-03a: scope to fixture's Taskfile.yml.
+              #
+              # NOTE: queries below must stay aligned with the production rule
+              # bodies above (LINT-02 ~line 110, LINT-03a ~line 180). The
+              # `map(has("task")) | all` form is required -- the alternative
+              # `all(has("task"))` is a yq syntax error and was previously
+              # masked by `|| echo false`, leaving the all-delegations
+              # exemption untested. The new fixture 03a-all-delegations-ok
+              # exercises this path so future drift trips the self-test.
               # LINT-02 per-entry local-vars allow-list mirrors the production
-              # rule (~line 102); fixtures 02d/02e exercise the new code paths.
+              # implementation; fixtures 02d/02e exercise the new code paths.
               lint02_hit=""
               n02=$(cd "$fix" && yq -o=json '[.tasks[] | select(.status) | .status[] | select(tag == "!!str")] | length' Taskfile.yml 2>/dev/null || echo 0)
               for ((k02=0; k02<n02; k02++)); do
@@ -334,9 +342,9 @@ tasks:
               lint03a_hit=""
               while IFS= read -r task_name; do
                 [[ -z "$task_name" ]] && continue
-                is_internal=$(cd "$fix" && yq ".tasks.\"$task_name\".internal // false" Taskfile.yml 2>/dev/null || echo false)
+                is_internal=$(cd "$fix" && yq ".tasks[\"$task_name\"].internal // false" Taskfile.yml 2>/dev/null || echo false)
                 [[ "$is_internal" == "true" ]] && continue
-                all_delegations=$(cd "$fix" && yq ".tasks.\"$task_name\".cmds | all(has(\"task\"))" Taskfile.yml 2>/dev/null || echo false)
+                all_delegations=$(cd "$fix" && yq ".tasks[\"$task_name\"].cmds | map(has(\"task\")) | all" Taskfile.yml 2>/dev/null || echo false)
                 [[ "$all_delegations" == "true" ]] && continue
                 lint03a_hit="${lint03a_hit}${task_name} "
               done < <(cd "$fix" && yq '.tasks | to_entries | .[] | select(.value | has("cmds")) | select(.value | has("status") | not) | .key' Taskfile.yml 2>/dev/null || true)
@@ -379,21 +387,51 @@ tasks:
               fi
               ;;
             05*)
-              # LINT-05: portability pattern (warn-only). actual="warn" if pattern found.
+              # LINT-05: portability pattern (warn-only). One fixture per
+              # production patterns[] entry. Drift-guard: the slug derived
+              # from the fixture name (05X-<slug>-warn) must appear in the
+              # production patterns=(...) line at lint.yml ~line 188. If a
+              # pattern is dropped from production, the corresponding fixture
+              # flips to `actual=fail` and the self-test fails.
               file=$(ls "$fix"/*.zsh 2>/dev/null | head -1)
-              if ggrep -qE '\b(pbcopy|pbpaste|osascript|sw_vers|dscl|PlistBuddy)\b|defaults (read|write)' "$file"; then
+              pat_slug=$(echo "$name" | sed -E 's/^05[a-z]-//; s/-warn$//')
+              case "$pat_slug" in
+                defaults-read)  expect_pat='defaults read'  ;;
+                defaults-write) expect_pat='defaults write' ;;
+                plistbuddy)     expect_pat='PlistBuddy'     ;;
+                *)              expect_pat="$pat_slug"      ;;
+              esac
+              prod_patterns_line=$(ggrep -oE 'patterns=\([^)]+\)' "{{.DOTFILEDIR}}/taskfiles/lint.yml" | head -1)
+              if ! echo "$prod_patterns_line" | ggrep -qF "$expect_pat"; then
+                actual=fail
+                echo "    LINT-05 production patterns=(...) does not declare '$expect_pat'" >&2
+              elif ggrep -qE "${expect_pat}" "$file"; then
                 actual=warn
               else
                 actual=pass
               fi
               ;;
             07*)
-              # LINT-07: zsh -n parse error
-              file=$(ls "$fix"/*.zsh 2>/dev/null | head -1)
-              if zsh -n "$file" 2>/dev/null; then
-                actual=pass
+              # LINT-07: zsh -n parse error OR yaml-parse failure.
+              # File extension selects the arm: *.zsh -> `zsh -n`,
+              # *.yml -> `task --list-all --json` with stderr 'Failed to parse'.
+              if ls "$fix"/*.zsh >/dev/null 2>&1; then
+                file=$(ls "$fix"/*.zsh 2>/dev/null | head -1)
+                if zsh -n "$file" 2>/dev/null; then
+                  actual=pass
+                else
+                  actual=fail
+                fi
+              elif ls "$fix"/*.yml >/dev/null 2>&1; then
+                file=$(ls "$fix"/*.yml 2>/dev/null | head -1)
+                err=$(task --list-all --json -t "$file" 2>&1 >/dev/null || true)
+                if echo "$err" | ggrep -q 'Failed to parse'; then
+                  actual=fail
+                else
+                  actual=pass
+                fi
               else
-                actual=fail
+                actual=unknown
               fi
               ;;
             08*)

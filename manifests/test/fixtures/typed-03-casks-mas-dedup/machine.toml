@@ -1,0 +1,32 @@
+# typed-03-casks-mas-dedup -- exercises machine-wins semantics for
+# casks (.name) and mas (.id). When defaults and machine declare the
+# same identity key, the machine entry survives.
+
+schema_version = 1
+
+[meta]
+description = "typed-03-casks-mas-dedup fixture"
+
+[platform]
+os = "darwin"
+
+[features]
+
+[packages.brew]
+bundles = ["core"]
+
+[packages.brew.extra_packages]
+formulae = []
+
+[[packages.brew.extra_packages.casks]]
+name = "iterm2"
+# (machine entry -- defaults declares iterm2 too; machine wins on dedup)
+
+[[packages.brew.extra_packages.mas]]
+id = 497799835
+name = "Xcode-machine"
+# (machine entry -- defaults declares same id; machine wins on dedup)
+
+[identity]
+git = "none"
+ssh = "none"

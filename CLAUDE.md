@@ -31,11 +31,10 @@ surface is exactly five top-level commands:
 | `task test`      | Run all smoke tests                                          |
 | `task lint`      | Run all lint checks                                          |
 
-Three diagnostic namespaces:
+Two diagnostic namespaces:
 
-- `task show:*` -- inspect current state (`show:manifest`, `show:claude`)
+- `task show:*` -- inspect current state (`show:manifest`, `show:claude`, `show:hostname`)
 - `task audit:*` -- detect drift (`audit:manifest`, `audit:packages`, `audit:links`)
-- `task refresh:*` -- explicit manual refresh (`refresh:claude`)
 
 `task --list` shows the full curated graph (every public task; internals
 hidden). Per-component install / validate tasks are intentionally
@@ -95,7 +94,6 @@ In-code `# LINT-NN:` citations reference this catalogue. The rule body lives in
 
 | ID | Scope | What it checks |
 |----|-------|----------------|
-| LINT-01 | Taskfiles | Every install task has a `status:` block |
 | LINT-02 | Taskfiles | `status:` uses `{{.X}}` template vars, not `$X` shell vars |
 | LINT-03a | Taskfiles | Tasks with `cmds:` have `status:` (or exempt via `internal: true` / all-task-delegates) |
 | LINT-03b | Repo-wide | No bare `ln -s` outside `taskfiles/helpers.yml` |
@@ -103,6 +101,11 @@ In-code `# LINT-NN:` citations reference this catalogue. The rule body lives in
 | LINT-05 | shell/ + os/ | Portability-sensitive commands surface as warnings (non-blocking) |
 | LINT-07 | All .zsh | `zsh -n` parse-check (Tier-0 syntax) |
 | LINT-08 | Root Taskfile.yml | `default:` banner lists every public top-level task |
+
+LINT-01 and LINT-06 are intentionally absent. The original LINT-01 rule
+("every install task has a status: block") was generalized into LINT-03a
+during v2 refactoring; the gap is preserved so existing `# LINT-NN:`
+citations in code remain unambiguous.
 
 ### Every install task has a `status:` block
 

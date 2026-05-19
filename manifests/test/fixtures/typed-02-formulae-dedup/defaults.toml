@@ -1,0 +1,6 @@
+# typed-02-formulae-dedup -- defaults provide no overlapping extras;
+# the dedup interesting case is shared-vs-machine for "git".
+
+[features]
+
+[packages.brew]
