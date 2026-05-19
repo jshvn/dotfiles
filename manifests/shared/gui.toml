@@ -1,0 +1,21 @@
+# manifests/shared/gui.toml -- laptop GUI baseline. Any machine with a
+# display includes "gui" in packages.brew.bundles; headless servers omit it.
+#
+# Schema reference: docs/MANIFEST.md "Shared bundles" section.
+#
+# Minimum set: 1Password + Ghostty. Other GUI apps (Slack, VS Code, Office,
+# Docker Desktop, MAS apps, etc.) live per-machine in
+# manifests/machines/<name>.toml under [packages.brew.extra_packages].
+#
+# The 1Password command-line tool is NOT here -- it lives in core.toml as a
+# binary-only cask (1password-cli; no /Applications/.app bundle).
+
+[packages.brew]
+formulae = []
+
+casks = [
+  { name = "1password" },
+  { name = "ghostty" },
+]
+
+mas = []
