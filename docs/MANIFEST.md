@@ -30,11 +30,10 @@ os = "darwin"
 # Conservative defaults (mostly off). kebab-case keys MUST be accessed via
 # {{index .MANIFEST.features "name"}} in taskfiles (Go-template parser rejects "-" in dot-access).
 one-password-ssh = false
-motd = true
 claude-marketplace = true
 
 [packages.brew]
-# Bundle names map to packages/<name>.rb (Phase 5).
+# Bundle names map to packages/<name>.rb.
 bundles = ["core"]
 # Additive escape hatch -- resolver computes the dedupe union of defaults plus machine extras.
 extra_packages = []
@@ -64,7 +63,6 @@ macos-finder = true
 macos-input = true
 macos-screenshots = true
 macos-security = true
-motd = true
 claude-marketplace = true
 
 [packages.brew]
@@ -92,7 +90,7 @@ supply a value -- silent inheritance of required fields is the drift class being
 | `meta.description` | string | any | Free-text purpose statement for the machine |
 | `platform.os` | string | `"darwin"` | v1 only; v2 will add `"linux"` |
 | `features` | table | any key-value pairs | May be empty `{}`; each key is kebab-case |
-| `packages.brew.bundles` | array of strings | non-empty; must include `"core"` | Maps to `packages/<name>.rb` files (Phase 5) |
+| `packages.brew.bundles` | array of strings | non-empty; must include `"core"` | Maps to `packages/<name>.rb` files |
 | `identity.git` | string | basename of a file under `identity/git/identities/` | Drives Phase 4 git config selection; resolver rejects names with no overlay file |
 | `identity.ssh` | string | basename of a file under `identity/ssh/identities/` | Drives Phase 4 SSH config selection; resolver rejects names with no overlay file |
 
@@ -134,8 +132,8 @@ concatenation for `extra_packages`.
 `defaults.toml`:
 ```toml
 [features]
-motd = true
 claude-marketplace = true
+one-password-signing = false
 ```
 
 `machine.toml`:
@@ -149,8 +147,8 @@ macos-dock = true
 ```json
 {
   "features": {
-    "motd": true,
     "claude-marketplace": true,
+    "one-password-signing": false,
     "one-password-ssh": true,
     "macos-dock": true
   }
@@ -333,9 +331,9 @@ concat+deduped with the corresponding defaults sub-array. Bare strings and
 objects. In this example, `casks` is the machine's value because defaults
 declared `casks = []`; `mas` resolves to `[]` because both sides are empty.
 
-Per-sub-array union semantics replace the legacy flat-array union. The resolver's
-Pass 2 (Plan 03 deliverable) keeps backward-compat with the legacy flat-array
-shape so existing Phase 1 fixtures continue to pass.
+Per-sub-array union semantics replace the legacy flat-array union. The resolver
+keeps backward-compat with the legacy flat-array shape so existing fixtures
+continue to pass.
 
 ### Why arrays replace (not concatenate)
 
@@ -393,14 +391,13 @@ See that task for the implementation details.
 4. Validate the schema:
 
    ```zsh
-   # Phase 1 invocation (direct; see CLI Reference note)
-   task -t taskfiles/manifest.yml manifest:validate -- --machine <name>
+   task audit:manifest -- --machine <name>
    ```
 
 5. Persist the selection and regenerate `resolved.json`:
 
    ```zsh
-   task -t taskfiles/manifest.yml setup -- <name>
+   task setup -- <name>
    ```
 
    This verifies the file exists, writes `$XDG_STATE_HOME/dotfiles/machine`, and
@@ -409,7 +406,7 @@ See that task for the implementation details.
 6. Inspect the resolved output:
 
    ```zsh
-   task -t taskfiles/manifest.yml manifest:show
+   task show:manifest
    ```
 
 7. (Optional) Apply the install:
@@ -453,15 +450,10 @@ discover identities at evaluation time.
    ssh = "<name>"
    ```
 
-7. Validate: `task -t taskfiles/manifest.yml manifest:validate -- --machine <machine>`.
+7. Validate: `task audit:manifest -- --machine <machine>`.
    A typo in `<name>` is rejected with an error naming the missing overlay file.
 
 ## CLI Reference
-
-> **Phase 1 note:** Until Phase 2 wires the manifest module into the root `Taskfile.yml`
-> via `includes:`, invoke manifest tasks with the `-t` flag:
-> `task -t taskfiles/manifest.yml <subtask>`. Phase 2 removes this requirement by adding
-> `manifest: ./taskfiles/manifest.yml` to the root `includes:` block.
 
 | Command | Description |
 |---------|-------------|
@@ -488,7 +480,6 @@ as of Phase 1. Each subsequent phase extends this table with the flags it consum
 |---------|-------------|--------------|---------------------------|
 | `one-password-ssh` | Phase 4 | Enables 1Password SSH agent integration | `false` |
 | `one-password-signing` | Phase 4 | Enables git commit signing via 1Password op-ssh-sign | `false` |
-| `motd` | Phase 3 | Enables MOTD display on `.zlogin` | `true` |
 | `claude-marketplace` | Phase 7 | Installs Claude marketplace plugins | `true` |
 | `macos-dock` | Phase 6 | Runs `os/defaults/dock.zsh` | `false` |
 | `macos-finder` | Phase 3 + Phase 6 | Gates `shell/aliases/finder.zsh` (P3 D-07) + runs `os/defaults/finder.zsh` (P6 D-01 same-flag-two-consumers) | `false` |
