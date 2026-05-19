@@ -92,7 +92,7 @@ None known. Phase 9 is read-only investigation; the gating risk for the mileston
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 260518-w2y | Fix VS Code zsh history clobber: move HISTFILE exports from .zshenv to .zshrc and delete stray history files | 2026-05-19 | 6068199 | [260518-w2y-fix-vs-code-zsh-history-clobber-move-his](./quick/260518-w2y-fix-vs-code-zsh-history-clobber-move-his/) |
+| 260518-w2y | Fix VS Code zsh history clobber: move HISTFILE exports from .zshenv to .zshrc and delete stray history files | 2026-05-19 | 70de621 | [260518-w2y-fix-vs-code-zsh-history-clobber-move-his](./quick/260518-w2y-fix-vs-code-zsh-history-clobber-move-his/) |
 
 ## Deferred Items
 
