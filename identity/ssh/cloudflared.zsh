@@ -1,21 +1,21 @@
 #!/bin/zsh
-# identity/ssh/cloudflared.zsh -- ProxyCommand wrapper for cloudflared tunnels.
+
+# =============================================================================
+# identity/ssh/cloudflared.zsh -- ProxyCommand wrapper for cloudflared tunnels
 #
-# Callers: identity/ssh/identities/personal via ProxyCommand directive for
-#   *.jgrid.net and *.plex.me hosts. Invoked by SSH as a subprocess for each
-#   connection that matches those Host blocks.
-# Side effects: exec replaces this shell process with cloudflared; the parent SSH
-#   process communicates with cloudflared over stdin/stdout.
-# Requires: cloudflared installed at $HOMEBREW_PREFIX/bin/cloudflared (Homebrew).
-#
-# CR-01: SSH ProxyCommand subshells do NOT source .zprofile, so HOMEBREW_PREFIX
-# (set by `brew shellenv` at login) is absent. Under `set -u` a bare reference
-# to $HOMEBREW_PREFIX would abort the wrapper with `unbound variable` on every
-# SSH connection. Detect the prefix locally via `uname -m` per project rule
-# (no hardcoded /opt/homebrew or /usr/local except inside the dispatch).
+# Purpose:      Locate cloudflared on the Homebrew prefix and exec it,
+#               invoked by SSH for *.jgrid.net / *.plex.me Host blocks.
+# Depends on:   cloudflared installed at $HOMEBREW_PREFIX/bin/cloudflared.
+# Side effects: exec replaces this shell with cloudflared; the parent SSH
+#               process communicates over stdin/stdout.
+# =============================================================================
 
 set -euo pipefail
 
+# SSH ProxyCommand subshells do NOT source .zprofile, so HOMEBREW_PREFIX
+# (set by `brew shellenv` at login) is absent. Under `set -u` a bare
+# reference would abort the wrapper with `unbound variable` on every SSH
+# connection. Detect the prefix locally via `uname -m`.
 if [[ -z "${HOMEBREW_PREFIX:-}" ]]; then
   case "$(uname -m)" in
     arm64)  HOMEBREW_PREFIX="/opt/homebrew" ;;
