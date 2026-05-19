@@ -1,169 +1,230 @@
+# =============================================================================
+# Taskfile.yml -- root taskfile for v2 dotfiles
+#
+# Purpose:      Single canonical entry (`task install`) plus public operator
+#               surface (default banner, setup, test, validate). Wires every
+#               included taskfile module under one namespace.
+# Depends on:   taskfiles/{audit,manifest,lint,links,shell,identity,packages,
+#               refresh,claude,show,test,macos}.yml; install/messages.zsh
+#               (sourced via {{.TASKFILE_DIR}}, not DOTFILEDIR).
+# Side effects: deferred to subtasks; this file declares no direct mutations.
+# =============================================================================
+
 version: '3'
 
 set: [errexit, pipefail]
-
 silent: true
 
 vars:
-  # Core paths
   HOME: '{{.HOME}}'
   XDG_CONFIG_HOME: '{{.HOME}}/.config'
   XDG_DATA_HOME: '{{.HOME}}/.local/share'
   XDG_STATE_HOME: '{{.HOME}}/.local/state'
   XDG_CACHE_HOME: '{{.HOME}}/.cache'
   ZDOTDIR: '{{.XDG_CONFIG_HOME}}/zsh'
-  
-  # Dotfiles paths
-  DOTFILEDIR:
-    sh: cd "$(dirname "$(realpath "${BASH_SOURCE[0]:-$0}")")" 2>/dev/null && pwd || pwd
-  
-  # Profile configuration
-  VALID_PROFILES: "personal server work test"
-  PROFILE_FILE: '{{.XDG_CONFIG_HOME}}/dotfiles/profile'
-  PROFILE: 
-    sh: |
-      if [[ -f "{{.PROFILE_FILE}}" ]]; then
-        cat "{{.PROFILE_FILE}}" 2>/dev/null | tr -d '[:space:]'
-      fi
-  
-  # Homebrew prefix - defined here so all taskfiles can access it
+
+  DOTFILEDIR: '{{.TASKFILE_DIR}}'
+
+  # Homebrew prefix -- detect from arch when brew not yet installed.
   HOMEBREW_PREFIX:
     sh: |
-      # Use existing brew if available, otherwise detect by architecture
-      if command -v brew &>/dev/null; then
-        brew --prefix
-      elif [[ "$(uname)" == "Darwin" ]]; then
-        [[ "$(uname -m)" == "arm64" ]] && echo "/opt/homebrew" || echo "/usr/local"
-      else
-        echo "/home/linuxbrew/.linuxbrew"
+      if command -v brew >/dev/null 2>&1; then brew --prefix
+      elif [[ "$(uname -m)" == "arm64" ]]; then echo "/opt/homebrew"
+      else echo "/usr/local"
       fi
-  
-  # Homebrew shellenv setup - ensures brew is available in each shell context
-  BREW_SHELLENV: |
-    if [[ -x "{{.HOMEBREW_PREFIX}}/bin/brew" ]]; then
-      eval "$({{.HOMEBREW_PREFIX}}/bin/brew shellenv)"
-    fi
 
-  # Consistent messages sourcing for all taskfiles
   DOTFILES_MESSAGES: |
     source '{{.DOTFILEDIR}}/install/messages.zsh'
-  
-  # Claude Code configuration path
-  CLAUDE_CONFIG_HOME: '{{.XDG_CONFIG_HOME}}/claude'
+
+  RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
+
+  # MANIFEST_JSON cats resolved.json or echoes a stub with a stderr warning
+  # so taskfiles that ref: MANIFEST never crash on a fresh checkout. The stub
+  # includes an empty `features` map so `{{if index .MANIFEST.features "<key>"}}`
+  # evaluates to false (nil zero value) instead of erroring out with
+  # `index of untyped nil` at parse time. Deeper paths (.identity.git,
+  # .packages.brew.*) remain unset so consumers fail loudly when accessed
+  # without setup.
+  MANIFEST_JSON:
+    sh: |
+      if [[ -f "{{.RESOLVED_JSON_PATH}}" ]]; then
+        cat "{{.RESOLVED_JSON_PATH}}"
+      else
+        echo "warn: resolved.json not found (run 'task setup -- <machine>')" >&2
+        echo '{"features":{}}'
+      fi
+  MANIFEST:
+    ref: 'fromJson .MANIFEST_JSON'
 
 includes:
-  common: ./taskfiles/common.yml
-  profile: ./taskfiles/profile.yml
-  links: ./taskfiles/links.yml
-  brew: ./taskfiles/brew.yml
-  macos: ./taskfiles/macos.yml
-  claude: ./taskfiles/claude.yml
-  personal:
-    taskfile: ./taskfiles/profile-tasks.yml
+  audit:    ./taskfiles/audit.yml
+  # manifest / identity / packages / test each need the root's DOTFILEDIR
+  # forwarded explicitly: their own DOTFILEDIR sh:dirname-twice pattern
+  # resolves to the wrong path when invoked as an included taskfile (the
+  # DOTFILEDIR-leak Don't-Do in CLAUDE.md applies here).
+  manifest:
+    taskfile: ./taskfiles/manifest.yml
     vars:
-      TARGET_PROFILE: personal
-  work:
-    taskfile: ./taskfiles/profile-tasks.yml
+      DOTFILEDIR: '{{.DOTFILEDIR}}'
+      XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
+      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
+  lint:     ./taskfiles/lint.yml
+  links:    ./taskfiles/links.yml
+  shell:    ./taskfiles/shell.yml
+  identity:
+    taskfile: ./taskfiles/identity.yml
     vars:
-      TARGET_PROFILE: work
-  server:
-    taskfile: ./taskfiles/profile-tasks.yml
+      DOTFILEDIR: '{{.DOTFILEDIR}}'
+      XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
+      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
+  packages:
+    taskfile: ./taskfiles/packages.yml
     vars:
-      TARGET_PROFILE: server
+      DOTFILEDIR: '{{.DOTFILEDIR}}'
+      XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
+      XDG_CACHE_HOME: '{{.XDG_CACHE_HOME}}'
+      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
+  claude:   ./taskfiles/claude.yml
+  show:     ./taskfiles/show.yml
+  test:
+    taskfile: ./taskfiles/test.yml
+    vars:
+      DOTFILEDIR: '{{.DOTFILEDIR}}'
+      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
+  macos:    ./taskfiles/macos.yml
+  # hostname:* lives alongside macos: -- both are macOS-only system-state
+  # layers. State is per-physical-machine ($XDG_STATE_HOME/dotfiles/hostname),
+  # NOT a manifest feature -- two machines sharing one manifest (JMBP +
+  # JAIR consuming personal-laptop.toml) need distinct hostnames.
+  hostname: ./taskfiles/hostname.yml
 
 tasks:
+
+  # lint-allow: cmds-without-status
   default:
-    desc: "Show available tasks"
+    desc: "Print curated task surface"
+    # status: [false] forces the cmd to run every invocation. status: [true]
+    # would consider the task up-to-date and `task` alone would print nothing
+    # instead of rendering the banner.
+    status: [false]
     cmds:
       - |
-        # Filter out profile-specific tasks from the list
-        PROFILES_PATTERN=$(echo "{{.VALID_PROFILES}}" | tr ' ' '|')
-        
-        # Use sed to strip ANSI codes, then filter, preserving the original colored output via process substitution
-        task --list --color | while IFS= read -r line; do
-          # Strip ANSI codes for pattern matching
-          stripped=$(echo "$line" | sed 's/\x1b\[[0-9;]*m//g')
-          # Check if it matches a profile task pattern
-          if ! echo "$stripped" | grep -qE "^\* ($PROFILES_PATTERN):"; then
-            echo "$line"
-          fi
-        done
+        # Source messages.zsh via TASKFILE_DIR (NOT the DOTFILES_MESSAGES var)
+        # per the documented DOTFILEDIR pollution workaround -- same pattern
+        # as install: and validate: above. Banner stays render-stable
+        # regardless of include-merge ordering.
+        source '{{.TASKFILE_DIR}}/install/messages.zsh'
+        header "Dotfiles -- common tasks"
+        echo
+        info "  install     Install dotfiles for the active machine"
+        info "  setup       Set the active machine: task setup -- <machine-name>"
+        info "  validate    Validate full installation state"
+        info "  test        Run all smoke tests"
+        info "  lint        Run all lint checks"
+        echo
+        header "Diagnostics (read-only)"
+        info "  task show:*                   Inspect current state (manifest, claude, hostname)"
+        info "  task audit:*                  Detect drift (manifest, packages, links)"
+        echo
+        header "State mutations"
+        info "  task setup -- <name>          Set active machine manifest (\$XDG_STATE_HOME/dotfiles/machine)"
+        info "  task hostname:set -- <name>   Set live macOS hostname (requires sudo; self-heals on task install)"
+        echo
+        echo "Run 'task --list' for the full task graph."
 
-  install:
-    desc: "Full dotfiles installation"
-    summary: |
-      Installs all dotfiles components for the configured profile.
-      
-      Usage:
-        ./bootstrap.zsh              # Fresh install (prompts for profile)
-        task install                 # Re-install with saved profile (also prompts for profile if missing)
+  # lint-allow: cmds-without-status
+  setup:
+    desc: "Persist active machine selection: task setup -- <machine-name>"
+    # Top-level alias for `manifest:setup`. Every doc and operator-facing
+    # error message says `task setup -- <machine-name>` -- without this
+    # alias those instructions fail with `Task "setup" does not exist`.
+    # Forwarding CLI_ARGS preserves the `-- <name>` calling convention.
+    status: [false]
     cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        info "Starting installation..."
-      - task: common:xdg
-      - task: profile:ensure
-      - task: common:zdotdir
-      - task: links:all
-      - task: brew:install
-      - task: claude:install
-      - task: macos:defaults
-      - task: macos:shell
-      - task: profile:install
-      - |
-        {{.DOTFILES_MESSAGES}}
-        success "Installation complete for profile {{.PROFILE}}"
-        success "If this is a brand new install, please restart your system to ensure all settings take effect."
+      - task: manifest:setup
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
 
-  update:
-    desc: "Update dotfiles and all dependencies"
-    summary: |
-      Updates the dotfiles installation:
-        - Pulls latest from git
-        - Updates Homebrew packages
-        - Updates oh-my-zsh
-        - Updates tldr definitions
-        - Updates antigen plugins
-        - Updates Claude Code marketplaces and plugins
-        - Updates get-shit-done-cc
-        - Re-runs profile installation
+  # lint-allow: cmds-without-status
+  test:
+    desc: "Run all smoke tests (manifest fixtures + hook fixtures + lint fixtures)"
     cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        info "Updating dotfiles..."
-      - cmd: 'git pull'
-      - cmd: 'zsh "$ZSH/tools/upgrade.sh"'
-      - cmd: 'tldr --update'
-      - task: common:antigen-update
-      - task: claude:update
-      - task: install
+      - task: test:manifest
+      - task: test:hooks
+      - task: lint:test-fixtures
 
+  # lint-allow: cmds-without-status
   validate:
-    desc: "Validate dotfiles installation"
+    desc: "Validate full installation state (all components; run-all-aggregate)"
+    status: [false]
+    deps: [manifest:resolve]
+    # Each per-component validate is `internal: true` -- it cannot be invoked
+    # from a shell command line (`task shell:validate` exits 0 with
+    # `task: Task "shell:validate" is internal` and silently no-ops). The
+    # aggregator therefore dispatches each validate via go-task's `task:`
+    # keyword, which bypasses the CLI-level internal gate. `ignore_error: true`
+    # on every dispatch preserves run-all-aggregate semantics: every component
+    # runs regardless of prior failures.
+    #
+    # Per-component pass/fail status is emitted INLINE by each validate via
+    # `check`/`cross`/`warn` from messages.zsh; there is no cross-component
+    # summary footer because go-task does not surface `task:` dispatch exit
+    # codes back to the surrounding shell context.
     cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        info "Validating installation for profile: {{.PROFILE}}"
-      
-      # Validate each component via its own taskfile
-      - task: common:validate
-      - task: profile:validate
+      - task: manifest:validate
+        ignore_error: true
+      - task: identity:validate
+        ignore_error: true
       - task: links:validate
-      - task: brew:validate
-      - task: claude:validate
+        ignore_error: true
       - task: macos:validate
-      
-      # Profile-specific validation (conditional)
-      - |
-        {{.DOTFILES_MESSAGES}}
-        task "{{.PROFILE}}:validate"
-        success "Validation complete"
+        ignore_error: true
+      - task: hostname:validate
+        ignore_error: true
+      - task: packages:validate
+        ignore_error: true
+      - task: claude:validate
+        ignore_error: true
+      - task: shell:validate
+        ignore_error: true
 
-  clean:
-    desc: "Remove caches and generated files"
+  # lint-allow: cmds-without-status
+  install:
+    desc: "Install dotfiles for active machine (canonical entry)"
+    summary: |
+      task install IS task update -- there is no separate update pipeline.
+      Subtasks are state-converging: links/packages/macos/hostname short-circuit
+      when already at desired state; claude:install always pulls latest
+      marketplace + plugins + GSD so re-running keeps Claude artifacts fresh.
+    status: [false]
+    deps: [manifest:resolve]
     cmds:
-      - rm -rf {{.XDG_CACHE_HOME}}/antigen
-      - rm -rf {{.XDG_CACHE_HOME}}/zsh
+      - task: links:install
+      - task: packages:install
+      - task: claude:install
+      - task: macos:install
+      # hostname:apply -- status:-gated; no-op when state file missing OR
+      # when state file matches live LocalHostName. Sudo prompts only on
+      # a fresh setup or after manual `sudo scutil` drift.
+      - task: hostname:apply
+      # packages:verify is the LAST FATAL task-call in the install pipeline.
+      # A missing bin or missing /Applications/<App>.app fails the entire
+      # `task install` with exit 1 -- no `success "install complete"` line
+      # is printed when verify trips.
+      - task: packages:verify
+      # install-time orphan warning -- non-fatal. links:reconcile in
+      # --warn-only mode emits orphans via warn() to stderr and ALWAYS
+      # exits 0 (internal to the task body), so install exits 0 even when
+      # an orphan is detected. The standalone `task links:reconcile`
+      # (default mode) keeps the non-zero-exit-on-orphans contract for CI.
+      - task: audit:links
+        vars: { CLI_ARGS: "--warn-only" }
       - |
-        {{.DOTFILES_MESSAGES}}
-        success "Caches cleaned"
+        # Source messages.zsh via TASKFILE_DIR (NOT DOTFILES_MESSAGES):
+        # root DOTFILEDIR var gets polluted to dirname(TASKFILE_DIR) after
+        # include-merge because some included taskfiles (lint.yml:59,
+        # links.yml:61) define DOTFILEDIR via sh-dirname of TASKFILE_DIR
+        # and that definition leaks back to root scope. TASKFILE_DIR is
+        # per-task and not subject to that pollution. Same pattern as
+        # validate: above.
+        source '{{.TASKFILE_DIR}}/install/messages.zsh'
+        success "install complete"

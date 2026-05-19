@@ -1,0 +1,19 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/02a-shell-var-in-status/Taskfile.yml
+#
+# Positive fixture for LINT-02: status: block uses $VAR shell variable.
+# This is the macos:shell:145 bug class -- $XDG_CONFIG_HOME is unset in the
+# status-eval context so the check always fails and the task always re-runs.
+#
+# Expected outcome: LINT-02 fires (expect: fail)
+# =============================================================================
+
+tasks:
+  fixture-task:
+    desc: "fixture: $VAR in status (the macos:shell:145 bug class)"
+    status:
+      - test -f "$XDG_CONFIG_HOME/dotfiles/marker"
+    cmds:
+      - echo run

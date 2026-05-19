@@ -1,0 +1,377 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/identity.yml -- manifest-driven git + SSH identity layer
+#
+# Purpose:      Reads identity.git, identity.ssh, features.one-password-ssh,
+#               features.one-password-signing from resolved.json; composes
+#               git+ssh symlink topology; materializes server-include.config
+#               on server machines.
+# Depends on:   taskfiles/helpers.yml; install/messages.zsh;
+#               :manifest:resolve (deps); identity/{git,ssh}/ overlay tree.
+# Side effects: writes symlinks under $XDG_CONFIG_HOME/git and $HOME/.ssh;
+#               writes $HOME/.config/git/server-include.config when the
+#               feature is on.
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+vars:
+  HOME: '{{.HOME}}'
+
+  XDG_CONFIG_HOME:
+    sh: echo "${XDG_CONFIG_HOME:-$HOME/.config}"
+
+  XDG_STATE_HOME:
+    sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
+
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+  RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
+
+  # Empty-features stub on missing resolved.json -- consumers fail loudly
+  # on .identity.* but `{{if index .MANIFEST.features "<key>"}}` still
+  # evaluates to false at template-parse time on a fresh machine.
+  MANIFEST_JSON:
+    sh: |
+      if [[ -s '{{.RESOLVED_JSON_PATH}}' ]]; then
+        cat '{{.RESOLVED_JSON_PATH}}'
+      else
+        echo "warning: {{.RESOLVED_JSON_PATH}} missing or empty -- run 'task setup -- <machine>' first" >&2
+        echo '{"features":{}}'
+      fi
+
+  MANIFEST:
+    ref: 'fromJson .MANIFEST_JSON'
+
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+  GIT_CONFIG_DIR: '{{.XDG_CONFIG_HOME}}/git'
+  SSH_DIR: '{{.HOME}}/.ssh'
+  SSH_IDENTITIES_DIR: '{{.SSH_DIR}}/identities'
+  SSH_KEYS_DIR: '{{.SSH_IDENTITIES_DIR}}/keys'
+  SERVER_INCLUDE_CONFIG: '{{.GIT_CONFIG_DIR}}/server-include.config'
+
+tasks:
+
+  # lint-allow: cmds-without-status
+  install:
+    desc: "Install identity layer (git + ssh)"
+    internal: true
+    deps: [":manifest:resolve"]
+    cmds:
+      - task: install-git
+      - task: install-ssh
+      - task: install-one-password-agent
+
+  install-git:
+    desc: "Link git identity files; materialize server-include.config on servers"
+    internal: true
+    # Adding a new identity = drop a file in identity/git/identities/; no
+    # edits to this task or the resolver.
+    vars:
+      GIT_IDENTITY_NAMES:
+        sh: ls "{{.DOTFILEDIR}}/identity/git/identities" 2>/dev/null
+    # MANIFEST_JSON falls back to '{}' when resolved.json is missing, which
+    # renders {{.MANIFEST.identity.git}} as the literal string "<no value>".
+    # Refuse to install against the empty fallback rather than silently
+    # materializing broken state.
+    preconditions:
+      - sh: test -s '{{.RESOLVED_JSON_PATH}}'
+        msg: |
+          resolved.json missing or empty; cannot resolve identity.git
+            run: task setup -- <machine-name>
+      - sh: test -f '{{.DOTFILEDIR}}/identity/git/identities/{{.MANIFEST.identity.git}}'
+        msg: |
+          identity.git = "{{.MANIFEST.identity.git}}" has no overlay file at
+          identity/git/identities/{{.MANIFEST.identity.git}}.
+          Drop a file there or pick an existing identity (see `ls identity/git/identities/`).
+    cmds:
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/config", TARGET: "{{.GIT_CONFIG_DIR}}/config" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/git/ignore", TARGET: "{{.GIT_CONFIG_DIR}}/ignore" }
+      - for: { var: GIT_IDENTITY_NAMES, split: "\n" }
+        task: _:safe-link
+        vars:
+          SOURCE: '{{.DOTFILEDIR}}/identity/git/identities/{{.ITEM}}'
+          TARGET: '{{.GIT_CONFIG_DIR}}/identities/{{.ITEM}}'
+      - task: server-include
+    status:
+      - test -L "{{.GIT_CONFIG_DIR}}/config"
+      - test -L "{{.GIT_CONFIG_DIR}}/ignore"
+      # Per-identity symlink presence: a missing target for any overlay file
+      # triggers a re-run.
+      - |
+        for f in "{{.DOTFILEDIR}}/identity/git/identities/"*; do
+          [[ -e "$f" ]] || continue
+          test -L "{{.GIT_CONFIG_DIR}}/identities/$(basename "$f")" || exit 1
+        done
+
+  server-include:
+    desc: "Materialize ~/.config/git/server-include.config when features.server-include = true"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{if index .MANIFEST.features "server-include"}}
+        identity="{{.MANIFEST.identity.git}}"
+        mkdir -p "{{.GIT_CONFIG_DIR}}"
+        printf '[includeIf "gitdir:~/"]\n    path = identities/%s\n' "$identity" > "{{.SERVER_INCLUDE_CONFIG}}"
+        check "server-include.config materialized for $identity"
+        {{else}}
+        if [[ -f "{{.SERVER_INCLUDE_CONFIG}}" ]]; then
+          rm -f "{{.SERVER_INCLUDE_CONFIG}}"
+          info "removed stale server-include.config (features.server-include = false)"
+        fi
+        {{end}}
+    status:
+      # Exact-match check against the canonical two-line content the cmd
+      # writes. A loose grep would pass on stale-content cases (e.g., a file
+      # containing the wrong identity path from a prior install) and skip the
+      # rewrite that fixes them.
+      - |
+        {{if index .MANIFEST.features "server-include"}}
+        test -f "{{.SERVER_INCLUDE_CONFIG}}" || exit 1
+        diff <(printf '[includeIf "gitdir:~/"]\n    path = identities/%s\n' "{{.MANIFEST.identity.git}}") "{{.SERVER_INCLUDE_CONFIG}}" >/dev/null
+        {{else}}
+        test ! -f "{{.SERVER_INCLUDE_CONFIG}}"
+        {{end}}
+
+  install-ssh:
+    desc: "Link SSH identity files; swap active symlink to manifest value"
+    internal: true
+    vars:
+      SSH_IDENTITY_NAMES:
+        sh: ls "{{.DOTFILEDIR}}/identity/ssh/identities" 2>/dev/null
+      SSH_KEY_NAMES:
+        sh: ls "{{.DOTFILEDIR}}/identity/ssh/keys" 2>/dev/null | grep '\.pub$' || true
+    # MANIFEST_JSON falls back to '{}' when resolved.json is missing, which
+    # renders {{.MANIFEST.identity.ssh}} as the literal string "<no value>".
+    # Without these preconditions the active-symlink swap below would create
+    # ~/.ssh/identities/active -> .../<no value> (silent corruption of the
+    # active SSH identity).
+    preconditions:
+      - sh: test -s '{{.RESOLVED_JSON_PATH}}'
+        msg: |
+          resolved.json missing or empty; cannot resolve identity.ssh
+            run: task setup -- <machine-name>
+      - sh: test -f '{{.DOTFILEDIR}}/identity/ssh/identities/{{.MANIFEST.identity.ssh}}'
+        msg: |
+          identity.ssh = "{{.MANIFEST.identity.ssh}}" has no overlay file at
+          identity/ssh/identities/{{.MANIFEST.identity.ssh}}.
+          Drop a file there or pick an existing identity (see `ls identity/ssh/identities/`).
+    cmds:
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/config", TARGET: "{{.SSH_DIR}}/config" }
+      - for: { var: SSH_IDENTITY_NAMES, split: "\n" }
+        task: _:safe-link
+        vars:
+          SOURCE: '{{.DOTFILEDIR}}/identity/ssh/identities/{{.ITEM}}'
+          TARGET: '{{.SSH_IDENTITIES_DIR}}/{{.ITEM}}'
+      # Iterated separately because not every identity has a pub key (work
+      # uses 1Password agent; "none" identity has none).
+      - for: { var: SSH_KEY_NAMES, split: "\n" }
+        task: _:safe-link
+        vars:
+          SOURCE: '{{.DOTFILEDIR}}/identity/ssh/keys/{{.ITEM}}'
+          TARGET: '{{.SSH_KEYS_DIR}}/{{.ITEM}}'
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/cloudflared.zsh", TARGET: "{{.SSH_IDENTITIES_DIR}}/cloudflared.zsh" }
+      # Active-identity swap: relink at install time; readlink resolves to a
+      # short name like "personal" since SOURCE is given as a sibling path.
+      - task: _:safe-link
+        vars: { SOURCE: "{{.SSH_IDENTITIES_DIR}}/{{.MANIFEST.identity.ssh}}", TARGET: "{{.SSH_IDENTITIES_DIR}}/active" }
+    status:
+      - test -L "{{.SSH_DIR}}/config"
+      - |
+        for f in "{{.DOTFILEDIR}}/identity/ssh/identities/"*; do
+          [[ -e "$f" ]] || continue
+          test -L "{{.SSH_IDENTITIES_DIR}}/$(basename "$f")" || exit 1
+        done
+      - |
+        for f in "{{.DOTFILEDIR}}/identity/ssh/keys/"*.pub; do
+          [[ -e "$f" ]] || continue
+          test -L "{{.SSH_KEYS_DIR}}/$(basename "$f")" || exit 1
+        done
+      - test -L "{{.SSH_IDENTITIES_DIR}}/cloudflared.zsh"
+      - test -L "{{.SSH_IDENTITIES_DIR}}/active"
+      - test "$(readlink "{{.SSH_IDENTITIES_DIR}}/active")" = "{{.MANIFEST.identity.ssh}}" || test "$(readlink "{{.SSH_IDENTITIES_DIR}}/active")" = "{{.SSH_IDENTITIES_DIR}}/{{.MANIFEST.identity.ssh}}"
+
+  install-one-password-agent:
+    desc: "Link 1Password SSH agent config (gated on one-password-ssh feature)"
+    internal: true
+    # Isolated as its own sub-task with a feature-gated status block so the
+    # `_:safe-link` call is never invoked when features.one-password-ssh =
+    # false. Mirrors the configs:ghostty pattern in taskfiles/links.yml.
+    cmds:
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/identity/ssh/agent.toml", TARGET: "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml" }
+    status:
+      - '{{if not (index .MANIFEST.features "one-password-ssh")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"{{end}}'
+
+  # lint-allow: cmds-without-status
+  validate:
+    desc: "Validate identity layer: symlinks, git config, ssh-add, keys/ contents"
+    internal: true
+    # Four assertion blocks:
+    #   (a) symlink presence
+    #   (b) git config user.email match (skip when gitdir absent / identity=none)
+    #   (c) ssh-add -L key match (skip when one-password-ssh=false / placeholder)
+    #   (d) identity/ssh/keys/ allowlist (no private keys committed)
+    cmds:
+      - task: validate:symlinks
+      - task: validate:git
+      - task: validate:ssh-add
+      - task: validate:keys
+
+  validate:symlinks:
+    desc: "validate (a): symlink presence for git config, ssh config, active, cloudflared, 1Password agent"
+    internal: true
+    cmds:
+      - task: _:check-link
+        vars: { TARGET: "{{.GIT_CONFIG_DIR}}/config", NAME: "git config" }
+      - task: _:check-link
+        vars: { TARGET: "{{.SSH_DIR}}/config", NAME: "ssh config" }
+      - task: _:check-link
+        vars: { TARGET: "{{.SSH_IDENTITIES_DIR}}/active", NAME: "ssh active identity" }
+      - task: _:check-link
+        vars: { TARGET: "{{.SSH_IDENTITIES_DIR}}/cloudflared.zsh", NAME: "ssh cloudflared wrapper" }
+      - task: validate:one-password-agent
+
+  validate:one-password-agent:
+    desc: "validate (a-sub): 1Password agent.toml symlink presence (gated)"
+    internal: true
+    # Feature-gated. status returns 0 when features.one-password-ssh = false,
+    # so the cmds: never runs on machines without 1Password.
+    cmds:
+      - task: _:check-link
+        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml", NAME: "1Password SSH agent config" }
+    status:
+      - '{{if not (index .MANIFEST.features "one-password-ssh")}}true{{else}}false{{end}}'
+
+  validate:git:
+    desc: "validate (b): git user.email matches manifest identity"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        identity="{{.MANIFEST.identity.git}}"
+
+        # `none` is the explicit no-identity sentinel; skip silently.
+        if [[ "$identity" == "none" ]]; then
+          info "identity.git = none -- skipping email assertion"
+          exit 0
+        fi
+
+        expected_email=$(git config -f "{{.DOTFILEDIR}}/identity/git/identities/${identity}" user.email 2>/dev/null || echo "")
+
+        # Resolve the probe source. Two patterns based on features.server-include:
+        # - server-include = true:  server-include.config has an unconditional
+        #   [includeIf gitdir:~/] block; identity loads from $HOME directly.
+        # - server-include = false: identity/git/config uses
+        #   [includeIf gitdir/i:~/git/<identity>/] blocks; probe inside a real
+        #   git repo under $HOME/git/<identity>/ so the includeIf fires. The
+        #   parent directory is not a git repo, so the gitdir-conditioned
+        #   includeIf would never fire if probe_dir pointed there.
+        {{if index .MANIFEST.features "server-include"}}
+        probe_dir="$HOME"
+        {{else}}
+        root="$HOME/git/$identity"
+        # Locate the first .git directory under the identity root (depth 2 =
+        # standard clone layout: $root/<repo>/.git).
+        dotgit=$(find "$root" -maxdepth 2 -name .git -type d -print -quit 2>/dev/null || true)
+        if [[ -z "$dotgit" ]]; then
+          info "no git repo found under $root -- skipping email assertion"
+          exit 0
+        fi
+        probe_dir=$(dirname "$dotgit")
+        {{end}}
+
+        if [[ -z "$expected_email" ]]; then
+          info "expected git user.email for identity.git=$identity is empty -- skipping"
+          exit 0
+        fi
+
+        # Verify $probe_dir is actually a git work tree before running config
+        # queries. A `[[ -d "$gitdir" ]]` guard would only check directory
+        # existence, not git-repo-ness. On a fresh server with no git history,
+        # rev-parse fails non-zero and we skip cleanly.
+        if ! git -C "$probe_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+          info "$probe_dir is not a git work tree -- skipping email assertion"
+          exit 0
+        fi
+
+        actual_email=$(git -C "$probe_dir" config user.email 2>/dev/null || echo "")
+        if [[ "$actual_email" = "$expected_email" ]]; then
+          check "git user.email matches identity ($expected_email)"
+        else
+          cross "git user.email mismatch: expected '$expected_email', got '$actual_email'"
+          exit 1
+        fi
+
+  validate:ssh-add:
+    desc: "validate (c): ssh-add -L lists expected pub key (when one-password-ssh = true)"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        opssh=$(jq -r '.features."one-password-ssh" // false' "{{.RESOLVED_JSON_PATH}}" 2>/dev/null || echo false)
+        if [[ "$opssh" != "true" ]]; then
+          info "features.one-password-ssh = false -- skipping ssh-add assertion"
+          exit 0
+        fi
+        identity="{{.MANIFEST.identity.ssh}}"
+        expected_pub="{{.DOTFILEDIR}}/identity/ssh/keys/${identity}.pub"
+        if [[ ! -s "$expected_pub" ]]; then
+          warn "expected pub-key file $expected_pub is missing or empty -- skipping (placeholder?)"
+          exit 0
+        fi
+        # A real pub key starts with one of the SSH key-type identifiers. The
+        # placeholder shape (a leading `#` comment) would otherwise pass the
+        # `! -s` guard above and produce a misleading "ssh-add -L does not
+        # include expected pub key" error.
+        case "$(head -n1 "$expected_pub")" in
+          ssh-ed25519*|ssh-rsa*|ecdsa-*|sk-*) ;;
+          *)
+            warn "$expected_pub is a placeholder, not a real public key -- skipping"
+            exit 0
+            ;;
+        esac
+        # Anchor on $1 (must be a real key-type field) and `exit` after the
+        # first match so the extracted key body is always a single line. A
+        # bare `awk '{print $2}'` would emit one $2 per input line (including
+        # comments), producing a newline-containing string that breaks the
+        # line-oriented `grep -qF` below.
+        expected_body=$(awk '$1 ~ /^(ssh-|ecdsa-|sk-)/ {print $2; exit}' "$expected_pub" 2>/dev/null)
+        if [[ -z "$expected_body" ]]; then
+          warn "could not extract key body from $expected_pub -- skipping"
+          exit 0
+        fi
+        if ssh-add -L 2>/dev/null | awk '$1 ~ /^(ssh-|ecdsa-|sk-)/ {print $2}' | grep -qF "$expected_body"; then
+          check "ssh-add -L includes expected pub key for $identity"
+        else
+          cross "ssh-add -L does not include expected pub key for $identity"
+          exit 1
+        fi
+
+  validate:keys:
+    desc: "validate (d): identity/ssh/keys/ contains only *.pub files (no private keys)"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        # No -maxdepth: a private key smuggled into a subdirectory of
+        # identity/ssh/keys/ would otherwise escape this validator
+        # (defense in depth -- the keys/ directory must contain pub keys only).
+        bad=$(find "{{.DOTFILEDIR}}/identity/ssh/keys" -type f -not -name '*.pub' -not -name '.gitignore' 2>/dev/null)
+        if [[ -z "$bad" ]]; then
+          check "identity/ssh/keys/ allowlist clean (no private keys)"
+        else
+          cross "identity/ssh/keys/ contains non-pub files:"
+          echo "$bad" >&2
+          exit 1
+        fi

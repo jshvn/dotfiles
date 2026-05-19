@@ -1,0 +1,40 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/audit.yml -- public diagnostics: drift detection
+#
+# Purpose:      Public delegates for diagnostic audit operations across all
+#               namespaces (links, packages, manifest).
+# Depends on:   included by Taskfile.yml; delegates to :links:reconcile,
+#               :packages:audit, :manifest:validate.
+# Side effects: read-only -- these tasks print state or detect drift.
+# =============================================================================
+
+vars:
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+tasks:
+  # lint-allow: cmds-without-status
+  links:
+    desc: "Audit symlink drift (detect orphans); -- --remove for interactive cleanup"
+    status: [false]
+    cmds:
+      - task: :links:reconcile
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  # lint-allow: cmds-without-status
+  packages:
+    desc: "Audit brew formulae/casks/mas vs declared. Non-blocking; --strict exits non-zero."
+    status: [false]
+    cmds:
+      - task: :packages:audit
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  # lint-allow: cmds-without-status
+  manifest:
+    desc: "Validate active (or -- [--machine] NAME) manifest schema"
+    status: [false]
+    cmds:
+      - task: :manifest:validate
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }

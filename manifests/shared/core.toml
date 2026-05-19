@@ -1,0 +1,57 @@
+# manifests/shared/core.toml -- server-safe CLI baseline. Every machine
+# whose packages.brew.bundles list contains "core" pulls these typed buckets
+# into its resolved.json packages.brew.extra_packages.{formulae,casks,mas}
+# during the resolver's bundle-merge pass.
+#
+# Schema reference: docs/MANIFEST.md "Shared bundles" section.
+# Merge semantics:  buckets are appended in order
+#     [defaults] -> [shared/<bundle>.toml for each bundle in order] -> [machine]
+#   then deduped (machine wins on collision).
+#
+# Notable surgery vs v1 install/Brewfile.rb:
+#   - Carries forward "antigen" (v2 reverted the antidote experiment; see
+#     shell/.zshrc comment for rationale).
+#   - 1password-cli is a binary-only cask (Homebrew ships the op binary
+#     to the Homebrew prefix; no /Applications/.app bundle).
+
+[packages.brew]
+formulae = [
+  "zsh",
+  "go-task",
+  "yq",
+  "jq",
+  "git",
+  "git-delta",
+  "node",
+  "openssh",
+  "wget",
+  "eza",
+  "bat",
+  "fd",
+  "grep",
+  "glow",
+  "highlight",
+  "grc",
+  "htop",
+  "hyperfine",
+  "duf",
+  "whois",
+  "doggo",
+  "hugo",
+  "ncdu",
+  "tlrc",
+  "trippy",
+  "cloudflared",
+  "fastfetch",
+  "onefetch",
+  "bottom",
+  "coreutils",
+  "mas",
+  "antigen",
+]
+
+casks = [
+  { name = "1password-cli" },
+]
+
+mas = []

@@ -1,31 +1,16 @@
 version: '3'
 
 # =============================================================================
-# Shared Helper Tasks
-# =============================================================================
+# taskfiles/helpers.yml -- shared reusable helper tasks
 #
-# This file contains reusable helper tasks that are included by other taskfiles.
-# It provides a single source of truth for common operations like:
-#   - Creating symlinks with parent directory creation
-#   - Validating symlinks, directories, files, and commands
-#
-# Usage in other taskfiles:
-#   includes:
-#     _: ./helpers.yml
-#
-#   tasks:
-#     my-task:
-#       cmds:
-#         - task: _:safe-link
-#           vars: { SOURCE: "...", TARGET: "..." }
-#
-# The underscore (_) namespace is a convention indicating internal/helper tasks.
+# Purpose:      Single source of truth for symlink creation + validation
+#               helpers (_:safe-link, _:check-link, _:check-dir, _:check-file,
+#               _:check-command).
+# Depends on:   nothing.
+# Side effects: _:safe-link creates symlinks (the rest are read-only).
 # =============================================================================
 
 tasks:
-  # ---------------------------------------------------------------------------
-  # Symlink Creation
-  # ---------------------------------------------------------------------------
 
   safe-link:
     desc: "Create a symlink with automatic parent directory creation"
@@ -33,12 +18,13 @@ tasks:
     requires:
       vars: [SOURCE, TARGET]
     cmds:
+      - |
+        if [[ -e "{{.TARGET}}" && ! -L "{{.TARGET}}" ]]; then
+          echo "_:safe-link: target exists and is not a symlink: {{.TARGET}}" >&2
+          exit 1
+        fi
       - mkdir -p "$(dirname "{{.TARGET}}")"
       - ln -sfn "{{.SOURCE}}" "{{.TARGET}}"
-
-  # ---------------------------------------------------------------------------
-  # Validation Helpers
-  # ---------------------------------------------------------------------------
 
   check-link:
     desc: "Validate a symlink exists and points to a valid target"
@@ -50,7 +36,16 @@ tasks:
         {{.DOTFILES_MESSAGES}}
         if [[ -L "{{.TARGET}}" ]]; then
           if [[ -e "{{.TARGET}}" ]]; then
+            {{- if .SOURCE}}
+            actual="$(readlink -f "{{.TARGET}}")"
+            if [[ "$actual" == "{{.SOURCE}}" ]]; then
+              check "{{.NAME}} linked"
+            else
+              cross "{{.NAME}} points to wrong source (expected {{.SOURCE}}, got $actual)"
+            fi
+            {{- else}}
             check "{{.NAME}} linked"
+            {{- end}}
           else
             cross "{{.NAME}} broken (target missing)"
           fi

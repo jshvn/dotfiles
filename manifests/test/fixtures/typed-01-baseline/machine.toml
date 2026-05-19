@@ -1,0 +1,21 @@
+# typed-01-baseline -- proves the real resolver pipeline runs end-to-end
+# with --defaults and --shared-dir overrides. Multi-bundle fold (core +
+# util), no extras on either side. Arch backfill via uname -m.
+
+schema_version = 1
+
+[meta]
+description = "typed-01-baseline fixture"
+
+[platform]
+os = "darwin"
+# platform.arch deliberately omitted -- resolver backfills via uname -m.
+
+[features]
+
+[packages.brew]
+bundles = ["core", "util"]
+
+[identity]
+git = "none"
+ssh = "none"

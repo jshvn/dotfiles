@@ -1,0 +1,9 @@
+# identity/git/ignore -- global gitignore; symlinked to ~/.config/git/ignore.
+#
+# Callers: identity/git/config [core] excludesfile = ignore (relative path resolved
+#   from the git config directory, i.e., ~/.config/git/).
+# Side effects: none.
+
+*~
+.DS_Store
+**/.claude/settings.local.json

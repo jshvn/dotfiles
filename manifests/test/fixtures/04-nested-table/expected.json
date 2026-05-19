@@ -1,0 +1,20 @@
+{
+  "a": {
+    "b": {
+      "c": {
+        "d": {
+          "shared": "machine-value",
+          "default_only": true,
+          "machine_only": true,
+          "e": {
+            "deep_nested": true,
+            "deep_nested_override": "yes"
+          },
+          "f": {
+            "totally_new": true
+          }
+        }
+      }
+    }
+  }
+}

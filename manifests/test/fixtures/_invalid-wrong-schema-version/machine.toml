@@ -1,0 +1,18 @@
+# negative fixture -- schema_version != 1; v1 resolver must reject.
+
+schema_version = 99
+
+[meta]
+description = "wrong-schema-version negative fixture"
+
+[platform]
+os = "darwin"
+
+[features]
+
+[packages.brew]
+bundles = ["core"]
+
+[identity]
+git = "none"
+ssh = "none"

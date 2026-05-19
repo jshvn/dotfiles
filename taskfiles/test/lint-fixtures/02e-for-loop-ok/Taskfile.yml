@@ -1,0 +1,23 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/02e-for-loop-ok/Taskfile.yml
+#
+# Negative fixture for LINT-02: status: block references $f where `f` is a
+# for-loop variable bound in the SAME status entry. This is legitimate --
+# the loop var is set when the body is evaluated. The rule must NOT fire on
+# this pattern (it's the identity.yml install-git / install-ssh shape).
+#
+# Expected outcome: LINT-02 does not fire (expect: pass)
+# =============================================================================
+
+tasks:
+  fixture-task:
+    desc: "fixture: $f used inside for-loop body in same status entry"
+    status:
+      - |
+        for f in /tmp/*; do
+          [[ -e "$f" ]] || continue
+        done
+    cmds:
+      - echo run

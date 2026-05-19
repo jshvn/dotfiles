@@ -1,0 +1,21 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/03b-helpers-allowed/helpers.yml
+#
+# Negative fixture for LINT-03b: helpers.yml with bare ln -sfn (allowed).
+# The LINT-03b allowlist excludes helpers.yml by filename -- it is the one
+# sanctioned location for bare ln calls (via _:safe-link and related helpers).
+#
+# Expected outcome: LINT-03b does not fire (expect: pass)
+# =============================================================================
+
+tasks:
+  safe-link-fixture:
+    desc: "fixture: bare ln in helpers.yml is allowed"
+    status:
+      - test -L "{{.TARGET}}"
+    requires:
+      vars: [SOURCE, TARGET]
+    cmds:
+      - ln -sfn "{{.SOURCE}}" "{{.TARGET}}"

@@ -1,76 +1,44 @@
-## 👨🏻‍💻 Josh's dotfiles
+# 👨🏻‍💻 Josh's dotfiles
 
-This repository is a working copy of my machine configuration, settings, and software. 
+macOS dotfiles managed with go-task, symlinks, and XDG base directory spec.
 
-##  How to install or update
+##  Install or update
 
-**Fresh macOS install:**
-```
-    $ git clone https://github.com/jshvn/dotfiles.git
-    $ cd dotfiles
-    $ zsh bootstrap.zsh
-```
-
-**Update software:**
-```
-    $ update
+### Install
+```zsh
+$ git clone https://github.com/jshvn/dotfiles.git
+$ ./bootstrap.zsh
+$ task setup -- <machine-name>
+$ task install
 ```
 
-## ⚙️ Technical details
-
-### 🛠 Installation
-
-Installation generally sets up several aspects of the machine for use:
-
-1. [git](git/) 
-2. [system defaults and links](install/)
-3. [ssh configs](ssh/configs/)
-4. [applications](install/Brewfile.rb)
-5. [zsh](zsh/)
-
-
-### 📦 Task runner
-
-The [task](https://formulae.brew.sh/formula/go-task) runner is used to manage the dotfiles and the install process.
-
-**List available tasks**
-```
-    $ cd dotfiles
-    $ task
+### Update
+```zsh
+$ update
 ```
 
-**Validate dotfiles install**
-```
-    $ cd dotfiles
-    $ task validate
-```
+## ⚙️ Common Tasks
 
-Tasks can be run independently of each other and in various orders. See main [Taskfile.yml](Taskfile.yml) for more details.
+The five top-level commands are:
 
-## 📘 Notes
+| Command          | Purpose                                                |
+|------------------|--------------------------------------------------------|
+| `task install`   | Install dotfiles for the active machine                |
+| `task setup`     | Set the active machine: `task setup -- <machine-name>` |
+| `task validate`  | Validate full installation state                       |
+| `task test`      | Run all smoke tests                                    |
+| `task lint`      | Run all lint checks                                    |
 
-If you change the location of this repo on the filesystem, you will need to re-run the `bootstrap.zsh` script again because the symlinks to the files within this repo will be broken.
+Run `task` (no arguments) to see the curated task surface; `task --list` for
+the full graph.
 
-ZSH aliases are meant to access state whilst functions are meant to mutate state. However, this is not strictly enforced.
+## 📦 Where things live
 
-## ☁️ Cloudflare Warp
+- `docs/MANIFEST.md` -- manifest schema, inheritance rules, worked examples
+- `docs/SECURITY.md` -- bootstrap trust chain
+- `docs/MACHINES.md` -- per-machine purpose and hardware
 
-Cloudflare WARP is used to enable connectivity between machines on the network `100.96.0.0/12`. The following guides were used:
+## 🧑🏻 Contributing
 
-- Overall: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/private-net/warp-to-warp/
-- Split Tunnel configuration: https://developers.cloudflare.com/cloudflare-one/connections/connect-devices/warp/configure-warp/route-traffic/split-tunnels/
-
-## 📚 License and references
-
-There are a ton of folks with better dotfiles than these that were the inspiration for this project. The links for those are below.
-
-I'm packaging up what is here under the MIT license. Feel free to pick and pull whatever is useful to you. Happy hacking!
-
-- https://github.com/mathiasbynens/dotfiles
-- https://github.com/jakejarvis/dotfiles
-- https://github.com/holman/dotfiles
-- https://github.com/sirugh/dotfiles/
-
-Arch XDG reference: 
-
-- https://wiki.archlinux.org/title/XDG_Base_Directory
+See [CLAUDE.md](CLAUDE.md) for conventions, rules, where-to-add tables, and
+the lint catalogue.

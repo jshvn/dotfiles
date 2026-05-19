@@ -1,0 +1,217 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/manifest.yml -- manifest engine orchestration
+#
+# Purpose:      Exposes the manifest engine (install/resolver.zsh) to humans
+#               and downstream taskfiles -- setup, resolve, show, validate.
+# Depends on:   install/resolver.zsh; install/messages.zsh; yq >= 4.52.1;
+#               jq >= 1.7; manifests/{defaults.toml,machines/*.toml}.
+# Side effects: writes $XDG_STATE_HOME/dotfiles/{machine,resolved.json}.
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+vars:
+  HOME: '{{.HOME}}'
+
+  XDG_STATE_HOME:
+    sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
+
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+  STATE_DIR: '{{.XDG_STATE_HOME}}/dotfiles'
+  STATE_FILE: '{{.STATE_DIR}}/machine'
+  RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
+
+  DEFAULTS_TOML: '{{.DOTFILEDIR}}/manifests/defaults.toml'
+  MACHINES_DIR: '{{.DOTFILEDIR}}/manifests/machines'
+  FIXTURES_DIR: '{{.DOTFILEDIR}}/manifests/test/fixtures'
+
+  # Read first line + trim edges only. A `cat | tr -d '[:space:]'` would
+  # silently strip embedded whitespace (e.g., "bad name" -> "badname") and
+  # let malformed state-file values bypass MACHINE_NAME_RE.
+  MACHINE:
+    sh: head -n1 '{{.STATE_FILE}}' 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+
+  MACHINE_TOML: '{{.MACHINES_DIR}}/{{.MACHINE}}.toml'
+
+  # Empty-features stub on missing resolved.json so consumers fail loudly on
+  # .identity.* / .packages.* but `{{if index .MANIFEST.features "<key>"}}`
+  # still evaluates to false at template-parse time on a fresh machine
+  # (would otherwise raise "index of untyped nil").
+  MANIFEST_JSON:
+    sh: |
+      if [[ -s '{{.RESOLVED_JSON_PATH}}' ]]; then
+        cat '{{.RESOLVED_JSON_PATH}}'
+      else
+        echo "warning: {{.RESOLVED_JSON_PATH}} missing or empty -- run 'task setup -- <machine>' first" >&2
+        echo '{"features":{}}'
+      fi
+
+  MANIFEST:
+    ref: 'fromJson .MANIFEST_JSON'
+
+  AVAILABLE_MACHINES:
+    sh: ls '{{.MACHINES_DIR}}'/*.toml 2>/dev/null | xargs -n1 basename | sed 's/\.toml$//' | tr '\n' ' '
+
+tasks:
+
+  setup:
+    desc: "Persist active machine selection: task setup -- <machine-name>"
+    internal: true
+    # requires: is a hard-fail when the var is absent (no arg passed).
+    requires:
+      vars: [CLI_ARGS]
+    # Pass CLI_ARGS via the environment instead of templating into shell-quoted
+    # text. Go-task substitutes {{.CLI_ARGS}} into the rendered shell BEFORE
+    # the shell parses it, so any apostrophe in user input would unterminate
+    # the surrounding single-quoted string and produce a confusing parse error
+    # rather than the "invalid machine" precondition message. Reading
+    # $CLI_ARGS_ENV from the environment moves the value past the parser
+    # intact.
+    env:
+      CLI_ARGS_ENV: '{{.CLI_ARGS}}'
+    # Path-traversal guard (kebab-case regex) then file-existence check; both
+    # run before any state-file write. The setup task allows underscore-prefixed
+    # names (e.g. _addmachine-test) so the regex is slightly wider than pure
+    # kebab-case, matching the resolver's MACHINE_NAME_RE.
+    preconditions:
+      - sh: |
+          name="${CLI_ARGS_ENV}"
+          [[ "$name" =~ ^[a-z0-9_][a-z0-9_-]*$ ]] || exit 1
+          test -f "{{.MACHINES_DIR}}/${name}.toml"
+        msg: |
+          invalid or unknown machine: "{{.CLI_ARGS}}"
+            available: {{.AVAILABLE_MACHINES}}
+    cmds:
+      - mkdir -p "{{.STATE_DIR}}"
+      - printf '%s' "${CLI_ARGS_ENV}" > "{{.STATE_FILE}}"
+      - |
+        {{.DOTFILES_MESSAGES}}
+        success "Machine set to: ${CLI_ARGS_ENV}"
+      - task: validate
+        vars: { CLI_ARGS: '' }
+      - task: resolve
+
+  resolve:
+    desc: "Compile defaults + active machine TOML to resolved.json (idempotent)"
+    internal: true
+    # missing-state hard-fails with an actionable error naming the canonical
+    # setup task.
+    preconditions:
+      - sh: test -f "{{.STATE_FILE}}"
+        msg: |
+          no machine selected
+            run: task setup -- <machine-name>
+            available: {{.AVAILABLE_MACHINES}}
+    cmds:
+      - mkdir -p "{{.STATE_DIR}}"
+      - |
+        DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+          zsh "{{.DOTFILEDIR}}/install/resolver.zsh"
+    # Idempotency via BSD-find mtime check. resolved.json must be at least
+    # as fresh as defaults.toml AND any machine TOML AND any shared-bundle
+    # TOML -- a change to manifests/shared/<bundle>.toml must trigger
+    # regeneration the same way a defaults/machine change does, since the
+    # resolver folds shared-bundle buckets into the resolved typed extras.
+    status:
+      - test -f "{{.RESOLVED_JSON_PATH}}"
+      - |
+        out=$(find "{{.DOTFILEDIR}}/manifests" \( -name 'defaults.toml' -o -path '*/machines/*.toml' -o -path '*/shared/*.toml' \) -newer "{{.RESOLVED_JSON_PATH}}" -print -quit 2>/dev/null)
+        [ -z "$out" ]
+
+  show:
+    desc: "Print resolved manifest (default: active machine; -- [--machine] NAME for any machine)"
+    internal: true
+    # No preconditions: resolver hard-fails with actionable error if no state.
+    # No status: read/print task; always re-run.
+    # CLI_ARGS via env so apostrophes / shell metacharacters in user input
+    # cannot break the rendered shell parse.
+    env:
+      CLI_ARGS_ENV: '{{.CLI_ARGS}}'
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        # Parse --machine NAME from CLI_ARGS if present. Use sed for
+        # extraction -- portable across gosh/sh/zsh (no zsh match[]).
+        machine_name=""
+        cli_args="${CLI_ARGS_ENV}"
+        machine_name=$(printf '%s' "$cli_args" | sed -n 's/.*--machine[[:space:]]\{1,\}\([a-z0-9_][a-z0-9_-]*\).*/\1/p')
+        # Also accept a bare machine name (e.g. `task manifest:show --
+        # personal-laptop`) so usage matches the `task setup -- <name>`
+        # form. Only accepted when --machine was not seen and the entire
+        # CLI_ARGS payload (whitespace-trimmed) is a valid machine name.
+        if [[ -z "$machine_name" ]]; then
+          candidate=$(printf '%s' "$cli_args" | tr -d '[:space:]')
+          if [[ "$candidate" =~ ^[a-z0-9_][a-z0-9_-]*$ ]]; then
+            machine_name="$candidate"
+          fi
+        fi
+        if [[ -z "$machine_name" ]]; then
+          # Read first line + trim edges only -- do not strip embedded
+          # whitespace, which would silently mangle malformed state-file
+          # contents into a wrong-but-valid name.
+          if [[ -f "{{.STATE_FILE}}" ]]; then
+            machine_name=$(head -n1 "{{.STATE_FILE}}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          fi
+        fi
+        if [[ -z "$machine_name" ]]; then
+          error "no machine selected and --machine not specified"
+          error "  run: task setup -- <machine-name>"
+          exit 1
+        fi
+        DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+          zsh "{{.DOTFILEDIR}}/install/resolver.zsh" --machine "$machine_name" --stdout \
+          | jq .
+
+  validate:
+    desc: "Validate active (or -- [--machine] NAME) manifest schema"
+    internal: true
+    env:
+      CLI_ARGS_ENV: '{{.CLI_ARGS}}'
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        # Mirror of show: parse --machine OR bare-name from CLI_ARGS;
+        # fall back to STATE_FILE first-line+trim-edges. See show: comments
+        # for the apostrophe / state-file-mangling rationale.
+        machine_name=""
+        cli_args="${CLI_ARGS_ENV}"
+        machine_name=$(printf '%s' "$cli_args" | sed -n 's/.*--machine[[:space:]]\{1,\}\([a-z0-9_][a-z0-9_-]*\).*/\1/p')
+        if [[ -z "$machine_name" ]]; then
+          candidate=$(printf '%s' "$cli_args" | tr -d '[:space:]')
+          if [[ "$candidate" =~ ^[a-z0-9_][a-z0-9_-]*$ ]]; then
+            machine_name="$candidate"
+          fi
+        fi
+        if [[ -z "$machine_name" ]]; then
+          if [[ -f "{{.STATE_FILE}}" ]]; then
+            machine_name=$(head -n1 "{{.STATE_FILE}}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          fi
+        fi
+        if [[ -z "$machine_name" ]]; then
+          error "no machine selected and --machine not specified"
+          error "  run: task setup -- <machine-name>"
+          exit 1
+        fi
+        if [[ ! -f "{{.DEFAULTS_TOML}}" ]]; then
+          cross "manifests/defaults.toml not found"
+          exit 1
+        fi
+        check "manifests/defaults.toml exists"
+        machine_toml="{{.MACHINES_DIR}}/${machine_name}.toml"
+        if [[ ! -f "$machine_toml" ]]; then
+          cross "manifests/machines/${machine_name}.toml not found"
+          exit 1
+        fi
+        check "manifests/machines/${machine_name}.toml exists"
+        # Delegate schema validation to resolver; non-zero exit propagates
+        # the failure through go-task.
+        DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+          zsh "{{.DOTFILEDIR}}/install/resolver.zsh" --validate-only --machine "$machine_name"

@@ -1,0 +1,42 @@
+{
+  "features": {},
+  "packages": {
+    "brew": {
+      "extra_packages": {
+        "formulae": [
+          "curl",
+          "git"
+        ],
+        "casks": [
+          {
+            "name": "iterm2"
+          },
+          {
+            "name": "vscode"
+          }
+        ],
+        "mas": [
+          {
+            "id": 497799835,
+            "name": "Xcode-machine"
+          }
+        ]
+      },
+      "bundles": [
+        "core"
+      ]
+    }
+  },
+  "schema_version": 1,
+  "meta": {
+    "description": "typed-03-casks-mas-dedup fixture"
+  },
+  "platform": {
+    "os": "darwin",
+    "arch": "FROM_UNAME"
+  },
+  "identity": {
+    "git": "none",
+    "ssh": "none"
+  }
+}

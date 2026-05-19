@@ -1,0 +1,112 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/shell.yml -- shell-layer measurement + validation tasks
+#
+# Purpose:      Cold-start measurement (startup-time) + shell-layer
+#               validation (XDG dirs, ZDOTDIR, /etc/zshenv, DOTFILES_MACHINE).
+# Depends on:   taskfiles/helpers.yml; install/messages.zsh;
+#               hyperfine + jq + bc + awk.
+# Side effects: read-only -- emits check/cross output via messages.zsh.
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+vars:
+  HOME: '{{.HOME}}'
+
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+  COLD_START_BUDGET: 500
+
+tasks:
+
+  startup-time:
+    desc: "Measure cold interactive zsh startup time (fails if > {{.COLD_START_BUDGET}}ms)"
+    # status: [false] -- measurement verb; always re-run.
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        if ! command -v hyperfine >/dev/null 2>&1; then
+            error "hyperfine not installed (brew install hyperfine)"
+            exit 1
+        fi
+        # Cold-start: each run is a fresh login interactive shell that exits
+        # immediately. --warmup 1 discards the first run (filesystem cache
+        # warm-up); --runs 5 averages five subsequent measurements.
+        # JSON goes to a tempfile so hyperfine's stdout summary doesn't
+        # contaminate the jq input.
+        json_out=$(mktemp -t startup-time.XXXXXX.json)
+        trap 'rm -f "$json_out"' EXIT
+        hyperfine --warmup 1 --runs 5 --export-json "$json_out" \
+            "zsh -lic exit" >/dev/null 2>&1
+        result=$(jq -r '.results[0].mean' "$json_out")
+        ms=$(echo "$result * 1000" | bc | awk '{printf "%d\n", $0}')
+        info "cold shell start: ${ms}ms (target: <= {{.COLD_START_BUDGET}}ms)"
+        if (( ms > {{.COLD_START_BUDGET}} )); then
+            error "shell start exceeds {{.COLD_START_BUDGET}}ms target"
+            exit 1
+        fi
+        check "shell start within budget"
+
+  validate:
+    desc: "Validate shell layer (XDG dirs, ZDOTDIR dir, /etc/zshenv ZDOTDIR line, DOTFILES_MACHINE state)"
+    internal: true
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+
+        # XDG base directories.
+        xdg_pairs=(
+          "{{.XDG_CONFIG_HOME}}:XDG config home"
+          "{{.XDG_DATA_HOME}}:XDG data home"
+          "{{.XDG_STATE_HOME}}:XDG state home"
+          "{{.XDG_CACHE_HOME}}:XDG cache home"
+        )
+        for pair in "${xdg_pairs[@]}"; do
+          dir="${pair%%:*}"
+          name="${pair#*:}"
+          if [[ -d "$dir" ]]; then
+            check "${name} exists"
+          else
+            cross "${name} missing"
+            failures=$(( failures + 1 ))
+          fi
+        done
+
+        if [[ -d "{{.ZDOTDIR}}" ]]; then
+          check "ZDOTDIR directory exists"
+        else
+          cross "ZDOTDIR directory missing"
+          failures=$(( failures + 1 ))
+        fi
+
+        # Embed the template var directly in the literal grep pattern so the
+        # status equivalent never references a shell var (LINT-02 hygiene;
+        # mirrors the zdotdir task in taskfiles/links.yml).
+        ZDOTDIR_EXPORT='export ZDOTDIR="{{.ZDOTDIR}}"'
+        if [[ -f /etc/zshenv ]] && grep -qF "$ZDOTDIR_EXPORT" /etc/zshenv; then
+          check "ZDOTDIR configured in /etc/zshenv"
+        else
+          cross "ZDOTDIR not configured in /etc/zshenv"
+          failures=$(( failures + 1 ))
+        fi
+
+        # Fresh-install check: operator forgetting `task setup` would leave
+        # $DOTFILES_MACHINE unset in shell/.zshenv.
+        if [[ -r "{{.XDG_STATE_HOME}}/dotfiles/machine" ]]; then
+          check "DOTFILES_MACHINE state file present"
+        else
+          cross "DOTFILES_MACHINE state file missing -- run: task setup -- <machine-name>"
+          failures=$(( failures + 1 ))
+        fi
+
+        exit "$failures"

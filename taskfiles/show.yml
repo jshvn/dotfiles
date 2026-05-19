@@ -1,0 +1,38 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/show.yml -- public diagnostics: state inspection
+#
+# Purpose:      Public delegates for diagnostic show operations across all
+#               namespaces (claude, manifest, hostname).
+# Depends on:   included by Taskfile.yml; delegates to :claude:status,
+#               :manifest:show, :hostname:show.
+# Side effects: read-only -- these tasks print state.
+# =============================================================================
+
+vars:
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+tasks:
+  # lint-allow: cmds-without-status
+  claude:
+    desc: "Show installed marketplaces + plugins (diagnostic)"
+    status: [false]
+    cmds:
+      - task: :claude:status
+
+  # lint-allow: cmds-without-status
+  manifest:
+    desc: "Print resolved manifest (default: active machine; -- [--machine] NAME for any machine)"
+    status: [false]
+    cmds:
+      - task: :manifest:show
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  # lint-allow: cmds-without-status
+  hostname:
+    desc: "Show hostname state file + live ComputerName/HostName/LocalHostName/NetBIOSName"
+    status: [false]
+    cmds:
+      - task: :hostname:show

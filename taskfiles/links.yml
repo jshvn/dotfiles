@@ -1,275 +1,446 @@
 version: '3'
 
 # =============================================================================
-# Include shared helper tasks
+# taskfiles/links.yml -- symlink orchestration for shell + claude + tool configs
+#
+# Purpose:      All symlink creation owned by this taskfile (shell startup,
+#               claude config tree, tool configs); identity-layer symlinks
+#               live in taskfiles/identity.yml.
+# Depends on:   taskfiles/helpers.yml (_:safe-link, _:check-link).
+# Side effects: writes symlinks under $ZDOTDIR + $XDG_CONFIG_HOME; writes
+#               $ZDOTDIR export to /etc/zshenv (sudo, idempotent).
 # =============================================================================
-# The underscore (_) namespace provides access to reusable helper tasks defined
-# in helpers.yml. This avoids duplicating safe-link and check-link logic across
-# multiple taskfiles. See helpers.yml for available tasks.
-# =============================================================================
+
 includes:
   _: ./helpers.yml
 
+vars:
+  HOME: '{{.HOME}}'
+
+  XDG_CONFIG_HOME:
+    sh: echo "${XDG_CONFIG_HOME:-$HOME/.config}"
+
+  ZDOTDIR: '{{.XDG_CONFIG_HOME}}/zsh'
+
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+  # EXPECTED_TARGETS -- single source of truth for every symlink target owned
+  # by this taskfile. Identity-layer symlinks are intentionally EXCLUDED --
+  # they live in taskfiles/identity.yml's equivalent and are validated by
+  # identity:validate. Feature-gated entries use the inline-ternary form
+  # which renders an empty line when the feature is off; consumers skip
+  # empty lines via `[[ -z "$target" ]] && continue`.
+  EXPECTED_TARGETS: |
+    {{.ZDOTDIR}}/.zshenv
+    {{.ZDOTDIR}}/.zprofile
+    {{.ZDOTDIR}}/.zshrc
+    {{.ZDOTDIR}}/.zlogin
+    {{.ZDOTDIR}}/.zlogout
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/settings.json{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/agents{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/commands{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/skills{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh{{end}}
+    {{if index .MANIFEST.features "ghostty"}}{{.XDG_CONFIG_HOME}}/ghostty/config{{end}}
+    {{.XDG_CONFIG_HOME}}/glow/glow.yml
+    {{.XDG_CONFIG_HOME}}/glow/glow_style.json
+    {{.XDG_CONFIG_HOME}}/trippy/trippy.toml
+    {{.XDG_CONFIG_HOME}}/tlrc/config.toml
+    {{.XDG_CONFIG_HOME}}/conda/condarc
+    {{.XDG_CONFIG_HOME}}/eza/theme.yaml
+
 tasks:
-  # ============================================================================
-  # Symlink Creation
-  # ============================================================================
 
-  all:
-    desc: "Create all symlinks"
+  # lint-allow: cmds-without-status
+  install:
+    desc: "Create all symlinks (shell + identity + claude + configs)"
+    internal: true
     cmds:
-      - task: zsh
-      - task: git
-      - task: ssh
-      - task: tools
-      - task: claude
+      - task: install-zsh
+      # Leading-colon absolute form: a bare `task: identity:install` resolves
+      # relative to the `links:` namespace and tries `links:identity:install`
+      # (which does not exist).
+      - task: :identity:install
+      - task: install-claude
+      - task: install-configs
 
-  zsh:
-    desc: "Link zsh configuration files"
+  install-zsh:
+    desc: "Link zsh configuration files and configure /etc/zshenv ZDOTDIR"
+    internal: true
     cmds:
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zshenv", TARGET: "{{.ZDOTDIR}}/.zshenv" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zshenv", TARGET: "{{.ZDOTDIR}}/.zshenv" }
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zprofile", TARGET: "{{.ZDOTDIR}}/.zprofile" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zprofile", TARGET: "{{.ZDOTDIR}}/.zprofile" }
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zshrc", TARGET: "{{.ZDOTDIR}}/.zshrc" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zshrc", TARGET: "{{.ZDOTDIR}}/.zshrc" }
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zlogin", TARGET: "{{.ZDOTDIR}}/.zlogin" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zlogin", TARGET: "{{.ZDOTDIR}}/.zlogin" }
       - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/.zlogout", TARGET: "{{.ZDOTDIR}}/.zlogout" }
+        vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zlogout", TARGET: "{{.ZDOTDIR}}/.zlogout" }
+      - task: zdotdir
+    # Verify target via `readlink -f` against the manifest-expected source path,
+    # not just `test -L` existence -- a corrupted symlink (wrong target) must
+    # force a re-run of cmds: to repair the link.
     status:
-      - test -L "{{.ZDOTDIR}}/.zshenv"
-      - test -L "{{.ZDOTDIR}}/.zprofile"
-      - test -L "{{.ZDOTDIR}}/.zshrc"
-      - test -L "{{.ZDOTDIR}}/.zlogin"
-      - test -L "{{.ZDOTDIR}}/.zlogout"
+      - test -L "{{.ZDOTDIR}}/.zshenv"   && [[ "$(readlink -f "{{.ZDOTDIR}}/.zshenv")"   == "{{.DOTFILEDIR}}/shell/.zshenv"   ]]
+      - test -L "{{.ZDOTDIR}}/.zprofile" && [[ "$(readlink -f "{{.ZDOTDIR}}/.zprofile")" == "{{.DOTFILEDIR}}/shell/.zprofile" ]]
+      - test -L "{{.ZDOTDIR}}/.zshrc"    && [[ "$(readlink -f "{{.ZDOTDIR}}/.zshrc")"    == "{{.DOTFILEDIR}}/shell/.zshrc"    ]]
+      - test -L "{{.ZDOTDIR}}/.zlogin"   && [[ "$(readlink -f "{{.ZDOTDIR}}/.zlogin")"   == "{{.DOTFILEDIR}}/shell/.zlogin"   ]]
+      - test -L "{{.ZDOTDIR}}/.zlogout"  && [[ "$(readlink -f "{{.ZDOTDIR}}/.zlogout")"  == "{{.DOTFILEDIR}}/shell/.zlogout"  ]]
+      - grep -qF 'export ZDOTDIR="{{.ZDOTDIR}}"' /etc/zshenv 2>/dev/null
 
-  git:
-    desc: "Link git configuration files (common)"
+  zdotdir:
+    desc: "Configure ZDOTDIR in /etc/zshenv (sudo write, idempotent)"
+    internal: true
+    # /etc/zshenv ZDOTDIR write. Status uses {{.ZDOTDIR}} (template var) not
+    # $ZDOTDIR -- shell vars in status: re-run every invocation (LINT-02).
+    # /etc/zshenv is world-readable so grep -qF runs without sudo on re-checks.
     cmds:
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/git/config", TARGET: "{{.XDG_CONFIG_HOME}}/git/config" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/git/ignore", TARGET: "{{.XDG_CONFIG_HOME}}/git/ignore" }
-    status:
-      - test -L "{{.XDG_CONFIG_HOME}}/git/config"
-      - test -L "{{.XDG_CONFIG_HOME}}/git/ignore"
-
-  ssh:
-    desc: "Link SSH configuration files (common)"
-    cmds:
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/configs/config", TARGET: "{{.HOME}}/.ssh/config" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/ssh/cloudflared.zsh", TARGET: "{{.HOME}}/.ssh/cloudflared.zsh" }
-      # 1Password agent config (only for non-server profiles)
-      - |
-        if [[ "{{.PROFILE}}" != "server" ]]; then
-          mkdir -p "{{.XDG_CONFIG_HOME}}/1Password/ssh"
-          ln -sf "{{.DOTFILEDIR}}/ssh/configs/agent.toml" "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"
-        fi
-    status:
-      - test -L "{{.HOME}}/.ssh/config"
-      - test -L "{{.HOME}}/.ssh/cloudflared.zsh"
-      - |
-        [[ "{{.PROFILE}}" == "server" ]] || test -L "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"
-
-  tools:
-    desc: "Link tool configuration files"
-    cmds:
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/trippy.toml", TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/tlrc.toml", TARGET: "{{.XDG_CONFIG_HOME}}/tlrc/config.toml" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/styles/eza_style.yaml", TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/condarc", TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/ghostty", TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/configs/glow.yml", TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow.yml" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/zsh/styles/glow_style.json", TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow_style.json" }
-    status:
-      - test -L "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"
-      - test -L "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"
-      - test -L "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"
-      - test -L "{{.XDG_CONFIG_HOME}}/conda/condarc"
-      - test -L "{{.XDG_CONFIG_HOME}}/ghostty/config"
-      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow.yml"
-      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow_style.json"
-
-  claude:
-    desc: "Link Claude Code configuration"
-    cmds:
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/CLAUDE.md", TARGET: "{{.CLAUDE_CONFIG_HOME}}/CLAUDE.md" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/agents", TARGET: "{{.CLAUDE_CONFIG_HOME}}/agents" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/commands", TARGET: "{{.CLAUDE_CONFIG_HOME}}/commands" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks", TARGET: "{{.CLAUDE_CONFIG_HOME}}/hooks" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/skills", TARGET: "{{.CLAUDE_CONFIG_HOME}}/skills" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/settings.json", TARGET: "{{.CLAUDE_CONFIG_HOME}}/settings.json" }
-    status:
-      - test -L "{{.CLAUDE_CONFIG_HOME}}/CLAUDE.md"
-      - test -L "{{.CLAUDE_CONFIG_HOME}}/agents"
-      - test -L "{{.CLAUDE_CONFIG_HOME}}/commands"
-      - test -L "{{.CLAUDE_CONFIG_HOME}}/hooks"
-      - test -L "{{.CLAUDE_CONFIG_HOME}}/skills"
-      - test -L "{{.CLAUDE_CONFIG_HOME}}/settings.json"
-
-  # ============================================================================
-  # Validation
-  # ============================================================================
-
-  validate:
-    desc: "Validate all common symlinks"
-    cmds:
-      # ZSH
-      - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zshenv", NAME: "zshenv" }
-      - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zprofile", NAME: "zprofile" }
-      - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zshrc", NAME: "zshrc" }
-      - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zlogin", NAME: "zlogin" }
-      - task: _:check-link
-        vars: { TARGET: "{{.ZDOTDIR}}/.zlogout", NAME: "zlogout" }
-
-      # Git
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/git/config", NAME: "git config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/git/ignore", NAME: "git ignore" }
-
-      # SSH
-      - task: _:check-link
-        vars: { TARGET: "{{.HOME}}/.ssh/config", NAME: "ssh config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.HOME}}/.ssh/cloudflared.zsh", NAME: "cloudflared.zsh" }
-
-      # 1Password agent config (skipped on server profile)
       - |
         {{.DOTFILES_MESSAGES}}
-        if [[ "{{.PROFILE}}" == "server" ]]; then
-          check "1Password ssh agent config (skipped for server profile)"
-        elif [[ -L "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml" ]]; then
-          check "1Password ssh agent config"
+        ZDOTDIR_EXPORT='export ZDOTDIR="{{.ZDOTDIR}}"'
+        if [[ ! -f /etc/zshenv ]]; then
+          info "Creating /etc/zshenv with ZDOTDIR export..."
+          echo "$ZDOTDIR_EXPORT" | sudo tee /etc/zshenv > /dev/null
+          success "ZDOTDIR configured in /etc/zshenv"
+        elif ! grep -qF "$ZDOTDIR_EXPORT" /etc/zshenv; then
+          info "Adding ZDOTDIR export to /etc/zshenv..."
+          echo "$ZDOTDIR_EXPORT" | sudo tee -a /etc/zshenv > /dev/null
+          success "ZDOTDIR added to /etc/zshenv"
         else
-          cross "1Password ssh agent config"
+          info "ZDOTDIR already configured in /etc/zshenv"
+        fi
+    status:
+      - grep -qF 'export ZDOTDIR="{{.ZDOTDIR}}"' /etc/zshenv 2>/dev/null
+
+  install-claude:
+    desc: "Link claude config tree (files, dirs, hooks)"
+    internal: true
+    deps: [":manifest:resolve"]
+    # Feature-gated on claude-marketplace. The status: block mirrors the gate
+    # so status checks also no-op when the flag is off.
+    cmds:
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/CLAUDE.md", TARGET: "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/settings.json", TARGET: "{{.XDG_CONFIG_HOME}}/claude/settings.json" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/agents", TARGET: "{{.XDG_CONFIG_HOME}}/claude/agents" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/commands", TARGET: "{{.XDG_CONFIG_HOME}}/claude/commands" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/skills", TARGET: "{{.XDG_CONFIG_HOME}}/claude/skills" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/post-compact.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/agent-transparency.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/secret-scan.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/block-destructive.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/no-ai-comments.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/no-emojis.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/notify.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/lib.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh" }
+    status:
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md")" == "{{.DOTFILEDIR}}/claude/CLAUDE.md" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/settings.json" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/settings.json")" == "{{.DOTFILEDIR}}/claude/settings.json" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/agents" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/agents")" == "{{.DOTFILEDIR}}/claude/agents" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/commands" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/commands")" == "{{.DOTFILEDIR}}/claude/commands" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/skills" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/skills")" == "{{.DOTFILEDIR}}/claude/skills" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/post-compact.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/agent-transparency.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/secret-scan.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/block-destructive.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/no-ai-comments.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/no-emojis.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/notify.zsh" ]]{{end}}'
+      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/lib.zsh" ]]{{end}}'
+
+  install-configs:
+    desc: "Link tool config files (ghostty, glow, trippy, tlrc, conda, eza)"
+    internal: true
+    deps: [":manifest:resolve"]
+    # ghostty is feature-gated; the other 6 are always-on. motd is intentionally
+    # absent (runtime read from DOTFILEDIR, no symlink needed).
+    cmds:
+      - task: configs:ghostty
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/glow/glow.yml", TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow.yml" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/glow/glow_style.json", TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow_style.json" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/trippy/trippy.toml", TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/tlrc/config.toml", TARGET: "{{.XDG_CONFIG_HOME}}/tlrc/config.toml" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/conda/condarc", TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/eza/theme.yaml", TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml" }
+    status:
+      # ghostty MUST appear in this status block. Without it, on a ghostty=true
+      # machine where the ghostty link is broken but the always-on configs are
+      # healthy, status returns 0 and go-task skips the entire cmds block --
+      # including `task: configs:ghostty`.
+      - '{{if not (index .MANIFEST.features "ghostty")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/ghostty/config" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/ghostty/config")" == "{{.DOTFILEDIR}}/configs/ghostty/config" ]]{{end}}'
+      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow.yml"        && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/glow/glow.yml")"        == "{{.DOTFILEDIR}}/configs/glow/glow.yml"        ]]
+      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow_style.json" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/glow/glow_style.json")" == "{{.DOTFILEDIR}}/configs/glow/glow_style.json" ]]
+      - test -L "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"   && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml")"   == "{{.DOTFILEDIR}}/configs/trippy/trippy.toml"   ]]
+      - test -L "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"     && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/tlrc/config.toml")"     == "{{.DOTFILEDIR}}/configs/tlrc/config.toml"     ]]
+      - test -L "{{.XDG_CONFIG_HOME}}/conda/condarc"        && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/conda/condarc")"        == "{{.DOTFILEDIR}}/configs/conda/condarc"        ]]
+      - test -L "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"       && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/eza/theme.yaml")"       == "{{.DOTFILEDIR}}/configs/eza/theme.yaml"       ]]
+
+  configs:ghostty:
+    desc: "Link ghostty config (gated on ghostty feature)"
+    internal: true
+    deps: [":manifest:resolve"]
+    # Isolated as its own sub-task so the inline-ternary status: gate works
+    # independently of the always-on tool configs. Avoids the regression
+    # where a missing always-on link forces cmds: to run unconditionally
+    # including the gated ghostty link.
+    cmds:
+      - task: _:safe-link
+        vars: { SOURCE: "{{.DOTFILEDIR}}/configs/ghostty/config", TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config" }
+    status:
+      - '{{if not (index .MANIFEST.features "ghostty")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/ghostty/config" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/ghostty/config")" == "{{.DOTFILEDIR}}/configs/ghostty/config" ]]{{end}}'
+
+  # lint-allow: cmds-without-status
+  validate:
+    desc: "Validate all symlinks (strict-mode SOURCE check)"
+    internal: true
+    deps: [":manifest:resolve"]
+    status: [false]
+    cmds:
+      # Iterates EXPECTED_TARGETS line-by-line and verifies each symlink with
+      # the same three-condition logic as helpers.yml _:check-link BUT
+      # increments an explicit failures counter on each failing path, ending
+      # with `exit "$failures"`. This closes the _:check-link-always-exits-0
+      # gap so root `task validate` can bubble links:validate failures via
+      # exit code. Feature-off entries in EXPECTED_TARGETS render as empty
+      # lines and are skipped via `[[ -z "$target" ]] && continue`.
+      - |
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+
+        # Resolve the expected SOURCE for a given TARGET. Mirrors the literal
+        # pairings used by install-zsh / install-claude / install-configs
+        # when materializing the links -- editing one mapping requires editing
+        # this case statement AND the corresponding cmds: entry.
+        resolve_source() {
+          local target="$1"
+          local zdotdir="{{.ZDOTDIR}}"
+          local xdg="{{.XDG_CONFIG_HOME}}"
+          local dotfiledir="{{.DOTFILEDIR}}"
+          case "$target" in
+            "$zdotdir/.zshenv")            printf '%s\n' "$dotfiledir/shell/.zshenv" ;;
+            "$zdotdir/.zprofile")          printf '%s\n' "$dotfiledir/shell/.zprofile" ;;
+            "$zdotdir/.zshrc")             printf '%s\n' "$dotfiledir/shell/.zshrc" ;;
+            "$zdotdir/.zlogin")            printf '%s\n' "$dotfiledir/shell/.zlogin" ;;
+            "$zdotdir/.zlogout")           printf '%s\n' "$dotfiledir/shell/.zlogout" ;;
+            "$xdg/claude/CLAUDE.md")       printf '%s\n' "$dotfiledir/claude/CLAUDE.md" ;;
+            "$xdg/claude/settings.json")   printf '%s\n' "$dotfiledir/claude/settings.json" ;;
+            "$xdg/claude/agents")          printf '%s\n' "$dotfiledir/claude/agents" ;;
+            "$xdg/claude/commands")        printf '%s\n' "$dotfiledir/claude/commands" ;;
+            "$xdg/claude/skills")          printf '%s\n' "$dotfiledir/claude/skills" ;;
+            "$xdg/claude/hooks/"*)         printf '%s\n' "$dotfiledir/claude/hooks/${target##*/hooks/}" ;;
+            "$xdg/ghostty/config")         printf '%s\n' "$dotfiledir/configs/ghostty/config" ;;
+            "$xdg/glow/"*)                 printf '%s\n' "$dotfiledir/configs/glow/${target##*/glow/}" ;;
+            "$xdg/trippy/"*)               printf '%s\n' "$dotfiledir/configs/trippy/${target##*/trippy/}" ;;
+            "$xdg/tlrc/"*)                 printf '%s\n' "$dotfiledir/configs/tlrc/${target##*/tlrc/}" ;;
+            "$xdg/conda/"*)                printf '%s\n' "$dotfiledir/configs/conda/${target##*/conda/}" ;;
+            "$xdg/eza/"*)                  printf '%s\n' "$dotfiledir/configs/eza/${target##*/eza/}" ;;
+            *)                             printf '%s\n' "" ;;
+          esac
+        }
+
+        while IFS= read -r target; do
+          [[ -z "$target" ]] && continue
+
+          if [[ ! -L "$target" ]]; then
+            cross "$target missing"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+
+          if [[ ! -e "$target" ]]; then
+            cross "$target broken (target missing)"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+
+          expected="$(resolve_source "$target")"
+          if [[ -z "$expected" ]]; then
+            cross "$target has no known expected source (links:validate bug)"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+
+          actual="$(readlink -f "$target" 2>/dev/null || true)"
+          if [[ "$actual" != "$expected" ]]; then
+            cross "$target points to wrong source (expected $expected, got $actual)"
+            failures=$(( failures + 1 ))
+          else
+            check "$target linked"
+          fi
+        done <<< "{{.EXPECTED_TARGETS}}"
+
+        exit "$failures"
+
+  # lint-allow: cmds-without-status
+  reconcile:
+    desc: "Detect orphan symlinks (default: exit non-zero); -- --remove for interactive cleanup"
+    internal: true
+    deps: [":manifest:resolve"]
+    status: [false]
+    # Three invocation modes via CLI_ARGS:
+    #   default     -- detect-only; exit non-zero on orphan; CI-safe gate.
+    #   --remove    -- interactive cleanup; TTY-gated; y/N per orphan;
+    #                  uses `unlink` only (never `rm`).
+    #   --warn-only -- non-fatal; emits orphans via warn(); always exits 0.
+    # Public path: audit:links (taskfiles/audit.yml delegate).
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+
+        # Mode dispatch via CLI_ARGS. If both --remove and --warn-only appear,
+        # warn-only wins by parse order (documented; pick one flag).
+        mode="detect"
+        cli="{{.CLI_ARGS}}"
+        case " $cli " in
+          *" --remove "*)      mode="remove" ;;
+        esac
+        case " $cli " in
+          *" --warn-only "*)   mode="warn" ;;
+        esac
+
+        # --remove TTY-gate MUST appear BEFORE any orphan enumeration so
+        # non-TTY callers fail fast.
+        if [[ "$mode" == "remove" ]]; then
+          if [[ ! -t 0 ]]; then
+            error "links:reconcile --remove requires an interactive TTY; stdin is not a tty"
+            exit 1
+          fi
         fi
 
-      # Claude Code
-      - task: _:check-link
-        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/CLAUDE.md", NAME: "claude CLAUDE.md" }
-      - task: _:check-link
-        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/agents", NAME: "claude agents" }
-      - task: _:check-link
-        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/commands", NAME: "claude commands" }
-      - task: _:check-link
-        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/hooks", NAME: "claude hooks" }
-      - task: _:check-link
-        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/skills", NAME: "claude skills" }
-      - task: _:check-link
-        vars: { TARGET: "{{.CLAUDE_CONFIG_HOME}}/settings.json", NAME: "claude settings.json" }
-      # Validate hook scripts are executable
-      - |
-        {{.DOTFILES_MESSAGES}}
-        all_exec=true
-        for hook in "{{.DOTFILEDIR}}/claude/hooks/"*.zsh; do
-          [[ -f "$hook" ]] || continue
-          # Skip lib.zsh -- sourced by other hooks, not executed directly
-          [[ "$(basename "$hook")" == "lib.zsh" ]] && continue
-          if [[ ! -x "$hook" ]]; then
-            cross "$(basename "$hook") not executable"
-            all_exec=false
-          fi
+        dotfiledir="{{.DOTFILEDIR}}"
+
+        expected=()
+        while IFS= read -r line; do
+          [[ -n "$line" ]] && expected+=("$line")
+        done <<< "{{.EXPECTED_TARGETS}}"
+
+        # Derive deduplicated parent_dirs from expected. CRITICAL: word-split-safe
+        # assignment via `while IFS= read -r` -- NOT the `array=($(...))` form,
+        # which is vulnerable to word-splitting on path components containing
+        # spaces and is not shellcheck-clean.
+        raw_parents=()
+        for t in "${expected[@]}"; do
+          raw_parents+=("$(dirname "$t")")
         done
-        $all_exec && check "hook scripts executable"
+        parent_dirs=()
+        while IFS= read -r dir; do
+          [[ -n "$dir" ]] && parent_dirs+=("$dir")
+        done < <(printf '%s\n' "${raw_parents[@]}" | sort -u)
 
-      # Tools
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml", NAME: "trippy config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/tlrc/config.toml", NAME: "tlrc config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml", NAME: "eza theme" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc", NAME: "conda config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config", NAME: "ghostty config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow.yml", NAME: "glow config" }
-      - task: _:check-link
-        vars: { TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow_style.json", NAME: "glow style" }
+        # Bounded scan (-maxdepth 2). A symlink is an orphan iff its readlink -f
+        # target is under $dotfiledir AND the link path itself is not in
+        # EXPECTED_TARGETS.
+        #
+        # `(( expr ))` evaluates to exit-1 when expr is zero -- under errexit
+        # that aborts the script. Use `if ... ; then ... ; fi` instead of
+        # `(( ... )) && cmd` or bare `(( ... ))`.
+        orphans=()
+        for dir in "${parent_dirs[@]}"; do
+          [[ -d "$dir" ]] || continue
+          while IFS= read -r lnk; do
+            [[ -z "$lnk" ]] && continue
+            target="$(readlink -f "$lnk" 2>/dev/null || true)"
+            [[ "$target" == "$dotfiledir"* ]] || continue
+            found=0
+            for e in "${expected[@]}"; do
+              if [[ "$lnk" == "$e" ]]; then
+                found=1
+                break
+              fi
+            done
+            if [[ "$found" == "0" ]]; then
+              orphans+=("$lnk")
+            fi
+          done < <(find "$dir" -maxdepth 2 -type l 2>/dev/null)
+        done
 
-  # ============================================================================
-  # Symlink Removal (Unlink)
-  # ============================================================================
+        orphan_count=${#orphans[@]}
 
-  unlink-all:
-    desc: "Remove all symlinks created by dotfiles"
-    prompt: "This will remove all dotfiles symlinks. Continue?"
-    cmds:
-      - task: unlink-zsh
-      - task: unlink-git
-      - task: unlink-ssh
-      - task: unlink-tools
-      - task: unlink-claude
-      - |
-        {{.DOTFILES_MESSAGES}}
-        success "All symlinks removed"
-
-  unlink-zsh:
-    desc: "Remove zsh symlinks"
-    internal: true
-    cmds:
-      - rm -f "{{.ZDOTDIR}}/.zshenv"
-      - rm -f "{{.ZDOTDIR}}/.zprofile"
-      - rm -f "{{.ZDOTDIR}}/.zshrc"
-      - rm -f "{{.ZDOTDIR}}/.zlogin"
-      - rm -f "{{.ZDOTDIR}}/.zlogout"
-
-  unlink-git:
-    desc: "Remove git symlinks"
-    internal: true
-    cmds:
-      - rm -f "{{.XDG_CONFIG_HOME}}/git/config"
-      - rm -f "{{.XDG_CONFIG_HOME}}/git/ignore"
-
-  unlink-ssh:
-    desc: "Remove SSH symlinks"
-    internal: true
-    cmds:
-      - rm -f "{{.HOME}}/.ssh/config"
-      - rm -f "{{.HOME}}/.ssh/cloudflared.zsh"
-      - rm -f "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"
-
-  unlink-tools:
-    desc: "Remove tool configuration symlinks"
-    internal: true
-    cmds:
-      - rm -f "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"
-      - rm -f "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"
-      - rm -f "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"
-      - rm -f "{{.XDG_CONFIG_HOME}}/conda/condarc"
-      - rm -f "{{.XDG_CONFIG_HOME}}/ghostty/config"
-      - rm -f "{{.XDG_CONFIG_HOME}}/glow/glow.yml"
-      - rm -f "{{.XDG_CONFIG_HOME}}/glow/glow_style.json"
-
-  unlink-claude:
-    desc: "Remove Claude Code symlinks"
-    internal: true
-    cmds:
-      - rm -f "{{.CLAUDE_CONFIG_HOME}}/CLAUDE.md"
-      - rm -f "{{.CLAUDE_CONFIG_HOME}}/agents"
-      - rm -f "{{.CLAUDE_CONFIG_HOME}}/commands"
-      - rm -f "{{.CLAUDE_CONFIG_HOME}}/hooks"
-      - rm -f "{{.CLAUDE_CONFIG_HOME}}/skills"
-      - rm -f "{{.CLAUDE_CONFIG_HOME}}/settings.json"
+        case "$mode" in
+          detect)
+            if [[ "$orphan_count" -eq 0 ]]; then
+              info "no orphan symlinks detected"
+              exit 0
+            fi
+            for orphan in "${orphans[@]}"; do
+              warn "orphan: $orphan -> $(readlink "$orphan" 2>/dev/null || echo unreadable)"
+            done
+            exit 1
+            ;;
+          warn)
+            if [[ "$orphan_count" -eq 0 ]]; then
+              info "no orphan symlinks detected"
+              exit 0
+            fi
+            for orphan in "${orphans[@]}"; do
+              warn "orphan: $orphan -> $(readlink "$orphan" 2>/dev/null || echo unreadable)"
+            done
+            # --warn-only ALWAYS exits 0 regardless of orphan count.
+            exit 0
+            ;;
+          remove)
+            if [[ "$orphan_count" -eq 0 ]]; then
+              info "no orphan symlinks detected"
+              exit 0
+            fi
+            for orphan in "${orphans[@]}"; do
+              tgt="$(readlink "$orphan" 2>/dev/null || echo unreadable)"
+              info "orphan: $orphan -> $tgt"
+              printf 'Remove? [y/N]: '
+              read -r REPLY
+              if [[ "$REPLY" == "y" || "$REPLY" == "yes" ]]; then
+                # Security: `unlink` removes ONLY the named symlink path.
+                # Never use `rm` here -- a misdirected rm could delete a
+                # directory if a real path slipped through orphan detection.
+                if unlink "$orphan"; then
+                  success "removed: $orphan"
+                else
+                  error "failed to unlink: $orphan"
+                fi
+              else
+                info "skipped: $orphan"
+              fi
+            done
+            exit 0
+            ;;
+          *)
+            # Defensive catch-all. The three valid modes (detect, warn, remove)
+            # are the only values $mode can take given the initialization +
+            # the two case mutators above; this branch surfaces a future
+            # flag-parsing bug as a hard error instead of a silent no-op.
+            error "links:reconcile: internal bug -- unknown mode '$mode'"
+            exit 1
+            ;;
+        esac

@@ -1,0 +1,59 @@
+# manifests/defaults.toml -- shared baseline inherited by every machine manifest.
+#
+# Schema reference: docs/MANIFEST.md
+# Merge semantics:  deep-merge maps; replace scalars/arrays; concat+dedupe
+#                   extra_packages. See research notes section 4 and 5.
+# Required fields:  every machine TOML in manifests/machines/<name>.toml MUST
+#                   explicitly declare meta.description, platform.os, features,
+#                   packages.brew.bundles, identity.git, identity.ssh. Defaults
+#                   supply shape so the resolver always produces a complete
+#                   resolved.json (hybrid pattern), but the validator
+#                   still requires the machine file to declare every required
+#                   field on its own (drift guard).
+
+schema_version = 1
+
+[meta]
+description = "default -- machine must override"
+
+[platform]
+# v1 accepts only "darwin"; v2 will open the rule up to "linux" as well.
+os = "darwin"
+
+[features]
+# Opt-in feature flags. Each is consumed by exactly one task or asset in
+# a later phase. Defaults are conservative (mostly off).
+one-password-ssh = false
+one-password-signing = false   # gates git commit signing via 1Password op-ssh-sign
+claude-marketplace = true
+macos-dock = false        # gates os/defaults/dock.zsh + macos:defaults:dock (P6)
+macos-finder = false      # gates shell/aliases/finder.zsh + os/defaults/finder.zsh (same-flag-two-consumers)
+macos-input = false       # gates os/defaults/input.zsh + macos:defaults:input (P6)
+macos-screenshots = false # gates os/defaults/screenshots.zsh + macos:defaults:screenshots (P6)
+macos-security = false    # gates os/defaults/security.zsh + macos:defaults:security (P6)
+ghostty = false           # gates shell/aliases/ghostty.zsh
+jgrid-net = false         # gates shell/aliases/jgrid.zsh
+server-include = false    # gates identity:server-include (materializes ~/.config/git/server-include.config); set true on headless server machines
+
+[packages.brew]
+# Bundle names map to packages/<name>.rb (Phase 5).
+bundles = ["core"]
+
+[packages.brew.extra_packages]
+# Typed sub-table. Resolver concat+dedupes each sub-array
+# independently with the active machine's extras.
+#   formulae -- bare strings OR { name, verify } objects
+#   casks    -- { name } objects required (verify field retained as optional
+#               metadata for backward-compat; ignored by dedupe semantics;
+#               brew info drives post-install verify)
+#   mas      -- { id, name } objects ONLY (name doubles as verify)
+formulae = []
+casks    = []
+mas      = []
+
+[identity]
+# Allowed values: any name with overlay files at identity/git/identities/<name>
+# AND identity/ssh/identities/<name>. The resolver checks for file presence at
+# validation time; no enum to maintain here. Drives Phase 4 git+SSH selection.
+git = "none"
+ssh = "none"

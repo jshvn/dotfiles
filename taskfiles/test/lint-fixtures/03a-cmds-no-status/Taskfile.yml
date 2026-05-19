@@ -1,0 +1,17 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/03a-cmds-no-status/Taskfile.yml
+#
+# Positive fixture for LINT-03a: task has cmds: but no status: block.
+# This is the gsd-install re-run-on-every-install bug class -- tasks without
+# status: are not idempotent and re-run every time task install is invoked.
+#
+# Expected outcome: LINT-03a fires (expect: fail)
+# =============================================================================
+
+tasks:
+  fixture-task:
+    desc: "fixture: cmds without status"
+    cmds:
+      - echo missing status

@@ -1,0 +1,22 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/07b-yaml-parse-error/Taskfile.yml
+#
+# Positive fixture for LINT-07: malformed YAML that `task --list-all --json`
+# rejects. The production rule distinguishes a real parse failure from a
+# task-list-empty exit code by grepping stderr for "Failed to parse".
+#
+# Intentional malformations:
+#   - tasks: is followed by an obvious scalar where a map is required.
+#
+# Expected outcome: LINT-07 yaml-parse fires (expect: fail)
+# =============================================================================
+
+tasks: this-should-be-a-mapping-not-a-scalar
+
+  fixture-task:
+    desc: "fixture: never reached -- parser fails before this line"
+    status: [true]
+    cmds:
+      - echo unreachable

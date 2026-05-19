@@ -1,0 +1,2 @@
+missing required field: schema_version
+missing schema_version in stderr

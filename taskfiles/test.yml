@@ -1,0 +1,400 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test.yml -- smoke-test surface
+#
+# Purpose:      Hook smoke tests (install/test-hooks.zsh) plus manifest
+#               deep-merge fixtures plus add-machine smoke. Composed by the
+#               root `task test` aggregator.
+# Depends on:   install/test-hooks.zsh; install/resolver.zsh;
+#               install/messages.zsh; manifests/test/fixtures/.
+# Side effects: temporary copies under manifests/machines/ (negative
+#               fixtures + add-machine throwaway) -- always cleaned up via
+#               EXIT trap.
+# =============================================================================
+
+vars:
+  HOME: '{{.HOME}}'
+  XDG_STATE_HOME:
+    sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+  STATE_DIR: '{{.XDG_STATE_HOME}}/dotfiles'
+  STATE_FILE: '{{.STATE_DIR}}/machine'
+  RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
+
+  DEFAULTS_TOML: '{{.DOTFILEDIR}}/manifests/defaults.toml'
+  MACHINES_DIR: '{{.DOTFILEDIR}}/manifests/machines'
+  FIXTURES_DIR: '{{.DOTFILEDIR}}/manifests/test/fixtures'
+
+tasks:
+
+  # lint-allow: cmds-without-status
+  default:
+    desc: "Run hook smoke tests (CLDE-02 named hooks)"
+    internal: true
+    cmds:
+      - task: hooks
+
+  # lint-allow: cmds-without-status
+  hooks:
+    desc: "Run Claude hook smoke tests via install/test-hooks.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running hook smoke tests"
+        export DOTFILEDIR="{{.DOTFILEDIR}}"
+        zsh "${DOTFILEDIR}/install/test-hooks.zsh"
+    status:
+      - false
+
+  manifest:
+    desc: "Run deep-merge fixtures (positive + negative)"
+    internal: true
+    # No status: always re-run; this is a test runner.
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        fix_dir="{{.FIXTURES_DIR}}"
+
+        # Cleanup tracker for negative-fixture copies. Any failure between
+        # cp and rm -f (yq crash, SIGINT, validator coredump) would otherwise
+        # leak _invalid-* files into manifests/machines/, polluting
+        # AVAILABLE_MACHINES and breaking `task setup` autocomplete. go-task's
+        # mvdan/sh interpreter only supports EXIT in trap (not INT/TERM by
+        # name); go-task forwards received signals to its child shell, which
+        # then runs the EXIT trap on its way out, so EXIT alone covers Ctrl-C.
+        neg_copies=()
+        cleanup_neg() {
+          local f
+          for f in "${neg_copies[@]}"; do
+            rm -f "$f"
+          done
+        }
+        trap cleanup_neg EXIT
+
+        # Positive fixtures: run inline merge pipeline + diff.
+        for fix in "${fix_dir}"/[0-9][0-9]-*; do
+          fix_name=$(basename "$fix")
+
+          # Pass 1: deep-merge defaults + machine via yq.
+          merged=$(yq eval-all '. as $i ireduce ({}; . * $i)' \
+            "$fix/defaults.toml" "$fix/machine.toml" -o json 2>/dev/null) || {
+            cross "fixture: ${fix_name} -- yq merge failed"
+            failures=$(( failures + 1 ))
+            continue
+          }
+
+          # Pass 2 (conditional): union extra_packages only when either side
+          # declares it -- avoids incorrectly adding the key to fixtures that
+          # omit extra_packages.
+          has_extras_def=false
+          has_extras_mach=false
+          if yq 'has("packages") and (.packages | has("brew")) and (.packages.brew | has("extra_packages"))' \
+              "$fix/defaults.toml" 2>/dev/null | grep -q true; then
+            has_extras_def=true
+          fi
+          if yq 'has("packages") and (.packages | has("brew")) and (.packages.brew | has("extra_packages"))' \
+              "$fix/machine.toml" 2>/dev/null | grep -q true; then
+            has_extras_mach=true
+          fi
+
+          if [[ "$has_extras_def" == "true" ]] || [[ "$has_extras_mach" == "true" ]]; then
+            extras_def=$(yq -o=json '.packages.brew.extra_packages // []' "$fix/defaults.toml")
+            extras_mach=$(yq -o=json '.packages.brew.extra_packages // []' "$fix/machine.toml")
+            union_extras=$(printf '%s %s' "$extras_def" "$extras_mach" | jq -s 'add | unique')
+            actual=$(printf '%s' "$merged" \
+              | jq --argjson extras "$union_extras" '.packages.brew.extra_packages = $extras')
+          else
+            actual="$merged"
+          fi
+
+          if diff <(printf '%s' "$actual" | jq -S .) <(jq -S . "$fix/expected.json") > /dev/null 2>&1; then
+            check "fixture: ${fix_name} -- pass"
+          else
+            cross "fixture: ${fix_name} -- FAIL (diff: actual vs expected)"
+            diff <(printf '%s' "$actual" | jq -S .) <(jq -S . "$fix/expected.json") || true
+            failures=$(( failures + 1 ))
+          fi
+        done
+
+        # Negative fixtures: validate-only; assert non-zero exit + stderr
+        # fragment. Each fixture under fixtures/_invalid-*/ has:
+        #   machine.toml -- the manifest that should be rejected
+        #   expect.txt   -- line 1: grep substring expected in resolver
+        #                   stderr; line 2 (optional): human-readable label
+        #                   used in the check/cross summary line (defaults
+        #                   to "<grep_substring> in stderr" when omitted)
+        #
+        # Per-PID sandboxed name: a $$-suffix on the copied filename so
+        # concurrent test runs (CI matrix, two terminals) cannot collide on
+        # the same manifests/machines/<name>.toml path.
+        #
+        # _run_negative_fixture registers the copy in neg_copies BEFORE cp
+        # so the EXIT trap (line 79) cleans up on cp failure / SIGINT.
+        _run_negative_fixture() {
+          local fixture_name="$1"
+          local grep_substring="$2"
+          local displayed_label="${3:-${grep_substring} in stderr}"
+          local neg_dir="${fix_dir}/${fixture_name}"
+          local sandboxed_name="${fixture_name}-pid$$"
+          local tmp_neg="{{.MACHINES_DIR}}/${sandboxed_name}.toml"
+          neg_copies+=("$tmp_neg")
+          cp "$neg_dir/machine.toml" "$tmp_neg"
+          local neg_stderr
+          neg_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+            zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
+            --validate-only --machine "$sandboxed_name" 2>&1 >/dev/null || true)
+          rm -f "$tmp_neg"
+          if echo "$neg_stderr" | grep -q "$grep_substring"; then
+            check "fixture: ${fixture_name} -- correctly rejected (${displayed_label})"
+          else
+            cross "fixture: ${fixture_name} -- expected rejection with '${grep_substring}' in stderr"
+            echo "stderr was: $neg_stderr" >&2
+            failures=$(( failures + 1 ))
+          fi
+        }
+
+        # Typed-bucket positive fixtures (typed-*/): invoke the REAL
+        # resolver via --stdout and diff against expected.json. Each
+        # fixture has:
+        #   defaults.toml -- defaults overlay (resolver --defaults arg)
+        #   machine.toml  -- machine overlay (full valid manifest)
+        #   expected.json -- golden resolved output
+        # Bundles named in machine.toml must exist under manifests/test/shared/
+        # (passed via --shared-dir). Unlike the numeric positive fixtures
+        # (01-06) which inline yq merge, this loop exercises the entire
+        # resolve_pipeline including shared-bundle folding and typed-bucket
+        # dedup -- the path the numeric fixtures cannot reach.
+        typed_count=0
+        test_shared_dir="{{.DOTFILEDIR}}/manifests/test/shared"
+        for fix in "${fix_dir}"/typed-*; do
+          [[ -d "$fix" ]] || continue
+          fix_name=$(basename "$fix")
+          if [[ ! -f "$fix/expected.json" ]]; then
+            cross "fixture: ${fix_name} -- expected.json missing"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+          sandboxed_name="${fix_name}-pid$$"
+          tmp_mach="{{.MACHINES_DIR}}/${sandboxed_name}.toml"
+          neg_copies+=("$tmp_mach")
+          cp "$fix/machine.toml" "$tmp_mach"
+          actual=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+            zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
+            --machine "$sandboxed_name" --stdout \
+            --defaults "$fix/defaults.toml" \
+            --shared-dir "$test_shared_dir" 2>/dev/null) || {
+            cross "fixture: ${fix_name} -- resolver invocation failed"
+            rm -f "$tmp_mach"
+            failures=$(( failures + 1 ))
+            continue
+          }
+          rm -f "$tmp_mach"
+          # platform.arch is backfilled via uname -m at resolve time, so the
+          # expected.json is normalized by stripping platform.arch before
+          # diffing. Fixtures that DO want to test arch backfill explicitly
+          # can include `"arch": "FROM_UNAME"` in expected.json and the runner
+          # will substitute the live uname -m result before comparison.
+          live_arch=$(uname -m)
+          actual_norm=$(printf '%s' "$actual" | jq -S '.')
+          expected_norm=$(jq -S --arg arch "$live_arch" \
+            'walk(if type == "string" and . == "FROM_UNAME" then $arch else . end)' \
+            "$fix/expected.json")
+          if diff <(printf '%s' "$actual_norm") <(printf '%s' "$expected_norm") > /dev/null 2>&1; then
+            check "fixture: ${fix_name} -- pass"
+          else
+            cross "fixture: ${fix_name} -- FAIL (diff: actual vs expected)"
+            diff <(printf '%s' "$actual_norm") <(printf '%s' "$expected_norm") || true
+            failures=$(( failures + 1 ))
+          fi
+          typed_count=$(( typed_count + 1 ))
+        done
+
+        # _run_warning_fixture: same sandbox machinery as _run_negative_fixture
+        # but asserts exit code == 0 AND stderr contains grep_substring.
+        # Used by _warn-*/ fixtures that exercise advisory paths in the
+        # resolver (currently: emit_unknown_key_warnings).
+        _run_warning_fixture() {
+          local fixture_name="$1"
+          local grep_substring="$2"
+          local displayed_label="${3:-${grep_substring} in stderr}"
+          local warn_dir="${fix_dir}/${fixture_name}"
+          local sandboxed_name="${fixture_name}-pid$$"
+          local tmp_warn="{{.MACHINES_DIR}}/${sandboxed_name}.toml"
+          neg_copies+=("$tmp_warn")
+          cp "$warn_dir/machine.toml" "$tmp_warn"
+          local warn_stderr warn_exit=0
+          warn_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+            zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
+            --validate-only --machine "$sandboxed_name" 2>&1 >/dev/null) || warn_exit=$?
+          rm -f "$tmp_warn"
+          if (( warn_exit != 0 )); then
+            cross "fixture: ${fixture_name} -- expected exit 0 (warning, not error), got ${warn_exit}"
+            echo "stderr was: $warn_stderr" >&2
+            failures=$(( failures + 1 ))
+            return
+          fi
+          if echo "$warn_stderr" | grep -q "$grep_substring"; then
+            check "fixture: ${fixture_name} -- warning emitted (${displayed_label})"
+          else
+            cross "fixture: ${fixture_name} -- expected warning with '${grep_substring}' in stderr"
+            echo "stderr was: $warn_stderr" >&2
+            failures=$(( failures + 1 ))
+          fi
+        }
+
+        # Iterate _invalid-*/ directories. Adding a new negative fixture is
+        # purely additive: drop machine.toml + expect.txt under a new
+        # _invalid-<slug>/ dir; no runner edits required.
+        negative_count=0
+        for neg_dir in "${fix_dir}"/_invalid-*/; do
+          [[ -d "$neg_dir" ]] || continue
+          fixture_name=$(basename "$neg_dir")
+          expect_file="${neg_dir}/expect.txt"
+          if [[ ! -f "$expect_file" ]]; then
+            cross "fixture: ${fixture_name} -- expect.txt missing"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+          grep_substring=$(sed -n '1p' "$expect_file")
+          displayed_label=$(sed -n '2p' "$expect_file")
+          if [[ -z "$grep_substring" ]]; then
+            cross "fixture: ${fixture_name} -- expect.txt line 1 is empty"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+          _run_negative_fixture "$fixture_name" "$grep_substring" "$displayed_label"
+          negative_count=$(( negative_count + 1 ))
+        done
+
+        # Iterate _warn-*/ directories. Same expect.txt shape as _invalid-*/,
+        # but the assertion is: exit 0 AND stderr contains the substring.
+        warning_count=0
+        for warn_dir in "${fix_dir}"/_warn-*/; do
+          [[ -d "$warn_dir" ]] || continue
+          fixture_name=$(basename "$warn_dir")
+          expect_file="${warn_dir}/expect.txt"
+          if [[ ! -f "$expect_file" ]]; then
+            cross "fixture: ${fixture_name} -- expect.txt missing"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+          grep_substring=$(sed -n '1p' "$expect_file")
+          displayed_label=$(sed -n '2p' "$expect_file")
+          if [[ -z "$grep_substring" ]]; then
+            cross "fixture: ${fixture_name} -- expect.txt line 1 is empty"
+            failures=$(( failures + 1 ))
+            continue
+          fi
+          _run_warning_fixture "$fixture_name" "$grep_substring" "$displayed_label"
+          warning_count=$(( warning_count + 1 ))
+        done
+
+        # Derive totals from actual fixture counts so adding a positive,
+        # negative, or warning fixture does not require editing a hand-coded
+        # constant.
+        positive_count=0
+        for fix in "${fix_dir}"/[0-9][0-9]-*; do
+          positive_count=$(( positive_count + 1 ))
+        done
+        total=$(( positive_count + negative_count + warning_count ))
+        passed=$(( total - failures ))
+        if (( failures == 0 )); then
+          info "fixtures: ${total} total, ${passed} passed, ${failures} failed"
+        else
+          error "fixtures: ${total} total, ${passed} passed, ${failures} failed"
+        fi
+        exit "$failures"
+
+  add-machine:
+    desc: "Smoke test: adding a new machine is one TOML + task setup"
+    internal: true
+    # No status: always re-run; this is a smoke test.
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        state_file="{{.STATE_FILE}}"
+        resolved_file="{{.RESOLVED_JSON_PATH}}"
+        machines_dir="{{.MACHINES_DIR}}"
+        throwaway="${machines_dir}/_addmachine-test.toml"
+
+        # Save current state for restoration. Distinguish "no prior state
+        # existed" from "prior state was empty" so the cleanup function can
+        # DELETE the state file on a fresh machine instead of leaving
+        # _addmachine-test pointing at a manifest that no longer exists.
+        prior_machine_existed=0
+        prior_machine=""
+        if [[ -f "$state_file" ]]; then
+          prior_machine_existed=1
+          # Trim only edges; embedded whitespace is preserved so an invalid
+          # prior state is not silently rewritten into a different
+          # (possibly valid) machine name on restore.
+          prior_machine=$(head -n1 "$state_file" 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+        fi
+        prior_resolved_existed=0
+        prior_resolved=""
+        if [[ -f "$resolved_file" ]]; then
+          prior_resolved_existed=1
+          prior_resolved=$(cat "$resolved_file" 2>/dev/null)
+        fi
+
+        # Unconditional cleanup: remove throwaway TOML and restore state.
+        # Defined as a function so trap can reference it without complex
+        # quoting.
+        do_cleanup() {
+          rm -f "$throwaway"
+          if (( prior_machine_existed )); then
+            printf '%s' "$prior_machine" > "$state_file"
+          else
+            rm -f "$state_file"
+          fi
+          if (( prior_resolved_existed )); then
+            printf '%s' "$prior_resolved" > "$resolved_file"
+          else
+            rm -f "$resolved_file"
+          fi
+        }
+        trap do_cleanup EXIT
+
+        # printf avoids heredoc indent issues.
+        printf '%s\n' \
+          'schema_version = 1' \
+          '' \
+          '[meta]' \
+          'description = "addmachine-test fixture machine"' \
+          '' \
+          '[platform]' \
+          'os = "darwin"' \
+          '' \
+          '[features]' \
+          '' \
+          '[packages.brew]' \
+          'bundles = ["core"]' \
+          '' \
+          '[identity]' \
+          'git = "none"' \
+          'ssh = "none"' \
+          > "$throwaway"
+
+        info "Writing state file for _addmachine-test..."
+        mkdir -p "{{.STATE_DIR}}"
+        printf '%s' "_addmachine-test" > "$state_file"
+        info "Running resolver for _addmachine-test..."
+        DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+          zsh "{{.DOTFILEDIR}}/install/resolver.zsh"
+
+        got_desc=$(jq -re '.meta.description' "$resolved_file" 2>/dev/null || echo "")
+        if [[ "$got_desc" == "addmachine-test fixture machine" ]]; then
+          check "new machine appears in resolved.json"
+        else
+          cross "expected 'addmachine-test fixture machine' in .meta.description, got: '$got_desc'"
+          exit 1
+        fi
+
+        success "test:add-machine passed -- new machine TOML + resolve works end-to-end"

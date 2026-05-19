@@ -1,0 +1,211 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/hostname.yml -- per-physical-machine hostname apply / rename layer
+#
+# Purpose:      Expose hostname:apply (install-time, status-gated on the
+#               state-file presence + content match), hostname:set
+#               (write-and-apply), hostname:validate, hostname:show. State
+#               lives at $XDG_STATE_HOME/dotfiles/hostname -- machine-local,
+#               outside the repo, NOT a manifest feature. File existence is
+#               the install-time gate; no feature flag.
+# Depends on:   taskfiles/helpers.yml; install/messages.zsh; os/hostname.zsh.
+# Side effects: hostname:apply / hostname:set run four sudo commands (scutil
+#               ComputerName / HostName / LocalHostName + defaults write SMB
+#               NetBIOSName) via os/hostname.zsh::apply_hostname.
+#               hostname:set additionally writes the state file atomically.
+#               hostname:validate / hostname:show are read-only.
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+vars:
+  HOME: '{{.HOME}}'
+
+  XDG_STATE_HOME:
+    sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
+
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+  STATE_DIR: '{{.XDG_STATE_HOME}}/dotfiles'
+  HOSTNAME_STATE_FILE: '{{.STATE_DIR}}/hostname'
+
+tasks:
+
+  apply:
+    desc: "Ensure hostname state file + system are in sync (auto-captures live hostname if state missing)"
+    internal: true
+    platforms: [darwin]
+    # status: short-circuits ONLY when the state file exists AND its contents
+    # match the live LocalHostName (already converged). All other cases run
+    # cmds, which branches on state-file presence:
+    #   - state file missing -> capture live LocalHostName into state file
+    #     (self-heal: a previously-installed machine whose hostname was set
+    #     via the legacy `sethostname` shell function gets back-filled on
+    #     the next `task install`).
+    #   - state file present AND mismatch -> apply state -> system.
+    # LINT-01 + LINT-02 -- the only template var in status is
+    # {{.HOSTNAME_STATE_FILE}}; the rest is shell inside the nested zsh -c
+    # body (same false-positive baseline class accepted in manifest.yml).
+    status:
+      - |
+        if [[ ! -f "{{.HOSTNAME_STATE_FILE}}" ]]; then
+          exit 1
+        fi
+        DOTFILEDIR={{.DOTFILEDIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
+          set -euo pipefail
+          source "${DOTFILEDIR}/os/hostname.zsh"
+          desired=$(read_hostname_state_file) || exit 1
+          verify_hostname "$desired" > /dev/null 2>&1
+        '
+    cmds:
+      - |
+        DOTFILEDIR={{.DOTFILEDIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
+          set -euo pipefail
+          source "${DOTFILEDIR}/install/messages.zsh"
+          source "${DOTFILEDIR}/os/hostname.zsh"
+          file="$(hostname_state_file)"
+          if [[ ! -f "$file" ]]; then
+            # Self-heal: capture live LocalHostName into the state file.
+            # A fresh machine has a default like "Joshs-MacBook-Pro" which
+            # passes the regex; an already-installed machine that ran
+            # `sethostname JMBP` interactively also gets captured here.
+            # After capture the operator can rename via `task hostname:set
+            # -- <name>`; subsequent `task install` runs are no-ops.
+            live=$(read_local_hostname) || {
+              warn "could not read LocalHostName; skipping hostname capture"
+              exit 0
+            }
+            if [[ -z "$live" ]]; then
+              warn "LocalHostName is unset; run '\''task hostname:set -- <name>'\''"
+              exit 0
+            fi
+            if ! validate_hostname_name "$live" 2>/dev/null; then
+              warn "live LocalHostName '\''${live}'\'' does not match validation regex; not captured"
+              warn "  set explicitly: task hostname:set -- <name>"
+              exit 0
+            fi
+            write_hostname_state_file "$live"
+            info "hostname state file initialized from live LocalHostName: ${live}"
+            info "  to rename: task hostname:set -- <name>"
+            exit 0
+          fi
+          desired=$(read_hostname_state_file) || {
+            warn "hostname state file unreadable -- skipping"
+            exit 0
+          }
+          apply_hostname "$desired"
+        '
+
+  # lint-allow: cmds-without-status
+  set:
+    desc: "Write hostname state file + apply: task hostname:set -- <name>"
+    platforms: [darwin]
+    # status: [false] -- this is a verb (write + apply), not idempotent-by-
+    # state. The underlying write is itself idempotent (atomic mv), but the
+    # task should always run when invoked.
+    status: [false]
+    # requires: hard-fails when CLI_ARGS is absent (no name passed).
+    requires:
+      vars: [CLI_ARGS]
+    # Forward CLI_ARGS via env (mirror manifest:setup exactly): go-task
+    # substitutes {{.CLI_ARGS}} into rendered shell BEFORE parse, so an
+    # apostrophe / shell metacharacter in user input would unterminate the
+    # surrounding single-quoted string. Reading $CLI_ARGS_ENV from env moves
+    # the value past the parser intact.
+    env:
+      CLI_ARGS_ENV: '{{.CLI_ARGS}}'
+    # Validate inline in the precondition shell (mvdan/sh) instead of via a
+    # nested `zsh -c` with `set -u`. The nested form fails confusingly when
+    # `env: CLI_ARGS_ENV` does not reach the inner zsh: `set -u` triggers an
+    # "unbound variable" exit BEFORE validate_hostname_name runs, the inner
+    # stderr is swallowed by go-task, and the user only sees the `msg:` with
+    # the template-rendered `{{.CLI_ARGS}}` -- making a valid name look
+    # rejected. Inline validation against `${CLI_ARGS_ENV}` defaults-empty
+    # to "" (NOT unbound) and lets the regex check below produce the right
+    # decision either way. Mirrors `manifest:setup` exactly.
+    preconditions:
+      - sh: |
+          name="${CLI_ARGS_ENV:-}"
+          [[ -n "$name" ]] || exit 1
+          [[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9-]*$ ]] || exit 1
+        msg: |
+          invalid hostname: "{{.CLI_ARGS}}"
+            must match ^[A-Za-z0-9][A-Za-z0-9-]*$
+            (ASCII letters, digits, hyphens; no leading hyphen)
+            example: task hostname:set -- JMBP
+    cmds:
+      - |
+        DOTFILEDIR={{.DOTFILEDIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
+          set -euo pipefail
+          source "${DOTFILEDIR}/install/messages.zsh"
+          source "${DOTFILEDIR}/os/hostname.zsh"
+          write_hostname_state_file "${CLI_ARGS_ENV}"
+          apply_hostname "${CLI_ARGS_ENV}"
+          success "hostname state + system updated: ${CLI_ARGS_ENV}"
+        '
+
+  validate:
+    desc: "Validate hostname state file presence + agreement with live LocalHostName"
+    internal: true
+    platforms: [darwin]
+    # status: [false] -- validate is always re-run; emits inline
+    # check/cross via messages.zsh.
+    status: [false]
+    cmds:
+      - |
+        DOTFILEDIR={{.DOTFILEDIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
+          set -euo pipefail
+          source "${DOTFILEDIR}/install/messages.zsh"
+          source "${DOTFILEDIR}/os/hostname.zsh"
+          file="$(hostname_state_file)"
+          if [[ ! -f "$file" ]]; then
+            cross "hostname state file missing -- run '\''task install'\'' (auto-captures live) or '\''task hostname:set -- <name>'\''"
+            exit 1
+          fi
+          desired=$(read_hostname_state_file) || {
+            cross "hostname state file unreadable: $file"
+            exit 1
+          }
+          check "hostname state file: ${desired}"
+          live=$(read_local_hostname) || live=""
+          if [[ "$live" == "$desired" ]]; then
+            check "live LocalHostName matches state file"
+          else
+            cross "live LocalHostName != state file (state: ${desired}, live: ${live:-<unset>}) -- run '\''task install'\'' or '\''task hostname:set -- <name>'\''"
+            exit 1
+          fi
+        '
+
+  # lint-allow: cmds-without-status
+  show:
+    desc: "Show hostname state file + live ComputerName/HostName/LocalHostName/NetBIOSName"
+    internal: true
+    platforms: [darwin]
+    # Internal -- public delegate is `task show:hostname` (taskfiles/show.yml),
+    # mirroring the manifest:show / show:manifest split.
+    # status: [false] -- diagnostic read; always re-run.
+    status: [false]
+    cmds:
+      - |
+        DOTFILEDIR={{.DOTFILEDIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
+          set -euo pipefail
+          source "${DOTFILEDIR}/install/messages.zsh"
+          source "${DOTFILEDIR}/os/hostname.zsh"
+          file="$(hostname_state_file)"
+          if [[ -f "$file" ]]; then
+            state=$(read_hostname_state_file) || state="<unreadable>"
+            info "state file:     ${state}    (${file})"
+          else
+            warn "state file:     <missing>   (${file})"
+          fi
+          info "LocalHostName:  $(scutil --get LocalHostName  2>/dev/null || echo "<unset>")"
+          info "ComputerName:   $(scutil --get ComputerName   2>/dev/null || echo "<unset>")"
+          info "HostName:       $(scutil --get HostName       2>/dev/null || echo "<unset>")"
+          info "NetBIOSName:    $(defaults read /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName 2>/dev/null || echo "<unset>")"
+        '

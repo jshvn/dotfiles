@@ -1,0 +1,44 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/08b-banner-parity-ok/Taskfile.yml
+#
+# Negative fixture for LINT-08: default:'s cmd block names every public
+# top-level task. The `hidden` task is internal: true and therefore exempt
+# from the parity check.
+#
+# Expected outcome: LINT-08 does not fire (expect: pass)
+# =============================================================================
+
+tasks:
+  default:
+    desc: "fixture default with all tasks mentioned"
+    status: [false]
+    cmds:
+      - echo "install setup validate"
+
+  install:
+    desc: "fixture install"
+    status: [false]
+    cmds:
+      - echo install
+
+  setup:
+    desc: "fixture setup"
+    status: [false]
+    cmds:
+      - echo setup
+
+  validate:
+    desc: "fixture validate"
+    status: [false]
+    cmds:
+      - echo validate
+
+  # Internal task -- LINT-08 skips it. Public task list excludes internals.
+  hidden:
+    desc: "fixture internal (skipped by check)"
+    internal: true
+    status: [false]
+    cmds:
+      - echo hidden

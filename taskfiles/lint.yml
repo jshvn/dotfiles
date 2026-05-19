@@ -1,0 +1,471 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/lint.yml -- lint suite for v2 dotfiles conventions
+#
+# Purpose:      Enforce LINT-01..08 structural correctness rules that prevent
+#               recurring bug classes. See CLAUDE.md §Lint rule catalogue
+#               for the rule definitions.
+# Depends on:   taskfiles/helpers.yml; install/messages.zsh; yq + ggrep.
+# Side effects: read-only -- emits check/cross output via messages.zsh.
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+vars:
+  TASKFILE_GLOB: 'taskfiles/*.yml'
+  # ZSH_FIND uses DOTFILEDIR so it works regardless of cwd when task is invoked.
+  ZSH_FIND: >-
+    find {{.DOTFILEDIR}} -name '*.zsh'
+    -not -path '{{.DOTFILEDIR}}/.git/*'
+    -not -path '{{.DOTFILEDIR}}/.planning/*'
+    -not -path '{{.DOTFILEDIR}}/taskfiles/test/*'
+    -not -path '{{.DOTFILEDIR}}/.claude/*'
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
+  DOTFILES_MESSAGES: |
+    source '{{.DOTFILEDIR}}/install/messages.zsh'
+
+tasks:
+
+  # lint-allow: cmds-without-status
+  default:
+    desc: "Run all lint checks"
+    # lint tasks intentionally have no status: block -- they are always
+    # re-run. Each sub-check carries ignore_error: true so the aggregator runs
+    # every check regardless of prior failures (run-all-aggregate). Without
+    # this, one early failure (e.g., a pre-existing LINT-02 baseline) aborts
+    # the pipeline and downstream checks like LINT-08 banner-parity never run.
+    cmds:
+      - task: syntax
+        ignore_error: true
+      - task: taskfile
+        ignore_error: true
+      - task: shell-headers
+        ignore_error: true
+      - task: portability
+        ignore_error: true
+      - task: banner-parity
+        ignore_error: true
+
+  # lint-allow: cmds-without-status
+  syntax:
+    desc: "YAML parse + zsh -n syntax checks"
+    internal: true
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # task --list-all --json exits non-zero on parse errors. Exit-1 with
+        # empty task list (all internal: true) is NOT a parse error; detect
+        # real failures by checking stderr for "Failed to parse".
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        while IFS= read -r f; do
+          err=$(task --list-all --json -t "$f" 2>&1 >/dev/null || true)
+          if echo "$err" | ggrep -q 'Failed to parse'; then
+            cross "yaml-parse: $f -- task --list-all failed"
+            echo "$err" >&2
+            failures=$(( failures + 1 ))
+          else
+            check "yaml-parse: $f"
+          fi
+        done < <(find {{.DOTFILEDIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
+        exit "$failures"
+      - |
+        # lint-allow: cmds-without-status
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        while IFS= read -r f; do
+          if zsh -n "$f" 2>&1; then
+            check "zsh -n: $f"
+          else
+            cross "zsh -n: $f"
+            failures=$(( failures + 1 ))
+          fi
+        done < <({{.ZSH_FIND}})
+        exit "$failures"
+
+  # lint-allow: cmds-without-status
+  taskfile:
+    desc: 'Taskfile convention checks: $VAR in status:, cmds: without status:, bare symlink outside helpers'
+    internal: true
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # All three checks run in a single block so all produce output even
+        # when one fails. The failures counter accumulates across LINT-02,
+        # LINT-03b, and LINT-03a; the final exit reports the total count.
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+
+        # LINT-02: $VAR-style shell vars inside status: blocks.
+        # Per-entry analysis (each .status[] item is its own shell context):
+        # a $VAR reference is OK if VAR is defined locally within the same
+        # entry via `VAR=` or `for VAR in`. These are real shell vars in the
+        # entry's execution context -- not misspelled go-task vars (the
+        # template `.VAR` form, wrapped in double braces, is the correct
+        # way to reach a go-task var; this rule guards against using $VAR
+        # by accident).
+        # Lines containing the substring `$(` or the template-open token
+        # are still dropped wholesale (existing semantics): `$(` masks the
+        # legitimate `out=$(cmd)` define-line, and the template open avoids
+        # matching template-rendered fragments.
+        while IFS= read -r f; do
+          n=$(yq -o=json '[.tasks[] | select(.status) | .status[] | select(tag == "!!str")] | length' "$f" 2>/dev/null || echo 0)
+          out=""
+          for ((i=0; i<n; i++)); do
+            entry=$(yq -o=json "[.tasks[] | select(.status) | .status[] | select(tag == \"!!str\")][$i]" "$f" 2>/dev/null | jq -r .)
+            local_vars=$(printf '%s\n' "$entry" \
+              | ggrep -oE '(^|[[:space:];&|]+)[A-Za-z_][A-Za-z0-9_]*=' \
+              | sed -E 's/^[^A-Za-z_]+//; s/=$//' || true)
+            loop_vars=$(printf '%s\n' "$entry" \
+              | ggrep -oE '\bfor[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+in\b' \
+              | awk '{print $2}' || true)
+            allowed=$(printf '%s\n%s\n' "$local_vars" "$loop_vars" | sort -u | ggrep -v '^$' || true)
+            entry_hits=$(printf '%s\n' "$entry" \
+              | ggrep -nE '\$[A-Za-z_][A-Za-z0-9_]*' \
+              | ggrep -vE '\$\(' \
+              | ggrep -vE '\{\{' \
+              | awk -v allowed="$allowed" '
+                  BEGIN {
+                    nlines = split(allowed, arr, "\n")
+                    for (j = 1; j <= nlines; j++) if (arr[j] != "") locals[arr[j]] = 1
+                  }
+                  {
+                    ok = 1; rest = $0
+                    while (match(rest, /\$[A-Za-z_][A-Za-z0-9_]*/)) {
+                      v = substr(rest, RSTART + 1, RLENGTH - 1)
+                      if (!(v in locals)) { ok = 0; break }
+                      rest = substr(rest, RSTART + RLENGTH)
+                    }
+                    if (!ok) print $0
+                  }
+                ' || true)
+            if [[ -n "$entry_hits" ]]; then
+              out="${out}${entry_hits}"$'\n'
+            fi
+          done
+          if [[ -n "$out" ]]; then
+            cross "LINT-02: \$VAR in status: block -- $f"
+            printf '%s' "$out" >&2
+            failures=$(( failures + 1 ))
+          else
+            check "LINT-02: $f"
+          fi
+        done < <(find {{.DOTFILEDIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
+
+        # LINT-03b: bare ln -s outside taskfiles/helpers.yml.
+        # Scope:
+        #   --include='*.yml'    -- markdown docs that describe the rule
+        #                           (taskfiles/README.md mentions `ln -s`)
+        #                           must not trip it.
+        #   --exclude-dir='test' -- self-test fixtures intentionally contain
+        #                           bare ln -s to verify the rule fires (e.g.
+        #                           03b-bare-ln/Taskfile.yml); they belong to
+        #                           lint:test-fixtures, not production scan.
+        violations=$(ggrep -rn -E '\bln[[:space:]]+-s' \
+                      --include='*.yml' --exclude-dir='test' \
+                      "{{.DOTFILEDIR}}/taskfiles/" \
+                      | ggrep -v 'helpers.yml' \
+                      | ggrep -v ':[[:space:]]*#' || true)
+        if [[ -n "$violations" ]]; then
+          cross "LINT-03b: bare 'ln -s' outside helpers.yml"
+          echo "$violations" >&2
+          failures=$(( failures + 1 ))
+        else
+          check "LINT-03b: no bare ln -s outside helpers.yml"
+        fi
+
+        # LINT-03a: tasks with cmds: but no status: block.
+        # Exemptions: internal: true tasks; tasks whose cmds: are ALL task:
+        # delegations; taskfiles/lint.yml itself.
+        while IFS= read -r f; do
+          [[ "$f" == *"lint.yml" ]] && continue
+          while IFS= read -r task_name; do
+            [[ -z "$task_name" ]] && continue
+            is_internal=$(yq ".tasks.\"$task_name\".internal // false" "$f" 2>/dev/null || echo false)
+            [[ "$is_internal" == "true" ]] && continue
+            # `map(has("task")) | all` (no-arg `all` builtin) because the
+            # `all(filter)` form returns a yq syntax error -- and that error
+            # was previously masked behind 2>/dev/null + ||echo false, so the
+            # exemption silently failed and orchestrator tasks were
+            # mis-flagged. Bracket-indexing `.tasks["$task_name"]` keeps the
+            # query robust when $task_name collides with a yq builtin name
+            # such as "all".
+            all_delegations=$(yq ".tasks[\"$task_name\"].cmds | map(has(\"task\")) | all" "$f" 2>/dev/null || echo false)
+            [[ "$all_delegations" == "true" ]] && continue
+            cross "LINT-03a: '$task_name' in $f has cmds: but no status:"
+            failures=$(( failures + 1 ))
+          done < <(yq '.tasks | to_entries | .[] | select(.value | has("cmds")) | select(.value | has("status") | not) | .key' "$f" 2>/dev/null || true)
+        done < <(find {{.DOTFILEDIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
+
+        exit "$failures"
+
+  # lint-allow: cmds-without-status
+  shell-headers:
+    desc: "Executable .zsh files have set -euo pipefail"
+    internal: true
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        while IFS= read -r f; do
+          if head -30 "$f" | ggrep -qE '^set -euo pipefail$'; then
+            check "LINT-04: $f"
+          else
+            cross "LINT-04: $f missing 'set -euo pipefail' in first 30 lines"
+            failures=$(( failures + 1 ))
+          fi
+        done < <(find {{.DOTFILEDIR}} -name '*.zsh' -perm +111 \
+                   -not -path '{{.DOTFILEDIR}}/.git/*' \
+                   -not -path '{{.DOTFILEDIR}}/.planning/*' \
+                   -not -path '{{.DOTFILEDIR}}/taskfiles/test/*' \
+                   -not -path '{{.DOTFILEDIR}}/.claude/*' \
+                   2>/dev/null)
+        exit "$failures"
+
+  # lint-allow: cmds-without-status
+  portability:
+    desc: "Portability hints for future-Linux v2 (warn-only, exit 0)"
+    internal: true
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # Scans shell/ and os/ for macOS-only commands. ggrep tolerates
+        # missing directories via 2>/dev/null and || true.
+        {{.DOTFILES_MESSAGES}}
+        patterns=(pbcopy pbpaste osascript 'defaults read' 'defaults write' sw_vers dscl PlistBuddy)
+        warnings=0
+        for pat in "${patterns[@]}"; do
+          hits=$(ggrep -rnE "\b${pat}\b" shell/ os/ 2>/dev/null \
+                 | ggrep -v ':[[:space:]]*#' || true)
+          if [[ -n "$hits" ]]; then
+            warn "LINT-05: portability hint -- '${pat}' found:"
+            echo "$hits" >&2
+            warnings=$(( warnings + 1 ))
+          fi
+        done
+        [[ $warnings -gt 0 ]] && warn "LINT-05: $warnings portability hint(s) found (non-blocking; exit 0)"
+        exit 0
+
+  # lint-allow: cmds-without-status
+  banner-parity:
+    desc: "Banner parity check: default:'s cmd block lists every public top-level task"
+    internal: true
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # The root Taskfile.yml `default:` task is the curated operator surface
+        # banner; every non-internal top-level task (no `:` in the name) MUST
+        # appear in its cmd block, otherwise operators miss commands rendered
+        # by `task --list` but not by bare `task`.
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        ROOT_TASKFILE="{{.DOTFILEDIR}}/Taskfile.yml"
+        public_top_tasks=$(yq '.tasks | to_entries | .[] | select(.value.internal // false | not) | .key | select(test("^[^:]+$"))' "$ROOT_TASKFILE")
+        banner_body=$(yq '.tasks.default.cmds[0]' "$ROOT_TASKFILE")
+        for task_name in $public_top_tasks; do
+          # Skip the `default` task itself -- it cannot reference itself in its own banner.
+          [[ "$task_name" == "default" ]] && continue
+          if ! echo "$banner_body" | ggrep -qF "$task_name"; then
+            cross "LINT-08: 'task $task_name' is public but missing from default:'s banner -- update Taskfile.yml"
+            failures=$(( failures + 1 ))
+          else
+            check "LINT-08: $task_name in banner"
+          fi
+        done
+        exit "$failures"
+
+  # lint-allow: cmds-without-status
+  test-fixtures:
+    desc: "Self-test the lint suite against fixtures (positive + negative cases)"
+    internal: true
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        fixtures_dir="{{.DOTFILEDIR}}/taskfiles/test/lint-fixtures"
+        for fix in "$fixtures_dir"/[0-9]*-*/; do
+          name=$(basename "$fix")
+          expect=$(head -n1 "$fix/expect" | tr -d '[:space:]')
+          actual=unknown
+          case "$name" in
+            02*|03a-*)
+              # LINT-02 / LINT-03a: scope to fixture's Taskfile.yml.
+              #
+              # NOTE: queries below must stay aligned with the production rule
+              # bodies above (LINT-02 ~line 110, LINT-03a ~line 180). The
+              # `map(has("task")) | all` form is required -- the alternative
+              # `all(has("task"))` is a yq syntax error and was previously
+              # masked by `|| echo false`, leaving the all-delegations
+              # exemption untested. The new fixture 03a-all-delegations-ok
+              # exercises this path so future drift trips the self-test.
+              # LINT-02 per-entry local-vars allow-list mirrors the production
+              # implementation; fixtures 02d/02e exercise the new code paths.
+              lint02_hit=""
+              n02=$(cd "$fix" && yq -o=json '[.tasks[] | select(.status) | .status[] | select(tag == "!!str")] | length' Taskfile.yml 2>/dev/null || echo 0)
+              for ((k02=0; k02<n02; k02++)); do
+                entry=$(cd "$fix" && yq -o=json "[.tasks[] | select(.status) | .status[] | select(tag == \"!!str\")][$k02]" Taskfile.yml 2>/dev/null | jq -r .)
+                local_vars=$(printf '%s\n' "$entry" \
+                  | ggrep -oE '(^|[[:space:];&|]+)[A-Za-z_][A-Za-z0-9_]*=' \
+                  | sed -E 's/^[^A-Za-z_]+//; s/=$//' || true)
+                loop_vars=$(printf '%s\n' "$entry" \
+                  | ggrep -oE '\bfor[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+in\b' \
+                  | awk '{print $2}' || true)
+                allowed=$(printf '%s\n%s\n' "$local_vars" "$loop_vars" | sort -u | ggrep -v '^$' || true)
+                eh=$(printf '%s\n' "$entry" \
+                  | ggrep -nE '\$[A-Za-z_][A-Za-z0-9_]*' \
+                  | ggrep -vE '\$\(' \
+                  | ggrep -vE '\{\{' \
+                  | awk -v allowed="$allowed" '
+                      BEGIN {
+                        nlines = split(allowed, arr, "\n")
+                        for (j = 1; j <= nlines; j++) if (arr[j] != "") locals[arr[j]] = 1
+                      }
+                      {
+                        ok = 1; rest = $0
+                        while (match(rest, /\$[A-Za-z_][A-Za-z0-9_]*/)) {
+                          v = substr(rest, RSTART + 1, RLENGTH - 1)
+                          if (!(v in locals)) { ok = 0; break }
+                          rest = substr(rest, RSTART + RLENGTH)
+                        }
+                        if (!ok) print $0
+                      }
+                    ' || true)
+                if [[ -n "$eh" ]]; then
+                  lint02_hit="${lint02_hit}${eh}"$'\n'
+                fi
+              done
+              lint03a_hit=""
+              while IFS= read -r task_name; do
+                [[ -z "$task_name" ]] && continue
+                is_internal=$(cd "$fix" && yq ".tasks[\"$task_name\"].internal // false" Taskfile.yml 2>/dev/null || echo false)
+                [[ "$is_internal" == "true" ]] && continue
+                all_delegations=$(cd "$fix" && yq ".tasks[\"$task_name\"].cmds | map(has(\"task\")) | all" Taskfile.yml 2>/dev/null || echo false)
+                [[ "$all_delegations" == "true" ]] && continue
+                lint03a_hit="${lint03a_hit}${task_name} "
+              done < <(cd "$fix" && yq '.tasks | to_entries | .[] | select(.value | has("cmds")) | select(.value | has("status") | not) | .key' Taskfile.yml 2>/dev/null || true)
+              if [[ -n "$lint02_hit" ]] || [[ -n "$lint03a_hit" ]]; then
+                actual=fail
+              else
+                actual=pass
+              fi
+              ;;
+            03b-*)
+              # LINT-03b: bare ln -s outside helpers.yml.
+              # Mirror production scope: scan *.yml only (production uses
+              # --include='*.yml' --exclude-dir='test'). A fixture with no
+              # .yml file (e.g. 03b-readme-ok/README.md) is out of scope and
+              # passes by construction -- exactly as the production rule
+              # treats taskfiles/README.md.
+              # `|| true` is required: under root errexit+pipefail
+              # (Taskfile.yml:15), an unmatched glob makes `ls` exit non-zero
+              # and pipefail propagates it through `head`, which would abort
+              # the script before the case branch runs.
+              file=$(ls "$fix"/*.yml 2>/dev/null | head -1 || true)
+              if [[ -z "$file" ]]; then
+                actual=pass
+              else
+                base=$(basename "$file")
+                if ggrep -qE '\bln[[:space:]]+-s' "$file" && [[ "$base" != "helpers.yml" ]]; then
+                  actual=fail
+                else
+                  actual=pass
+                fi
+              fi
+              ;;
+            04*)
+              # LINT-04: executable .zsh missing set -euo pipefail
+              file=$(ls "$fix"/*.zsh 2>/dev/null | head -1)
+              if [[ -x "$file" ]] && ! head -30 "$file" | ggrep -qE '^set -euo pipefail$'; then
+                actual=fail
+              else
+                actual=pass
+              fi
+              ;;
+            05*)
+              # LINT-05: portability pattern (warn-only). One fixture per
+              # production patterns[] entry. Drift-guard: the slug derived
+              # from the fixture name (05X-<slug>-warn) must appear in the
+              # production patterns=(...) line at lint.yml ~line 188. If a
+              # pattern is dropped from production, the corresponding fixture
+              # flips to `actual=fail` and the self-test fails.
+              file=$(ls "$fix"/*.zsh 2>/dev/null | head -1)
+              pat_slug=$(echo "$name" | sed -E 's/^05[a-z]-//; s/-warn$//')
+              case "$pat_slug" in
+                defaults-read)  expect_pat='defaults read'  ;;
+                defaults-write) expect_pat='defaults write' ;;
+                plistbuddy)     expect_pat='PlistBuddy'     ;;
+                *)              expect_pat="$pat_slug"      ;;
+              esac
+              prod_patterns_line=$(ggrep -oE 'patterns=\([^)]+\)' "{{.DOTFILEDIR}}/taskfiles/lint.yml" | head -1)
+              if ! echo "$prod_patterns_line" | ggrep -qF "$expect_pat"; then
+                actual=fail
+                echo "    LINT-05 production patterns=(...) does not declare '$expect_pat'" >&2
+              elif ggrep -qE "${expect_pat}" "$file"; then
+                actual=warn
+              else
+                actual=pass
+              fi
+              ;;
+            07*)
+              # LINT-07: zsh -n parse error OR yaml-parse failure.
+              # File extension selects the arm: *.zsh -> `zsh -n`,
+              # *.yml -> `task --list-all --json` with stderr 'Failed to parse'.
+              if ls "$fix"/*.zsh >/dev/null 2>&1; then
+                file=$(ls "$fix"/*.zsh 2>/dev/null | head -1)
+                if zsh -n "$file" 2>/dev/null; then
+                  actual=pass
+                else
+                  actual=fail
+                fi
+              elif ls "$fix"/*.yml >/dev/null 2>&1; then
+                file=$(ls "$fix"/*.yml 2>/dev/null | head -1)
+                err=$(task --list-all --json -t "$file" 2>&1 >/dev/null || true)
+                if echo "$err" | ggrep -q 'Failed to parse'; then
+                  actual=fail
+                else
+                  actual=pass
+                fi
+              else
+                actual=unknown
+              fi
+              ;;
+            08*)
+              # LINT-08: banner-parity check against THIS fixture's
+              # Taskfile.yml (not the project root). Replicates the
+              # banner-parity rule body: extract public top-level tasks (no
+              # `:` in name; internal: true excluded), grep each name
+              # against default.cmds[0]. fail if any missing.
+              file=$(ls "$fix"/Taskfile.yml 2>/dev/null)
+              if [[ -z "$file" ]]; then
+                actual=unknown
+              else
+                public_top=$(yq '.tasks | to_entries | .[] | select(.value.internal // false | not) | .key | select(test("^[^:]+$"))' "$file" 2>/dev/null)
+                banner_body=$(yq '.tasks.default.cmds[0] // ""' "$file" 2>/dev/null)
+                any_miss=0
+                for tn in $public_top; do
+                  [[ "$tn" == "default" ]] && continue
+                  if ! echo "$banner_body" | ggrep -qF "$tn"; then any_miss=1; fi
+                done
+                if [[ "$any_miss" -eq 1 ]]; then actual=fail; else actual=pass; fi
+              fi
+              ;;
+            *) actual=unknown ;;
+          esac
+          if [[ "$actual" == "$expect" ]]; then
+            check "${name}: expect=${expect} actual=${actual}"
+          else
+            cross "${name}: expect=${expect} actual=${actual}"
+            failures=$((failures + 1))
+          fi
+        done
+        if [[ $failures -gt 0 ]]; then
+          error "lint:test-fixtures: $failures fixture(s) failed expected behavior"
+        else
+          success "lint:test-fixtures: all $(ls -d "$fixtures_dir"/[0-9]*-*/ | wc -l | tr -d ' ') fixtures behaved as expected"
+        fi
+        exit "$failures"

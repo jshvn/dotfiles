@@ -1,0 +1,15 @@
+# negative fixture -- meta.description omitted; validator must reject
+
+schema_version = 1
+
+[platform]
+os = "darwin"
+
+[features]
+
+[packages.brew]
+bundles = ["core"]
+
+[identity]
+git = "none"
+ssh = "none"

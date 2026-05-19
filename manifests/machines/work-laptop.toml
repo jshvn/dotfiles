@@ -1,0 +1,60 @@
+# manifests/machines/work-laptop.toml -- Work MacBook.
+#
+# Work identity, GUI + dev environment; arch detected by the resolver.
+# See docs/MANIFEST.md for the schema reference and field semantics.
+
+schema_version = 1
+
+[meta]
+description = "Work MacBook -- work identity, GUI + dev environment"
+
+[platform]
+os = "darwin"
+
+[features]
+one-password-ssh = true
+one-password-signing = true
+macos-dock = true
+macos-finder = true
+macos-input = true
+macos-screenshots = true
+macos-security = true
+claude-marketplace = true
+ghostty = true
+
+[packages.brew]
+bundles = ["core", "gui"]
+
+[packages.brew.extra_packages]
+formulae = []
+
+casks = [
+  { name = "claude-code" },
+  { name = "slack" },
+  { name = "spotify" },
+  { name = "sourcetree" },
+  { name = "sublime-text" },
+  { name = "visual-studio-code" },
+  { name = "appcleaner" },
+  { name = "raycast" },
+  { name = "alcove" },
+  { name = "standard-notes" },
+  { name = "fantastical" },
+  { name = "cardhop" },
+  { name = "microsoft-word" },
+  { name = "microsoft-excel" },
+  { name = "microsoft-powerpoint" },
+  { name = "zoom" },
+  { name = "firefox" },
+  { name = "miniconda" },
+  { name = "docker-desktop" },
+]
+
+mas = [
+  { id = 441258766, name = "Magnet" },
+  { id = 904280696, name = "Things3" },
+]
+
+[identity]
+git = "work"
+ssh = "work"

@@ -1,0 +1,53 @@
+# identity/ssh/agent.toml -- 1Password SSH agent configuration.
+#
+# Symlinked to ~/.config/1Password/ssh/agent.toml by
+# `task identity:one-password-agent` when features.one-password-ssh = true.
+# Controls which SSH keys 1Password offers to remote servers and in what
+# order. The 1Password agent reads this file at startup, so restart the
+# 1Password app after editing.
+#
+# Schema reference: https://developer.1password.com/docs/ssh/agent/config
+# Callers: taskfiles/identity.yml via _:safe-link to
+#   ~/.config/1Password/ssh/agent.toml
+# Side effects: the 1Password agent process reads this file once at
+#   startup to determine which vault items to offer to SSH.
+
+# This is the 1Password SSH agent config file, which allows you to customize the
+# behavior of the SSH agent running on this machine.
+#
+# You can use it to:
+# * Enable keys from other vaults than the Private vault
+# * Control the order in which keys are offered to SSH servers
+#
+# EXAMPLE
+#
+# By default, all keys in your Private vault(s) are enabled:
+#
+#  [[ssh-keys]]
+#  vault = "Private"
+#
+# You can enable more keys by adding more `[[ssh-keys]]` entries.
+# For example, to first enable item "My SSH Key" from "My Custom Vault":
+#
+#  [[ssh-keys]]
+#  item = "My SSH Key"
+#  vault = "My Custom Vault"
+#
+#  [[ssh-keys]]
+#  vault = "Private"
+#
+# You can test the result by running:
+#
+#  SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock ssh-add -l
+#
+# More examples can be found here:
+#  https://developer.1password.com/docs/ssh/agent/config
+
+
+# Personal
+[[ssh-keys]]
+item = "id_ed25519_personal"
+vault = "Personal"
+
+
+# Work (TBD)
