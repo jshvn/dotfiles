@@ -15,8 +15,16 @@
 #   step "Doing something" (prints a step indicator)
 #   check "Item passed" (prints ✓ with message)
 #   cross "Item failed" (prints ✗ with message)
+#
+# set -u contract:
+#   This file is safe to `source` from a caller running under `set -u` /
+#   `set -euo pipefail`. The double-source guard below uses the `:-` default
+#   expansion (`${DOTFILES_MESSAGES_LOADED:-}`), so referencing the variable
+#   when unset returns the empty string instead of aborting the caller.
+#   Callers MUST NOT pre-initialize the guard variable -- a bare
+#   `source "${DOTFILEDIR}/install/messages.zsh"` is sufficient and idempotent.
 
-# Prevent double-sourcing
+# Prevent double-sourcing (set-u safe via :- default expansion).
 [[ -n "${DOTFILES_MESSAGES_LOADED:-}" ]] && return 0
 DOTFILES_MESSAGES_LOADED=1
 

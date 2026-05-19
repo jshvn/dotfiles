@@ -36,21 +36,26 @@
 
 set -euo pipefail
 
-# messages.zsh references a bare $DOTFILES_MESSAGES_LOADED in its double-source
-# guard; under set -u that would abort. Pre-initialize the guard variable and
-# the caller-supplied DOTFILEDIR var so this script is safe to source from a
-# `set -euo pipefail` taskfile heredoc (matches install/resolver.zsh +
-# install/compose-brewfile.zsh pattern).
+# Source the messages library. messages.zsh handles its own set -u-safe
+# double-source guard via the `:-` default expansion on
+# $DOTFILES_MESSAGES_LOADED (see messages.zsh `set -u contract` block);
+# a bare source is sufficient and idempotent under `set -euo pipefail`.
 : "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task macos:*' or export it manually}"
-: "${DOTFILES_MESSAGES_LOADED:=}"
-if [[ -z "$DOTFILES_MESSAGES_LOADED" ]]; then
-  source "${DOTFILEDIR}/install/messages.zsh"
-fi
+source "${DOTFILEDIR}/install/messages.zsh"
+
+# Shared apply / verify helpers (REVW-04: extracted in Plan 13-04).
+# _apply_defaults / _verify_defaults both expand the literal $HOME token in
+# tuple values via narrow substitution (`${value/\$HOME/$HOME}`); the
+# (e)-flag was rejected because it performs command substitution and would
+# be a code-exec sink if a future concern starts sourcing tuple values from
+# external data.
+source "${DOTFILEDIR}/os/defaults/_apply_verify.zsh"
 
 # ---------------------------------------------------------------------------
 # SCREENSHOTS_DEFAULTS -- single source of truth (D-02).
 # Tuple stride 4: (domain, key, expected_value, write_type).
-# The `location` value embeds $HOME; expanded with `(e)` flag at use time.
+# The `location` value embeds the literal $HOME token; _apply_defaults /
+# _verify_defaults expand it via narrow substitution at use time.
 # ---------------------------------------------------------------------------
 typeset -ga SCREENSHOTS_DEFAULTS=(
   "com.apple.screencapture"  "location"        "\$HOME/Pictures/Screenshots"  "string"
@@ -59,48 +64,13 @@ typeset -ga SCREENSHOTS_DEFAULTS=(
 )
 
 apply_screenshots() {
-  local i domain key value type expanded
   # Ensure the screenshots directory exists BEFORE the location key is
   # written; macOS silently falls back to ~/Desktop otherwise
   # (RESEARCH Pitfall 14).
   mkdir -p "$HOME/Pictures/Screenshots"
-  for ((i = 1; i <= ${#SCREENSHOTS_DEFAULTS[@]}; i += 4)); do
-    domain="${SCREENSHOTS_DEFAULTS[$i]}"
-    key="${SCREENSHOTS_DEFAULTS[$((i + 1))]}"
-    value="${SCREENSHOTS_DEFAULTS[$((i + 2))]}"
-    type="${SCREENSHOTS_DEFAULTS[$((i + 3))]}"
-    # Expand the literal $HOME token at use time. (e)-flag was rejected --
-    # it performs command substitution + arithmetic and would be a code-exec
-    # sink the moment a future concern is copied from this template and
-    # starts sourcing tuple values from external data. Narrow substitution
-    # only.
-    expanded="${value/\$HOME/$HOME}"
-    defaults write "$domain" "$key" "-${type}" "$expanded"
-  done
-  killall SystemUIServer 2>/dev/null || true
+  _apply_defaults SCREENSHOTS_DEFAULTS SystemUIServer
 }
 
 verify_screenshots() {
-  local i domain key value type current expected_read failed=0 expanded
-  for ((i = 1; i <= ${#SCREENSHOTS_DEFAULTS[@]}; i += 4)); do
-    domain="${SCREENSHOTS_DEFAULTS[$i]}"
-    key="${SCREENSHOTS_DEFAULTS[$((i + 1))]}"
-    value="${SCREENSHOTS_DEFAULTS[$((i + 2))]}"
-    type="${SCREENSHOTS_DEFAULTS[$((i + 3))]}"
-    current=$(defaults read "$domain" "$key" 2>/dev/null || echo "<unset>")
-    # Expand $HOME and any other env vars in the expected value at use time.
-    expanded="${(e)value}"
-    # bool round-trip normalization (RESEARCH Pitfall 2).
-    case "$type" in
-      bool) [[ "$expanded" == "true" ]] && expected_read="1" || expected_read="0" ;;
-      *)    expected_read="$expanded" ;;
-    esac
-    if [[ "$current" == "$expected_read" ]]; then
-      check "screenshots.$key = $expanded"
-    else
-      cross "screenshots.$key: expected '$expected_read', got '$current'"
-      failed=1
-    fi
-  done
-  return $failed
+  _verify_defaults SCREENSHOTS_DEFAULTS screenshots
 }

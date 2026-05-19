@@ -13,7 +13,6 @@
 # automatically but a function does not.
 
 function g() {
-    [[ "$(_dotfiles_feature ghostty)" == "true" ]] \
-        || { echo "g: feature 'ghostty' is disabled on this machine" >&2; return 1; }
+    _dotfiles_require_feature ghostty || return 1
     /Applications/Ghostty.app/Contents/MacOS/ghostty "$@"
 }

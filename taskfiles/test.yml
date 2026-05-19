@@ -170,99 +170,48 @@ tasks:
         # Negative fixtures: validate-only; assert non-zero exit + stderr
         # fragment.
         # ---------------------------------------------------------------
-        # _invalid-missing-desc: validator must reject; stderr must contain
-        # "meta.description".
-        # CR-01 fix: register copy in neg_copies BEFORE cp so the EXIT trap
-        # can clean it up even if cp itself fails or is interrupted. Drop
-        # the silenced `2>/dev/null || true` -- let cp errors fail loudly
-        # rather than silently running the test against stale or absent
-        # files (which would mask real bugs as "test passed").
-        neg_dir="${fix_dir}/_invalid-missing-desc"
-        tmp_neg="{{.MACHINES_DIR}}/_invalid-missing-desc.toml"
-        neg_copies+=("$tmp_neg")
-        cp "$neg_dir/machine.toml" "$tmp_neg"
-        neg_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
-          zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
-          --validate-only --machine _invalid-missing-desc 2>&1 >/dev/null || true)
-        rm -f "$tmp_neg"
-        if echo "$neg_stderr" | grep -q 'meta.description'; then
-          check "fixture: _invalid-missing-desc -- correctly rejected (meta.description in stderr)"
-        else
-          cross "fixture: _invalid-missing-desc -- expected rejection with 'meta.description' in stderr"
-          echo "stderr was: $neg_stderr" >&2
-          failures=$(( failures + 1 ))
-        fi
+        # _run_negative_fixture: shared inner-loop helper (REVW-04 / D-09,
+        # extracted in Plan 13-04). Collapses the 5 hand-rolled blocks
+        # (`_invalid-*`) into a single function called once per fixture.
+        # CR-01 fix preserved: registers the copy in neg_copies BEFORE cp
+        # so the EXIT trap cleans up on cp failure / SIGINT.
+        #
+        # Args:
+        #   $1 fixture_name      -- the _invalid-* directory under fix_dir
+        #   $2 grep_substring    -- the literal stderr fragment grep -q must match
+        #   $3 displayed_label   -- the human-readable summary text used in
+        #                            check / cross messages (e.g.
+        #                            "missing overlay file in stderr" for
+        #                            _invalid-bad-identity where the grep
+        #                            pattern "no overlay file at" reads
+        #                            awkwardly out of context)
+        _run_negative_fixture() {
+          local fixture_name="$1"
+          local grep_substring="$2"
+          local displayed_label="${3:-${grep_substring} in stderr}"
+          local neg_dir="${fix_dir}/${fixture_name}"
+          local tmp_neg="{{.MACHINES_DIR}}/${fixture_name}.toml"
+          neg_copies+=("$tmp_neg")
+          cp "$neg_dir/machine.toml" "$tmp_neg"
+          local neg_stderr
+          neg_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+            zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
+            --validate-only --machine "$fixture_name" 2>&1 >/dev/null || true)
+          rm -f "$tmp_neg"
+          if echo "$neg_stderr" | grep -q "$grep_substring"; then
+            check "fixture: ${fixture_name} -- correctly rejected (${displayed_label})"
+          else
+            cross "fixture: ${fixture_name} -- expected rejection with '${grep_substring}' in stderr"
+            echo "stderr was: $neg_stderr" >&2
+            failures=$(( failures + 1 ))
+          fi
+        }
 
-        # _invalid-bad-os: validator must reject; stderr must contain "darwin".
-        # CR-01 fix: same pattern as _invalid-missing-desc above.
-        neg_dir="${fix_dir}/_invalid-bad-os"
-        tmp_neg="{{.MACHINES_DIR}}/_invalid-bad-os.toml"
-        neg_copies+=("$tmp_neg")
-        cp "$neg_dir/machine.toml" "$tmp_neg"
-        neg_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
-          zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
-          --validate-only --machine _invalid-bad-os 2>&1 >/dev/null || true)
-        rm -f "$tmp_neg"
-        if echo "$neg_stderr" | grep -q 'darwin'; then
-          check "fixture: _invalid-bad-os -- correctly rejected (darwin in stderr)"
-        else
-          cross "fixture: _invalid-bad-os -- expected rejection with 'darwin' in stderr"
-          echo "stderr was: $neg_stderr" >&2
-          failures=$(( failures + 1 ))
-        fi
-
-        # _invalid-identity-without-opssh: cross-field rule (D-16); stderr must contain "one-password-ssh".
-        neg_dir="${fix_dir}/_invalid-identity-without-opssh"
-        tmp_neg="{{.MACHINES_DIR}}/_invalid-identity-without-opssh.toml"
-        neg_copies+=("$tmp_neg")
-        cp "$neg_dir/machine.toml" "$tmp_neg"
-        neg_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
-          zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
-          --validate-only --machine _invalid-identity-without-opssh 2>&1 >/dev/null || true)
-        rm -f "$tmp_neg"
-        if echo "$neg_stderr" | grep -q 'one-password-ssh'; then
-          check "fixture: _invalid-identity-without-opssh -- correctly rejected (one-password-ssh in stderr)"
-        else
-          cross "fixture: _invalid-identity-without-opssh -- expected rejection with 'one-password-ssh' in stderr"
-          echo "stderr was: $neg_stderr" >&2
-          failures=$(( failures + 1 ))
-        fi
-
-        # _invalid-identity-without-opsign: cross-field rule (D-16); stderr must contain "one-password-signing".
-        neg_dir="${fix_dir}/_invalid-identity-without-opsign"
-        tmp_neg="{{.MACHINES_DIR}}/_invalid-identity-without-opsign.toml"
-        neg_copies+=("$tmp_neg")
-        cp "$neg_dir/machine.toml" "$tmp_neg"
-        neg_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
-          zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
-          --validate-only --machine _invalid-identity-without-opsign 2>&1 >/dev/null || true)
-        rm -f "$tmp_neg"
-        if echo "$neg_stderr" | grep -q 'one-password-signing'; then
-          check "fixture: _invalid-identity-without-opsign -- correctly rejected (one-password-signing in stderr)"
-        else
-          cross "fixture: _invalid-identity-without-opsign -- expected rejection with 'one-password-signing' in stderr"
-          echo "stderr was: $neg_stderr" >&2
-          failures=$(( failures + 1 ))
-        fi
-
-        # _invalid-bad-identity: identity values are filesystem-validated against
-        # identity/{git,ssh}/identities/*. A bogus identity name (e.g. "alice")
-        # must trigger a rejection naming the missing overlay file.
-        neg_dir="${fix_dir}/_invalid-bad-identity"
-        tmp_neg="{{.MACHINES_DIR}}/_invalid-bad-identity.toml"
-        neg_copies+=("$tmp_neg")
-        cp "$neg_dir/machine.toml" "$tmp_neg"
-        neg_stderr=$(DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
-          zsh "{{.DOTFILEDIR}}/install/resolver.zsh" \
-          --validate-only --machine _invalid-bad-identity 2>&1 >/dev/null || true)
-        rm -f "$tmp_neg"
-        if echo "$neg_stderr" | grep -q 'no overlay file at'; then
-          check "fixture: _invalid-bad-identity -- correctly rejected (missing overlay file in stderr)"
-        else
-          cross "fixture: _invalid-bad-identity -- expected rejection naming a missing overlay file in stderr"
-          echo "stderr was: $neg_stderr" >&2
-          failures=$(( failures + 1 ))
-        fi
+        _run_negative_fixture _invalid-missing-desc           'meta.description'      'meta.description in stderr'
+        _run_negative_fixture _invalid-bad-os                  'darwin'                'darwin in stderr'
+        _run_negative_fixture _invalid-identity-without-opssh  'one-password-ssh'      'one-password-ssh in stderr'
+        _run_negative_fixture _invalid-identity-without-opsign 'one-password-signing'  'one-password-signing in stderr'
+        _run_negative_fixture _invalid-bad-identity            'no overlay file at'    'missing overlay file in stderr'
 
         # ---------------------------------------------------------------
         # Summary

@@ -32,16 +32,15 @@
 
 set -euo pipefail
 
-# messages.zsh references a bare $DOTFILES_MESSAGES_LOADED in its double-source
-# guard; under set -u that would abort. Pre-initialize the guard variable and
-# the caller-supplied DOTFILEDIR var so this script is safe to source from a
-# `set -euo pipefail` taskfile heredoc (matches install/resolver.zsh +
-# install/compose-brewfile.zsh pattern).
+# Source the messages library. messages.zsh handles its own set -u-safe
+# double-source guard via the `:-` default expansion on
+# $DOTFILES_MESSAGES_LOADED (see messages.zsh `set -u contract` block);
+# a bare source is sufficient and idempotent under `set -euo pipefail`.
 : "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task macos:*' or export it manually}"
-: "${DOTFILES_MESSAGES_LOADED:=}"
-if [[ -z "$DOTFILES_MESSAGES_LOADED" ]]; then
-  source "${DOTFILEDIR}/install/messages.zsh"
-fi
+source "${DOTFILEDIR}/install/messages.zsh"
+
+# Shared apply / verify helpers (REVW-04: extracted in Plan 13-04).
+source "${DOTFILEDIR}/os/defaults/_apply_verify.zsh"
 
 # ---------------------------------------------------------------------------
 # INPUT_DEFAULTS -- single source of truth (D-02).
@@ -52,37 +51,11 @@ typeset -ga INPUT_DEFAULTS=(
 )
 
 apply_input() {
-  local i domain key value type
-  for ((i = 1; i <= ${#INPUT_DEFAULTS[@]}; i += 4)); do
-    domain="${INPUT_DEFAULTS[$i]}"
-    key="${INPUT_DEFAULTS[$((i + 1))]}"
-    value="${INPUT_DEFAULTS[$((i + 2))]}"
-    type="${INPUT_DEFAULTS[$((i + 3))]}"
-    defaults write "$domain" "$key" "-${type}" "$value"
-  done
   # No killall: input domain keys take effect on next login or system reset;
   # no canonical UI process to restart for these keys.
+  _apply_defaults INPUT_DEFAULTS
 }
 
 verify_input() {
-  local i domain key value type current expected_read failed=0
-  for ((i = 1; i <= ${#INPUT_DEFAULTS[@]}; i += 4)); do
-    domain="${INPUT_DEFAULTS[$i]}"
-    key="${INPUT_DEFAULTS[$((i + 1))]}"
-    value="${INPUT_DEFAULTS[$((i + 2))]}"
-    type="${INPUT_DEFAULTS[$((i + 3))]}"
-    current=$(defaults read "$domain" "$key" 2>/dev/null || echo "<unset>")
-    # bool round-trip normalization (RESEARCH Pitfall 2).
-    case "$type" in
-      bool) [[ "$value" == "true" ]] && expected_read="1" || expected_read="0" ;;
-      *)    expected_read="$value" ;;
-    esac
-    if [[ "$current" == "$expected_read" ]]; then
-      check "input.$key = $value"
-    else
-      cross "input.$key: expected '$expected_read', got '$current'"
-      failed=1
-    fi
-  done
-  return $failed
+  _verify_defaults INPUT_DEFAULTS input
 }
