@@ -21,6 +21,7 @@ source "${DOTFILEDIR}/install/messages.zsh"
 
 typeset -r DEFAULTS="${DOTFILEDIR}/manifests/defaults.toml"
 typeset -r MACHINES_DIR="${DOTFILEDIR}/manifests/machines"
+typeset -r SHARED_DIR="${DOTFILEDIR}/manifests/shared"
 typeset -r STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
 typeset -r STATE_FILE="${STATE_DIR}/machine"
 typeset -r OUT="${STATE_DIR}/resolved.json"
@@ -127,6 +128,23 @@ validate_manifest() {
         error 'packages.brew.bundles must include "core"'
         errors=$(( errors + 1 ))
       fi
+      # Each bundle name must resolve to a typed-bucket TOML under
+      # manifests/shared/. Catch typos at validate time (a missing shared
+      # file would silently contribute nothing to packages.brew.extra_packages
+      # at resolve time, with no error -- v1 had a similar drop-on-the-floor
+      # bug with mis-named .rb bundles).
+      local -a bundle_names
+      bundle_names=( $(yq -r '.packages.brew.bundles[]' "$machine_file" 2>/dev/null || true) )
+      local bn shared_toml available
+      for bn in "${bundle_names[@]}"; do
+        [[ -z "$bn" ]] && continue
+        shared_toml="${SHARED_DIR}/${bn}.toml"
+        if [[ ! -f "$shared_toml" ]]; then
+          available=$(print -l "${SHARED_DIR}"/*.toml(N:t:r) 2>/dev/null | tr '\n' '|' | sed 's/|$//')
+          error "packages.brew.bundles entry '${bn}' has no shared file at ${shared_toml} (available: ${available:-<none>})"
+          errors=$(( errors + 1 ))
+        fi
+      done
     fi
   fi
 
@@ -265,8 +283,15 @@ emit_unknown_key_warnings() {
 }
 
 # resolve_pipeline <defaults_path> <machine_path>
-# Three-pass merge: yq deep-merge + extra_packages union + arch backfill.
-# Emits the final JSON to stdout.
+# Three-pass merge: yq deep-merge + extra_packages union (with shared
+# bundles folded in) + arch backfill. Emits the final JSON to stdout.
+#
+# Pass 2 typed-bucket path concatenates source arrays in this order, then
+# dedupes (last-write-wins):
+#   1. defaults.toml             .packages.brew.extra_packages.{formulae,casks,mas}
+#   2. manifests/shared/<b>.toml .packages.brew.{formulae,casks,mas}
+#      -- one entry per <b> in the merged packages.brew.bundles array.
+#   3. machine.toml              .packages.brew.extra_packages.{formulae,casks,mas}
 #
 # Pass 2 supports TWO `extra_packages` shapes:
 #
@@ -335,17 +360,61 @@ resolve_pipeline() {
   # Typed-bucket path: one sub-array per kind. Each sub-array is unioned
   # independently with semantics tailored to its entry shape; see the
   # function-header comment.
+  #
+  # Source order (concatenated then deduped; last write wins):
+  #   1. defaults.toml          .packages.brew.extra_packages.{formulae,casks,mas}
+  #   2. manifests/shared/<b>.toml .packages.brew.{formulae,casks,mas}
+  #      for each <b> in the merged packages.brew.bundles array, in array
+  #      order. (yq `. * .` REPLACES arrays, so merged.bundles == machine's
+  #      bundles list. The machine drives bundle selection.)
+  #   3. machine.toml           .packages.brew.extra_packages.{formulae,casks,mas}
+  #
+  # A missing shared file is a hard error: the operator typoed a bundle name
+  # and would otherwise silently lose every package in that bundle.
+  local -a bundle_names
+  bundle_names=( $(printf '%s' "$merged" | jq -r '.packages.brew.bundles[]?' 2>/dev/null || true) )
+
   local def_formulae mach_formulae union_formulae
   local def_casks    mach_casks    union_casks
   local def_mas      mach_mas      union_mas
 
-  def_formulae=$(yq -o=json '.packages.brew.extra_packages.formulae // []'  "$defaults_path")
+  def_formulae=$(yq -o=json  '.packages.brew.extra_packages.formulae // []' "$defaults_path")
   mach_formulae=$(yq -o=json '.packages.brew.extra_packages.formulae // []' "$machine_path")
-  # formulae dedupe: lift bare strings to { name: ., __bare: true }; group_by .name;
-  # within each group prefer an object (drops __bare) over a bare string;
-  # demote surviving __bare objects back to their string-name form.
-  union_formulae=$(printf '%s %s' "$def_formulae" "$mach_formulae" \
-    | jq -s '
+  def_casks=$(yq -o=json  '.packages.brew.extra_packages.casks // []' "$defaults_path")
+  mach_casks=$(yq -o=json '.packages.brew.extra_packages.casks // []' "$machine_path")
+  def_mas=$(yq -o=json  '.packages.brew.extra_packages.mas // []' "$defaults_path")
+  mach_mas=$(yq -o=json '.packages.brew.extra_packages.mas // []' "$machine_path")
+
+  # Shared-bundle arrays gathered in declared order. Each bundle contributes
+  # three JSON arrays (one per kind).
+  local -a shared_formulae shared_casks shared_mas
+  local bn shared_toml
+  for bn in "${bundle_names[@]}"; do
+    [[ -z "$bn" ]] && continue
+    shared_toml="${SHARED_DIR}/${bn}.toml"
+    if [[ ! -f "$shared_toml" ]]; then
+      error "bundle '${bn}' referenced in packages.brew.bundles has no shared file at ${shared_toml}"
+      return 1
+    fi
+    shared_formulae+=( "$(yq -o=json '.packages.brew.formulae // []' "$shared_toml")" )
+    shared_casks+=(    "$(yq -o=json '.packages.brew.casks    // []' "$shared_toml")" )
+    shared_mas+=(      "$(yq -o=json '.packages.brew.mas      // []' "$shared_toml")" )
+  done
+
+  # formulae dedupe: lift bare strings to { name: ., __bare: true }; group_by
+  # .name; within each group prefer an object (drops __bare) over a bare
+  # string; demote surviving __bare objects back to their string-name form.
+  # jq -s slurps each source array as one list element; `add` flattens in
+  # declaration order so the last collision wins.
+  union_formulae=$(
+    {
+      print -r -- "$def_formulae"
+      local sf
+      for sf in "${shared_formulae[@]}"; do
+        print -r -- "$sf"
+      done
+      print -r -- "$mach_formulae"
+    } | jq -s '
         add
         | map(if type == "string" then { name: ., __bare: true } else . end)
         | group_by(.name)
@@ -354,17 +423,30 @@ resolve_pipeline() {
               else (map(select(.__bare | not)) | first // .[0])
               end)
         | map(if .__bare then .name else . end)
-      ')
+      '
+  )
 
-  def_casks=$(yq -o=json  '.packages.brew.extra_packages.casks // []' "$defaults_path")
-  mach_casks=$(yq -o=json '.packages.brew.extra_packages.casks // []' "$machine_path")
-  union_casks=$(printf '%s %s' "$def_casks" "$mach_casks" \
-    | jq -s 'add | group_by(.name) | map(.[-1])')
+  union_casks=$(
+    {
+      print -r -- "$def_casks"
+      local sc
+      for sc in "${shared_casks[@]}"; do
+        print -r -- "$sc"
+      done
+      print -r -- "$mach_casks"
+    } | jq -s 'add | group_by(.name) | map(.[-1])'
+  )
 
-  def_mas=$(yq -o=json  '.packages.brew.extra_packages.mas // []' "$defaults_path")
-  mach_mas=$(yq -o=json '.packages.brew.extra_packages.mas // []' "$machine_path")
-  union_mas=$(printf '%s %s' "$def_mas" "$mach_mas" \
-    | jq -s 'add | group_by(.id) | map(.[-1])')
+  union_mas=$(
+    {
+      print -r -- "$def_mas"
+      local sm
+      for sm in "${shared_mas[@]}"; do
+        print -r -- "$sm"
+      done
+      print -r -- "$mach_mas"
+    } | jq -s 'add | group_by(.id) | map(.[-1])'
+  )
 
   local arch
   arch=$(yq -r '.platform.arch // ""' "$machine_path")
