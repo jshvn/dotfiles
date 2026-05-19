@@ -83,8 +83,6 @@ form:
 
 # Correct — use index for all kebab-case feature keys
 {{if index .MANIFEST.features "one-password-ssh"}}
-{{if index .MANIFEST.features "macos-dock"}}
-{{if index .MANIFEST.features "claude-marketplace"}}
 ```
 
 Snake_case keys (e.g., `identity.git`, `meta.description`) work with dot access as usual.
@@ -152,6 +150,13 @@ calls bypass this guarantee.
 Set in `shell/.zshenv` (Phase 3 populates `shell/`); available as `{{.XDG_*}}` in taskfiles via the
 root `Taskfile.yml` vars block.
 
+### Zsh startup order
+
+`.zshenv` (always sourced — keep minimal) -> `.zprofile` (login only;
+`brew shellenv`, 1Password SSH socket) -> `.zshrc` (interactive only;
+antigen, `compinit` daily-rebuild cache, theme, functions, aliases) ->
+`.zlogin` (login only; MOTD dispatch) -> `.zlogout` (login exit; history flush).
+
 ## Where to Add Things
 
 | Adding | Where | Naming |
@@ -202,6 +207,7 @@ root `Taskfile.yml` vars block.
   scope under include-merge and competes with the root `Taskfile.yml` definition. Source
   `install/messages.zsh` via `{{.TASKFILE_DIR}}` (per the `Taskfile.yml` comment block warning
   the same).
+- Don't commit private keys. `identity/ssh/keys/` contains public keys only.
 
 ## Project State and Workflow
 
