@@ -97,12 +97,7 @@ includes:
   # layers. State is per-physical-machine ($XDG_STATE_HOME/dotfiles/hostname),
   # NOT a manifest feature -- two machines sharing one manifest (JMBP +
   # JAIR consuming personal-laptop.toml) need distinct hostnames.
-  hostname:
-    taskfile: ./taskfiles/hostname.yml
-    vars:
-      DOTFILEDIR: '{{.DOTFILEDIR}}'
-      XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
-      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
+  hostname: ./taskfiles/hostname.yml
 
 tasks:
 
@@ -132,6 +127,7 @@ tasks:
         info "  task show:*      Inspect current state (manifest, claude, hostname)"
         info "  task audit:*     Detect drift (manifest, packages, links)"
         info "  task refresh:*   Manually refresh a layer (claude)"
+        info "  task hostname:set -- <name>   Set the live hostname (requires sudo; self-heals on task install)"
         echo
         echo "Run 'task --list' for the full task graph."
 

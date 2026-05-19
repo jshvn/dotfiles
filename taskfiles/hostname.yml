@@ -9,8 +9,7 @@ version: '3'
 #               lives at $XDG_STATE_HOME/dotfiles/hostname -- machine-local,
 #               outside the repo, NOT a manifest feature. File existence is
 #               the install-time gate; no feature flag.
-# Depends on:   taskfiles/helpers.yml; install/messages.zsh; os/hostname.zsh;
-#               $DOTFILEDIR + $XDG_STATE_HOME forwarded by root Taskfile.yml.
+# Depends on:   taskfiles/helpers.yml; install/messages.zsh; os/hostname.zsh.
 # Side effects: hostname:apply / hostname:set run four sudo commands (scutil
 #               ComputerName / HostName / LocalHostName + defaults write SMB
 #               NetBIOSName) via os/hostname.zsh::apply_hostname.
@@ -24,13 +23,11 @@ includes:
 vars:
   HOME: '{{.HOME}}'
 
-  # DOTFILEDIR is forwarded from the root Taskfile.yml include block per the
-  # CLAUDE.md "Don't define DOTFILEDIR in included taskfiles" rule. Declaring
-  # `sh: dirname "{{.TASKFILE_DIR}}"` here would pollute root scope after
-  # include-merge.
-
   XDG_STATE_HOME:
     sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
+
+  DOTFILEDIR:
+    sh: dirname "{{.TASKFILE_DIR}}"
 
   DOTFILES_MESSAGES: |
     source '{{.DOTFILEDIR}}/install/messages.zsh'
