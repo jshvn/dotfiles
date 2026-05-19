@@ -29,7 +29,7 @@ lives at the repo root as `bootstrap.zsh` (deviation Rule 3 -- path correction).
 | taskfiles/macos.yml                             |        170 |          130 |            45 |   -85 |         65% |
 | taskfiles/manifest.yml                          |        146 |          122 |            49 |   -73 |         59% |
 | taskfiles/test.yml                              |        190 |          108 |            54 |   -54 |         50% |
-| taskfiles/shell.yml                             |         73 |           68 |           TBD |   TBD |         TBD |
+| taskfiles/shell.yml                             |         73 |           68 |            19 |   -49 |         72% |
 | taskfiles/helpers.yml                           |         68 |           27 |           TBD |   TBD |         TBD |
 | taskfiles/audit.yml                             |         23 |           14 |           TBD |   TBD |         TBD |
 | taskfiles/show.yml                              |         16 |           12 |           TBD |   TBD |         TBD |
