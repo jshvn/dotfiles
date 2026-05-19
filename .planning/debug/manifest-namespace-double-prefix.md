@@ -1,8 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 trigger: "task manifest:resolve fails with 'Task does not exist'; task list shows manifest:manifest:resolve (double-prefixed). Asymmetry: identity:install / identity:validate appear single-prefixed."
 created: 2026-05-15T06:07:38Z
-updated: 2026-05-15T06:08:30Z
+updated: 2026-05-19T05:46:00Z
+resolution: "Resolved at v2.1 milestone close. Phase 12 (Task Surface Redesign) renamed the affected manifest tasks; the diagnosis served its purpose but no separate fix was landed. Closing without further action."
 ---
 
 ## Current Focus

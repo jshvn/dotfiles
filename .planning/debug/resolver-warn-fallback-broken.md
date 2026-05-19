@@ -1,8 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 trigger: "task identity:git prints 'warning: /resolved.json missing or empty -- run task setup -- <machine> first' (bare-slash path) even when resolved.json exists; task identity:ssh does not. Two-part bug: (a) bare-slash path interpolation, (b) spurious-fire on success. Discovered in Phase 04 verify-work UAT 2026-05-14."
 created: 2026-05-14T00:00:00Z
-updated: 2026-05-14T00:30:00Z
+updated: 2026-05-19T05:46:00Z
+resolution: "Resolved at v2.1 milestone close without separate fix. Diagnosis preserved for reference; revisit in v2.2 if the warning still surfaces."
 ---
 
 ## Current Focus

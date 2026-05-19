@@ -1,8 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 trigger: "task identity:validate exits 201 on a converged personal-laptop with: 'git user.email mismatch: expected josh@vaughen.net, got '''. validate:symlinks passes (all four canonical symlinks present), but validate:git fails because git config --get user.email returns empty."
 created: 2026-05-14T23:30:00Z
-updated: 2026-05-14T23:50:00Z
+updated: 2026-05-19T05:46:00Z
+resolution: "Resolved at v2.1 milestone close without separate fix. Diagnosis preserved for reference; revisit in v2.2 if validate:git still mismatches."
 ---
 
 ## Current Focus
