@@ -47,7 +47,9 @@ export ZSH_COMPDUMP="$XDG_CACHE_HOME/zsh/zcompcache"
 mkdir -p "${ZSH_COMPDUMP%/*}"
 
 autoload -Uz compinit
-local _zcomp_age=0
+# Note: `local` cannot be used at script scope (shellcheck error -- same class
+# as the local-at-script-scope bug Plan 07-02 fixed in agent-transparency.zsh).
+_zcomp_age=0
 if [[ -f "$ZSH_COMPDUMP" ]]; then
     _zcomp_age=$(( $(date +%s) - $(stat -f %m "$ZSH_COMPDUMP" 2>/dev/null || stat -c %Y "$ZSH_COMPDUMP" 2>/dev/null || echo 0) ))
 fi
@@ -109,9 +111,14 @@ if command -v conda >/dev/null 2>&1; then
     }
 fi
 
-# Source VSCode shell integration if running inside VSCode
-if [[ "$TERM_PROGRAM" == "vscode" ]]; then
-    source "$(code --locate-shell-integration-path zsh)"
+# Source VSCode shell integration if running inside VSCode AND the `code` CLI
+# is on PATH. Skips noisily-failing `source ""` when the CLI is not installed
+# via "Shell Command: Install 'code' command in PATH".
+if [[ "$TERM_PROGRAM" == "vscode" ]] && command -v code >/dev/null 2>&1; then
+    _vscode_shell_integration="$(code --locate-shell-integration-path zsh 2>/dev/null || true)"
+    [[ -n "$_vscode_shell_integration" && -f "$_vscode_shell_integration" ]] && \
+        source "$_vscode_shell_integration"
+    unset _vscode_shell_integration
 fi
 
 # the below sources need to happen after the above shell initializations
