@@ -4,10 +4,6 @@ Shared package bundles -- typed-bucket TOML files that the resolver pulls
 into a machine's resolved manifest based on the machine's
 `packages.brew.bundles = [...]` array.
 
-This directory replaces the old `packages/<name>.rb` Ruby-DSL bundles
-(v2-pre-refactor); the schema is now TOML, identical in shape to the
-per-machine `[packages.brew.extra_packages]` typed sub-table.
-
 ## How it fits in
 
 The resolver compiles `manifests/defaults.toml` plus the active machine's
