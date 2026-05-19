@@ -4,8 +4,8 @@ milestone: v2.1
 milestone_name: Cleanup
 status: Awaiting next milestone
 stopped_at: v2.1 milestone closed; awaiting /gsd-new-milestone
-last_updated: "2026-05-19T05:50:36.144Z"
-last_activity: 2026-05-19 — Milestone v2.1 completed and archived
+last_updated: "2026-05-19T06:25:00.000Z"
+last_activity: 2026-05-19 — Completed quick task 260518-w2d: Per-machine hostname tracking and rename
 progress:
   total_phases: 14
   completed_phases: 6
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 Phase: Milestone v2.1 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-05-19 — Completed quick task 260518-w2y: Fix VS Code zsh history clobber
+Last activity: 2026-05-19 — Completed quick task 260518-w2d: Per-machine hostname tracking and rename
 
 ## Performance Metrics
 
@@ -93,6 +93,7 @@ None known. Phase 9 is read-only investigation; the gating risk for the mileston
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260518-w2y | Fix VS Code zsh history clobber: move HISTFILE exports from .zshenv to .zshrc and delete stray history files | 2026-05-19 | 70de621 | [260518-w2y-fix-vs-code-zsh-history-clobber-move-his](./quick/260518-w2y-fix-vs-code-zsh-history-clobber-move-his/) |
+| 260518-w2d | Per-machine hostname tracking and rename: $XDG_STATE_HOME/dotfiles/hostname + os/hostname.zsh + taskfiles/hostname.yml | 2026-05-19 | 7a10564 | [260518-w2d-per-machine-hostname-tracking-and-rename](./quick/260518-w2d-per-machine-hostname-tracking-and-rename/) |
 
 ## Deferred Items
 
