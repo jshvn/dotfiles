@@ -26,9 +26,10 @@ vars:
 
 tasks:
 
-  # lint-allow: cmds-without-status
   startup-time:
     desc: "Measure cold interactive zsh startup time (fails if > {{.COLD_START_BUDGET}}ms)"
+    # status: [false] -- measurement verb; always re-run.
+    status: [false]
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
