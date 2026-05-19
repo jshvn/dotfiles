@@ -202,4 +202,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-05-17 -- Milestone v2.1 (Cleanup) started after v1.0 shipped (8 phases: manifest engine, install engine, shell layer, identity, packages, OS defaults, claude/tool-configs, validation+cutover). v2.1 prioritizes v1-drop audit before v1 removal after fresh-machine install surfaced silently-dropped /etc/zshenv writing. Phase 9 (v1-drop-audit) complete — AUDIT.md catalogues 102 v1 surfaces (3 keep, 99 drop, 70 already-ported) with file:line evidence; hands a 3-item implementation queue to Phase 10 (ZDOTDIR write to /etc/zshenv pinned first as PORT-01 driver).*
+*Last updated: 2026-05-19 -- Phase 13 (code-review-dead-code-cleanup) complete: 37-finding REVIEW.md spine + 2 HIGH closed + 3 dead-code symbols removed + 5 rule-of-three duplications consolidated + 26 `links:*` status blocks upgraded to `readlink -f` target-match (closes the bug that triggered v2.1). Advisory audit (13-REVIEW-AUDIT.md) surfaced 3 Critical / 9 Warning / 7 Info regressions from consolidation work — candidates for Phase 13.1 gap-closure or Phase 14 routing. Next: Phase 14 comment-+-doc-trim.*
