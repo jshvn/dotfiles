@@ -35,7 +35,7 @@ lives at the repo root as `bootstrap.zsh` (deviation Rule 3 -- path correction).
 | taskfiles/show.yml                              |         16 |           12 |            11 |    -1 |          8% |
 | taskfiles/refresh.yml                           |         10 |           11 |            10 |    -1 |          9% |
 | install/resolver.zsh                            |        392 |          183 |           110 |   -73 |         39% |
-| install/messages.zsh                            |         37 |           30 |           TBD |   TBD |         TBD |
+| install/messages.zsh                            |         37 |           30 |            15 |   -15 |         50% |
 | bootstrap.zsh                                   |         54 |           51 |           TBD |   TBD |         TBD |
 | install/compose-brewfile.zsh                    |        100 |          101 |           TBD |   TBD |         TBD |
 | install/test-hooks.zsh                          |         93 |           70 |           TBD |   TBD |         TBD |
