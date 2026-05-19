@@ -32,20 +32,26 @@ source "${DOTFILEDIR}/install/messages.zsh"
 
 header "Dotfiles v2 Bootstrap"
 
-# Step 1: Homebrew. If brew is absent, emit an AUDIT block to stderr with a
-# 3-second abort window BEFORE fetching the installer script -- surfaces
-# the supply-chain trust boundary (HTTPS, no checksum pin) so the user can
-# ctrl-C.
+# Step 1: Homebrew. If brew is absent, emit an AUDIT block to stderr and
+# require an explicit Enter keypress BEFORE fetching the installer script
+# -- surfaces the supply-chain trust boundary (HTTPS, no checksum pin) so
+# the user must consciously consent (any other key aborts).
 if ! command -v brew >/dev/null 2>&1; then
   {
     echo
     echo "AUDIT: about to fetch and execute brew install script"
     echo "  source: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
     echo "  trust:  HTTPS only, no checksum pin (see docs/SECURITY.md)"
-    echo "  ctrl-C now to abort (3 second window)"
+    echo
+    echo "  Press Enter to continue. Any other key aborts."
     echo
   } >&2
-  sleep 3
+  read -rs -k 1 reply </dev/tty
+  echo >&2
+  if [[ "$reply" != $'\n' && "$reply" != $'\r' ]]; then
+    error "aborted by user"
+    exit 1
+  fi
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   # Re-shellenv so brew is on PATH for the rest of this script.
   if [[ "$(uname -m)" == "arm64" ]]; then
