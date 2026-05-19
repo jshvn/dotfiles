@@ -377,17 +377,22 @@ Phase 14 has 5 success criteria; each gets ≥1 concrete validation evidence typ
 | R9 | Mid-trim commits could land before the corresponding lint suite passes if the planner batches multiple files per commit | n/a (process risk) | CONTEXT recommends per-file trim commits with lint+test green after each. Plan 14-02 should enforce this in its task list. |
 | R10 | The "Phase 5 will move..." style forward-looking phrasing in `docs/MANIFEST.md` toml-block comments (e.g., line 33 `# Bundle names map to packages/<name>.rb (Phase 5).`) is technically inside a fenced code block, so it doesn't trip the SC#5 grep gate (which excludes `*.md`), but it's still stale | `docs/MANIFEST.md:33` and similar | TRIM-03 should rewrite as `# Bundle names map to packages/<name>.rb.` (drop the Phase-N forward-look). Sweep within the MANIFEST.md edits. |
 
-## Open Questions for Planner
+## Open Questions for Planner (RESOLVED)
 
 1. **`shell/functions` + `shell/aliases` Class A: re-banner the 21 files with terse/no banner?** Phase 14 Claude's Discretion says "include in TRIM-02 banner pass." But for `whois.zsh`, `cheat.zsh`, etc. that already have a single-line `# <verb> <description>` comment, adding a full 3-label banner is more noise than signal. Recommendation: leave the 19 terse files alone; only re-banner the 6 heavy files (2 functions + 4 aliases). Planner confirms.
+   **RESOLVED:** honored in 14-02 Tier-8 -- only 6 substantive files re-bannered; other 19 left alone.
 
 2. **`docs/MANIFEST.md` Phase-N TOML-block comments:** strip the `(Phase 5)` / `(Phase 6)` parenthetical references inside fenced code blocks, or leave them? They don't trip the SC#5 grep gate (which excludes `*.md`), but they're stale forward-looking phrasing for a v2.1-final reader. Recommendation: strip during TRIM-03 (mechanical pass, low risk). Planner confirms.
+   **RESOLVED:** honored in 14-03 Task 1 Pass 4.
 
 3. **`docs/SECURITY.md` past-tense polish:** the "What This Document Does NOT Cover" section has 3 sentences in future tense pointing at completed Phase 4/7/8 work. Recommendation: rewrite to past tense (1-3 line touches). Planner confirms or skips.
+   **RESOLVED:** honored in 14-03 Task 2 Pass 2 -- made optional.
 
 4. **`CLAUDE.md` 200-line guideline:** the D-09 gap-fills (likely 1-3 NEEDS-ADD rows of 1-3 sentences each) plus the D-01 amendment (callers -> key dependencies) plus the LINT-NN catalogue (if added) puts CLAUDE.md at ~205-215 lines post-trim. Per Claude Code docs that's near the soft limit. Recommendation: keep the gap-fills terse; defer the LINT-NN catalogue to `.claude/rules/lint.md` if length pressure surfaces. Planner decides during Plan 14-01.
+   **RESOLVED:** honored in 14-01 Task 2 -- 220-line check with conditional split to .claude/rules/lint.md.
 
 5. **Single-line `desc:` cut-to-essence pass:** D-05 applies the three-test rule. The longest `desc:` is `lint:taskfile` at 197 chars. Should the planner do a low-effort sweep over all `desc:` strings >100 chars, or skip? Recommendation: cut the 5-6 longest as part of Plan 14-02 per-file commits; don't sweep separately. Planner confirms.
+   **RESOLVED:** loosely handled per-file; see warning #1 for sharpening.
 
 ## Environment Availability
 
