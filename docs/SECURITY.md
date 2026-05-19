@@ -10,10 +10,9 @@ inherits from.
 
 Scope is intentionally narrow: only the three tools the bootstrap
 script acquires (Homebrew, go-task, yq) and the audit signals the
-script emits before doing so. SSH key handling is deferred to Phase 4
-(identity layer); Claude hook secret-scanning is deferred to Phase 7
-hardening; per-machine credential management is documented in
-`docs/MACHINES.md` (Phase 8).
+script emits before doing so. SSH key handling lives in the identity
+layer; Claude hook secret-scanning is implemented in `claude/hooks/`;
+per-machine credential management is documented in `docs/MACHINES.md`.
 
 The repository's per-machine security boundary is the manifest model
 itself: every install action keys off the machine name written to
@@ -91,17 +90,16 @@ The bootstrap trust chain inherits from three named anchors:
 
 ## What This Document Does NOT Cover
 
-- **SSH key handling** -- deferred to Phase 4 (identity layer). Phase 4 will
-  document how SSH keys are generated, stored (1Password agent integration),
-  and rotated.
-- **1Password agent integration** -- deferred to Phase 4. The non-server
-  machines route SSH agent traffic through 1Password; the trust model for
-  that integration belongs in Phase 4's doc.
-- **Claude hook secret-scanning** -- deferred to Phase 7 hardening. The
-  hook that blocks commits containing secrets is documented in Phase 7.
+- **SSH key handling** -- the identity layer (`identity/ssh/`) documents
+  how SSH keys are organized, with 1Password agent integration gated by
+  the `one-password-ssh` feature flag.
+- **1Password agent integration** -- the non-server machines route SSH
+  agent traffic through 1Password; the wiring lives in
+  `shell/.zprofile` and `identity/ssh/cloudflared.zsh`.
+- **Claude hook secret-scanning** -- the hook that blocks commits
+  containing secrets is implemented in `claude/hooks/secret-scan.zsh`.
 - **Per-machine credential management** -- out of scope for v1. Anything
-  beyond the universal bootstrap path is documented in `docs/MACHINES.md`
-  (Phase 8).
+  beyond the universal bootstrap path is documented in `docs/MACHINES.md`.
 
 ---
 
