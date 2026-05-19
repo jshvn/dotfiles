@@ -34,7 +34,7 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
 - [x] **Phase 11: v1 Removal** - Delete v1 leftover taskfiles, `zsh/` tree, `install/Brewfile*`, cutover infrastructure; simplify `Taskfile.yml`; purge v1 references from docs (completed 2026-05-18)
 - [x] **Phase 12: Task Surface Redesign** - Audit every `task --list` entry; classify keep/rename/internal/remove; apply renames; mark internal tasks `internal: true` (completed 2026-05-18)
 - [x] **Phase 13: Code Review + Dead-Code Cleanup** - Language-aware repo-wide review (zsh shellcheck, taskfile lint, TOML schema); HIGH fixed; dead code removed; duplicated logic consolidated; `links:*` target-match bug fixed (completed 2026-05-19)
-- [ ] **Phase 14: Comment + Doc Trim** - Strip excess inline taskfile comments to WHY-only; slim per-file header banners; dedupe `README.md` / `CLAUDE.md` / `.claude/CLAUDE.md`; remove obsolete docs
+- [x] **Phase 14: Comment + Doc Trim** - Strip excess inline taskfile comments to WHY-only; slim per-file header banners; dedupe `README.md` / `CLAUDE.md` / `.claude/CLAUDE.md`; remove obsolete docs (completed 2026-05-19)
 
 ## Phase Details
 
@@ -276,7 +276,7 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
 **Plans**: 3 plans
   - [x] 14-01-PLAN.md — Build 14-TEACHING-INVENTORY.md (D-09 prereq) + amend CLAUDE.md for D-01 contradiction + NEEDS-ADD gap-fills (TRIM-04, TRIM-05 prereq)
   - [x] 14-02-PLAN.md — Per-file trim pass: 3-label banners + D-04 inline-comment KEEP/CUT across ~43 files; 14-METRICS.md pre/post (TRIM-01, TRIM-02)
-  - [ ] 14-03-PLAN.md — docs/MANIFEST.md surgical edits + docs/README.md rewrite + README.md humans-only + .claude/CLAUDE.md delete + SC#5 grep gate (TRIM-03, TRIM-04, TRIM-05)
+  - [x] 14-03-PLAN.md — docs/MANIFEST.md surgical edits + docs/README.md rewrite + README.md humans-only + .claude/CLAUDE.md delete + SC#5 grep gate (TRIM-03, TRIM-04, TRIM-05)
 
 ## Progress
 
@@ -298,4 +298,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 11. v1 Removal | 1/1 | Complete   | 2026-05-18 |
 | 12. Task Surface Redesign | 8/8 | Complete    | 2026-05-18 |
 | 13. Code Review + Dead-Code Cleanup | 6/6 | Complete    | 2026-05-19 |
-| 14. Comment + Doc Trim | 2/3 | In Progress|  |
+| 14. Comment + Doc Trim | 3/3 | Complete   | 2026-05-19 |
