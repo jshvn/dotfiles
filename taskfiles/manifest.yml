@@ -6,13 +6,10 @@ version: '3'
 # Exposes the manifest engine (install/resolver.zsh) to humans and downstream
 # taskfiles. Wires Plan 02's resolver against Plan 01's fixtures.
 #
-# NOT yet included from the root Taskfile.yml (Phase 1 constraint).
-# Invoke standalone via:
+# Included by the root Taskfile.yml. The root's exported vars (DOTFILEDIR,
+# XDG_STATE_HOME, DOTFILES_MESSAGES) override the local fallbacks below via
+# go-task vars-merge. For standalone invocation:
 #   task -t taskfiles/manifest.yml <task> [-- <args>]
-#
-# Phase 2 will add `manifest: ./taskfiles/manifest.yml` to the root includes
-# block. When included, the root's exported vars (DOTFILEDIR, XDG_STATE_HOME,
-# DOTFILES_MESSAGES) override the local fallbacks below via go-task vars-merge.
 #
 # Phase 12 Plan 07: the `manifest:test` + `manifest:test:add-machine` task
 # bodies were moved to `taskfiles/test.yml` as `test:manifest` +
