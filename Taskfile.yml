@@ -93,6 +93,16 @@ includes:
       DOTFILEDIR: '{{.DOTFILEDIR}}'
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   macos:    ./taskfiles/macos.yml
+  # hostname:* lives alongside macos: -- both are macOS-only system-state
+  # layers. State is per-physical-machine ($XDG_STATE_HOME/dotfiles/hostname),
+  # NOT a manifest feature -- two machines sharing one manifest (JMBP +
+  # JAIR consuming personal-laptop.toml) need distinct hostnames.
+  hostname:
+    taskfile: ./taskfiles/hostname.yml
+    vars:
+      DOTFILEDIR: '{{.DOTFILEDIR}}'
+      XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
+      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
 
 tasks:
 
@@ -170,6 +180,8 @@ tasks:
         ignore_error: true
       - task: macos:validate
         ignore_error: true
+      - task: hostname:validate
+        ignore_error: true
       - task: packages:validate
         ignore_error: true
       - task: claude:validate
@@ -190,6 +202,10 @@ tasks:
       - task: packages:install
       - task: claude:install
       - task: macos:install
+      # hostname:apply -- status:-gated; no-op when state file missing OR
+      # when state file matches live LocalHostName. Sudo prompts only on
+      # a fresh setup or after manual `sudo scutil` drift.
+      - task: hostname:apply
       # packages:verify is the LAST FATAL task-call in the install pipeline.
       # A missing bin or missing /Applications/<App>.app fails the entire
       # `task install` with exit 1 -- no `success "install complete"` line
