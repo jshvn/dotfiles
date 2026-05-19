@@ -56,10 +56,10 @@ lives at the repo root as `bootstrap.zsh` (deviation Rule 3 -- path correction).
 | claude/hooks/no-emojis.zsh                      |         12 |            6 |            13 |    +7 |          0% |
 | claude/hooks/no-ai-comments.zsh                 |         15 |            4 |            10 |    +6 |          0% |
 | claude/hooks/agent-transparency.zsh             |         31 |            8 |            12 |    +4 |          0% |
-| shell/functions/_dotfiles_feature.zsh           |         15 |           26 |           TBD |   TBD |         TBD |
-| shell/functions/_dotfiles_require_feature.zsh   |          7 |           34 |           TBD |   TBD |         TBD |
-| shell/aliases/jgrid.zsh                         |         30 |           20 |           TBD |   TBD |         TBD |
-| shell/aliases/ghostty.zsh                       |          4 |           13 |           TBD |   TBD |         TBD |
-| shell/aliases/finder.zsh                        |         12 |           11 |           TBD |   TBD |         TBD |
-| shell/aliases/dotfiles.zsh                      |          1 |            9 |           TBD |   TBD |         TBD |
+| shell/functions/_dotfiles_feature.zsh           |         15 |           26 |            12 |   -14 |         54% |
+| shell/functions/_dotfiles_require_feature.zsh   |          7 |           34 |            21 |   -13 |         38% |
+| shell/aliases/jgrid.zsh                         |         30 |           20 |            15 |    -5 |         25% |
+| shell/aliases/ghostty.zsh                       |          4 |           13 |            12 |    -1 |          7% |
+| shell/aliases/finder.zsh                        |         12 |           11 |            13 |    +2 |          0% |
+| shell/aliases/dotfiles.zsh                      |          1 |            9 |             9 |     0 |          0% |
 | **Total**                                       |  **3,347** |    **2,681** |       **TBD** | **TBD** |     **TBD** |

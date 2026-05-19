@@ -1,14 +1,17 @@
 #!/bin/zsh
-# shell/aliases/finder.zsh -- Finder GUI aliases.
+
+# =============================================================================
+# shell/aliases/finder.zsh -- Finder GUI wrappers
 #
-# Purpose: Finder GUI wrappers gated on features.macos-finder via
-# _dotfiles_feature per D-07. Replaces v1 zsh/aliases/common/general.zsh:27-31
-# (the three Finder aliases that were always loaded in v1's common bucket but
-# break on non-GUI machines).
-#
-# Why wrapper-function (D-07) rather than source-time gate (D-08): three
-# discrete aliases. The wrapper-function gate gives a helpful stderr message
-# when called on a server / non-GUI machine, instead of silently no-opping.
+# Purpose:      Finder GUI wrappers (finder / findershow / finderhide);
+#               gated on features.macos-finder via wrapper-function pattern
+#               so calls on server / non-GUI machines surface a stderr
+#               message instead of silently no-opping.
+# Depends on:   shell/functions/_dotfiles_require_feature.zsh.
+# Side effects: defines functions finder / findershow / finderhide;
+#               feature-gated `open -a Finder` + `defaults write` +
+#               `killall Finder` on macos-finder=true machines.
+# =============================================================================
 
 function finder() {
     _dotfiles_require_feature macos-finder || return 1
