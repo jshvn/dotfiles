@@ -273,7 +273,10 @@ Milestone v2.1 (Cleanup) continues the phase sequence from v1.0. Phases are numb
   3. The `docs/` directory is reviewed; obsolete docs are removed (e.g., `CUTOVER.md` is gone per Phase 11 RMV-04 and stays gone; `MIGRATION.md` is either removed or rewritten as a single-page "what changed from v1" summary per Phase 9's AUDIT-05 decision); every doc remaining in `docs/` has a clear, current purpose
   4. Top-level `README.md`, project `CLAUDE.md`, and `.claude/CLAUDE.md` are deduped: each piece of info (manifest model, task surface, conventions, where to add things) lives in exactly one canonical home; cross-references replace duplication; running `diff <(grep '^##' README.md) <(grep '^##' CLAUDE.md)` shows minimal overlap
   5. After trim, the codebase reads cleanly for a new contributor with zero v2-history context: no "v1 macos:shell:145 bug class" references, no "Gap 2 brew-info pivot" references, no historical commit-hash references in code comments; `git grep -E 'v1 (bug|finding|leftover)|Gap [0-9]+|D-[0-9]+|UAT [Gg]ap'` returns zero matches in code (only `.planning/` history retains those references, which is correct)
-**Plans**: TBD
+**Plans**: 3 plans
+  - [ ] 14-01-PLAN.md — Build 14-TEACHING-INVENTORY.md (D-09 prereq) + amend CLAUDE.md for D-01 contradiction + NEEDS-ADD gap-fills (TRIM-04, TRIM-05 prereq)
+  - [ ] 14-02-PLAN.md — Per-file trim pass: 3-label banners + D-04 inline-comment KEEP/CUT across ~43 files; 14-METRICS.md pre/post (TRIM-01, TRIM-02)
+  - [ ] 14-03-PLAN.md — docs/MANIFEST.md surgical edits + docs/README.md rewrite + README.md humans-only + .claude/CLAUDE.md delete + SC#5 grep gate (TRIM-03, TRIM-04, TRIM-05)
 
 ## Progress
 
@@ -295,4 +298,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 11. v1 Removal | 1/1 | Complete   | 2026-05-18 |
 | 12. Task Surface Redesign | 8/8 | Complete    | 2026-05-18 |
 | 13. Code Review + Dead-Code Cleanup | 6/6 | Complete    | 2026-05-19 |
-| 14. Comment + Doc Trim | 0/TBD | Not started (v2.1) | - |
+| 14. Comment + Doc Trim | 0/3 | Planned (v2.1) | - |
