@@ -1,51 +1,18 @@
 version: '3'
 
 # =============================================================================
-# taskfiles/links.yml -- Phase 3 link orchestration (real implementation)
+# taskfiles/links.yml -- symlink orchestration for shell + claude + tool configs
 #
-# Purpose:
-#   Replaces taskfiles/links-stub.yml as the real implementation of links:all.
-#   P3 + P4 currently included; later phases extend the `all:` aggregator with
-#   their own subtasks:
-#     - P3 shell startup files (already wired)
-#     - P4 git/ssh/identity (already wired via `task: identity:install`)
-#     - P5 adds packages/brew (none in links.yml; package install lives in brew.yml)
-#     - P6 adds macos (none in links.yml; defaults live in macos.yml)
-#     - P7 adds tools/claude
-#
-# Dependencies:
-#   - taskfiles/helpers.yml provides `_:safe-link` (mkdir -p + ln -sfn) and
-#     `_:check-link` (verifies -L and -e on the target symlink).
-#
-# Status-block convention (LINT-02 enforcement):
-#   Every install-style task has a `status:` block. Status blocks use
-#   `{{.X}}` template vars ONLY -- never `$X` shell vars. Shell vars are
-#   not in scope during status evaluation; using `$X` causes the task to
-#   re-run on every invocation (the v1 macos:shell:145 bug class).
-#   Aggregator tasks (e.g., the `all:` aggregator below) intentionally
-#   omit the `status:` block and use the `# lint-allow: cmds-without-status`
-#   marker; idempotency is enforced inside each sub-task. A status: block
-#   on the aggregator that only checks a subset of the sub-tasks' symlinks
-#   would short-circuit on partial state -- the exact macos:shell:145
-#   regression class CR-02 closes.
-#
-# Symlink-creation convention (LINT-03b enforcement):
-#   No bare `ln -s` lives here -- every symlink goes through `_:safe-link`
-#   in taskfiles/helpers.yml. Direct `ln` calls bypass the parent-directory
-#   guarantee and idempotent `ln -sfn` semantics.
-#
-# When the root Taskfile.yml includes this module, its vars (DOTFILEDIR,
-# ZDOTDIR, DOTFILES_MESSAGES) take precedence over any local fallbacks.
+# Purpose:      All symlink creation owned by this taskfile (shell startup,
+#               claude config tree, tool configs); identity-layer symlinks
+#               live in taskfiles/identity.yml.
+# Depends on:   taskfiles/helpers.yml (_:safe-link, _:check-link).
+# Side effects: writes symlinks under $ZDOTDIR + $XDG_CONFIG_HOME; writes
+#               $ZDOTDIR export to /etc/zshenv (sudo, idempotent).
 # =============================================================================
 
 includes:
   _: ./helpers.yml
-
-# =============================================================================
-# Vars block -- self-contained so `task -t taskfiles/links.yml ...` works
-# without the root Taskfile.yml being loaded. When invoked via the root,
-# the root's vars take precedence via go-task vars-merge.
-# =============================================================================
 
 vars:
   HOME: '{{.HOME}}'
@@ -55,30 +22,18 @@ vars:
 
   ZDOTDIR: '{{.XDG_CONFIG_HOME}}/zsh'
 
-  # Resolve DOTFILEDIR from this taskfile's parent directory.
-  # dirname once: taskfiles/links.yml -> taskfiles/ -> ../taskfiles/ -> repo root.
   DOTFILEDIR:
     sh: dirname "{{.TASKFILE_DIR}}"
 
   DOTFILES_MESSAGES: |
     source '{{.DOTFILEDIR}}/install/messages.zsh'
 
-  # ---------------------------------------------------------------------------
-  # EXPECTED_TARGETS (D-08) -- single source of truth for every symlink target
-  # owned by this taskfile. The entries below cover the zsh +
-  # claude + tool-configs sub-tasks; identity-layer symlinks
-  # ({{.GIT_CONFIG_DIR}}/config, {{.SSH_DIR}}/config) are intentionally
-  # EXCLUDED -- they live in taskfiles/identity.yml's EXPECTED_TARGETS
-  # equivalent and are validated by identity:validate.
-  #
-  # Feature-gated entries use the inline-ternary form:
-  #   {{if index .MANIFEST.features "<key>"}}<path>{{end}}
-  # which renders an empty line when the feature is off; downstream consumers
-  # (links:validate shell-block; future links:reconcile) skip empty lines via
-  #   [[ -z "$target" ]] && continue
-  # per the pseudocode in 08-RESEARCH.md lines 178-208.
-  # ---------------------------------------------------------------------------
-
+  # EXPECTED_TARGETS -- single source of truth for every symlink target owned
+  # by this taskfile. Identity-layer symlinks are intentionally EXCLUDED --
+  # they live in taskfiles/identity.yml's equivalent and are validated by
+  # identity:validate. Feature-gated entries use the inline-ternary form
+  # which renders an empty line when the feature is off; consumers skip
+  # empty lines via `[[ -z "$target" ]] && continue`.
   EXPECTED_TARGETS: |
     {{.ZDOTDIR}}/.zshenv
     {{.ZDOTDIR}}/.zprofile
@@ -106,35 +61,20 @@ vars:
     {{.XDG_CONFIG_HOME}}/conda/condarc
     {{.XDG_CONFIG_HOME}}/eza/theme.yaml
 
-# =============================================================================
-# Tasks
-# =============================================================================
-
 tasks:
-
-  # ---------------------------------------------------------------------------
-  # Aggregator (D-09 internal: <ns>:install pattern; D-01 per-component install internal).
-  # P3 + P4 wired; later phases extend this list.
-  # ---------------------------------------------------------------------------
 
   # lint-allow: cmds-without-status
   install:
-    desc: "Create all symlinks (P3+P4+P7: shell + identity + claude + configs)"
+    desc: "Create all symlinks (shell + identity + claude + configs)"
     internal: true
     cmds:
       - task: install-zsh
-      # Leading-colon absolute form: when this file is loaded as the `links:`
-      # namespace from the root Taskfile.yml, a bare `task: identity:install`
-      # resolves relative to the current namespace and tries `links:identity:install`
-      # (which does not exist). Same fix pattern as commit d94168e applied to
-      # identity.yml's [:manifest:resolve] dep.
+      # Leading-colon absolute form: a bare `task: identity:install` resolves
+      # relative to the `links:` namespace and tries `links:identity:install`
+      # (which does not exist).
       - task: :identity:install
       - task: install-claude
       - task: install-configs
-
-  # ---------------------------------------------------------------------------
-  # Shell startup files (SHEL-03) -- five files in zsh's documented order.
-  # ---------------------------------------------------------------------------
 
   install-zsh:
     desc: "Link zsh configuration files and configure /etc/zshenv ZDOTDIR"
@@ -151,11 +91,9 @@ tasks:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/shell/.zlogout", TARGET: "{{.ZDOTDIR}}/.zlogout" }
       - task: zdotdir
-    # REVW-05 (Plan 13-05): every links:* install-style status block verifies
-    # the symlink TARGET via `readlink -f` against the manifest-expected source
-    # path, not just `test -L` existence. A corrupted symlink (wrong target)
-    # now forces a re-run of cmds: to repair the link. The grep -qF line for
-    # /etc/zshenv is unchanged -- it tests content, not a symlink.
+    # Verify target via `readlink -f` against the manifest-expected source path,
+    # not just `test -L` existence -- a corrupted symlink (wrong target) must
+    # force a re-run of cmds: to repair the link.
     status:
       - test -L "{{.ZDOTDIR}}/.zshenv"   && [[ "$(readlink -f "{{.ZDOTDIR}}/.zshenv")"   == "{{.DOTFILEDIR}}/shell/.zshenv"   ]]
       - test -L "{{.ZDOTDIR}}/.zprofile" && [[ "$(readlink -f "{{.ZDOTDIR}}/.zprofile")" == "{{.DOTFILEDIR}}/shell/.zprofile" ]]
@@ -164,27 +102,12 @@ tasks:
       - test -L "{{.ZDOTDIR}}/.zlogout"  && [[ "$(readlink -f "{{.ZDOTDIR}}/.zlogout")"  == "{{.DOTFILEDIR}}/shell/.zlogout"  ]]
       - grep -qF 'export ZDOTDIR="{{.ZDOTDIR}}"' /etc/zshenv 2>/dev/null
 
-  # ---------------------------------------------------------------------------
-  # PORT-01: ZDOTDIR write to /etc/zshenv (sudo, idempotent).
-  #
-  # Direct port of v1 taskfiles/common.yml:36-57 with the LINT-02 hardening
-  # from D-04: status block uses the {{.ZDOTDIR}} template var rather than a
-  # shell $ZDOTDIR reference, so the idempotency check evaluates correctly at
-  # task-graph build time (not the v1 macos:shell:145 bug class).
-  #
-  # Three-branch cmd body mirrors v1 verbatim: file-absent -> `sudo tee` to
-  # create; line-absent -> `sudo tee -a` to append; line-present -> info no-op.
-  # /etc/zshenv is world-readable on macOS so the grep -qF check in status
-  # runs without sudo and re-runs never prompt (D-03).
-  #
-  # Marked internal: true to keep it out of `task --list`; dispatched via
-  # `task: zdotdir` from the outer `zsh:` task (precedent: configs:ghostty
-  # extraction at lines 269-277 below).
-  # ---------------------------------------------------------------------------
-
   zdotdir:
     desc: "Configure ZDOTDIR in /etc/zshenv (sudo write, idempotent)"
     internal: true
+    # /etc/zshenv ZDOTDIR write. Status uses {{.ZDOTDIR}} (template var) not
+    # $ZDOTDIR -- shell vars in status: re-run every invocation (LINT-02).
+    # /etc/zshenv is world-readable so grep -qF runs without sudo on re-checks.
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
@@ -203,17 +126,12 @@ tasks:
     status:
       - grep -qF 'export ZDOTDIR="{{.ZDOTDIR}}"' /etc/zshenv 2>/dev/null
 
-  # ---------------------------------------------------------------------------
-  # Claude config tree (CLDE-01) -- feature-gated on claude-marketplace.
-  # 13 entries: 2 file + 3 dir + 8 hook file symlinks per D-01.
-  # On servers where claude-marketplace=false the gate skips the entire body;
-  # the status: block mirrors the gate so status checks also no-op.
-  # ---------------------------------------------------------------------------
-
   install-claude:
     desc: "Link claude config tree (files, dirs, hooks)"
     internal: true
     deps: [":manifest:resolve"]
+    # Feature-gated on claude-marketplace. The status: block mirrors the gate
+    # so status checks also no-op when the flag is off.
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/claude/CLAUDE.md", TARGET: "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md" }
@@ -241,11 +159,6 @@ tasks:
         vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/notify.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh" }
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/claude/hooks/lib.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh" }
-    # REVW-05 (Plan 13-05): inline readlink -f target-match check inside the
-    # feature-gate wrapper. The {{if not (index .MANIFEST.features "claude-marketplace")}}
-    # arm short-circuits to true when the flag is off (no claude install on this
-    # machine; status no-ops). The {{else}} arm verifies BOTH that the path is a
-    # symlink AND that its resolved target matches the manifest-expected source.
     status:
       - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md")" == "{{.DOTFILEDIR}}/claude/CLAUDE.md" ]]{{end}}'
       - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/settings.json" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/settings.json")" == "{{.DOTFILEDIR}}/claude/settings.json" ]]{{end}}'
@@ -261,16 +174,12 @@ tasks:
       - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/notify.zsh" ]]{{end}}'
       - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh")" == "{{.DOTFILEDIR}}/claude/hooks/lib.zsh" ]]{{end}}'
 
-  # ---------------------------------------------------------------------------
-  # Tool configs (TOOL-01, TOOL-02) -- 7 symlinks; ghostty gated on ghostty
-  # feature flag; glow, trippy, tlrc, conda, eza always-on (D-07).
-  # motd intentionally absent -- D-08 (runtime read from DOTFILEDIR).
-  # ---------------------------------------------------------------------------
-
   install-configs:
     desc: "Link tool config files (ghostty, glow, trippy, tlrc, conda, eza)"
     internal: true
     deps: [":manifest:resolve"]
+    # ghostty is feature-gated; the other 6 are always-on. motd is intentionally
+    # absent (runtime read from DOTFILEDIR, no symlink needed).
     cmds:
       - task: configs:ghostty
       - task: _:safe-link
@@ -285,15 +194,11 @@ tasks:
         vars: { SOURCE: "{{.DOTFILEDIR}}/configs/conda/condarc", TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc" }
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/configs/eza/theme.yaml", TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml" }
-    # REVW-05 (Plan 13-05): readlink -f target-match verification per row.
-    # The ghostty row keeps its feature-gate wrapper; the 6 always-on rows
-    # are unconditional readlink -f checks.
     status:
-      # CR-04: ghostty MUST appear in this status block. Without it, on a
-      # ghostty=true machine where the ghostty link is broken but the
-      # always-on configs are healthy, status returns 0 and go-task skips
-      # the entire cmds block -- including `task: configs:ghostty`. The
-      # gated entry mirrors the `claude:` pattern at lines 204-216.
+      # ghostty MUST appear in this status block. Without it, on a ghostty=true
+      # machine where the ghostty link is broken but the always-on configs are
+      # healthy, status returns 0 and go-task skips the entire cmds block --
+      # including `task: configs:ghostty`.
       - '{{if not (index .MANIFEST.features "ghostty")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/ghostty/config" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/ghostty/config")" == "{{.DOTFILEDIR}}/configs/ghostty/config" ]]{{end}}'
       - test -L "{{.XDG_CONFIG_HOME}}/glow/glow.yml"        && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/glow/glow.yml")"        == "{{.DOTFILEDIR}}/configs/glow/glow.yml"        ]]
       - test -L "{{.XDG_CONFIG_HOME}}/glow/glow_style.json" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/glow/glow_style.json")" == "{{.DOTFILEDIR}}/configs/glow/glow_style.json" ]]
@@ -302,69 +207,42 @@ tasks:
       - test -L "{{.XDG_CONFIG_HOME}}/conda/condarc"        && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/conda/condarc")"        == "{{.DOTFILEDIR}}/configs/conda/condarc"        ]]
       - test -L "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"       && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/eza/theme.yaml")"       == "{{.DOTFILEDIR}}/configs/eza/theme.yaml"       ]]
 
-  # ---------------------------------------------------------------------------
-  # configs:ghostty -- ghostty config symlink isolated as its own sub-task so
-  # the inline-ternary status: gate works independently of the always-on
-  # tool configs. When `ghostty=false`, status returns `true` and cmds: never
-  # executes (correct gate even in partial-state failure of always-on entries
-  # in configs:). Avoids the regression where a missing always-on link forces
-  # cmds: to run unconditionally including the gated ghostty link.
-  # ---------------------------------------------------------------------------
-
   configs:ghostty:
     desc: "Link ghostty config (gated on ghostty feature)"
     internal: true
     deps: [":manifest:resolve"]
+    # Isolated as its own sub-task so the inline-ternary status: gate works
+    # independently of the always-on tool configs. Avoids the regression
+    # where a missing always-on link forces cmds: to run unconditionally
+    # including the gated ghostty link.
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.DOTFILEDIR}}/configs/ghostty/config", TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config" }
-    # REVW-05 (Plan 13-05): inline readlink -f target-match check inside the
-    # ghostty feature-gate wrapper.
     status:
       - '{{if not (index .MANIFEST.features "ghostty")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/ghostty/config" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/ghostty/config")" == "{{.DOTFILEDIR}}/configs/ghostty/config" ]]{{end}}'
 
-  # ---------------------------------------------------------------------------
-  # Validation -- always-re-run diagnostic output; no status: by design.
-  # ---------------------------------------------------------------------------
-
   # lint-allow: cmds-without-status
   validate:
-    desc: "Validate all P3+P4+P7 symlinks (strict-mode SOURCE check per TOOL-04)"
+    desc: "Validate all symlinks (strict-mode SOURCE check)"
     internal: true
     deps: [":manifest:resolve"]
     status: [false]
     cmds:
-      # ---------------------------------------------------------------------
-      # Shell-block validator (D-08 / 08-01 P1 rewrite).
-      #
       # Iterates EXPECTED_TARGETS line-by-line and verifies each symlink with
-      # the same three-condition logic as helpers.yml _:check-link (lines
-      # 48-73) BUT increments an explicit failures counter on each failing
-      # path, ending with `exit "$failures"`. This closes the
-      # _:check-link-always-exits-0 gap so root `task validate` (Plan 02) can
-      # bubble links:validate failures via exit code.
-      #
-      # Feature-off entries in EXPECTED_TARGETS render as empty lines (per
-      # the inline-ternary form in the vars: block) and are skipped via
-      # [[ -z "$target" ]] && continue -- so claude-marketplace=false elides
-      # the 13 claude entries and ghostty=false elides 1 ghostty entry from
-      # the iteration without any conditional logic in the loop body.
-      #
-      # The TARGET -> SOURCE mapping uses a single case statement keyed on
-      # target path patterns. This is the SAME mapping the links:zsh,
-      # links:claude, and links:configs cmds: blocks use
-      # when creating the links -- changing one mapping requires editing
-      # this case statement AND the corresponding cmds: entry, but the
-      # mappings are mechanical (target path under XDG -> equivalent path
-      # under DOTFILEDIR with module prefix).
-      # ---------------------------------------------------------------------
+      # the same three-condition logic as helpers.yml _:check-link BUT
+      # increments an explicit failures counter on each failing path, ending
+      # with `exit "$failures"`. This closes the _:check-link-always-exits-0
+      # gap so root `task validate` can bubble links:validate failures via
+      # exit code. Feature-off entries in EXPECTED_TARGETS render as empty
+      # lines and are skipped via `[[ -z "$target" ]] && continue`.
       - |
         {{.DOTFILES_MESSAGES}}
         failures=0
 
         # Resolve the expected SOURCE for a given TARGET. Mirrors the literal
-        # pairings used by links:zsh, links:claude,
-        # links:configs (and configs:ghostty) when materializing the links.
+        # pairings used by install-zsh / install-claude / install-configs
+        # when materializing the links -- editing one mapping requires editing
+        # this case statement AND the corresponding cmds: entry.
         resolve_source() {
           local target="$1"
           local zdotdir="{{.ZDOTDIR}}"
@@ -388,13 +266,10 @@ tasks:
             "$xdg/tlrc/"*)                 printf '%s\n' "$dotfiledir/configs/tlrc/${target##*/tlrc/}" ;;
             "$xdg/conda/"*)                printf '%s\n' "$dotfiledir/configs/conda/${target##*/conda/}" ;;
             "$xdg/eza/"*)                  printf '%s\n' "$dotfiledir/configs/eza/${target##*/eza/}" ;;
-            *)                             printf '%s\n' "" ;;  # unknown target -- treat as no expected source
+            *)                             printf '%s\n' "" ;;
           esac
         }
 
-        # Iterate EXPECTED_TARGETS line-by-line. Empty lines are feature-off
-        # ternary renders (e.g., claude-marketplace=false produces 13 empty
-        # lines for the claude entries); skip them.
         while IFS= read -r target; do
           [[ -z "$target" ]] && continue
 
@@ -428,46 +303,24 @@ tasks:
 
         exit "$failures"
 
-  # ---------------------------------------------------------------------------
-  # links:reconcile (CUTV-02 + CUTV-07 + CUTV-08) -- orphan symlink detection.
-  #
-  # Three invocation modes, dispatched via CLI_ARGS:
-  #   - default (no flag):  detect-only; exit non-zero on orphan; CI-safe gate.
-  #   - -- --remove:         interactive cleanup; TTY-gated; y/N per orphan;
-  #                          uses `unlink` only (never `rm`).
-  #   - -- --warn-only:      non-fatal; emits orphans via warn() to stderr;
-  #                          always exits 0; reserved for install-time call.
-  #
-  # Orphan detection (D-09) walks ONLY parent dirs derived from
-  # EXPECTED_TARGETS with `find -maxdepth 2 -type l`; a symlink is an
-  # orphan iff its readlink -f target is under $DOTFILEDIR AND the link
-  # path itself is not in EXPECTED_TARGETS. Bounded surface; fast.
-  #
-  # Security:
-  #   - --remove mode TTY-gates BEFORE orphan enumeration ([[ -t 0 ]])
-  #   - removal uses `unlink` (operates only on the named symlink)
-  #   - parent_dirs deduplication uses word-split-safe `while IFS= read -r`
-  #     pattern (NOT `array=($(...))` which is vulnerable to word-splitting
-  #     on paths containing spaces and is not shellcheck-clean)
-  #
-  # Public path: audit:links (via taskfiles/audit.yml delegate). This task
-  # remains as the implementation; the audit: delegate is the operator-facing
-  # surface (D-02).
-  # ---------------------------------------------------------------------------
-
   # lint-allow: cmds-without-status
   reconcile:
     desc: "Detect orphan symlinks (default: exit non-zero); -- --remove for interactive cleanup"
     internal: true
     deps: [":manifest:resolve"]
     status: [false]
+    # Three invocation modes via CLI_ARGS:
+    #   default     -- detect-only; exit non-zero on orphan; CI-safe gate.
+    #   --remove    -- interactive cleanup; TTY-gated; y/N per orphan;
+    #                  uses `unlink` only (never `rm`).
+    #   --warn-only -- non-fatal; emits orphans via warn(); always exits 0.
+    # Public path: audit:links (taskfiles/audit.yml delegate).
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
 
-        # Mode dispatch via CLI_ARGS. If CLI_ARGS contains both --remove and
-        # --warn-only, last-wins by parse order (warn-only wins if both
-        # appear; documented but not user-facing -- pick one flag).
+        # Mode dispatch via CLI_ARGS. If both --remove and --warn-only appear,
+        # warn-only wins by parse order (documented; pick one flag).
         mode="detect"
         cli="{{.CLI_ARGS}}"
         case " $cli " in
@@ -477,8 +330,8 @@ tasks:
           *" --warn-only "*)   mode="warn" ;;
         esac
 
-        # --remove TTY-gate (D-10 / Pitfall 6). MUST appear BEFORE any
-        # orphan enumeration so non-TTY callers fail fast.
+        # --remove TTY-gate MUST appear BEFORE any orphan enumeration so
+        # non-TTY callers fail fast.
         if [[ "$mode" == "remove" ]]; then
           if [[ ! -t 0 ]]; then
             error "links:reconcile --remove requires an interactive TTY; stdin is not a tty"
@@ -488,21 +341,15 @@ tasks:
 
         dotfiledir="{{.DOTFILEDIR}}"
 
-        # Enumerate EXPECTED_TARGETS line-by-line. Feature-off entries
-        # render as empty lines (per the inline-ternary form in the vars:
-        # block) and are skipped, matching the consumer contract used by
-        # links:validate.
         expected=()
         while IFS= read -r line; do
           [[ -n "$line" ]] && expected+=("$line")
         done <<< "{{.EXPECTED_TARGETS}}"
 
-        # Derive deduplicated parent_dirs from expected. CRITICAL:
-        # word-split-safe assignment via `while IFS= read -r` (NOT the
-        # `array=($(...))` cmd-subst-into-array form, which is vulnerable
-        # to word-splitting on path components containing spaces and is
-        # not shellcheck-clean). Matches the EXPECTED_TARGETS reader
-        # pattern above.
+        # Derive deduplicated parent_dirs from expected. CRITICAL: word-split-safe
+        # assignment via `while IFS= read -r` -- NOT the `array=($(...))` form,
+        # which is vulnerable to word-splitting on path components containing
+        # spaces and is not shellcheck-clean.
         raw_parents=()
         for t in "${expected[@]}"; do
           raw_parents+=("$(dirname "$t")")
@@ -512,18 +359,13 @@ tasks:
           [[ -n "$dir" ]] && parent_dirs+=("$dir")
         done < <(printf '%s\n' "${raw_parents[@]}" | sort -u)
 
-        # Walk each parent dir; collect orphans. Bounded scan
-        # (-maxdepth 2). For each symlink found: readlink -f to resolve
-        # the target; skip if target does not start with $dotfiledir;
-        # check if the link path is in EXPECTED_TARGETS; if not, append
-        # to orphans.
+        # Bounded scan (-maxdepth 2). A symlink is an orphan iff its readlink -f
+        # target is under $dotfiledir AND the link path itself is not in
+        # EXPECTED_TARGETS.
         #
-        # NOTE on `set -e` interaction: the root Taskfile.yml sets
-        # [errexit, pipefail] globally and the include inherits it.
-        # `(( expr ))` evaluates to exit-1 when expr is zero -- under
-        # errexit that aborts the script. So we use `if ... ; then ...
-        # ; fi` (which is exempt from errexit on the condition itself)
-        # instead of `(( ... )) && cmd` or bare `(( ... ))`.
+        # `(( expr ))` evaluates to exit-1 when expr is zero -- under errexit
+        # that aborts the script. Use `if ... ; then ... ; fi` instead of
+        # `(( ... )) && cmd` or bare `(( ... ))`.
         orphans=()
         for dir in "${parent_dirs[@]}"; do
           [[ -d "$dir" ]] || continue
@@ -546,7 +388,6 @@ tasks:
 
         orphan_count=${#orphans[@]}
 
-        # Mode-specific action.
         case "$mode" in
           detect)
             if [[ "$orphan_count" -eq 0 ]]; then
@@ -595,12 +436,10 @@ tasks:
             exit 0
             ;;
           *)
-            # WR-03: defensive catch-all. The three valid modes (detect,
-            # warn, remove) are the only values $mode can take given the
-            # initialization at line 408 + the two case mutators above; this
-            # branch surfaces a future flag-parsing bug or refactor mistake
-            # as a hard error instead of a silent no-op (exit 0 with no
-            # orphan action taken).
+            # Defensive catch-all. The three valid modes (detect, warn, remove)
+            # are the only values $mode can take given the initialization +
+            # the two case mutators above; this branch surfaces a future
+            # flag-parsing bug as a hard error instead of a silent no-op.
             error "links:reconcile: internal bug -- unknown mode '$mode'"
             exit 1
             ;;

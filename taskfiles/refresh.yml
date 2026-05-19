@@ -1,14 +1,13 @@
 version: '3'
 
 # =============================================================================
-# taskfiles/refresh.yml -- Phase 12 public refresh namespace (D-03).
+# taskfiles/refresh.yml -- public refresh namespace
 #
-# Purpose: Public delegates for explicit manual-refresh operations across all namespaces.
-# Callers: Invoked directly by operator; included by Taskfile.yml.
-# Side effects: Tasks here are thin pass-through delegates; the underlying
-#   implementations may mutate state (e.g., claude:update re-fetches plugins).
-# Tasks:
-#   - claude -- delegate to :claude:update (marketplaces + plugins + GSD refresh; D-03)
+# Purpose:      Public delegates for explicit manual-refresh operations.
+# Depends on:   included by Taskfile.yml; delegates to :claude:update.
+# Side effects: tasks here are thin pass-through delegates; the underlying
+#               implementations may mutate state (e.g., claude:update
+#               re-fetches plugins).
 # =============================================================================
 
 vars:

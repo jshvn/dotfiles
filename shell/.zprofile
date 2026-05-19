@@ -1,62 +1,39 @@
 #!/bin/zsh
-# -----------------------------------------------------------------------------
-# .zprofile - Zsh login shell initialization
-#
-# Sourced by: zsh login shells (after ~/.zshenv, before ~/.zshrc)
-# Zsh startup order (login interactive example):
-#   1) ~/.zshenv
-#   2) ~/.zprofile   (login shells)
-#   3) ~/.zshrc      (interactive shells)
-#   4) ~/.zlogin     (after .zshrc for login shells)
-#
-# Logout order (login shells):
-#   - ~/.zlogout is read when a login shell exits
-#
-# Purpose:
-#   - Configure per-login environment and perform one-time login tasks.
-#   - Source cross-shell files (e.g., ~/.profile) for bash/zsh compatibility.
-#   - Set up SSH agent (1Password on machines with the feature enabled).
-#
-# SSH Agent Configuration:
-#   - Manifest-driven via features.one-password-ssh in resolved.json.
-#     Workstations with the feature enabled use the 1Password SSH agent socket;
-#     machines without the feature inherit the system default ssh-agent.
-#
-# Notes:
-#   - Avoid interactive-only plugin initialization here; put those in ~/.zshrc.
-#   - If you want environment available to bash and zsh, keep a shared ~/.profile
-#     and source it here.
-#
-# See: Zsh manual -- Startup/Shutdown Files:
-#   http://zsh.sourceforge.net/Doc/Release/Files.html
-# -----------------------------------------------------------------------------
 
-# MacOS -- v1 targets darwin only (PROJECT.md "Out of Scope" defers Linux to v2+).
-# Every machine TOML enforces platform.os = "darwin", so the previous Linux
-# (linuxbrew) else-branch was unreachable; re-introduce it when a Linux
-# machine TOML is added.
+# =============================================================================
+# shell/.zprofile -- zsh login-shell initialization
+#
+# Purpose:      Load Homebrew shellenv; conditionally configure SSH_AUTH_SOCK
+#               to the 1Password agent socket (manifest-driven via
+#               features.one-password-ssh).
+# Depends on:   brew (at $HOMEBREW_PREFIX/bin/brew); resolved.json (read
+#               via jq for the one-password-ssh feature gate); .zshenv
+#               for XDG_STATE_HOME.
+# Side effects: evals `brew shellenv` (PATH/MANPATH/INFOPATH/HOMEBREW_* exports);
+#               may export SSH_AUTH_SOCK to the 1Password agent socket.
+# =============================================================================
+
+# v1 targets darwin only. Every machine TOML enforces platform.os = "darwin",
+# so the previous Linux (linuxbrew) else-branch was unreachable;
+# re-introduce it when a Linux machine TOML is added.
 if [[ "$(uname -m)" == "arm64" ]]; then
     DIRECTORY="/opt/homebrew/bin/brew"
 else
     DIRECTORY="/usr/local/bin/brew"
 fi
 
-# ensure Homebrew is inserted into $PATH, $MANPATH, $INFOPATH
-# and load $HOMEBREW_PREFIX, $HOMEBREW_CELLAR and $HOMEBREW_REPOSITORY into the environment
-# SHEL-02: guarded eval so a partial install does not crash on a missing brew binary.
+# Guarded eval so a partial install does not crash on a missing brew binary.
 if [[ -x "$DIRECTORY" ]]; then
     eval "$($DIRECTORY shellenv)"
 else
     echo "warn: brew not found at $DIRECTORY -- run bootstrap" >&2
 fi
 
-# SSH Agent Configuration
-# Manifest-driven (CONCERNS.md bug fix: replaces v1 literal hostname == 'server' check
-# with features.one-password-ssh). .zprofile runs BEFORE .zshrc, so the _dotfiles_feature
-# helper is not yet defined; use an inline jq read of resolved.json instead. On missing
-# resolved.json (fresh machine, before `task setup`), the jq read returns nothing, the
-# local var defaults to false, and SSH_AUTH_SOCK stays unset (graceful degrade -- the
-# system ssh-agent handles key lookup).
+# SSH Agent. .zprofile runs BEFORE .zshrc, so the _dotfiles_feature helper
+# is not yet defined; use an inline jq read of resolved.json. On missing
+# resolved.json (fresh machine, before `task setup`), the jq read returns
+# nothing, the local var defaults to false, and SSH_AUTH_SOCK stays unset
+# (graceful degrade -- the system ssh-agent handles key lookup).
 if [[ -r "${XDG_STATE_HOME}/dotfiles/resolved.json" ]]; then
     _opssh=$(jq -r '.features."one-password-ssh" // false' "${XDG_STATE_HOME}/dotfiles/resolved.json" 2>/dev/null)
     if [[ "$_opssh" == "true" ]]; then

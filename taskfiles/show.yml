@@ -1,14 +1,13 @@
 version: '3'
 
 # =============================================================================
-# taskfiles/show.yml -- Phase 12 public diagnostics: state inspection.
+# taskfiles/show.yml -- public diagnostics: state inspection
 #
-# Purpose: Public delegates for diagnostic show operations across all namespaces.
-# Callers: Invoked directly by operator; included by Taskfile.yml.
-# Side effects: Read-only -- these tasks print state or detect drift; no mutations.
-# Tasks:
-#   - claude -- delegate to :claude:status (marketplaces + plugins listing; D-02)
-#   - manifest -- delegate to :manifest:show (resolved manifest printout; D-02)
+# Purpose:      Public delegates for diagnostic show operations across all
+#               namespaces (claude, manifest).
+# Depends on:   included by Taskfile.yml; delegates to :claude:status,
+#               :manifest:show.
+# Side effects: read-only -- these tasks print state.
 # =============================================================================
 
 vars:

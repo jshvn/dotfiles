@@ -1,35 +1,23 @@
 #!/bin/zsh
-# Dotfiles messaging library
-# Source this file to get consistent messaging functions
-#
-# Usage:
-#   source "${DOTFILEDIR}/install/messages.zsh"
-#   info "This is an info message"
-#   success "Operation completed"
-#   warn "This might cause issues"
-#   error "Something went wrong"
-#
-# Optional functions:
-#   debug "Debug output" (only shown if DOTFILES_DEBUG=true)
-#   header "Section Name" (prints a styled section header)
-#   step "Doing something" (prints a step indicator)
-#   check "Item passed" (prints ✓ with message)
-#   cross "Item failed" (prints ✗ with message)
-#
-# set -u contract:
-#   This file is safe to `source` from a caller running under `set -u` /
-#   `set -euo pipefail`. The double-source guard below uses the `:-` default
-#   expansion (`${DOTFILES_MESSAGES_LOADED:-}`), so referencing the variable
-#   when unset returns the empty string instead of aborting the caller.
-#   Callers MUST NOT pre-initialize the guard variable -- a bare
-#   `source "${DOTFILEDIR}/install/messages.zsh"` is sufficient and idempotent.
 
-# Prevent double-sourcing (set-u safe via :- default expansion).
+# =============================================================================
+# install/messages.zsh -- shared messaging library
+#
+# Purpose:      Consistent ANSI-coloured info/success/warn/error/debug/
+#               header/step/check/cross output for all install + task scripts.
+# Depends on:   nothing.
+# Side effects: defines DOTFILES_{RED,GREEN,YELLOW,BLUE,CYAN,BOLD,NC}
+#               globals; defines info/success/warn/error/debug/header/step/
+#               check/cross functions.
+# =============================================================================
+
+# Safe to source under `set -u`: the double-source guard uses the `:-`
+# default expansion so referencing the variable when unset returns "" rather
+# than aborting the caller. Callers MUST NOT pre-initialize the guard.
 [[ -n "${DOTFILES_MESSAGES_LOADED:-}" ]] && return 0
 DOTFILES_MESSAGES_LOADED=1
 
-# Color codes (ANSI for broad compatibility)
-# Using \033 instead of \e for maximum portability
+# ANSI color codes (\033 for maximum portability).
 DOTFILES_RED='\033[0;31m'
 DOTFILES_GREEN='\033[0;32m'
 DOTFILES_YELLOW='\033[0;33m'
@@ -38,7 +26,6 @@ DOTFILES_CYAN='\033[0;36m'
 DOTFILES_BOLD='\033[1m'
 DOTFILES_NC='\033[0m'
 
-# Core messaging functions
 function info() {
     echo -e "${DOTFILES_BLUE}[INFO]${DOTFILES_NC} $*"
 }
@@ -55,7 +42,6 @@ function error() {
     echo -e "${DOTFILES_RED}[ERROR]${DOTFILES_NC} $*" >&2
 }
 
-# Extended messaging functions
 function debug() {
     [[ "${DOTFILES_DEBUG:-}" == "true" ]] && echo -e "${DOTFILES_CYAN}[DEBUG]${DOTFILES_NC} $*"
 }

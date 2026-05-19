@@ -1,21 +1,13 @@
 # =============================================================================
-# Taskfile.yml -- root taskfile for v2 dotfiles.
+# Taskfile.yml -- root taskfile for v2 dotfiles
 #
-# Single canonical entry: `task install`. There is no separate `task update`
-# (D-10 -- install IS update; re-run idempotent by every subtask having a
-# status: block per LINT-01 / LINT-03a).
-#
-# Includes:
-#   - audit    (P12, real)
-#   - manifest (P1, real)
-#   - lint     (P2, real)
-#   - links    (P3, real)
-#   - identity (P4, real)
-#   - packages (P5, real)
-#   - refresh  (P12, real)
-#   - claude   (P7, real)
-#   - macos    (P6, real)
-#   - show     (P12, real)
+# Purpose:      Single canonical entry (`task install`) plus public operator
+#               surface (default banner, setup, test, validate). Wires every
+#               included taskfile module under one namespace.
+# Depends on:   taskfiles/{audit,manifest,lint,links,shell,identity,packages,
+#               refresh,claude,show,test,macos}.yml; install/messages.zsh
+#               (sourced via {{.TASKFILE_DIR}}, not DOTFILEDIR).
+# Side effects: deferred to subtasks; this file declares no direct mutations.
 # =============================================================================
 
 version: '3'
@@ -31,9 +23,6 @@ vars:
   XDG_CACHE_HOME: '{{.HOME}}/.cache'
   ZDOTDIR: '{{.XDG_CONFIG_HOME}}/zsh'
 
-  # Resolve DOTFILEDIR from this taskfile's parent directory.
-  # go-task 3.37+ provides {{.TASKFILE_DIR}} as the directory containing the
-  # invoked taskfile (root Taskfile.yml -> repo root).
   DOTFILEDIR: '{{.TASKFILE_DIR}}'
 
   # Homebrew prefix -- detect from arch when brew not yet installed.
@@ -44,20 +33,18 @@ vars:
       else echo "/usr/local"
       fi
 
-  # Consistent messages sourcing for taskfile cmd blocks.
   DOTFILES_MESSAGES: |
     source '{{.DOTFILEDIR}}/install/messages.zsh'
 
-  # Path to compiled manifest (P1 resolver writes here).
   RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
 
-  # MANIFEST_JSON cats the resolved.json or echoes a stub with a stderr
-  # warning so taskfiles that ref: MANIFEST never crash on a fresh checkout.
-  # The stub includes an empty `features` map so template expressions like
-  # `{{if index .MANIFEST.features "<key>"}}` evaluate to false (nil zero
-  # value) instead of erroring out with `index of untyped nil` at parse
-  # time. Deeper paths (.identity.git, .packages.brew.*) intentionally
-  # remain unset so consumers fail loudly when accessed without setup.
+  # MANIFEST_JSON cats resolved.json or echoes a stub with a stderr warning
+  # so taskfiles that ref: MANIFEST never crash on a fresh checkout. The stub
+  # includes an empty `features` map so `{{if index .MANIFEST.features "<key>"}}`
+  # evaluates to false (nil zero value) instead of erroring out with
+  # `index of untyped nil` at parse time. Deeper paths (.identity.git,
+  # .packages.brew.*) remain unset so consumers fail loudly when accessed
+  # without setup.
   MANIFEST_JSON:
     sh: |
       if [[ -f "{{.RESOLVED_JSON_PATH}}" ]]; then
@@ -71,9 +58,10 @@ vars:
 
 includes:
   audit:    ./taskfiles/audit.yml
-  # manifest needs the root's DOTFILEDIR + XDG_STATE_HOME explicitly forwarded;
-  # its DOTFILEDIR sh:dirname-twice pattern resolves to the wrong path when
-  # invoked as an included taskfile.
+  # manifest / identity / packages / test each need the root's DOTFILEDIR
+  # forwarded explicitly: their own DOTFILEDIR sh:dirname-twice pattern
+  # resolves to the wrong path when invoked as an included taskfile (the
+  # DOTFILEDIR-leak Don't-Do in CLAUDE.md applies here).
   manifest:
     taskfile: ./taskfiles/manifest.yml
     vars:
@@ -82,20 +70,13 @@ includes:
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   lint:     ./taskfiles/lint.yml
   links:    ./taskfiles/links.yml
-  shell:    ./taskfiles/shell.yml   # Phase-3 shell layer (startup-time gate + validate)
-  # identity needs the root's DOTFILEDIR + XDG_STATE_HOME explicitly forwarded
-  # since it also reads resolved.json via fromJson (mirrors manifest:).
+  shell:    ./taskfiles/shell.yml
   identity:
     taskfile: ./taskfiles/identity.yml
     vars:
       DOTFILEDIR: '{{.DOTFILEDIR}}'
       XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
-  # packages needs the root's DOTFILEDIR + XDG_STATE_HOME + XDG_CACHE_HOME
-  # explicitly forwarded -- it reads resolved.json (manifest), writes the
-  # composed Brewfile under XDG_CACHE_HOME (D-08), and verifies post-install
-  # state. XDG_CACHE_HOME is new in Phase 5; the root already declares it
-  # in the vars: block above.
   packages:
     taskfile: ./taskfiles/packages.yml
     vars:
@@ -103,29 +84,24 @@ includes:
       XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
       XDG_CACHE_HOME: '{{.XDG_CACHE_HOME}}'
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
-  refresh:  ./taskfiles/refresh.yml          # P12 public refresh: namespace (D-03)
-  claude:   ./taskfiles/claude.yml           # P7 real bodies
-  show:     ./taskfiles/show.yml             # P12 public show: namespace (D-02)
-  # test needs the root's DOTFILEDIR + DOTFILES_MESSAGES explicitly forwarded;
-  # its DOTFILEDIR sh:dirname pattern resolves to the wrong path when
-  # invoked as an included taskfile (same issue as manifest: and identity:).
+  refresh:  ./taskfiles/refresh.yml
+  claude:   ./taskfiles/claude.yml
+  show:     ./taskfiles/show.yml
   test:
     taskfile: ./taskfiles/test.yml
     vars:
       DOTFILEDIR: '{{.DOTFILEDIR}}'
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
-  macos:    ./taskfiles/macos.yml           # P6 ships real bodies
+  macos:    ./taskfiles/macos.yml
 
-# Note: task install IS task update -- D-10 dropped the update: block.
-# Phase 3 ships shell alias `update='task install'` for muscle memory.
 tasks:
 
   # lint-allow: cmds-without-status
   default:
     desc: "Print curated task surface"
-    # status: [false] forces the cmd to run every invocation. With status:
-    # [true] the task is considered up-to-date and skipped, so `task` alone
-    # would print nothing instead of rendering the banner.
+    # status: [false] forces the cmd to run every invocation. status: [true]
+    # would consider the task up-to-date and `task` alone would print nothing
+    # instead of rendering the banner.
     status: [false]
     cmds:
       - |
@@ -150,14 +126,12 @@ tasks:
         echo "Run 'task --list' for the full task graph."
 
   # lint-allow: cmds-without-status
-  # Top-level alias for `manifest:setup`. Every doc and operator-facing
-  # error message says `task setup -- <machine-name>` (bootstrap.zsh,
-  # README.md, CLAUDE.md, manifest:resolve's own precondition msg).
-  # Without this alias those instructions fail with
-  # `Task "setup" does not exist`. Forwarding CLI_ARGS preserves the
-  # `-- <name>` calling convention.
   setup:
     desc: "Persist active machine selection: task setup -- <machine-name>"
+    # Top-level alias for `manifest:setup`. Every doc and operator-facing
+    # error message says `task setup -- <machine-name>` -- without this
+    # alias those instructions fail with `Task "setup" does not exist`.
+    # Forwarding CLI_ARGS preserves the `-- <name>` calling convention.
     status: [false]
     cmds:
       - task: manifest:setup
@@ -175,23 +149,18 @@ tasks:
     desc: "Validate full installation state (all components; run-all-aggregate)"
     status: [false]
     deps: [manifest:resolve]
-    # Each per-component validate is `internal: true` (D-01) so it cannot be
-    # invoked from a shell command line -- `task shell:validate` exits 0 with
-    # `task: Task "shell:validate" is internal` and silently no-ops. The
+    # Each per-component validate is `internal: true` -- it cannot be invoked
+    # from a shell command line (`task shell:validate` exits 0 with
+    # `task: Task "shell:validate" is internal` and silently no-ops). The
     # aggregator therefore dispatches each validate via go-task's `task:`
-    # keyword, which bypasses the CLI-level internal gate. `ignore_error:
-    # true` on every dispatch preserves D-04 run-all-aggregate semantics:
-    # every component runs regardless of prior failures.
-    #
-    # Order: manifest first (keystone), remaining alphabetical (identity,
-    # links, macos, packages, claude, shell) per 08-CONTEXT.md Claude's
-    # Discretion.
+    # keyword, which bypasses the CLI-level internal gate. `ignore_error: true`
+    # on every dispatch preserves run-all-aggregate semantics: every component
+    # runs regardless of prior failures.
     #
     # Per-component pass/fail status is emitted INLINE by each validate via
     # `check`/`cross`/`warn` from messages.zsh; there is no cross-component
     # summary footer because go-task does not surface `task:` dispatch exit
-    # codes back to the surrounding shell context. Operators see each
-    # component's status as it runs.
+    # codes back to the surrounding shell context.
     cmds:
       - task: manifest:validate
         ignore_error: true
@@ -221,20 +190,16 @@ tasks:
       - task: packages:install
       - task: claude:install
       - task: macos:install
-      # VRFY-04 + D-10 + ROADMAP P5 success criterion #6:
       # packages:verify is the LAST FATAL task-call in the install pipeline.
       # A missing bin or missing /Applications/<App>.app fails the entire
       # `task install` with exit 1 -- no `success "install complete"` line
       # is printed when verify trips.
       - task: packages:verify
-      # CUTV-08 / D-11: install-time orphan warning -- non-fatal.
-      # links:reconcile in --warn-only mode emits orphans via warn() to
-      # stderr and ALWAYS exits 0 (internal to the task body), so install
-      # exits 0 even when an orphan is detected. The standalone
-      # `task links:reconcile` (default mode) keeps the non-zero-exit-on-
-      # orphans contract for CI use; this entry only invokes warn-only.
-      # No `ignore_error: true` needed here -- the task's mode dispatch
-      # swallows the non-zero exit internally.
+      # install-time orphan warning -- non-fatal. links:reconcile in
+      # --warn-only mode emits orphans via warn() to stderr and ALWAYS
+      # exits 0 (internal to the task body), so install exits 0 even when
+      # an orphan is detected. The standalone `task links:reconcile`
+      # (default mode) keeps the non-zero-exit-on-orphans contract for CI.
       - task: audit:links
         vars: { CLI_ARGS: "--warn-only" }
       - |

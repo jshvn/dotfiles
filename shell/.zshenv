@@ -1,82 +1,65 @@
 #!/bin/zsh
-# -----------------------------------------------------------------------------
-# .zshenv - Zsh environment initialization
-#
-# Sourced by: every zsh invocation (login, non-login, interactive, non-interactive)
-# Zsh startup order (login interactive example):
-#   1) ~/.zshenv
-#   2) ~/.zprofile   (login shells)
-#   3) ~/.zshrc      (interactive shells)
-#   4) ~/.zlogin     (after .zshrc for login shells)
-#
-# Logout order (login shells):
-#   - ~/.zlogout is read when a login shell exits
-#
-# Purpose:
-#   - Provide minimal, always-needed environment variables for all invocations.
-#   - Must be tiny and safe for non-interactive contexts (scripts, scp, cron).
-#
-# Typical contents / examples (safe for .zshenv):
-#   - Exports used by scripts and programs:
-#       export PATH="$HOME/bin:/usr/local/bin:$PATH"
-#       export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
-#   - Avoid: aliases, functions, plugin managers, compinit, or any heavy commands.
-#
-# See: Zsh manual -- Startup/Shutdown Files:
-#   http://zsh.sourceforge.net/Doc/Release/Files.html
-# -----------------------------------------------------------------------------
 
-# while not a strict requirement, loosely follow the XDG Base Directory Specification
-# https://specifications.freedesktop.org/basedir/latest/
+# =============================================================================
+# shell/.zshenv -- zsh environment initialization
+#
+# Purpose:      Minimal always-needed env (XDG dirs, ZDOTDIR, locale,
+#               DOTFILES_MACHINE) for ALL zsh invocations, including
+#               non-interactive contexts (scripts, scp, cron). Must stay tiny.
+# Depends on:   nothing.
+# Side effects: exports XDG_{CONFIG,DATA,STATE,CACHE}_HOME, XDG_{DATA,CONFIG}_DIRS,
+#               ZDOTDIR, HISTFILE, HIST_STAMPS, CLAUDE_CONFIG_DIR, EDITOR,
+#               VEDITOR, VISUAL, LANG, LC_ALL, BROWSER (gated), SHELL_SESSIONS_DISABLE,
+#               __CF_USER_TEXT_ENCODING, DOTFILES_MACHINE (gated); creates
+#               $HISTFILE parent dir; enables SHARE_HISTORY.
+# =============================================================================
+
+# XDG Base Directory Specification (preserve any pre-set value).
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 
-# setup data and config directories -- preserve any value the launching context
-# already set (system administrator may export XDG_DATA_DIRS site-wide).
+# Preserve any value the launching context already set (site-wide admins
+# may export XDG_DATA_DIRS).
 export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 export XDG_CONFIG_DIRS="${XDG_CONFIG_DIRS:-/etc/xdg}"
 
-# setup ZSH directory
 export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
 
-# zsh history file (set here, not .zshrc, so it's defined before
-# VS Code shell integration or other wrappers can write to the default path)
+# HISTFILE set here, not .zshrc, so it is defined before VS Code shell
+# integration or other wrappers can write to the default path.
 export HISTFILE="$XDG_DATA_HOME/zsh/history"
 export HIST_STAMPS="%Y-%m-%d %I:%M:%S"
 mkdir -p "${HISTFILE%/*}"
 setopt SHARE_HISTORY
 
-# Claude Code: use XDG-compliant config directory instead of ~/.claude
+# Claude Code: XDG-compliant config directory instead of ~/.claude.
 export CLAUDE_CONFIG_DIR="${XDG_CONFIG_HOME}/claude"
 
-# tool defaults (safe for non-interactive shells)
 export EDITOR="nano"
 export VEDITOR="code"
 export VISUAL="code"
 
-# Ensure UTF-8 locale for consistent Unicode character width calculation
-# This is critical for prompt width calculation in zsh
+# UTF-8 locale -- critical for prompt width calculation in zsh.
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
-# set browser to Firefox (some tools use $BROWSER) -- guard with executable
-# check so tools reading $BROWSER do not get a path-to-nothing on machines
-# without Firefox installed.
+# Guard with executable check so tools reading $BROWSER do not get a
+# path-to-nothing on machines without Firefox.
 [[ -x "/Applications/Firefox.app/Contents/MacOS/firefox" ]] && \
     export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
 
-# disable shell sessions to avoid creating .zsh/sessions/ directories and files
+# Disable shell sessions to avoid creating .zsh/sessions/ directories.
 export SHELL_SESSIONS_DISABLE=1
 
-# set CF_USER_TEXT_ENCODING to avoid locale warnings in some macOS terminal apps
+# Avoid locale warnings in some macOS terminal apps.
 export __CF_USER_TEXT_ENCODING=0x0:0:0
 
-# Read active machine from state surface (written by `task setup -- <name>`).
-# .zshenv is sourced by non-interactive contexts (cron, scp); degrade gracefully
-# on missing state (CF-05). .zshrc handles the missing-machine warning for
-# interactive shells. Do NOT loud-fail here -- a crash breaks cron/scp.
+# DOTFILES_MACHINE (written by `task setup -- <name>`). .zshenv is sourced
+# by non-interactive contexts (cron, scp); degrade gracefully on missing
+# state. .zshrc handles the missing-machine warning for interactive shells.
+# Do NOT loud-fail here -- a crash breaks cron/scp.
 if [[ -r "${XDG_STATE_HOME}/dotfiles/machine" ]]; then
     DOTFILES_MACHINE="$(<${XDG_STATE_HOME}/dotfiles/machine)"
     export DOTFILES_MACHINE

@@ -1,66 +1,32 @@
 version: '3'
 
 # =============================================================================
-# taskfiles/shell.yml -- shell-layer measurement tasks for the v2 shell stack
+# taskfiles/shell.yml -- shell-layer measurement + validation tasks
 #
-# Purpose:
-#   Hosts measurement / observability tasks that apply to the shell layer.
-#   Currently a single-task file; future plans may extend.
-#
-# Tasks:
-#   - startup-time -- SHEL-12 cold interactive startup gate via hyperfine
-#     (invoked as `task shell:startup-time`).
-#   - validate -- PORT-02 shell-layer validation (internal; joins the root
-#     `task validate` aggregator).
-#
-# Self-exemption (LINT-03a):
-#   `startup-time` is a measurement task; always-re-run is correct -- the
-#   cold-start number changes every invocation. The task is marked with
-#   `# lint-allow: cmds-without-status` so LINT-03a skips it.
-#
-# Dependencies:
-#   - hyperfine (Phase 5 core Brewfile). Existence check provides an actionable
-#     error when hyperfine is absent (useful before Phase 5 brews land).
-#   - jq (Phase 1 tool stack) -- parses hyperfine's JSON export.
-#   - bc, awk -- macOS-native; convert seconds to integer milliseconds.
-#
-# When the root Taskfile.yml includes this module, its DOTFILEDIR and
-# DOTFILES_MESSAGES vars take precedence over the local fallbacks.
+# Purpose:      Cold-start measurement (startup-time) + shell-layer
+#               validation (XDG dirs, ZDOTDIR, /etc/zshenv, DOTFILES_MACHINE).
+# Depends on:   taskfiles/helpers.yml; install/messages.zsh;
+#               hyperfine + jq + bc + awk.
+# Side effects: read-only -- emits check/cross output via messages.zsh.
 # =============================================================================
 
 includes:
   _: ./helpers.yml
 
-# =============================================================================
-# Vars block -- self-contained so direct invocation
-#   task -t taskfiles/shell.yml startup-time
-# works without the root Taskfile.yml being loaded.
-# =============================================================================
-
 vars:
   HOME: '{{.HOME}}'
 
-  # Resolve DOTFILEDIR from this taskfile's parent directory.
-  # dirname once: taskfiles/shell.yml -> taskfiles/ -> ../ -> repo root.
   DOTFILEDIR:
     sh: dirname "{{.TASKFILE_DIR}}"
 
   DOTFILES_MESSAGES: |
     source '{{.DOTFILEDIR}}/install/messages.zsh'
 
-# =============================================================================
-# Tasks
-# =============================================================================
-
 tasks:
-
-  # ---------------------------------------------------------------------------
-  # SHEL-12: cold interactive shell start gate (≤ 200ms target).
-  # ---------------------------------------------------------------------------
 
   # lint-allow: cmds-without-status
   startup-time:
-    desc: "Measure cold interactive zsh startup time (fails if > 200ms -- SHEL-12)"
+    desc: "Measure cold interactive zsh startup time (fails if > 200ms)"
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
@@ -77,22 +43,10 @@ tasks:
         ms=$(echo "$result * 1000" | bc | awk '{printf "%d\n", $0}')
         info "cold shell start: ${ms}ms (target: <= 200ms)"
         if (( ms > 200 )); then
-            error "shell start exceeds 200ms target (SHEL-12)"
+            error "shell start exceeds 200ms target"
             exit 1
         fi
         check "shell start within budget"
-
-  # ---------------------------------------------------------------------------
-  # PORT-02: shell-layer validation (XDG dirs, ZDOTDIR dir, /etc/zshenv ZDOTDIR
-  # line, DOTFILES_MACHINE state). Joins the root `task validate` aggregator.
-  #
-  # Implementation note (RESEARCH.md Landmine 4): does NOT use _:check-dir
-  # because that helper always exits 0 (the `&&` / `||` chain ends on `cross`
-  # which itself exits 0). Inlines the per-check `[[ -d ... ]]` test and
-  # tallies a `failures` counter, then `exit "$failures"` so the root
-  # aggregator's exit-code capture (Taskfile.yml:219) sees a real non-zero on
-  # any failed assertion. Mirrors the pattern at taskfiles/links.yml:382.
-  # ---------------------------------------------------------------------------
 
   validate:
     desc: "Validate shell layer (XDG dirs, ZDOTDIR dir, /etc/zshenv ZDOTDIR line, DOTFILES_MACHINE state)"
@@ -103,11 +57,7 @@ tasks:
         {{.DOTFILES_MESSAGES}}
         failures=0
 
-        # Four XDG base directories. REVW-04 / Plan 13-04: prior implementation
-        # inlined four 6-line `[[ -d ... ]] && check / cross + failures+=1`
-        # blocks (one per XDG dir); collapsed here into a tuple-pair loop so
-        # adding a 5th XDG var means appending one line to xdg_pairs, not
-        # cloning a 6-line block.
+        # XDG base directories.
         xdg_pairs=(
           "{{.XDG_CONFIG_HOME}}:XDG config home"
           "{{.XDG_DATA_HOME}}:XDG data home"
@@ -125,7 +75,6 @@ tasks:
           fi
         done
 
-        # ZDOTDIR directory ($XDG_CONFIG_HOME/zsh).
         if [[ -d "{{.ZDOTDIR}}" ]]; then
           check "ZDOTDIR directory exists"
         else
@@ -133,10 +82,9 @@ tasks:
           failures=$(( failures + 1 ))
         fi
 
-        # /etc/zshenv ZDOTDIR line (the PORT-01 milestone driver).
         # Embed the template var directly in the literal grep pattern so the
-        # status equivalent of this check never references a shell var
-        # (LINT-02 hygiene; mirrors the zdotdir task in taskfiles/links.yml).
+        # status equivalent never references a shell var (LINT-02 hygiene;
+        # mirrors the zdotdir task in taskfiles/links.yml).
         ZDOTDIR_EXPORT='export ZDOTDIR="{{.ZDOTDIR}}"'
         if [[ -f /etc/zshenv ]] && grep -qF "$ZDOTDIR_EXPORT" /etc/zshenv; then
           check "ZDOTDIR configured in /etc/zshenv"
@@ -145,9 +93,8 @@ tasks:
           failures=$(( failures + 1 ))
         fi
 
-        # DOTFILES_MACHINE state file (D-08 discretionary fresh-install check
-        # per RESEARCH.md `### PORT-02 -- shell:validate`): operator forgetting
-        # `task setup` would leave $DOTFILES_MACHINE unset in shell/.zshenv.
+        # Fresh-install check: operator forgetting `task setup` would leave
+        # $DOTFILES_MACHINE unset in shell/.zshenv.
         if [[ -r "{{.XDG_STATE_HOME}}/dotfiles/machine" ]]; then
           check "DOTFILES_MACHINE state file present"
         else

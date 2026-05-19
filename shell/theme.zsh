@@ -1,21 +1,22 @@
 #!/bin/zsh
 
-##############################
-###### Prompt Customization
-##############################
+# =============================================================================
+# shell/theme.zsh -- prompt + syntax-highlight + man-page + grc colour setup
+#
+# Purpose:      Customize PROMPT / RPROMPT (alanpeabody-derived); set
+#               highlight + man + grc colours.
+# Depends on:   OMZ git_prompt_status / git_prompt_info (sourced via
+#               antigen in .zshrc); eza, highlight, grc on PATH.
+# Side effects: sets EZA_CONFIG_HOME; unsets LS_COLORS; sets PROMPT,
+#               RPROMPT, ZSH_THEME_GIT_PROMPT_*; defines highlight alias;
+#               redefines man() with LESS_TERMCAP_* colour env; aliases
+#               supported commands through `grc --colour=auto`.
+# =============================================================================
 
-# set our ZSH theme customizations here
-# the following prompt elements are based on the "alanpeabody" oh-my-zsh theme, but are
-# customized to my liking and personal style. loosely based on ubuntu as well
-
-# alanpeabody theme reference:
-# https://github.com/ohmyzsh/ohmyzsh/blob/master/themes/alanpeabody.zsh-theme
-
-# set eza config directory and unset any LS_COLORS that may interfere
 export EZA_CONFIG_HOME="$XDG_CONFIG_HOME/eza"
 unset LS_COLORS
 
-# Use native zsh prompt escapes (%F{color}...%f) for reliable width calculation
+# Native zsh prompt escapes (%F{color}...%f) for reliable width calculation.
 local user='%F{green}%n@%m%f'
 local pwd='%F{blue}%~%f'
 local return_code='%(?..%F{red}%? ↵%f)'
@@ -41,19 +42,10 @@ ZSH_THEME_GIT_PROMPT_STASHED="%F{blue} ⚑"
 PROMPT="${user}:${pwd}$ "
 RPROMPT="${return_code} ${git_branch} ${time}"
 
-##############################
-###### Syntax highlighting
-##############################
-
-# set default highlighting colors
 alias highlight="highlight --out-format=xterm256 --style=duotone-dark-sky"
 
-##############################
-###### Man pages
-##############################
-
-# set default colors for man pages
-# some useful information this here: https://unix.stackexchange.com/questions/108699/documentation-on-less-termcap-variables
+# Colourise man pages. LESS_TERMCAP_* reference:
+# https://unix.stackexchange.com/questions/108699
 man() {
   env \
     LESS_TERMCAP_mb=$(printf "\e[1;34m") \
@@ -66,13 +58,7 @@ man() {
     man "$@"
 }
 
-##############################
-###### Miscellaneous commands
-##############################
-
 if [[ "$TERM" != dumb ]] && (( $+commands[grc] )) ; then
-
-  # Supported commands
   cmds=(
     df \
     diff \
@@ -88,13 +74,11 @@ if [[ "$TERM" != dumb ]] && (( $+commands[grc] )) ; then
     uptime \
   );
 
-  # Set alias for available commands.
   for cmd in $cmds ; do
     if (( $+commands[$cmd] )) ; then
       alias $cmd="grc --colour=auto $(whence $cmd)"
     fi
   done
 
-  # Clean up variables
   unset cmds cmd
 fi

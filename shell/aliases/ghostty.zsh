@@ -1,16 +1,16 @@
 #!/bin/zsh
-# shell/aliases/ghostty.zsh -- Ghostty launcher alias.
+
+# =============================================================================
+# shell/aliases/ghostty.zsh -- Ghostty launcher wrapper
 #
-# Purpose: launch the Ghostty terminal binary from the shell, gated on
-# features.ghostty via _dotfiles_feature per D-07. Replaces v1
-# zsh/aliases/common/general.zsh:40 (the bare `g` alias, always loaded
-# in v1, broken on machines without Ghostty installed).
-#
-# Why wrapper-function (D-07) rather than source-time gate (D-08): single
-# alias. The wrapper-function gate surfaces a helpful stderr message on
-# machines without the feature. The explicit positional-args forwarder
-# in the body is needed because zsh aliases pass remaining argv
-# automatically but a function does not.
+# Purpose:      Launch the Ghostty terminal binary; gated on
+#               features.ghostty via the wrapper-function pattern (single
+#               alias, so the helpful stderr message wins over the
+#               bulk-loop source-time gate).
+# Depends on:   shell/functions/_dotfiles_require_feature.zsh.
+# Side effects: defines function g(); execs Ghostty.app/MacOS/ghostty
+#               on feature-on machines.
+# =============================================================================
 
 function g() {
     _dotfiles_require_feature ghostty || return 1

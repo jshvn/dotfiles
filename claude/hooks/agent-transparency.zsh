@@ -1,8 +1,13 @@
 #!/bin/zsh
-# PreToolUse hook: log which subagent is being delegated to for conversation transparency.
-# Lifecycle event: PreToolUse on the Agent tool.
-# Output: stdout log line read by the Claude Code transcript.
-# Never blocks (always exits 0).
+
+# =============================================================================
+# claude/hooks/agent-transparency.zsh -- PreToolUse hook: log Agent delegation
+#
+# Purpose:      Log which subagent is being delegated to (read by the
+#               Claude Code transcript). Never blocks (always exits 0).
+# Depends on:   claude/hooks/lib.zsh; jq.
+# Side effects: writes one log line to stdout per Agent tool invocation.
+# =============================================================================
 
 set -euo pipefail
 source "${0:A:h}/lib.zsh"
@@ -15,10 +20,10 @@ main() {
   description=$(hook::extract '.tool_input.description // "no description"')
   cwd=$(hook::extract '.cwd // ""')
 
-  # Resolve agent.md from known locations (project, user global, plugin)
+  # Resolve agent.md from known locations (project, user global, plugin).
   agent_md=""
   if [[ "$agent_type" != "general-purpose" ]]; then
-    # Check for plugin-scoped agents (e.g. "everything-claude-code:rust-reviewer")
+    # Plugin-scoped agents (e.g. "everything-claude-code:rust-reviewer").
     if [[ "$agent_type" == *:* ]]; then
       local plugin="${agent_type%%:*}"
       local agent_name="${agent_type#*:}"
@@ -28,7 +33,7 @@ main() {
         [[ -f "$candidate" ]] && { agent_md="$candidate"; break; }
       done
     else
-      # Non-plugin agents: check project then global
+      # Non-plugin agents: project then global.
       for base in "${cwd}/.claude/agents" "${XDG_CONFIG_HOME}/claude/agents"; do
         for candidate in "${base}/${agent_type}.md" "${base}/${agent_type}/agent.md"; do
           [[ -f "$candidate" ]] && { agent_md="$candidate"; break 2; }
