@@ -8,7 +8,11 @@ Greenfield rewrite of the personal dotfiles repo at `/Users/josh/Git/personal/do
 
 A single declarative manifest per machine makes the complete install state legible to both humans and AI agents — no inference from filename suffixes, no hidden profile branching, no hostname-based guessing.
 
-## Current Milestone: v2.1 Cleanup
+## Current Milestone: between milestones
+
+v2.1 Cleanup shipped 2026-05-19 (6 phases / 24 plans / 30 requirements satisfied). Next milestone (v2.2) to be defined via `/gsd-new-milestone`. A full PROJECT.md evolution review (move shipped Active requirements to Validated, audit Out of Scope, refresh Context) is recommended at `/gsd-new-milestone` time; the v2.1 context below is preserved for reference.
+
+### Previously: v2.1 Cleanup (shipped 2026-05-19)
 
 **Goal:** Make the v2 dotfiles repo lean, correct, and self-contained — port any silently-dropped v1 features, remove v1 entirely, redesign the public task surface, eliminate code/comment bloat and dead code, and ensure the test surface validates what each component actually delivers.
 

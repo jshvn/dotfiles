@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.1
-milestone_name: Milestone Phases
-status: Phase 14 shipped (pushed only; personal repo, no PR)
-stopped_at: Phase 14 context gathered
-last_updated: "2026-05-19T05:42:56.710Z"
-last_activity: 2026-05-19 -- Phase 14 pushed to origin (no PR)
+milestone_name: Cleanup
+status: Awaiting next milestone
+stopped_at: v2.1 milestone closed; awaiting /gsd-new-milestone
+last_updated: "2026-05-19T05:50:36.144Z"
+last_activity: 2026-05-19 — Milestone v2.1 completed and archived
 progress:
   total_phases: 14
   completed_phases: 6
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** A single declarative manifest per machine makes the complete install state legible to both humans and AI agents — no inference from filename suffixes, no hidden profile branching, no hostname-based guessing.
-**Current focus:** Phase 14 — comment-doc-trim
+**Current focus:** Between milestones — v2.1 Cleanup shipped 2026-05-19; awaiting /gsd-new-milestone for v2.2
 
 ## Current Position
 
-Phase: 14 — COMPLETE
-Plan: 1 of 3
-Status: Phase 14 shipped (pushed only; personal repo, no PR)
-Last activity: 2026-05-19 -- Phase 14 pushed to origin (no PR)
+Phase: Milestone v2.1 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-19 — Milestone v2.1 completed and archived
 
 ## Performance Metrics
 
@@ -101,3 +101,7 @@ Items acknowledged and carried forward from previous milestone close:
 Last session: 2026-05-19T02:37:26.116Z
 Stopped at: Phase 14 context gathered
 Resume file: .planning/phases/14-comment-doc-trim/14-CONTEXT.md
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
