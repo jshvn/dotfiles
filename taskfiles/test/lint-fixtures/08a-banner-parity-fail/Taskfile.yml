@@ -3,7 +3,7 @@ version: '3'
 # =============================================================================
 # taskfiles/test/lint-fixtures/08a-banner-parity-fail/Taskfile.yml
 #
-# Positive fixture for LINT-08 (D-13): default:'s cmd block is missing a public
+# Positive fixture for LINT-08: default:'s cmd block is missing a public
 # top-level task. The `mypublic:` task is public (no internal: true marker)
 # but is NOT mentioned in default:'s cmd block. LINT-08 must fire.
 #

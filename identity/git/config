@@ -6,7 +6,7 @@
 #   the unconditional [include] path = server-include.config block; that file
 #   is materialized by `task identity:server-include` when
 #   features.server-include = true, and is absent (silent no-op) on
-#   workstations (Pattern 2 / D-08).
+#   workstations (silent no-op pattern).
 #
 # Adding a new workstation identity: add a matching [includeIf
 # "gitdir/i:~/git/<name>/"] block below (mirrors the personal/work pattern).

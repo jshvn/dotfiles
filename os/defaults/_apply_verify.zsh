@@ -8,7 +8,7 @@
 #   and previously hand-rolled near-identical apply_<concern> / verify_<concern>
 #   loops that differed only in the array name, the killall target, and the
 #   scope flag. This file extracts those loops into two parameterized helpers
-#   (REVW-04 / D-09 rule-of-three; 5 sites > threshold).
+#   (rule-of-three; 5 sites > threshold).
 #
 # Caller:
 #   Each os/defaults/<concern>.zsh file sources this helper, then implements

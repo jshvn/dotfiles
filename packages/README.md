@@ -6,7 +6,7 @@ baseline -- the bulk of per-machine variation lives in
 (typed sub-table: `formulae`, `casks`, `mas`). v1 ships two bundles only
 (`core.rb`, `gui.rb`) -- adding `dev.rb`/`ops.rb`/`personal.rb` is a future
 extension when a tool is wanted on two or more machines and has no
-per-machine variation (D-02 minimal-bundles philosophy). macOS-only in v1;
+per-machine variation (minimal-bundles philosophy). macOS-only in v1;
 the flat layout (no `packages/brew/` subdirectory) collapses when Linux is
 in scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
 
@@ -15,7 +15,7 @@ in scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
 - `core.rb` -- server-safe CLI baseline. Every machine includes this
   (every machine TOML's `bundles = [...]` array contains `"core"`).
   Roughly 30 formulas: shell tooling (zsh, antigen, go-task; antidote
-  was evaluated in Phase 3 D-01 and reverted -- see `../shell/.zshrc:75`
+  was evaluated and reverted -- see `../shell/.zshrc:75`
   comment for rationale), text and search (jq, yq, ripgrep-substitutes
   via bat/eza/fd, grep, glow,
   highlight), system inspectors (htop, bottom, fastfetch, onefetch),
@@ -34,9 +34,9 @@ in scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
   sub-table. `formulae` accepts bare strings (default verify) or
   `{ name, verify }` objects (override). `casks` takes `{ name }`
   objects -- no per-entry `verify` field required (data-driven from
-  `brew info` post-Gap-2 pivot). `mas` REQUIRES `{ id, name }` objects
+  `brew info`). `mas` REQUIRES `{ id, name }` objects
   (id drives install; name drives the `/Applications/<name>.app`
-  verify -- D-06).
+  verify).
 
 ## Adding a pattern
 
@@ -44,12 +44,12 @@ in scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
   machines AND has no per-machine variation. Create
   `packages/<purpose>.rb`; add `<purpose>` to the relevant machines'
   `bundles = [...]`. v1 ships `core` and `gui` only -- adding `dev` or
-  `ops` is acknowledged as a future extension (door open per D-02);
+  `ops` is acknowledged as a future extension (minimal-bundles door open);
   premature bundle creation makes the per-machine-extras-as-catalog UX
   feel split.
 - **A per-machine package.** Edit
   `../manifests/machines/<name>.toml`
-  `[packages.brew.extra_packages]` typed sub-table (D-03): `formulae`
+  `[packages.brew.extra_packages]` typed sub-table: `formulae`
   (bare strings OR `{ name, verify }` objects), `casks` (bare
   `{ name }` objects -- no verify field required), `mas` (REQUIRED
   `{ id, name }` objects). The resolver concat+dedupes each sub-array
@@ -82,9 +82,9 @@ For the canonical schema-level reference see `../docs/MANIFEST.md`
 The `name` field in each `{ id, name }` MAS entry doubles as both the
 install-list display name and the verify target
 (`/Applications/<name>.app` existence check). This is the one place
-per-entry verify metadata is still authored in v2 -- D-06 preserved.
+per-entry verify metadata is still authored in v2.
 
-**Failure semantics.** Verify is hard-fail at the install gate per D-10:
+**Failure semantics.** Verify is hard-fail at the install gate:
 `task install`'s final step is `task packages:verify`; a missing artifact
 fails the entire `task install` with exit 1 after printing the full
 check/cross table. The recovery path is "fix the manifest or the upstream
@@ -94,14 +94,14 @@ formula/cask, re-run `task install`." No `--no-verify` escape hatch.
 the `bin:` prefix convention used in earlier Phase 5 plans are retired.
 Authors of new bundles or machine extras do NOT write per-line verify
 annotations -- the `brew info` bulk path is authoritative and the
-annotation metadata went stale on upstream renames (Gap 2 surface area,
-discovered during Phase 5 UAT).
+annotation metadata went stale on upstream renames -- a surface area
+discovered during earlier UAT.
 
 ## Composed Brewfile cache
 
 The per-machine composed Brewfile lives at
-`$XDG_CACHE_HOME/dotfiles/Brewfile` (D-08; CF-07 -- XDG cache, not
-state, because it is cheaply regenerated). The composer (Plan 03) reads
+`$XDG_CACHE_HOME/dotfiles/Brewfile` (XDG cache, not state, because it is
+cheaply regenerated). The composer reads
 the active machine's `packages.brew.bundles` array from
 `$XDG_STATE_HOME/dotfiles/resolved.json`, concatenates each
 `packages/<bundle>.rb` in declared order, then appends the rendered

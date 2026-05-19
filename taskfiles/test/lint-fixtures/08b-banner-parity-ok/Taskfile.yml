@@ -3,7 +3,7 @@ version: '3'
 # =============================================================================
 # taskfiles/test/lint-fixtures/08b-banner-parity-ok/Taskfile.yml
 #
-# Negative fixture for LINT-08 (D-13): default:'s cmd block names every public
+# Negative fixture for LINT-08: default:'s cmd block names every public
 # top-level task. The `hidden` task is internal: true and therefore exempt
 # from the parity check.
 #

@@ -39,7 +39,7 @@ claude/skills/gsd-*/
 claude/hooks/gsd-*
 ```
 
-## Symlink Shape (D-01)
+## Symlink Shape
 
 The `taskfiles/links.yml` `claude:` sub-task creates 13 symlinks:
 

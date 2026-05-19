@@ -4,7 +4,7 @@ version: '3'
 # taskfiles/lint.yml -- lint suite for v2 dotfiles conventions
 #
 # Purpose:      Enforce LINT-01..08 structural correctness rules that prevent
-#               recurring v1 bug classes. See CLAUDE.md §Lint rule catalogue
+#               recurring bug classes. See CLAUDE.md §Lint rule catalogue
 #               for the rule definitions.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh; yq + ggrep.
 # Side effects: read-only -- emits check/cross output via messages.zsh.
@@ -201,7 +201,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   banner-parity:
-    desc: "Banner parity check: default:'s cmd block lists every public top-level task (LINT-08 -- D-13)"
+    desc: "Banner parity check: default:'s cmd block lists every public top-level task (LINT-08)"
     internal: true
     cmds:
       - |

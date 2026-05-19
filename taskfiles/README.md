@@ -22,12 +22,12 @@ task is idempotent (`status:` block) and every symlink goes through
   LINT-01..LINT-07.
 - **Phase 3 (real).** `links.yml` -- shell symlinks via `_:safe-link` plus
   the zdotdir step (antigen is the live plugin manager; antidote was
-  evaluated in Phase 3 D-01 and reverted -- see `shell/.zshrc:75` comment
+  evaluated and reverted -- see `shell/.zshrc:75` comment
   for rationale). `shell.yml` exposes `task shell:startup-time` (SHEL-12
   cold-start gate); `shell:validate` is internal-only (invoked by root
   `task validate`).
 - **Smoke-test fixtures.** `test/` -- lint-fixture taskfiles consumed by
-  `task lint:test-fixtures` (Phase 2 D-08).
+  `task lint:test-fixtures`.
 
 ## Adding a pattern
 
@@ -57,7 +57,7 @@ task is idempotent (`status:` block) and every symlink goes through
 
 - `../Taskfile.yml` -- root taskfile, includes block, install/update
   unification (`task install` is the canonical entry; `task update` is
-  retired per D-10).
+  retired).
 - `helpers.yml` -- symlink helpers and command-availability checks.
 - `../docs/MANIFEST.md` -- manifest schema; many tasks consume
   `resolved.json` via `fromJson`.

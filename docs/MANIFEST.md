@@ -102,7 +102,7 @@ supply a value -- silent inheritance of required fields is the drift class being
 | `platform.arch` | string | `"arm64"` or `"x86_64"`; resolver auto-detects via `uname -m` when absent |
 | `packages.brew.extra_packages.formulae` | array of strings or `{name, verify}` objects | Per-machine formula extras; concat+dedupe across defaults + machine |
 | `packages.brew.extra_packages.casks` | array of `{name}` objects | Per-machine cask extras; the legacy `verify` field is optional and ignored post-Gap-2 pivot (see ## Verify model) |
-| `packages.brew.extra_packages.mas` | array of `{id, name}` objects | Per-machine MAS app extras; `name` doubles as the `.app` verify name (D-06) |
+| `packages.brew.extra_packages.mas` | array of `{id, name}` objects | Per-machine MAS app extras; `name` doubles as the `.app` verify name |
 
 ### Unknown keys
 
@@ -372,7 +372,7 @@ per-entry authorship cost entirely.
 each `{ id, name }` object doubles as both the install-list display name (drives `mas install
 <id>` UX) and the verify target (`/Applications/<name>.app` existence check). This is the one
 place per-entry verify metadata is still authored in v2, because Apple does not expose an
-authoritative artifacts list the way Homebrew does. D-06 preserved.
+authoritative artifacts list the way Homebrew does.
 
 The task body lives in `taskfiles/packages.yml :: packages:verify` (rewritten in Plan 05-08).
 See that task for the implementation details.
@@ -482,7 +482,7 @@ as of Phase 1. Each subsequent phase extends this table with the flags it consum
 | `one-password-signing` | Phase 4 | Enables git commit signing via 1Password op-ssh-sign | `false` |
 | `claude-marketplace` | Phase 7 | Installs Claude marketplace plugins | `true` |
 | `macos-dock` | Phase 6 | Runs `os/defaults/dock.zsh` | `false` |
-| `macos-finder` | Phase 3 + Phase 6 | Gates `shell/aliases/finder.zsh` (P3 D-07) + runs `os/defaults/finder.zsh` (P6 D-01 same-flag-two-consumers) | `false` |
+| `macos-finder` | shell + os | Gates `shell/aliases/finder.zsh` + runs `os/defaults/finder.zsh` (same-flag-two-consumers) | `false` |
 | `macos-input` | Phase 6 | Runs `os/defaults/input.zsh` | `false` |
 | `macos-screenshots` | Phase 6 | Runs `os/defaults/screenshots.zsh` | `false` |
 | `macos-security` | Phase 6 | Runs `os/defaults/security.zsh` | `false` |

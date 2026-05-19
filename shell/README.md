@@ -14,11 +14,11 @@ see `../.planning/ROADMAP.md` for the deferred migration cost.
   `.zlogout` on login-shell exit.
 - `theme.zsh` -- alanpeabody-based prompt; consumed by `.zshrc` after
   antigen loads `ohmyzsh/ohmyzsh git` (the v1 prompt is small, fast, and
-  not on life support; no Starship swap in v1). antidote was evaluated in
-  Phase 3 D-01 and reverted; see `.zshrc:75` comment for rationale.
+  not on life support; no Starship swap in v1). antidote was evaluated
+  and reverted; see `.zshrc:75` comment for rationale.
 - `aliases/<topic>.zsh` -- flat layout, one topic per file. Gating
-  happens inside the file: wrapper functions for 1-3 aliases (D-07);
-  source-time `return 0` for bulk-alias loops (D-08).
+  happens inside the file: wrapper functions for 1-3 aliases;
+  source-time `return 0` for bulk-alias loops.
 - `functions/<name>.zsh` -- flat layout, one function per file; the
   filename equals the function name. `_dotfiles_feature` is the lazy
   manifest reader callers use to test feature flags.
@@ -27,8 +27,8 @@ see `../.planning/ROADMAP.md` for the deferred migration cost.
 
 - **An alias.** Create `aliases/<topic>.zsh`. If the alias is GUI-coupled
   or identity-coupled, gate inside the file: wrapper-function gate for
-  1-3 aliases (D-07) -- each function calls `_dotfiles_feature <name>`
-  before delegating; source-time gate for bulk-alias loops (D-08) --
+  1-3 aliases -- each function calls `_dotfiles_feature <name>`
+  before delegating; source-time gate for bulk-alias loops --
   prepend `[[ "$(_dotfiles_feature <name>)" == "true" ]] || return 0`.
 - **A function.** Create `functions/<name>.zsh`; the filename equals the
   function name. Add a docstring as an inline comment on the

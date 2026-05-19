@@ -10,7 +10,7 @@ scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
 ## Purpose
 
 Five `defaults/<concern>.zsh` sourced libraries declare a single tuple-array
-source of truth per concern (D-02: `(domain, key, expected_value, write_type)`
+source of truth per concern (`(domain, key, expected_value, write_type)`
 rows). Each library exposes `apply_<concern>` (iterates the tuples and runs
 `defaults write`) and `verify_<concern>` (iterates the same tuples and reads
 back, printing `check`/`cross` via `../install/messages.zsh` and returning
@@ -27,7 +27,7 @@ v1 task to re-apply on every install.
 
 - `defaults/dock.zsh` -- Dock keys (gated on `macos-dock`)
 - `defaults/finder.zsh` -- Finder keys (gated on `macos-finder`; shared
-  with `../shell/aliases/finder.zsh` per D-01 same-flag-two-consumers --
+  with `../shell/aliases/finder.zsh` as same-flag-two-consumers --
   any machine that wants the Finder aliases also wants the Finder
   defaults applied, and vice versa)
 - `defaults/input.zsh` -- Keyboard / trackpad keys (gated on `macos-input`)
@@ -41,7 +41,7 @@ v1 task to re-apply on every install.
 - **A new defaults concern.** Create `defaults/<concern>.zsh` with the
   `<CONCERN>_DEFAULTS` tuple array (rows of
   `(domain, key, expected_value, write_type)`) plus `apply_<concern>` and
-  `verify_<concern>` functions -- one source of truth per concern (D-02).
+  `verify_<concern>` functions -- one source of truth per concern.
   Add `features.macos-<concern>` to `../manifests/defaults.toml`
   `[features]` with `false`. Add a `macos:defaults:<concern>` task to
   `../taskfiles/macos.yml` (sources the script; gates on the feature flag

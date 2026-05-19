@@ -20,7 +20,7 @@ so `_:safe-link` calls are straightforward.
 ## How to add a tool config
 
 1. Drop the config file at `configs/<tool>/<filename>` -- the basename must
-   match the destination basename (D-06: match-destination-filename rule).
+   match the destination basename (match-destination-filename rule).
 2. Add `configs/<tool>/README.md` documenting purpose, files, symlink
    destination, and feature gate.
 3. Register a `_:safe-link` entry in `taskfiles/links.yml` under the `configs:`
@@ -31,17 +31,17 @@ so `_:safe-link` calls are straightforward.
 
 ## Conventions
 
-- **Match-destination-filename (D-06):** The source file basename inside
+- **Match-destination-filename:** The source file basename inside
   `configs/<tool>/` must equal the destination basename so `_:safe-link`
   source and target share the same filename. When the v1 source uses a
   different name, rename in transit during the port (e.g. v1 `tlrc.toml`
   becomes `configs/tlrc/config.toml`; v1 `eza_style.yaml` becomes
   `configs/eza/theme.yaml`).
 
-- **Per-tool subdirectory always (D-05):** Even single-file tools get their
+- **Per-tool subdirectory always:** Even single-file tools get their
   own subdirectory (never a flat file directly under `configs/`). This keeps
   the layout extensible when a tool adds a second config file.
 
-- **motd runtime-read exception (D-08):** `configs/motd/` files are read
+- **motd runtime-read exception:** `configs/motd/` files are read
   directly by `shell/functions/motd.zsh` at render time. No symlink is
   registered for motd. The subdirectory exists for structural symmetry only.

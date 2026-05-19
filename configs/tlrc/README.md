@@ -11,7 +11,7 @@ terminal theme.
   `~/.config/tlrc/config.toml` at launch.
 
 Note: renamed in transit from v1 `tlrc.toml` to `config.toml` per the
-match-destination-filename rule (D-06). The destination path
+match-destination-filename rule. The destination path
 `~/.config/tlrc/config.toml` dictates the basename; the source is renamed
 to match when porting from v1.
 
@@ -28,6 +28,6 @@ Always on -- no feature flag. Every machine that installs `tlrc` (declared in
 
 ## References
 
-- `taskfiles/links.yml` -- `configs:` sub-task registers the symlink (Plan 06)
-- `manifests/defaults.toml` -- D-06 rename-in-transit convention documented in
-  `CLAUDE.md` and the phase 7 context
+- `taskfiles/links.yml` -- `configs:` sub-task registers the symlink
+- `manifests/defaults.toml` -- rename-in-transit convention documented in
+  `CLAUDE.md`

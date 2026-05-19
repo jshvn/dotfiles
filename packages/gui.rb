@@ -18,7 +18,7 @@
 #     artifact paths directly from `brew info --installed --json=v2`.
 #   - Beyond the two lines below, GUI apps live in per-machine
 #     `manifests/machines/<name>.toml` `[packages.brew.extra_packages.casks]`
-#     -- per D-02 minimal-bundles philosophy (Plan 02 migrations).
+#     -- per minimal-bundles philosophy.
 #   - The 1Password command-line tool is NOT here -- it lives in core.rb as a
 #     binary-only cask (`cask '1password-cli'`; no /Applications/.app bundle).
 

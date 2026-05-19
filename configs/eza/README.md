@@ -11,7 +11,7 @@ categories (permissions, sizes, Git status, and file-type groups).
   at launch.
 
 Note: renamed in transit from v1 `eza_style.yaml` to `theme.yaml` per the
-match-destination-filename rule (D-06). The eza CLI looks for the file at
+match-destination-filename rule. The eza CLI looks for the file at
 `~/.config/eza/theme.yaml`; the source is renamed to match when porting from v1.
 
 ## Symlink destination
@@ -27,6 +27,6 @@ Always on -- no feature flag. Every machine that installs `eza` (declared in
 
 ## References
 
-- `taskfiles/links.yml` -- `configs:` sub-task registers the symlink (Plan 06)
-- `manifests/defaults.toml` -- D-06 rename-in-transit convention documented in
-  `CLAUDE.md` and the phase 7 context
+- `taskfiles/links.yml` -- `configs:` sub-task registers the symlink
+- `manifests/defaults.toml` -- rename-in-transit convention documented in
+  `CLAUDE.md`

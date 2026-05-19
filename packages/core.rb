@@ -20,15 +20,14 @@
 #     default appdir (/Applications).
 #
 # Notable surgery vs v1 install/Brewfile.rb:
-#   - Carries forward `brew 'antigen'` from v1 (v2 reverted Phase 3 D-01's
+#   - Carries forward `brew 'antigen'` from v1 (v2 reverted the prior
 #     antidote experiment because antidote's static-bundle did not replicate
 #     antigen's `antigen use ohmyzsh/ohmyzsh` lib-loading; the prompt and
 #     several OMZ helpers broke without it).
 #   - Adds  `cask '1password-cli'` (binary-only cask: Homebrew lists this as a
 #                                   cask that ships the `op` binary to
 #                                   /opt/homebrew/bin -- no /Applications/.app
-#                                   bundle; gap-1 fix preserved, bin: verify
-#                                   convention retired by gap-2 pivot).
+#                                   bundle).
 
 brew 'zsh'
 brew 'go-task'

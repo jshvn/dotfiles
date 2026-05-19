@@ -138,7 +138,7 @@ Brewfile.rb.lock.json
 # Task (go-task) checksum cache
 .task/
 
-# GSD-installer runtime artifacts (D-02). Repo owns hand-authored Claude
+# GSD-installer runtime artifacts. Repo owns hand-authored Claude
 # assets only; gsd-* artifacts are deployed by `npx get-shit-done-cc`.
 claude/agents/gsd-*.md
 claude/commands/gsd-*

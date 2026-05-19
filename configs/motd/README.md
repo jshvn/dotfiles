@@ -20,7 +20,7 @@ directly from `${DOTFILEDIR}/configs/motd/`. The motd function uses
 `${DOTFILEDIR}/configs/motd/motd_tron.txt` and
 `${DOTFILEDIR}/configs/motd/motd_sysinfo.jsonc`.
 
-This is the D-08 exception: motd files live under `configs/motd/` for
+This is the runtime-read exception: motd files live under `configs/motd/` for
 structural symmetry with the other tool subdirectories but require no symlink
 because the shell function reads the repo path directly.
 

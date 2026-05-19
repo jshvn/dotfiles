@@ -7,7 +7,7 @@
 #                   explicitly declare meta.description, platform.os, features,
 #                   packages.brew.bundles, identity.git, identity.ssh. Defaults
 #                   supply shape so the resolver always produces a complete
-#                   resolved.json (D-05 hybrid pattern), but the validator
+#                   resolved.json (hybrid pattern), but the validator
 #                   still requires the machine file to declare every required
 #                   field on its own (drift guard).
 
@@ -27,7 +27,7 @@ one-password-ssh = false
 one-password-signing = false   # gates git commit signing via 1Password op-ssh-sign
 claude-marketplace = true
 macos-dock = false        # gates os/defaults/dock.zsh + macos:defaults:dock (P6)
-macos-finder = false      # gates shell/aliases/finder.zsh (P3) + os/defaults/finder.zsh (P6) -- D-01 same-flag-two-consumers
+macos-finder = false      # gates shell/aliases/finder.zsh + os/defaults/finder.zsh (same-flag-two-consumers)
 macos-input = false       # gates os/defaults/input.zsh + macos:defaults:input (P6)
 macos-screenshots = false # gates os/defaults/screenshots.zsh + macos:defaults:screenshots (P6)
 macos-security = false    # gates os/defaults/security.zsh + macos:defaults:security (P6)
@@ -40,13 +40,13 @@ server-include = false    # gates identity:server-include (materializes ~/.confi
 bundles = ["core"]
 
 [packages.brew.extra_packages]
-# Typed sub-table per D-03. Resolver concat+dedupes each sub-array
+# Typed sub-table. Resolver concat+dedupes each sub-array
 # independently with the active machine's extras.
-#   formulae -- bare strings OR { name, verify } objects (D-05)
+#   formulae -- bare strings OR { name, verify } objects
 #   casks    -- { name } objects required (verify field retained as optional
 #               metadata for backward-compat; ignored by dedupe semantics;
-#               brew info drives post-install verify post-Gap-2 pivot)
-#   mas      -- { id, name } objects ONLY (D-06 -- name doubles as verify)
+#               brew info drives post-install verify)
+#   mas      -- { id, name } objects ONLY (name doubles as verify)
 formulae = []
 casks    = []
 mas      = []

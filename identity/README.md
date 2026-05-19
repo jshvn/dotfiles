@@ -16,7 +16,7 @@ identity is selected by a single symlink swap rather than profile-file-exec.
 - `git/config` -- main git config; symlinked to `~/.config/git/config`. Carries
   the workstation `[includeIf "gitdir/i:~/git/personal/"]` and
   `[includeIf "gitdir/i:~/git/work/"]` blocks plus the universal
-  `[include] path = server-include.config` hook (D-08; absent on workstations
+  `[include] path = server-include.config` hook (absent on workstations
   is a silent no-op).
 - `git/ignore` -- global gitignore, referenced via `core.excludesfile = ignore`.
 - `git/identities/<name>` -- flat per-identity overlays. Workstation overlays
@@ -24,19 +24,19 @@ identity is selected by a single symlink swap rather than profile-file-exec.
   overlays are loaded via the `server-include.config` wildcard that
   `taskfiles/identity.yml` materializes when `features.server-include = true`.
 - `ssh/config` -- main SSH config; symlinked to `~/.ssh/config`. Contains a
-  single `Include ~/.ssh/identities/active` directive (D-10); no `Match exec`
+  single `Include ~/.ssh/identities/active` directive; no `Match exec`
   blocks. Identity is resolved at install time, not connection time.
 - `ssh/identities/<name>` -- flat per-identity host configs; deployed at
-  `~/.ssh/identities/<name>` on every machine (D-11). Swapping identities is
+  `~/.ssh/identities/<name>` on every machine. Swapping identities is
   a relink, not an edit.
-- `ssh/identities/active` -- symlink to the manifest-selected identity file
-  (D-12). Created by `taskfiles/identity.yml`'s ssh task.
+- `ssh/identities/active` -- symlink to the manifest-selected identity file.
+  Created by `taskfiles/identity.yml`'s ssh task.
 - `ssh/keys/<name>.pub` -- public keys only. Private keys NEVER enter the
   repo (IDNT-06); the `keys/.gitignore` allowlist (`*` + `!*.pub` +
   `!.gitignore`) is the enforcement.
 - `ssh/cloudflared.zsh` -- ProxyCommand wrapper invoked by the personal
   identity's `ProxyCommand` directive for `*.jgrid.net` and `*.plex.me` hosts.
-  Deployed on every machine (D-14) even though only the personal identity
+  Deployed on every machine even though only the personal identity
   references it.
 
 ## Adding a pattern
