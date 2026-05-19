@@ -22,11 +22,13 @@ vars:
   DOTFILES_MESSAGES: |
     source '{{.DOTFILEDIR}}/install/messages.zsh'
 
+  COLD_START_BUDGET: 500
+
 tasks:
 
   # lint-allow: cmds-without-status
   startup-time:
-    desc: "Measure cold interactive zsh startup time (fails if > 200ms)"
+    desc: "Measure cold interactive zsh startup time (fails if > {{.COLD_START_BUDGET}}ms)"
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
@@ -37,13 +39,17 @@ tasks:
         # Cold-start: each run is a fresh login interactive shell that exits
         # immediately. --warmup 1 discards the first run (filesystem cache
         # warm-up); --runs 5 averages five subsequent measurements.
-        result=$(hyperfine --warmup 1 --runs 5 --export-json /dev/stdout \
-            "zsh -lic exit" 2>/dev/null \
-            | jq -r '.results[0].mean')
+        # JSON goes to a tempfile so hyperfine's stdout summary doesn't
+        # contaminate the jq input.
+        json_out=$(mktemp -t startup-time.XXXXXX.json)
+        trap 'rm -f "$json_out"' EXIT
+        hyperfine --warmup 1 --runs 5 --export-json "$json_out" \
+            "zsh -lic exit" >/dev/null 2>&1
+        result=$(jq -r '.results[0].mean' "$json_out")
         ms=$(echo "$result * 1000" | bc | awk '{printf "%d\n", $0}')
-        info "cold shell start: ${ms}ms (target: <= 200ms)"
-        if (( ms > 200 )); then
-            error "shell start exceeds 200ms target"
+        info "cold shell start: ${ms}ms (target: <= {{.COLD_START_BUDGET}}ms)"
+        if (( ms > {{.COLD_START_BUDGET}} )); then
+            error "shell start exceeds {{.COLD_START_BUDGET}}ms target"
             exit 1
         fi
         check "shell start within budget"

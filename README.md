@@ -1,22 +1,23 @@
-# Dotfiles
+# 👨🏻‍💻 Josh's dotfiles
 
 macOS dotfiles managed with go-task, symlinks, and XDG base directory spec.
 
-## Install
+##  Install or update
 
+### Install
 ```zsh
-git clone <repo-url>
-./bootstrap.zsh
-task setup -- <machine-name>
-task install
+$ git clone https://github.com/jshvn/dotfiles.git
+$ ./bootstrap.zsh
+$ task setup -- <machine-name>
+$ task install
 ```
 
-`bootstrap.zsh` acquires Homebrew, go-task, and yq. `task setup` writes the
-active machine name to `$XDG_STATE_HOME/dotfiles/machine`; `task install` runs
-the full install pipeline. For the list of accepted `<machine-name>` values,
-see `docs/MACHINES.md`.
+### Update
+```zsh
+$ update
+```
 
-## Common Tasks
+## ⚙️ Common Tasks
 
 The five top-level commands are:
 
@@ -31,13 +32,13 @@ The five top-level commands are:
 Run `task` (no arguments) to see the curated task surface; `task --list` for
 the full graph.
 
-## Where things live
+## 📦 Where things live
 
 - `docs/MANIFEST.md` -- manifest schema, inheritance rules, worked examples
 - `docs/SECURITY.md` -- bootstrap trust chain
 - `docs/MACHINES.md` -- per-machine purpose and hardware
 
-## Contributing
+## 🧑🏻 Contributing
 
 See [CLAUDE.md](CLAUDE.md) for conventions, rules, where-to-add tables, and
 the lint catalogue.

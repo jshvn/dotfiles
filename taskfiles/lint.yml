@@ -31,7 +31,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   default:
-    desc: "Run all lint checks (LINT-06 aggregator)"
+    desc: "Run all lint checks"
     # lint tasks intentionally have no status: block -- they are always
     # re-run. Each sub-check carries ignore_error: true so the aggregator runs
     # every check regardless of prior failures (run-all-aggregate). Without
@@ -51,7 +51,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   syntax:
-    desc: "YAML parse + zsh -n syntax checks (LINT-07)"
+    desc: "YAML parse + zsh -n syntax checks"
     internal: true
     cmds:
       - |
@@ -88,7 +88,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   taskfile:
-    desc: 'Taskfile convention checks: $VAR in status:, cmds: without status:, bare symlink outside helpers (LINT-02 + LINT-03a + LINT-03b)'
+    desc: 'Taskfile convention checks: $VAR in status:, cmds: without status:, bare symlink outside helpers'
     internal: true
     cmds:
       - |
@@ -153,7 +153,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   shell-headers:
-    desc: "Executable .zsh files have set -euo pipefail (LINT-04)"
+    desc: "Executable .zsh files have set -euo pipefail"
     internal: true
     cmds:
       - |
@@ -177,7 +177,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   portability:
-    desc: "Portability hints for future-Linux v2 (warn-only, exit 0; LINT-05)"
+    desc: "Portability hints for future-Linux v2 (warn-only, exit 0)"
     internal: true
     cmds:
       - |
@@ -201,7 +201,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   banner-parity:
-    desc: "Banner parity check: default:'s cmd block lists every public top-level task (LINT-08)"
+    desc: "Banner parity check: default:'s cmd block lists every public top-level task"
     internal: true
     cmds:
       - |

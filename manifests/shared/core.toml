@@ -33,6 +33,7 @@ formulae = [
   "highlight",
   "grc",
   "htop",
+  "hyperfine",
   "duf",
   "whois",
   "doggo",
