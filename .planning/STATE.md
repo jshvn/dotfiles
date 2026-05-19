@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 Phase: Milestone v2.1 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-05-19 — Milestone v2.1 completed and archived
+Last activity: 2026-05-19 — Completed quick task 260518-w2y: Fix VS Code zsh history clobber
 
 ## Performance Metrics
 
@@ -87,6 +87,12 @@ None yet.
 ### Blockers/Concerns
 
 None known. Phase 9 is read-only investigation; the gating risk for the milestone is incomplete audit coverage (mitigated by AUDIT-04 + the cross-reference grep success criterion).
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260518-w2y | Fix VS Code zsh history clobber: move HISTFILE exports from .zshenv to .zshrc and delete stray history files | 2026-05-19 | 6068199 | [260518-w2y-fix-vs-code-zsh-history-clobber-move-his](./quick/260518-w2y-fix-vs-code-zsh-history-clobber-move-his/) |
 
 ## Deferred Items
 
