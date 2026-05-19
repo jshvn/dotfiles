@@ -11,19 +11,16 @@
 # when called on a server / non-GUI machine, instead of silently no-opping.
 
 function finder() {
-    [[ "$(_dotfiles_feature macos-finder)" == "true" ]] \
-        || { echo "finder: feature 'macos-finder' is disabled on this machine" >&2; return 1; }
+    _dotfiles_require_feature macos-finder || return 1
     open -a Finder ./
 }
 
 function findershow() {
-    [[ "$(_dotfiles_feature macos-finder)" == "true" ]] \
-        || { echo "findershow: feature 'macos-finder' is disabled on this machine" >&2; return 1; }
+    _dotfiles_require_feature macos-finder || return 1
     defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder
 }
 
 function finderhide() {
-    [[ "$(_dotfiles_feature macos-finder)" == "true" ]] \
-        || { echo "finderhide: feature 'macos-finder' is disabled on this machine" >&2; return 1; }
+    _dotfiles_require_feature macos-finder || return 1
     defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder
 }
