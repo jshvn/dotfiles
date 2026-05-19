@@ -5,7 +5,7 @@ function cheat() {    # cheat() will query a web service and return a human-read
 	if [[ -z "${1}" ]]; then
 		echo "ERROR: No command specified. Printing help instead.";
         local result=$(curl "cheat.sh" -s)
-        echo $result
+        echo "$result"
 		return 1;
 	fi
     
