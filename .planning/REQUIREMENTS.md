@@ -53,12 +53,12 @@ Audit every public go-task task; curate names and visibility.
 
 Repo-wide code review with severity classification and surgical fixes.
 
-- [ ] **REVW-01**: Repo-wide review run with language-aware reviewers (zsh shellcheck, taskfile lint, TOML schema). Findings classified HIGH / MEDIUM / LOW with file:line locations.
-- [ ] **REVW-02**: Every HIGH-severity finding is fixed in this milestone; MEDIUM and LOW are triaged into "fix now" / "defer with rationale".
-- [ ] **REVW-03**: Dead code is identified and removed: unused functions, dead branches, unreachable code, helpers with zero call sites.
-- [ ] **REVW-04**: Duplicated logic is consolidated into shared helpers; near-duplicate status blocks across taskfiles use shared variables or helper tasks where it reduces drift risk.
-- [ ] **REVW-05**: `links:*` status blocks verify each symlink's *target* (via `readlink -f`), not just its existence (the 27-entry `test -L` bug surfaced in this session). After the fix, a stale symlink pointing to the wrong source forces a re-link.
-- [ ] **REVW-06**: Every `task test*` invocation runs and passes after every fix; any test fixture for removed/changed v1 code is updated or removed (no orphan fixtures).
+- [x] **REVW-01**: Repo-wide review run with language-aware reviewers (zsh shellcheck, taskfile lint, TOML schema). Findings classified HIGH / MEDIUM / LOW with file:line locations.
+- [x] **REVW-02**: Every HIGH-severity finding is fixed in this milestone; MEDIUM and LOW are triaged into "fix now" / "defer with rationale".
+- [x] **REVW-03**: Dead code is identified and removed: unused functions, dead branches, unreachable code, helpers with zero call sites.
+- [x] **REVW-04**: Duplicated logic is consolidated into shared helpers; near-duplicate status blocks across taskfiles use shared variables or helper tasks where it reduces drift risk.
+- [x] **REVW-05**: `links:*` status blocks verify each symlink's *target* (via `readlink -f`), not just its existence (the 27-entry `test -L` bug surfaced in this session). After the fix, a stale symlink pointing to the wrong source forces a re-link.
+- [x] **REVW-06**: Every `task test*` invocation runs and passes after every fix; any test fixture for removed/changed v1 code is updated or removed (no orphan fixtures).
 
 ### Trim (comment/doc trim)
 

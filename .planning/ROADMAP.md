@@ -294,5 +294,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 10. v1-Drop Remediation | 1/1 | Complete    | 2026-05-18 |
 | 11. v1 Removal | 1/1 | Complete   | 2026-05-18 |
 | 12. Task Surface Redesign | 8/8 | Complete    | 2026-05-18 |
-| 13. Code Review + Dead-Code Cleanup | 6/6 | Complete   | 2026-05-19 |
+| 13. Code Review + Dead-Code Cleanup | 6/6 | Complete    | 2026-05-19 |
 | 14. Comment + Doc Trim | 0/TBD | Not started (v2.1) | - |
