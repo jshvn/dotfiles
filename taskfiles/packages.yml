@@ -1,46 +1,19 @@
 version: '3'
 
 # =============================================================================
-# taskfiles/packages.yml -- Phase 5 manifest-driven package layer.
+# taskfiles/packages.yml -- manifest-driven brew + cask + mas package layer
 #
-# Purpose:
-#   Reads packages.brew.bundles + packages.brew.extra_packages.{formulae,casks,mas}
-#   from resolved.json via `ref: fromJson` and composes the per-machine
-#   Brewfile to $XDG_CACHE_HOME/dotfiles/Brewfile, then runs
-#   `brew bundle install` and verifies post-install state (every declared
-#   formula bin on PATH; every declared cask + mas .app under /Applications).
-#
-# Dependencies:
-#   - :manifest:resolve (deps) -- ensures resolved.json is current before
-#     any read of {{.MANIFEST.packages.brew.*}}.
-#   - taskfiles/helpers.yml -- _:check-command, _:check-file as building
-#     blocks (verify task uses inline test -d / command -v + messages.zsh
-#     to honor the D-07 enumerate-all contract).
-#   - install/messages.zsh -- sourced via {{.DOTFILES_MESSAGES}} for the
-#     info/success/warn/error/check/cross UX primitives.
-#   - install/compose-brewfile.zsh (Plan 03) -- invoked by packages:install
-#     and packages:compose to render the per-machine Brewfile.
-#
-# Status-block convention (LINT-02 enforcement):
-#   Every install / compose task uses a `status:` block. Status blocks use
-#   `{{.X}}` template vars ONLY -- never `$X` shell vars (the v1
-#   macos:shell:145 bug class). Aggregator-style tasks (verify, audit,
-#   validate) intentionally omit `status:` and carry the
-#   `# lint-allow: cmds-without-status` marker on the line immediately
-#   above the task key.
-#
-# When the root Taskfile.yml includes this module, its vars (DOTFILEDIR,
-# XDG_STATE_HOME, XDG_CACHE_HOME, DOTFILES_MESSAGES) take precedence over
-# the local fallbacks defined below.
+# Purpose:      Reads packages.brew.* from resolved.json, composes the
+#               per-machine Brewfile to $XDG_CACHE_HOME/dotfiles/Brewfile,
+#               runs `brew bundle install`, and verifies post-install state.
+# Depends on:   taskfiles/helpers.yml; install/messages.zsh;
+#               install/compose-brewfile.zsh; :manifest:resolve (deps).
+# Side effects: writes $XDG_CACHE_HOME/dotfiles/Brewfile; runs
+#               `brew bundle install` against it.
 # =============================================================================
 
 includes:
   _: ./helpers.yml
-
-# =============================================================================
-# Vars block -- self-contained so `task -t taskfiles/packages.yml ...` works
-# without the root Taskfile.yml being loaded.
-# =============================================================================
 
 vars:
   HOME: '{{.HOME}}'
@@ -51,22 +24,19 @@ vars:
   XDG_STATE_HOME:
     sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
 
-  # NEW in Phase 5: XDG_CACHE_HOME is the destination for the composed
-  # Brewfile (D-08; CF-07). Identity / manifest layers did not need this.
+  # XDG_CACHE_HOME is the destination for the composed Brewfile.
   XDG_CACHE_HOME:
     sh: echo "${XDG_CACHE_HOME:-$HOME/.cache}"
 
-  # Resolve DOTFILEDIR from this taskfile's parent directory.
   DOTFILEDIR:
     sh: dirname "{{.TASKFILE_DIR}}"
 
   RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
 
-  # WR-03 fallback: emit a stderr warning when resolved.json is missing so
-  # consumers of {{.MANIFEST.packages.brew.*}} fail loudly rather than
-  # evaluating against an empty {}. The stub includes an empty `features`
-  # map so `{{if index .MANIFEST.features "<key>"}}` evaluates to false
-  # instead of erroring out at template-parse time on a fresh machine.
+  # Empty-features stub on missing resolved.json so
+  # `{{if index .MANIFEST.features "<key>"}}` evaluates to false on a fresh
+  # machine instead of erroring at template-parse time. Stderr warning so
+  # consumers fail loudly rather than silently against {}.
   MANIFEST_JSON:
     sh: |
       if [[ -s '{{.RESOLVED_JSON_PATH}}' ]]; then
@@ -76,34 +46,15 @@ vars:
         echo '{"features":{}}'
       fi
 
-  # fromJson ref pattern (matches taskfiles/manifest.yml +
-  # taskfiles/identity.yml). Downstream consumers use
-  # {{.MANIFEST.packages.brew.bundles}} via dot-access (snake_case-safe).
   MANIFEST:
     ref: 'fromJson .MANIFEST_JSON'
 
   DOTFILES_MESSAGES: |
     source '{{.DOTFILEDIR}}/install/messages.zsh'
 
-  # Derived path: the composed per-machine Brewfile (Plan 03 composer
-  # writes here; D-08 atomic compose to $XDG_CACHE_HOME/dotfiles/Brewfile).
   COMPOSED_BREWFILE: '{{.XDG_CACHE_HOME}}/dotfiles/Brewfile'
 
-# =============================================================================
-# Tasks
-# =============================================================================
-
 tasks:
-
-  # ---------------------------------------------------------------------------
-  # install -- single task with the D-09 two-condition status block.
-  #   (a) composed Brewfile exists
-  #   (b) brew bundle check --no-upgrade exits 0
-  # Either fails -> regenerate the composed Brewfile, then brew bundle install.
-  #
-  # Realizes PKGS-02 (compose-and-install path), PKGS-03 (brew bundle check
-  # for status), PKGS-05 (servers' core-only bundle installs cleanly).
-  # ---------------------------------------------------------------------------
 
   install:
     desc: "Install packages: compose per-machine Brewfile then run brew bundle install"
@@ -118,16 +69,15 @@ tasks:
         msg: "brew not on PATH -- run bootstrap.zsh first"
     # Three-condition status (all must pass to skip cmds):
     #   1. Composed Brewfile exists on disk.
-    #   2. Composed Brewfile is at least as fresh as ALL composer inputs:
-    #      resolved.json AND every $DOTFILEDIR/packages/*.rb bundle file.
-    #      The composer (install/compose-brewfile.zsh) reads BOTH; pulling
-    #      a manifest change (resolved.json ticks) OR a bundle change
-    #      (packages/core.rb ticks via `git pull`) must trigger a recompose.
+    #   2. Composed Brewfile is at least as fresh as ALL composer inputs
+    #      (resolved.json AND every $DOTFILEDIR/packages/*.rb bundle file).
+    #      Pulling a manifest change OR a bundle change (e.g. via `git pull`)
+    #      must trigger a recompose.
     #   3. brew bundle check passes against the composed Brewfile.
-    # The freshness check (line 2) was missing before: `brew bundle check`
-    # against a stale Brewfile passes when the previously-declared packages
-    # happen to be installed, so newly-declared packages were silently
-    # ignored until $XDG_CACHE_HOME/dotfiles/Brewfile was manually deleted.
+    # Without the freshness check, `brew bundle check` against a stale Brewfile
+    # passes when the previously-declared packages happen to be installed, so
+    # newly-declared packages would be silently ignored until the cached
+    # Brewfile was manually deleted.
     status:
       - test -f "{{.COMPOSED_BREWFILE}}"
       - |
@@ -135,27 +85,14 @@ tasks:
         [ -z "$out" ]
       - brew bundle check --file="{{.COMPOSED_BREWFILE}}" --no-upgrade
     cmds:
-      # 1. Compose the per-machine Brewfile from manifest + bundle files.
-      #    Explicit env forwarding so the composer's path constants resolve
-      #    correctly when invoked through go-task (which strips many envs).
+      # Explicit env forwarding so the composer's path constants resolve
+      # correctly when invoked through go-task (which strips many envs).
       - DOTFILEDIR="{{.DOTFILEDIR}}" XDG_CACHE_HOME="{{.XDG_CACHE_HOME}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" zsh "{{.DOTFILEDIR}}/install/compose-brewfile.zsh"
-      # 2. Run brew bundle install against the composed Brewfile. The shell
-      #    block sources messages.zsh so the info/success lines render in
-      #    the same color scheme as the rest of the install pipeline. The
-      #    root Taskfile.yml sets `set: [errexit, pipefail]` so any
-      #    brew-bundle-install failure propagates.
       - |
         {{.DOTFILES_MESSAGES}}
         info "running brew bundle install --file={{.COMPOSED_BREWFILE}}"
         brew bundle install --file="{{.COMPOSED_BREWFILE}}"
         success "brew bundle install complete"
-
-  # ---------------------------------------------------------------------------
-  # compose -- inspection helper. Runs the composer only; useful for
-  # diff-ing the composed Brewfile or sanity-checking the manifest -> Brewfile
-  # pipeline without triggering brew bundle install. Force regen via
-  # `task --force packages:compose`.
-  # ---------------------------------------------------------------------------
 
   compose:
     desc: "Compose per-machine Brewfile from manifest -> $XDG_CACHE_HOME/dotfiles/Brewfile"
@@ -166,11 +103,8 @@ tasks:
         msg: |
           resolved.json missing or empty; cannot compose packages.brew.bundles
             run: task setup -- <machine-name>
-    # Two-condition status: Brewfile exists AND is at least as fresh as
-    # all composer inputs (resolved.json + packages/*.rb bundle files).
-    # Same freshness-check rationale as packages:install above -- a stale
-    # Brewfile must be regenerated when the manifest OR a bundle file
-    # changes, even though brew bundle check still passes against it.
+    # Brewfile exists AND is at least as fresh as all composer inputs --
+    # same freshness-check rationale as packages:install.
     status:
       - test -f "{{.COMPOSED_BREWFILE}}"
       - |
@@ -182,35 +116,13 @@ tasks:
         {{.DOTFILES_MESSAGES}}
         check "composed Brewfile -> {{.COMPOSED_BREWFILE}}"
 
-  # ---------------------------------------------------------------------------
-  # verify -- D-07 enumerate-all + Gap 2 brew-info-driven two-layer model.
-  #
-  # Layer 1 (install-state): brew bundle check --no-upgrade --file={{.COMPOSED_BREWFILE}}
-  #                          confirms every declared package is installed per Homebrew.
-  # Layer 2 (artifact-state): brew info --installed --json=v2 returns the full set of
-  #                           installed-formulae + installed-casks records with
-  #                           .artifacts[] (casks) / .linked_keg (formulae;
-  #                           verify task asserts every declared package's on-disk
-  #                           artifacts exist.
-  # MAS layer (D-06):        no brew-info equivalent for App Store apps; declared
-  #                          { id, name } objects -> mas list | awk '{print $1}' for
-  #                          installed ids + /Applications/<name>.app probe.
-  #
-  # Aggregator-style (D-07 enumerate-all): never short-circuit; emit check/cross row
-  # per package; exit non-zero with failure count.
-  #
-  # silent: false (task-level) -- closes Gap 3 (root Taskfile.yml silent:true hides
-  # verify output through pipes / non-TTY captures); the task-level override restores
-  # stdout/stderr visibility for THIS task only without disturbing the root global.
-  #
-  # Aggregator: intentionally always-re-run (D-07). `status: [false]` satisfies
-  # LINT-03a structurally; `[false]` is the always-rerun shape.
-  # ---------------------------------------------------------------------------
-
   # lint-allow: cmds-without-status
   verify:
     desc: "Verify declared packages: brew bundle check (Layer 1) + brew info artifact probe (Layer 2)"
     internal: true
+    # silent: false restores stdout/stderr visibility for THIS task only --
+    # the root Taskfile.yml `silent: true` would hide verify output through
+    # pipes / non-TTY captures.
     silent: false
     deps: [":manifest:resolve", ":packages:compose"]
     preconditions:
@@ -232,11 +144,10 @@ tasks:
         {{.DOTFILES_MESSAGES}}
         failures=0
 
-        # ---- Layer 1: brew bundle check (install-state gate) ----
-        # Reuses the EXACT same command as the install task's status block
-        # (D-09) so Layer 1 install-state semantics are identical: install
-        # and verify share the same gate. Continue to Layer 2 even on failure
-        # (enumerate-all; D-07 -- no short-circuit).
+        # Layer 1: install-state gate. Reuses the EXACT same command as
+        # the install task's status block so Layer 1 install-state semantics
+        # are identical: install and verify share the same gate. Continue to
+        # Layer 2 even on failure (enumerate-all; never short-circuit).
         info "Layer 1: brew bundle check --no-upgrade"
         if brew bundle check --no-upgrade --file="{{.COMPOSED_BREWFILE}}" >/dev/null 2>&1; then
           check "Layer 1: all declared packages installed per brew bundle"
@@ -247,10 +158,10 @@ tasks:
           failures=$(( failures + 1 ))
         fi
 
-        # ---- Layer 2 prelude: bulk brew info call (artifact-state gate) ----
-        # Single invocation for the full installed set (~200ms on local
-        # metadata). Hard-fail if brew info itself is broken -- cannot
-        # enumerate artifacts without a parseable JSON response.
+        # Layer 2 prelude: bulk brew info call. Single invocation for the
+        # full installed set (~200ms on local metadata). Hard-fail if brew
+        # info itself is broken -- cannot enumerate artifacts without a
+        # parseable JSON response.
         info "Layer 2: bulk brew info (artifact-state gate)"
         brew_info_json=$(brew info --installed --json=v2 2>/dev/null || true)
         if ! echo "$brew_info_json" | jq -e '.casks' >/dev/null 2>&1; then
@@ -258,15 +169,7 @@ tasks:
           exit 1
         fi
 
-        # ---- Layer 2: cask artifact probe ----
-        # For each cask declared in the composed Brewfile (bare `cask '<name>'`
-        # lines, no # verify: suffix post-Gap-2 pivot):
-        #   - Look up the installed cask record from brew info JSON.
-        #   - Walk .artifacts[] for .app / .binary entries and assert on-disk
-        #     presence. Skip .pkg / .manpage / .uninstall / .zap / other
-        #     informational-only artifact kinds (not user-visible).
-        #   - A cask with empty or non-checkable .artifacts[] passes implicitly
-        #     (Layer 1 already confirmed Homebrew considers it installed).
+        # Layer 2: cask artifact probe.
         while IFS= read -r line; do
           cask_name=$(echo "$line" | ggrep -oE "^[[:space:]]*cask[[:space:]]+'[^']+'" | ggrep -oE "'[^']+'" | tr -d "'")
           [[ -z "$cask_name" ]] && continue
@@ -298,10 +201,11 @@ tasks:
               binary)
                 checkable=1
                 # Homebrew cask binary artifacts can be:
-                #   ["<source-path>"]                      -- destination name = basename(source)
+                #   ["<source-path>"]                       -- destination name = basename(source)
                 #   ["<source-path>", {"target": "<name>"}] -- destination name = target
-                # The target form is required for casks like firefox where the source
-                # is a wrapper script (firefox.wrapper.sh) but the installed bin is "firefox".
+                # The target form is required for casks like firefox where the
+                # source is a wrapper script (firefox.wrapper.sh) but the
+                # installed bin is "firefox".
                 bin_target=$(echo "$artifact_json" | jq -r '.binary[1].target // empty')
                 if [[ -n "$bin_target" ]]; then
                   bin_name="$bin_target"
@@ -330,23 +234,18 @@ tasks:
           fi
         done < <(ggrep -E "^[[:space:]]*cask[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" || true)
 
-        # ---- Layer 2: formula linked_keg probe ----
-        # For each formula declared in the composed Brewfile:
-        #   - Look up the installed formula record from brew info JSON.
-        #   - Assert .linked_keg is non-null (formula is built and linked,
-        #     not just downloaded). Note: this is the top-level linked_keg on
-        #     the formula record (the version string of the currently linked
-        #     keg), NOT .installed[0].linked_keg which is always null in
-        #     `brew info --installed --json=v2` output.
-        #   - D-05 escape hatch preserved: if the bundle line carries a
-        #     `# verify: <bin>` comment, also run `command -v <bin>` as
-        #     defense-in-depth (no bundle lines carry overrides post-Gap-2
-        #     pivot, but the parsing pathway is preserved for schema defense).
+        # Layer 2: formula linked_keg probe. Assert .linked_keg is non-null
+        # (formula is built and linked, not just downloaded). This is the
+        # top-level linked_keg on the formula record (version string of the
+        # currently linked keg), NOT .installed[0].linked_keg which is
+        # always null in `brew info --installed --json=v2` output.
         while IFS= read -r line; do
           formula_name=$(echo "$line" | ggrep -oE "^[[:space:]]*brew[[:space:]]+'[^']+'" | ggrep -oE "'[^']+'" | tr -d "'")
           [[ -z "$formula_name" ]] && continue
 
-          # D-05 defense-in-depth: extract # verify: <bin> override if present.
+          # Extract `# verify: <bin>` override if present (defense-in-depth;
+          # no bundle lines carry overrides today but the parsing pathway is
+          # preserved for schema defense).
           bin_override=$(echo "$line" | ggrep -oE "#[[:space:]]*verify:[[:space:]]*[^[:space:]]+" | awk '{print $3}' || true)
 
           formula_record=$(echo "$brew_info_json" | jq -c --arg n "$formula_name" '.formulae[] | select(.name == $n)')
@@ -356,10 +255,11 @@ tasks:
             continue
           fi
 
-          # keg-only formulae (e.g., whois on macOS, which would shadow /usr/bin/whois)
-          # are intentionally not symlinked into the Homebrew prefix; .linked_keg is
-          # always null. Layer 1 (brew bundle check) already confirmed installation,
-          # so accept keg-only formulae without the linked_keg probe.
+          # keg-only formulae (e.g., whois on macOS, which would shadow
+          # /usr/bin/whois) are intentionally not symlinked into the Homebrew
+          # prefix; .linked_keg is always null. Layer 1 already confirmed
+          # installation, so accept keg-only formulae without the linked_keg
+          # probe.
           keg_only=$(echo "$formula_record" | jq -r '.keg_only // false')
           linked_keg=$(echo "$formula_record" | jq -r '.linked_keg // empty')
           if [[ "$keg_only" == "true" ]]; then
@@ -376,7 +276,7 @@ tasks:
             if command -v "$bin_override" >/dev/null 2>&1; then
               check "formula $formula_name -> linked_keg=$(basename "$linked_keg") + $bin_override"
             else
-              cross "formula $formula_name -> $bin_override NOT FOUND on PATH (D-05 override)"
+              cross "formula $formula_name -> $bin_override NOT FOUND on PATH (override)"
               failures=$(( failures + 1 ))
             fi
           else
@@ -384,11 +284,8 @@ tasks:
           fi
         done < <(ggrep -E "^[[:space:]]*brew[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" || true)
 
-        # ---- MAS layer (D-06: name doubles as verify target) ----
-        # No brew-info equivalent for App Store apps. Use:
-        #   mas list | awk '{print $1}' -> installed ids
-        #   /Applications/<name>.app probe -> artifact presence (D-06)
-        # Skip gracefully if mas is not on PATH (mas is in core.rb so should
+        # MAS layer. No brew-info equivalent for App Store apps. Skip
+        # gracefully if mas is not on PATH (mas is in core.rb so should
         # always be installed on a fully-converged machine).
         if ! command -v mas >/dev/null 2>&1; then
           warn "MAS layer skipped: mas not on PATH"
@@ -413,7 +310,6 @@ tasks:
           done < <(ggrep -E "^[[:space:]]*mas[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" || true)
         fi
 
-        # ---- Summary (D-07: enumerate-all + count-failures; D-10: hard-fail) ----
         if [[ "$failures" -gt 0 ]]; then
           cross "${failures} package(s) failed verify"
           exit "$failures"
@@ -421,19 +317,7 @@ tasks:
         success "all declared packages verified (Layer 1 + Layer 2 + MAS)"
         exit 0
 
-  # ---------------------------------------------------------------------------
-  # audit -- drift detection (D-11). Compares installed packages
-  # (brew leaves, brew list --cask, mas list) against declared packages
-  # (parsed from the composed Brewfile). Non-blocking by default; --strict
-  # CLI flag promotes drift to a non-zero exit.
-  #
-  # Realizes VRFY-03 (audit declared vs installed).
-  # ---------------------------------------------------------------------------
-
   # lint-allow: cmds-without-status
-  # audit is intentionally always-re-run (drift detection is a fresh
-  # measurement each invocation). `status: [false]` satisfies LINT-03a
-  # while preserving always-rerun semantics; matches verify above.
   audit:
     desc: "Audit installed brew formulae/casks/mas vs declared. Non-blocking; --strict exits non-zero."
     internal: true
@@ -449,45 +333,38 @@ tasks:
             run: task packages:compose first
       - sh: command -v brew >/dev/null 2>&1
         msg: "brew not on PATH -- run bootstrap.zsh first"
+    # always-rerun: drift detection is a fresh measurement each invocation.
     status: [false]
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
 
-        # Parse --strict from CLI_ARGS. Caller form:
-        #   task packages:audit -- --strict
+        # Parse --strict from CLI_ARGS. Caller form: task packages:audit -- --strict
         strict=0
         for arg in {{.CLI_ARGS}}; do
           [[ "$arg" == "--strict" ]] && strict=1
         done
 
-        # ---- Declared sets (extracted from the composed Brewfile) ----
-        # Formulae: name only (strip any `# verify:` suffix).
+        # Declared sets (extracted from the composed Brewfile).
         declared_formulae=$(ggrep -E "^[[:space:]]*brew[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
           | ggrep -oE "^[[:space:]]*brew[[:space:]]+'[^']+'" \
           | ggrep -oE "'[^']+'" | tr -d "'" \
           | sort -u)
 
-        # Casks: cask name only (the `# verify:` is declared metadata, not
-        # an installed-package property).
         declared_casks=$(ggrep -E "^[[:space:]]*cask[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
           | ggrep -oE "^[[:space:]]*cask[[:space:]]+'[^']+'" \
           | ggrep -oE "'[^']+'" | tr -d "'" \
           | sort -u)
 
-        # MAS ids (numeric; matches `mas list` column 1).
         declared_mas=$(ggrep -E "^[[:space:]]*mas[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
           | ggrep -oE "id:[[:space:]]*[0-9]+" \
           | awk '{print $2}' \
           | sort -u)
 
-        # ---- Installed sets ----
-        # `brew leaves` = top-level formulae only (D-11: catches
-        # "I `brew install`'d X manually" not transitive deps).
+        # `brew leaves` = top-level formulae only (catches manual installs,
+        # not transitive deps).
         installed_formulae=$(brew leaves 2>/dev/null | sort -u || true)
         installed_casks=$(brew list --cask 2>/dev/null | sort -u || true)
-        # mas list column 1 = id; columns 2+ = name + version. Empty when
-        # MAS is unused on this machine.
         if command -v mas >/dev/null 2>&1; then
           installed_mas=$(mas list 2>/dev/null | awk '{print $1}' | sort -u || true)
         else
@@ -497,9 +374,8 @@ tasks:
 
         total_drift=0
 
-        # ---- Diff (installed - declared) per category ----
-        # `comm -23 <installed> <declared>` yields lines present in
-        # installed but absent from declared = drift.
+        # `comm -23 <installed> <declared>` = present in installed but absent
+        # from declared = drift.
         for item in $(comm -23 <(echo "$installed_formulae") <(echo "$declared_formulae")); do
           [[ -z "$item" ]] && continue
           warn "drift: formula $item (installed but not declared)"
@@ -518,7 +394,6 @@ tasks:
           total_drift=$(( total_drift + 1 ))
         done
 
-        # ---- Final disposition ----
         if [[ "$total_drift" -eq 0 ]]; then
           success "no drift detected"
           exit 0
@@ -530,15 +405,9 @@ tasks:
         warn "${total_drift} drift item(s) detected (non-blocking; --strict to fail)"
         exit 0
 
-  # ---------------------------------------------------------------------------
-  # validate -- thin wrapper composed into the root `task validate` in P8
-  # (CUTV-01 composition slot). Delegates to packages:verify; the
-  # aggregator marker is correct here (single task: delegation).
-  # ---------------------------------------------------------------------------
-
   # lint-allow: cmds-without-status
   validate:
-    desc: "Validate packages layer (wraps packages:verify; composed into root task validate in P8)"
+    desc: "Validate packages layer (wraps packages:verify)"
     internal: true
     cmds:
       - task: verify
