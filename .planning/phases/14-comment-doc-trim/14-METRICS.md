@@ -51,11 +51,11 @@ lives at the repo root as `bootstrap.zsh` (deviation Rule 3 -- path correction).
 | shell/.zshrc                                    |         63 |           71 |            38 |   -33 |         46% |
 | shell/.zlogin                                   |          3 |           15 |             9 |    -6 |         40% |
 | shell/theme.zsh                                 |         57 |           26 |            16 |   -10 |         38% |
-| claude/hooks/lib.zsh                            |         40 |           35 |           TBD |   TBD |         TBD |
-| claude/hooks/secret-scan.zsh                    |         13 |            5 |           TBD |   TBD |         TBD |
-| claude/hooks/no-emojis.zsh                      |         12 |            6 |           TBD |   TBD |         TBD |
-| claude/hooks/no-ai-comments.zsh                 |         15 |            4 |           TBD |   TBD |         TBD |
-| claude/hooks/agent-transparency.zsh             |         31 |            8 |           TBD |   TBD |         TBD |
+| claude/hooks/lib.zsh                            |         40 |           35 |            21 |   -14 |         40% |
+| claude/hooks/secret-scan.zsh                    |         13 |            5 |            13 |    +8 |          0% |
+| claude/hooks/no-emojis.zsh                      |         12 |            6 |            13 |    +7 |          0% |
+| claude/hooks/no-ai-comments.zsh                 |         15 |            4 |            10 |    +6 |          0% |
+| claude/hooks/agent-transparency.zsh             |         31 |            8 |            12 |    +4 |          0% |
 | shell/functions/_dotfiles_feature.zsh           |         15 |           26 |           TBD |   TBD |         TBD |
 | shell/functions/_dotfiles_require_feature.zsh   |          7 |           34 |           TBD |   TBD |         TBD |
 | shell/aliases/jgrid.zsh                         |         30 |           20 |           TBD |   TBD |         TBD |
