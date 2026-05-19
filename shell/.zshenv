@@ -33,9 +33,10 @@ export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 
-# setup data and config directories
-export XDG_DATA_DIRS="/usr/local/share:/usr/share"
-export XDG_CONFIG_DIRS="/etc/xdg"
+# setup data and config directories -- preserve any value the launching context
+# already set (system administrator may export XDG_DATA_DIRS site-wide).
+export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+export XDG_CONFIG_DIRS="${XDG_CONFIG_DIRS:-/etc/xdg}"
 
 # setup ZSH directory
 export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
@@ -60,8 +61,11 @@ export VISUAL="code"
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
-# set browser to Firefox (some tools use $BROWSER)
-export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
+# set browser to Firefox (some tools use $BROWSER) -- guard with executable
+# check so tools reading $BROWSER do not get a path-to-nothing on machines
+# without Firefox installed.
+[[ -x "/Applications/Firefox.app/Contents/MacOS/firefox" ]] && \
+    export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
 
 # disable shell sessions to avoid creating .zsh/sessions/ directories and files
 export SHELL_SESSIONS_DISABLE=1
