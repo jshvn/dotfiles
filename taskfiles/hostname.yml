@@ -97,13 +97,20 @@ tasks:
     # the value past the parser intact.
     env:
       CLI_ARGS_ENV: '{{.CLI_ARGS}}'
+    # Validate inline in the precondition shell (mvdan/sh) instead of via a
+    # nested `zsh -c` with `set -u`. The nested form fails confusingly when
+    # `env: CLI_ARGS_ENV` does not reach the inner zsh: `set -u` triggers an
+    # "unbound variable" exit BEFORE validate_hostname_name runs, the inner
+    # stderr is swallowed by go-task, and the user only sees the `msg:` with
+    # the template-rendered `{{.CLI_ARGS}}` -- making a valid name look
+    # rejected. Inline validation against `${CLI_ARGS_ENV}` defaults-empty
+    # to "" (NOT unbound) and lets the regex check below produce the right
+    # decision either way. Mirrors `manifest:setup` exactly.
     preconditions:
       - sh: |
-          DOTFILEDIR={{.DOTFILEDIR}} zsh -c '
-            set -euo pipefail
-            source "${DOTFILEDIR}/os/hostname.zsh"
-            validate_hostname_name "${CLI_ARGS_ENV}"
-          '
+          name="${CLI_ARGS_ENV:-}"
+          [[ -n "$name" ]] || exit 1
+          [[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9-]*$ ]] || exit 1
         msg: |
           invalid hostname: "{{.CLI_ARGS}}"
             must match ^[A-Za-z0-9][A-Za-z0-9-]*$
