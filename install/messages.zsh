@@ -57,7 +57,7 @@ function error() {
 
 # Extended messaging functions
 function debug() {
-    [[ "$DOTFILES_DEBUG" == "true" ]] && echo -e "${DOTFILES_CYAN}[DEBUG]${DOTFILES_NC} $*"
+    [[ "${DOTFILES_DEBUG:-}" == "true" ]] && echo -e "${DOTFILES_CYAN}[DEBUG]${DOTFILES_NC} $*"
 }
 
 function header() {

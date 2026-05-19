@@ -6,6 +6,10 @@ function prettyjson() {    # prettyjson() will print human readable json that ha
 		echo "ERROR: No file specified";
 		return 1;
 	fi
+    if [[ ! -f "${1}" ]]; then
+        echo "ERROR: file not found: ${1}" >&2
+        return 1
+    fi
 
     jq '.' "${1}" | highlight --syntax=json
 }

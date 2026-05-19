@@ -203,7 +203,7 @@ validate_manifest() {
     ident_dir="${DOTFILEDIR}/identity/${ident_key}/identities"
     ident_file="${ident_dir}/${ident_val}"
     if [[ ! -f "$ident_file" ]]; then
-      valid=$(ls "$ident_dir" 2>/dev/null | tr '\n' '|' | sed 's/|$//')
+      valid=$(print -l "$ident_dir"/*(N:t) 2>/dev/null | tr '\n' '|' | sed 's/|$//')
       error "identity.${ident_key} = '${ident_val}' has no overlay file at ${ident_file} (available: ${valid:-<none>})"
       errors=$(( errors + 1 ))
     fi

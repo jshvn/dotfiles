@@ -29,10 +29,15 @@ set -euo pipefail
 #   Tail     -- typed extras as Ruby DSL lines (formulae / casks / mas)
 #
 # Extras line shapes (canonical; literal single-quotes around the name):
-#   brew '<name>'                              (bare formula)
-#   brew '<name>' # verify: <verify>           (formula override)
-#   cask '<name>'                              (bare cask; verify is data-driven from brew info)
+#   brew '<name>'                              (formula -- string OR {name,...} object)
+#   cask '<name>'                              (cask; verify is data-driven from brew info)
 #   mas  '<name>', id: <id>                    (Mac App Store entry)
+#
+# Note: post-Gap-2 (Plan 05-07/05-08), `packages:verify` is brew-info-driven,
+# not bundle-comment-driven. The schema still permits {name, verify} formula
+# objects (docs/MANIFEST.md:105 backward-compat) but the `verify` field is
+# ignored on emit -- both string and object shapes produce the bare `brew '<name>'`
+# line. No per-line `# verify:` comments are emitted.
 
 # Source the messages library. messages.zsh handles its own set -u-safe
 # double-source guard via the `:-` default expansion on
@@ -129,14 +134,17 @@ compose() {
     done
 
     # ---- Extras: formulae ---------------------------------------------------
-    # Canonical jq emit form (formulae). Two branches:
-    #   - bare string  -> "brew '<value>'"
-    #   - object       -> "brew '<name>' # verify: <verify>"
+    # Canonical jq emit form (formulae): "brew '<name>'" for both shapes.
+    # Schema accepts bare strings OR {name, ...} objects (backward-compat per
+    # docs/MANIFEST.md:105). Both shapes emit the same bare brew line; the
+    # legacy {name, verify} object's `verify` field is ignored on emit because
+    # `packages:verify` is brew-info-driven post-Gap-2 (Plan 05-07/05-08), not
+    # bundle-comment-driven.
     # The literal single-quote (U+0027) is injected as the jq parameter $q
-    # (set from the SQ constant above). This keeps the jq filter inside
-    # zsh's single-quote wrapping with no shell-escape nested form needed.
+    # (set from the SQ constant above) so the jq filter stays inside zsh
+    # single-quote wrapping with no nested shell-escape needed.
     echo "# === extras (formulae) ==="
-    echo "$formulae_json" | jq -r --arg q "$SQ" '.[] | if type == "string" then "brew " + $q + . + $q else "brew " + $q + .name + $q + " # verify: " + .verify end'
+    echo "$formulae_json" | jq -r --arg q "$SQ" '.[] | if type == "string" then "brew " + $q + . + $q else "brew " + $q + .name + $q end'
 
     # ---- Extras: casks ------------------------------------------------------
     # Canonical jq emit form (casks): "cask '<name>'" (bare; verify is

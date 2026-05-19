@@ -5,10 +5,8 @@ version: '3'
 #
 # Purpose: Public delegates for explicit manual-refresh operations across all namespaces.
 # Callers: Invoked directly by operator; included by Taskfile.yml.
-# Side effects: Read-only -- these tasks print state or detect drift; no mutations.
-#   (NOTE: the underlying refresh implementations DO mutate state; the delegate
-#   itself is the read-only thin pass-through -- it forwards args and propagates
-#   exit codes without performing any work of its own.)
+# Side effects: Tasks here are thin pass-through delegates; the underlying
+#   implementations may mutate state (e.g., claude:update re-fetches plugins).
 # Tasks:
 #   - claude -- delegate to :claude:update (marketplaces + plugins + GSD refresh; D-03)
 # =============================================================================
