@@ -4,7 +4,7 @@ slug: comment-doc-trim
 artifact: METRICS
 created: 2026-05-18
 pre_snapshot_at: 2026-05-18
-post_snapshot_at: pending
+post_snapshot_at: 2026-05-18
 ---
 
 # Phase 14 -- Comment-to-Code Metrics
@@ -62,4 +62,4 @@ lives at the repo root as `bootstrap.zsh` (deviation Rule 3 -- path correction).
 | shell/aliases/ghostty.zsh                       |          4 |           13 |            12 |    -1 |          7% |
 | shell/aliases/finder.zsh                        |         12 |           11 |            13 |    +2 |          0% |
 | shell/aliases/dotfiles.zsh                      |          1 |            9 |             9 |     0 |          0% |
-| **Total**                                       |  **3,347** |    **2,681** |       **TBD** | **TBD** |     **TBD** |
+| **Total**                                       |  **3,331** |    **2,635** |     **1,257** | **-1,378** |     **52%** |
