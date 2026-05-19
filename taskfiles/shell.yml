@@ -103,34 +103,27 @@ tasks:
         {{.DOTFILES_MESSAGES}}
         failures=0
 
-        # Four XDG base directories.
-        if [[ -d "{{.XDG_CONFIG_HOME}}" ]]; then
-          check "XDG config home exists"
-        else
-          cross "XDG config home missing"
-          failures=$(( failures + 1 ))
-        fi
-
-        if [[ -d "{{.XDG_DATA_HOME}}" ]]; then
-          check "XDG data home exists"
-        else
-          cross "XDG data home missing"
-          failures=$(( failures + 1 ))
-        fi
-
-        if [[ -d "{{.XDG_STATE_HOME}}" ]]; then
-          check "XDG state home exists"
-        else
-          cross "XDG state home missing"
-          failures=$(( failures + 1 ))
-        fi
-
-        if [[ -d "{{.XDG_CACHE_HOME}}" ]]; then
-          check "XDG cache home exists"
-        else
-          cross "XDG cache home missing"
-          failures=$(( failures + 1 ))
-        fi
+        # Four XDG base directories. REVW-04 / Plan 13-04: prior implementation
+        # inlined four 6-line `[[ -d ... ]] && check / cross + failures+=1`
+        # blocks (one per XDG dir); collapsed here into a tuple-pair loop so
+        # adding a 5th XDG var means appending one line to xdg_pairs, not
+        # cloning a 6-line block.
+        xdg_pairs=(
+          "{{.XDG_CONFIG_HOME}}:XDG config home"
+          "{{.XDG_DATA_HOME}}:XDG data home"
+          "{{.XDG_STATE_HOME}}:XDG state home"
+          "{{.XDG_CACHE_HOME}}:XDG cache home"
+        )
+        for pair in "${xdg_pairs[@]}"; do
+          dir="${pair%%:*}"
+          name="${pair#*:}"
+          if [[ -d "$dir" ]]; then
+            check "${name} exists"
+          else
+            cross "${name} missing"
+            failures=$(( failures + 1 ))
+          fi
+        done
 
         # ZDOTDIR directory ($XDG_CONFIG_HOME/zsh).
         if [[ -d "{{.ZDOTDIR}}" ]]; then
