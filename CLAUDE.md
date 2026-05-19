@@ -49,6 +49,12 @@ Never infer state from hostname. Never branch on a filename suffix. v2 has no pr
 there is only a machine name. When you need to know whether a machine wants a feature, read
 `resolved.json`; it is already loaded as `{{.MANIFEST}}` in every taskfile via `ref: 'fromJson .MANIFEST_JSON'`.
 
+Cross-field validation: the resolver enforces conditional rules across manifest sections
+(e.g., `identity.ssh in {personal, work}` requires `features.one-password-ssh = true`;
+`identity.git in {personal, work}` requires `features.one-password-signing = true`). Failing
+rules surface at `task setup` time with a clear error from `install/resolver.zsh`. Add new
+rules to the `validate_manifest` block in `resolver.zsh`.
+
 ### One concept per file
 
 - One alias topic per `shell/aliases/<topic>.zsh`
@@ -82,6 +88,22 @@ form:
 ```
 
 Snake_case keys (e.g., `identity.git`, `meta.description`) work with dot access as usual.
+
+### Lint rule catalogue (LINT-01..08)
+
+In-code `# LINT-NN:` citations reference this catalogue. The rule body lives in
+`taskfiles/lint.yml`; this table is the operator-facing summary.
+
+| ID | Scope | What it checks |
+|----|-------|----------------|
+| LINT-01 | Taskfiles | Every install task has a `status:` block |
+| LINT-02 | Taskfiles | `status:` uses `{{.X}}` template vars, not `$X` shell vars |
+| LINT-03a | Taskfiles | Tasks with `cmds:` have `status:` (or exempt via `internal: true` / all-task-delegates) |
+| LINT-03b | Repo-wide | No bare `ln -s` outside `taskfiles/helpers.yml` |
+| LINT-04 | Executable .zsh | `set -euo pipefail` in first 30 lines |
+| LINT-05 | shell/ + os/ | Portability-sensitive commands surface as warnings (non-blocking) |
+| LINT-07 | All .zsh | `zsh -n` parse-check (Tier-0 syntax) |
+| LINT-08 | Root Taskfile.yml | `default:` banner lists every public top-level task |
 
 ### Every install task has a `status:` block
 
@@ -149,9 +171,10 @@ root `Taskfile.yml` vars block.
   anywhere. Hooks enforce this at commit time.
 - No emojis in any file — including markdown. Project convention is stricter than the global
   "no emojis in non-markdown" rule.
-- File-level comment block at the top of every script explaining its purpose, callers, and
-  side effects.
-- Section separators in YAML files use `# ===` or `# ---` banner style.
+- File-level comment block at the top of every script: Purpose / Depends on / Side effects
+  (3 labels; one `# === ===` 77-char rule above and below; no narrative prose, no examples).
+- The file-header banner uses one `# === ===` 77-char rule above and below the 3 labels; no
+  mid-file dividers.
 - Errors go to stderr (`echo "..." >&2` or `error "..."` from the messages library in
   `install/messages.zsh`).
 
@@ -175,6 +198,10 @@ root `Taskfile.yml` vars block.
 - Don't bypass `_:safe-link` when creating symlinks.
 - Don't use `$VAR` (shell variable) where `{{.VAR}}` (task template variable) is expected —
   especially inside `status:` blocks.
+- Don't define `DOTFILEDIR: { sh: dirname ... }` in included taskfiles — it leaks into root
+  scope under include-merge and competes with the root `Taskfile.yml` definition. Source
+  `install/messages.zsh` via `{{.TASKFILE_DIR}}` (per the `Taskfile.yml` comment block warning
+  the same).
 
 ## Project State and Workflow
 
