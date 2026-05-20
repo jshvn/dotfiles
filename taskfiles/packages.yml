@@ -113,9 +113,6 @@ tasks:
         [ -z "$out" ]
     cmds:
       - DOTFILEDIR="{{.DOTFILEDIR}}" XDG_CACHE_HOME="{{.XDG_CACHE_HOME}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" zsh "{{.DOTFILEDIR}}/install/compose-brewfile.zsh"
-      - |
-        {{.DOTFILES_MESSAGES}}
-        check "composed Brewfile -> {{.COMPOSED_BREWFILE}}"
 
   # lint-allow: cmds-without-status
   verify:
