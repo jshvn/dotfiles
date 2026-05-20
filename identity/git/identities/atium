@@ -4,7 +4,6 @@
 # server-include.config is materialized by `task identity:server-include` at install time;
 # it is absent on workstations (silent no-op).
 # Overrides: [user] name, email; [github] user; [commit] gpgsign.
-# Side effects: disables commit signing (servers do not have 1Password).
 
 [user]
     name = Atium
