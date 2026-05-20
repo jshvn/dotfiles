@@ -3,7 +3,15 @@
 # Loaded via server-include.config when identity.git = "atium".
 # server-include.config is materialized by `task identity:server-include` at install time;
 # it is absent on workstations (silent no-op).
-# Overrides: [user] name, email; [github] user; [commit] gpgsign.
+# Overrides: [user] name, email; [github] user; [url] rewrites for per-repo deploy keys.
+# Side effects: rewrites bare github.com URLs to the aliased hostnames defined in
+#   identity/ssh/identities/atium, so each repo's git operations pick up the matching
+#   deploy key automatically -- no per-clone `git remote set-url` step required. Survives
+#   atium reinstall: dropping the dotfiles back on the machine restores the rewrites.
+#
+# Adding a new repo: register a deploy key on the repo, drop the private key at
+# ~/.ssh/id_ed25519_atium_<slug>, add a Host github.com-<slug> block in
+# identity/ssh/identities/atium, and add a matching [url ...] insteadOf block below.
 
 [user]
     name = Atium
@@ -12,5 +20,8 @@
 [github]
     user = jshvn
 
-[commit]
-    gpgsign = false
+[url "git@github.com-jgrid:jshvn/jgrid.net"]
+    insteadOf = git@github.com:jshvn/jgrid.net
+
+[url "git@github.com-dotfiles:jshvn/dotfiles"]
+    insteadOf = git@github.com:jshvn/dotfiles
