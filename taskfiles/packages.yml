@@ -347,20 +347,25 @@ tasks:
         done
 
         # Declared sets (extracted from the composed Brewfile).
+        # `|| true` on each pipeline: a section with zero entries makes the
+        # first ggrep exit 1 (no match), which under errexit+pipefail (set at
+        # the root Taskfile) aborts the entire audit silently. Machines with
+        # `mas = []` / `casks = []` are legitimate (e.g., atium headless), so
+        # an empty section must yield an empty declared-set, not a hard fail.
         declared_formulae=$(ggrep -E "^[[:space:]]*brew[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
           | ggrep -oE "^[[:space:]]*brew[[:space:]]+'[^']+'" \
           | ggrep -oE "'[^']+'" | tr -d "'" \
-          | sort -u)
+          | sort -u || true)
 
         declared_casks=$(ggrep -E "^[[:space:]]*cask[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
           | ggrep -oE "^[[:space:]]*cask[[:space:]]+'[^']+'" \
           | ggrep -oE "'[^']+'" | tr -d "'" \
-          | sort -u)
+          | sort -u || true)
 
         declared_mas=$(ggrep -E "^[[:space:]]*mas[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
           | ggrep -oE "id:[[:space:]]*[0-9]+" \
           | awk '{print $2}' \
-          | sort -u)
+          | sort -u || true)
 
         # `brew leaves` = top-level formulae only (catches manual installs,
         # not transitive deps).
