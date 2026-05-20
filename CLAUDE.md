@@ -25,7 +25,7 @@ surface is exactly five top-level commands:
 
 | Command          | Purpose                                                      |
 |------------------|--------------------------------------------------------------|
-| `task install`   | Install dotfiles for the active machine                      |
+| `task install`   | Install dotfiles + refresh brew, upgrade declared packages   |
 | `task setup`     | Set the active machine: `task setup -- <machine-name>`       |
 | `task validate`  | Validate full installation state                             |
 | `task test`      | Run all smoke tests                                          |

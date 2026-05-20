@@ -5,11 +5,13 @@ version: '3'
 #
 # Purpose:      Reads packages.brew.* from resolved.json, composes the
 #               per-machine Brewfile to $XDG_CACHE_HOME/dotfiles/Brewfile,
-#               runs `brew bundle install`, and verifies post-install state.
+#               refreshes brew metadata, runs `brew bundle install --upgrade`,
+#               and verifies post-install state.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh;
 #               install/compose-brewfile.zsh; :manifest:resolve (deps).
-# Side effects: writes $XDG_CACHE_HOME/dotfiles/Brewfile; runs
-#               `brew bundle install` against it.
+# Side effects: writes $XDG_CACHE_HOME/dotfiles/Brewfile; runs `brew update`
+#               then `brew bundle install --upgrade` against it (may upgrade
+#               already-installed packages to newer upstream versions).
 # =============================================================================
 
 includes:
@@ -56,10 +58,18 @@ vars:
 
 tasks:
 
+  # lint-allow: cmds-without-status
   install:
-    desc: "Install packages: compose per-machine Brewfile then run brew bundle install"
+    desc: "Install packages: refresh brew metadata then run brew bundle install --upgrade"
     internal: true
-    deps: [":manifest:resolve"]
+    # `:packages:compose` carries its own freshness-gated status block, so
+    # the Brewfile is only recomposed when resolved.json (or any of its
+    # upstream TOML inputs) changes. The install task itself always runs
+    # so `brew update` + `brew bundle install --upgrade` execute every
+    # invocation -- the "task install IS task update" contract from the
+    # root Taskfile summary requires this. Both subcommands are
+    # internally idempotent (no-op when nothing to do, modulo network).
+    deps: [":manifest:resolve", ":packages:compose"]
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
         msg: |
@@ -67,32 +77,21 @@ tasks:
             run: task setup -- <machine-name>
       - sh: command -v brew >/dev/null 2>&1
         msg: "brew not on PATH -- run bootstrap.zsh first"
-    # Three-condition status (all must pass to skip cmds):
-    #   1. Composed Brewfile exists on disk.
-    #   2. Composed Brewfile is at least as fresh as resolved.json. The
-    #      resolver itself depends on defaults.toml + machines/*.toml +
-    #      shared/*.toml (see :manifest:resolve status), so any upstream
-    #      manifest change propagates to resolved.json before reaching here.
-    #   3. brew bundle check passes against the composed Brewfile.
-    # Without the freshness check, `brew bundle check` against a stale Brewfile
-    # passes when the previously-declared packages happen to be installed, so
-    # newly-declared packages would be silently ignored until the cached
-    # Brewfile was manually deleted.
-    status:
-      - test -f "{{.COMPOSED_BREWFILE}}"
-      - |
-        out=$(find "{{.RESOLVED_JSON_PATH}}" -newer "{{.COMPOSED_BREWFILE}}" -print -quit 2>/dev/null)
-        [ -z "$out" ]
-      - brew bundle check --file="{{.COMPOSED_BREWFILE}}" --no-upgrade
+    # always-rerun: brew metadata refresh + upgrade must execute every
+    # invocation to honour the install-is-update contract. The previous
+    # `brew bundle check --no-upgrade` gate intentionally suppressed
+    # upgrades; --upgrade semantics make that gate incorrect.
+    status: [false]
     cmds:
-      # Explicit env forwarding so the composer's path constants resolve
-      # correctly when invoked through go-task (which strips many envs).
-      - DOTFILEDIR="{{.DOTFILEDIR}}" XDG_CACHE_HOME="{{.XDG_CACHE_HOME}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" zsh "{{.DOTFILEDIR}}/install/compose-brewfile.zsh"
       - |
         {{.DOTFILES_MESSAGES}}
-        info "running brew bundle install --file={{.COMPOSED_BREWFILE}}"
-        brew bundle install --file="{{.COMPOSED_BREWFILE}}"
-        success "brew bundle install complete"
+        info "running brew update"
+        brew update
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running brew bundle install --upgrade --file={{.COMPOSED_BREWFILE}}"
+        brew bundle install --upgrade --file="{{.COMPOSED_BREWFILE}}"
+        success "brew bundle install --upgrade complete"
 
   compose:
     desc: "Compose per-machine Brewfile from manifest -> $XDG_CACHE_HOME/dotfiles/Brewfile"
