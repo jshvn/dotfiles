@@ -1,12 +1,12 @@
-# manifests/machines/atium.toml -- Mac atium (headless ops server).
+# manifests/machines/atium.toml -- Mac atium.
 #
-# Headless ops machine, core packages only; no GUI feature flags.
+# Headless Mac server.
 # See docs/MANIFEST.md for the schema reference and field semantics.
 
 schema_version = 1
 
 [meta]
-description = "Mac atium -- headless ops machine, core packages only"
+description = "Mac atium -- headless Mac server"
 
 [platform]
 os = "darwin"
@@ -14,17 +14,24 @@ os = "darwin"
 [features]
 one-password-ssh = false
 claude-marketplace = false
-macos-security = true  # server runs security defaults + shell-registration only
-server-include = true  # headless server: materialize ~/.config/git/server-include.config
-# macos-dock, macos-finder, macos-input, macos-screenshots absent -> inherited false
+macos-security = true
+ghostty = true
 
 [packages.brew]
-bundles = ["core"]
+bundles = ["core", "gui"]
 
 [packages.brew.extra_packages]
 formulae = []
-casks    = []
-mas      = []
+
+casks = [
+  { name = "appcleaner" },
+  { name = "cloudflare-warp" },
+  { name = "docker-desktop" },
+  { name = "dropbox" },
+  { name = "miniconda" },
+]
+
+mas = []
 
 [identity]
 git = "atium"
