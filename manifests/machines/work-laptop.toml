@@ -23,37 +23,12 @@ claude-marketplace = true
 ghostty = true
 
 [packages.brew]
-bundles = ["dotfiles", "cli", "dotfiles-gui"]
+bundles = ["dotfiles", "cli", "dotfiles-gui", "dev", "productivity", "apps"]
 
 [packages.brew.extra_packages]
 formulae = []
-
-casks = [
-  { name = "alcove" },
-  { name = "appcleaner" },
-  { name = "cardhop" },
-  { name = "claude-code" },
-  { name = "docker-desktop" },
-  { name = "fantastical" },
-  { name = "firefox" },
-  { name = "microsoft-excel" },
-  { name = "microsoft-powerpoint" },
-  { name = "microsoft-word" },
-  { name = "miniconda" },
-  { name = "raycast" },
-  { name = "slack" },
-  { name = "sourcetree" },
-  { name = "spotify" },
-  { name = "standard-notes" },
-  { name = "sublime-text" },
-  { name = "visual-studio-code" },
-  { name = "zoom" },
-]
-
-mas = [
-  { id = 441258766, name = "Magnet" },
-  { id = 904280696, name = "Things3" },
-]
+casks = []
+mas = []
 
 [identity]
 git = "work"
