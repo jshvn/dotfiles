@@ -9,7 +9,7 @@ scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
 
 ## Purpose
 
-Five `defaults/<concern>.zsh` sourced libraries declare a single tuple-array
+Six `defaults/<concern>.zsh` sourced libraries declare a single tuple-array
 source of truth per concern (`(domain, key, expected_value, write_type)`
 rows). Each library exposes `apply_<concern>` (iterates the tuples and runs
 `defaults write`) and `verify_<concern>` (iterates the same tuples and reads
@@ -33,6 +33,7 @@ v1 task to re-apply on every install.
 - `defaults/input.zsh` -- Keyboard / trackpad keys (gated on `macos-input`)
 - `defaults/screenshots.zsh` -- Screen capture keys (gated on `macos-screenshots`)
 - `defaults/security.zsh` -- Security / privacy keys (gated on `macos-security`)
+- `defaults/appearance.zsh` -- System appearance + icon/widget style (gated on `macos-appearance`)
 - `shell-registration.zsh` -- `/etc/shells` + chsh (always-on, no gate;
   structural fix for the v1 `macos:shell:145` `$BREW_ZSH`-in-status bug)
 

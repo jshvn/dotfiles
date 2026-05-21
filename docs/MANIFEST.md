@@ -486,6 +486,7 @@ as of Phase 1. Each subsequent phase extends this table with the flags it consum
 | `macos-input` | Phase 6 | Runs `os/defaults/input.zsh` | `false` |
 | `macos-screenshots` | Phase 6 | Runs `os/defaults/screenshots.zsh` | `false` |
 | `macos-security` | Phase 6 | Runs `os/defaults/security.zsh` | `false` |
+| `macos-appearance` | Phase 6 | Runs `os/defaults/appearance.zsh` (system Dark mode + icon/widget style) | `false` |
 
 To access any of these in a taskfile, use `{{index .MANIFEST.features "feature-name"}}`.
 Do not use dot-access (`{{.MANIFEST.features.one-password-ssh}}`) -- Go-template parsing

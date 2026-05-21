@@ -20,6 +20,7 @@ macos-finder = true
 macos-input = true
 macos-screenshots = true
 macos-security = true
+macos-appearance = true
 claude-marketplace = true
 ghostty = true
 jgrid-net = true

@@ -11,9 +11,11 @@
 #               $DOTFILEDIR exported by caller.
 # Side effects: `defaults write` for global SECURITY_DEFAULTS + `defaults
 #               -currentHost write` for SECURITY_DEFAULTS_CURRENTHOST;
-#               conditionally `sudo sysadminctl -guestAccount off` (gated
-#               on an unprivileged status check so sudo never prompts on a
-#               converged machine). No killall.
+#               conditionally `sudo sysadminctl -guestAccount off` and
+#               `sudo /usr/libexec/ApplicationFirewall/socketfilterfw
+#               --setglobalstate on` (both gated on unprivileged status
+#               checks so sudo never prompts on a converged machine).
+#               No killall.
 # =============================================================================
 
 set -euo pipefail
@@ -64,6 +66,24 @@ apply_security() {
       return 1
     fi
   fi
+  # Application Firewall: socketfilterfw --getglobalstate works without sudo
+  # and prints e.g. "Firewall is enabled. (State = 1)" or
+  # "Firewall is disabled. (State = 0)". State 1 (on) and 2 (on + block all)
+  # are both treated as desired; only state 0 triggers the sudo write.
+  local fw_status fw_state=unknown
+  fw_status=$(/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>&1 || true)
+  if printf '%s' "$fw_status" | grep -qE 'State = [12]\b'; then
+    fw_state=enabled
+  elif printf '%s' "$fw_status" | grep -qE 'State = 0\b'; then
+    fw_state=disabled
+  fi
+  if [[ "$fw_state" == disabled ]]; then
+    warn "Application Firewall is disabled. Enabling it now (sudo required)..."
+    if ! sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on >/dev/null; then
+      error "Failed to enable firewall; run manually: sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on"
+      return 1
+    fi
+  fi
 }
 
 verify_security() {
@@ -85,6 +105,21 @@ verify_security() {
     check "security.guest-account = disabled"
   else
     cross "security.guest-account: expected 'disabled', got '$guest_state', raw='$guest_status'"
+    failed=1
+  fi
+  # Firewall: mirrors apply_security's parser; raw output surfaced in the
+  # cross message so field debugging is not misled by a missing substring.
+  local fw_status fw_state=unknown
+  fw_status=$(/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>&1 || true)
+  if printf '%s' "$fw_status" | grep -qE 'State = [12]\b'; then
+    fw_state=enabled
+  elif printf '%s' "$fw_status" | grep -qE 'State = 0\b'; then
+    fw_state=disabled
+  fi
+  if [[ "$fw_state" == enabled ]]; then
+    check "security.firewall = enabled"
+  else
+    cross "security.firewall: expected 'enabled', got '$fw_state', raw='$fw_status'"
     failed=1
   fi
   return $failed

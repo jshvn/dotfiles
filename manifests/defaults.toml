@@ -31,6 +31,7 @@ macos-finder = false      # gates shell/aliases/finder.zsh + os/defaults/finder.
 macos-input = false       # gates os/defaults/input.zsh + macos:defaults:input (P6)
 macos-screenshots = false # gates os/defaults/screenshots.zsh + macos:defaults:screenshots (P6)
 macos-security = false    # gates os/defaults/security.zsh + macos:defaults:security (P6)
+macos-appearance = false  # gates os/defaults/appearance.zsh (system Dark mode + icon/widget style)
 ghostty = false           # gates shell/aliases/ghostty.zsh
 jgrid-net = false         # gates shell/aliases/jgrid.zsh
 server-include = false    # gates identity:server-include (materializes ~/.config/git/server-include.config); set true on headless server machines

@@ -3,15 +3,18 @@ version: '3'
 # =============================================================================
 # taskfiles/macos.yml -- macOS OS-defaults + shell-registration layer
 #
-# Purpose:      Reads features.macos-{dock,finder,input,screenshots,security}
-#               from resolved.json; applies per-concern defaults via
+# Purpose:      Reads features.macos-{dock,finder,input,screenshots,security,
+#               appearance} from resolved.json; applies per-concern defaults via
 #               os/defaults/<concern>.zsh sourced helpers; runs
 #               os/shell-registration.zsh (always-on) to register Homebrew
 #               zsh as the login shell.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh;
 #               os/defaults/<concern>.zsh; os/shell-registration.zsh;
 #               :manifest:resolve (deps).
-# Side effects: writes macOS user defaults via `defaults write`; appends
+# Side effects: writes macOS user defaults via `defaults write`; relaunches
+#               Dock / Finder / SystemUIServer / ControlCenter at the end of
+#               apply-defaults so visual changes take effect immediately
+#               (gated on dock/finder/appearance features); appends
 #               $HOMEBREW_PREFIX/bin/zsh to /etc/shells (sudo); runs chsh.
 # =============================================================================
 
@@ -87,6 +90,8 @@ tasks:
       - task: apply-defaults:input
       - task: apply-defaults:screenshots
       - task: apply-defaults:security
+      - task: apply-defaults:appearance
+      - task: apply-defaults:refresh-ui
 
   # Per-concern feature-gate pattern: each status: uses a single-shell-block
   # with template-time short-circuit. The `{{if not (index .MANIFEST.features
@@ -164,6 +169,42 @@ tasks:
         {{if not (index .MANIFEST.features "macos-security")}}exit 0{{end}}
         DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/security.zsh"; verify_security > /dev/null 2>&1'
 
+  apply-defaults:appearance:
+    desc: "Apply Appearance defaults (gated on macos-appearance)"
+    internal: true
+    platforms: [darwin]
+    deps: [":manifest:resolve"]
+    cmds:
+      - |
+        {{if not (index .MANIFEST.features "macos-appearance")}}exit 0{{end}}
+        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/appearance.zsh"; apply_appearance'
+    status:
+      - |
+        {{if not (index .MANIFEST.features "macos-appearance")}}exit 0{{end}}
+        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/appearance.zsh"; verify_appearance > /dev/null 2>&1'
+
+  # lint-allow: cmds-without-status
+  apply-defaults:refresh-ui:
+    # Final step of apply-defaults: relaunch UI processes so the writes from
+    # the per-concern tasks take effect immediately rather than at next login.
+    # Gated on any *visual* macos-* feature being on -- machines that only opt
+    # into non-visual concerns (security, input) get no UI churn. Dock and
+    # Finder are also killed inside their own concerns; the duplicate kill
+    # here covers the appearance-on/dock-off case (Dark mode still needs the
+    # Dock to repaint). `|| true` keeps the step idempotent on headless boxes
+    # where the target process does not exist.
+    desc: "Relaunch UI processes (Dock, Finder, SystemUIServer, ControlCenter)"
+    internal: true
+    platforms: [darwin]
+    deps: [":manifest:resolve"]
+    cmds:
+      - |
+        {{if not (or (index .MANIFEST.features "macos-dock") (index .MANIFEST.features "macos-finder") (index .MANIFEST.features "macos-appearance"))}}exit 0{{end}}
+        killall Dock 2>/dev/null || true
+        killall Finder 2>/dev/null || true
+        killall SystemUIServer 2>/dev/null || true
+        killall ControlCenter 2>/dev/null || true
+
   install-shell:
     desc: "Register Homebrew zsh as login shell (/etc/shells + chsh)"
     internal: true
@@ -234,6 +275,10 @@ tasks:
           {{if index .MANIFEST.features "macos-security"}}
           source "${DOTFILEDIR}/os/defaults/security.zsh"
           verify_security || failed=1
+          {{end}}
+          {{if index .MANIFEST.features "macos-appearance"}}
+          source "${DOTFILEDIR}/os/defaults/appearance.zsh"
+          verify_appearance || failed=1
           {{end}}
 
           exit "$failed"
