@@ -32,7 +32,6 @@ formulae = []  # all CLI comes from the dotfiles/cli bundles
 
 casks = [
   { name = "cloudflare-warp" },
-  { name = "cryptomator" },
   { name = "discord" },
   { name = "dropbox" },
   { name = "nvidia-geforce-now" },
