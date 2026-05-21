@@ -1,12 +1,16 @@
 # manifests/machines/atium.toml -- Mac atium.
 #
-# Headless Mac server.
+# Mostly-headless Mac server: usually headless but occasionally connected
+# to a display, so it still takes dotfiles-gui (1Password GUI, ghostty)
+# and the cli bundle. Does NOT take dev/productivity/apps -- the few
+# laptop-class casks it wants (docker-desktop, miniconda, etc.) live in
+# extras.
 # See docs/MANIFEST.md for the schema reference and field semantics.
 
 schema_version = 1
 
 [meta]
-description = "Mac atium -- headless Mac server"
+description = "Mac atium -- mostly-headless Mac server"
 
 [platform]
 os = "darwin"
