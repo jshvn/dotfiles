@@ -21,7 +21,7 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   contract` block at the top of the file).
 - `compose-brewfile.zsh` -- Reads `resolved.json`'s typed buckets
   (`packages.brew.extra_packages.{formulae,casks,mas}`, already folded
-  in by `resolver.zsh` from `manifests/shared/<bundle>.toml`) and writes
+  in by `resolver.zsh` from `manifests/bundles/<bundle>.toml`) and writes
   a composed `$XDG_CACHE_HOME/dotfiles/Brewfile` (atomic mktemp+mv).
   Invoked by `taskfiles/packages.yml :: packages:compose` and indirectly
   by `packages:install`.
@@ -45,9 +45,9 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   output, add it to `messages.zsh` -- the existing self-bootstrap contract
   applies to new functions automatically. Otherwise create a new file
   under `install/` following the same conventions.
-- **A new Brew package.** Add to a shared bundle at
-  `manifests/shared/<purpose>.toml` (named by role, not by profile -- a
-  shared bundle's `[packages.brew]` table accepts `formulae` / `casks` /
+- **A new Brew package.** Add to a purpose bundle at
+  `manifests/bundles/<purpose>.toml` (named by role, not by profile -- a
+  bundle's `[packages.brew]` table accepts `formulae` / `casks` /
   `mas` arrays with the same shape as machine extras) or to the machine
   manifest's `extra_packages` typed sub-table for one-offs.
 

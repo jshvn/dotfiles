@@ -23,7 +23,7 @@ Both wired via `_:safe-link` entries in `taskfiles/links.yml` `configs:` sub-tas
 ## Feature gate
 
 Always on -- no feature flag. Every machine that installs `glow` (declared in
-`manifests/shared/core.toml`) gets this config symlinked automatically.
+`manifests/bundles/dotfiles.toml`) gets this config symlinked automatically.
 
 ## References
 
