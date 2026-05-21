@@ -1,0 +1,24 @@
+# manifests/bundles/dev.toml -- GUI developer applications shared by every
+# workstation machine (laptops). Headless/hybrid servers do NOT take this
+# bundle; they keep docker-desktop / miniconda as explicit extras when they
+# want those individually.
+#
+# Pure-CLI developer tools that the dotfiles config wires up (biome, ruff,
+# hyperfine) live in dotfiles.toml. Unwired CLI utilities (hugo, bat, fd,
+# etc.) live in cli.toml. This bundle is the GUI half.
+#
+# Schema reference: docs/MANIFEST.md "Bundles" section.
+
+[packages.brew]
+formulae = []
+
+casks = [
+  { name = "claude-code" },
+  { name = "docker-desktop" },
+  { name = "miniconda" },
+  { name = "sourcetree" },
+  { name = "sublime-text" },
+  { name = "visual-studio-code" },
+]
+
+mas = []
