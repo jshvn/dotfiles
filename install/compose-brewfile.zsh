@@ -18,7 +18,7 @@ set -euo pipefail
 #   Body      -- typed extras emitted as Ruby DSL lines, in fixed order:
 #                  formulae -> casks -> mas
 #
-# The resolver folds each shared-bundle's typed buckets (manifests/shared/
+# The resolver folds each shared-bundle's typed buckets (manifests/bundles/
 # <bundle>.toml `.packages.brew.{formulae,casks,mas}`) into resolved.json's
 # packages.brew.extra_packages during resolve, so the composer no longer
 # concatenates per-bundle .rb files. `bundles` survives in resolved.json

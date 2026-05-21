@@ -24,7 +24,7 @@ source "${DOTFILEDIR}/install/messages.zsh"
 # the only ones referenced by validate_manifest / resolve_pipeline; the
 # initial assignment here is the production default.
 typeset DEFAULTS="${DOTFILEDIR}/manifests/defaults.toml"
-typeset SHARED_DIR="${DOTFILEDIR}/manifests/shared"
+typeset SHARED_DIR="${DOTFILEDIR}/manifests/bundles"
 typeset -r MACHINES_DIR="${DOTFILEDIR}/manifests/machines"
 typeset -r STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
 typeset -r STATE_FILE="${STATE_DIR}/machine"
@@ -133,7 +133,7 @@ validate_manifest() {
         errors=$(( errors + 1 ))
       fi
       # Each bundle name must resolve to a typed-bucket TOML under
-      # manifests/shared/. Catch typos at validate time (a missing shared
+      # manifests/bundles/. Catch typos at validate time (a missing bundle
       # file would silently contribute nothing to packages.brew.extra_packages
       # at resolve time, with no error -- v1 had a similar drop-on-the-floor
       # bug with mis-named .rb bundles).
@@ -299,7 +299,7 @@ emit_unknown_key_warnings() {
 # Pass 2 typed-bucket path concatenates source arrays in this order, then
 # dedupes (last-write-wins):
 #   1. defaults.toml             .packages.brew.extra_packages.{formulae,casks,mas}
-#   2. manifests/shared/<b>.toml .packages.brew.{formulae,casks,mas}
+#   2. manifests/bundles/<b>.toml .packages.brew.{formulae,casks,mas}
 #      -- one entry per <b> in the merged packages.brew.bundles array.
 #   3. machine.toml              .packages.brew.extra_packages.{formulae,casks,mas}
 #
@@ -373,13 +373,13 @@ resolve_pipeline() {
   #
   # Source order (concatenated then deduped; last write wins):
   #   1. defaults.toml          .packages.brew.extra_packages.{formulae,casks,mas}
-  #   2. manifests/shared/<b>.toml .packages.brew.{formulae,casks,mas}
+  #   2. manifests/bundles/<b>.toml .packages.brew.{formulae,casks,mas}
   #      for each <b> in the merged packages.brew.bundles array, in array
   #      order. (yq `. * .` REPLACES arrays, so merged.bundles == machine's
   #      bundles list. The machine drives bundle selection.)
   #   3. machine.toml           .packages.brew.extra_packages.{formulae,casks,mas}
   #
-  # A missing shared file is a hard error: the operator typoed a bundle name
+  # A missing bundle file is a hard error: the operator typoed a bundle name
   # and would otherwise silently lose every package in that bundle.
   local -a bundle_names
   bundle_names=( $(printf '%s' "$merged" | jq -r '.packages.brew.bundles[]?' 2>/dev/null || true) )
@@ -560,7 +560,7 @@ main() {
         shift 2
         ;;
       --shared-dir)
-        # Testing only: override path to manifests/shared/ directory.
+        # Testing only: override path to manifests/bundles/ directory.
         if (( $# < 2 )); then
           error "--shared-dir requires an argument"
           return 1
@@ -577,7 +577,7 @@ Usage:
 
 Test-only flags (do not use in production):
   --defaults <path>       override defaults.toml path
-  --shared-dir <path>     override manifests/shared/ directory
+  --shared-dir <path>     override manifests/bundles/ directory
 
 Environment:
   DOTFILEDIR        repo root (required)

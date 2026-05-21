@@ -1,4 +1,4 @@
-# manifests/shared
+# manifests/bundles
 
 Shared package bundles -- typed-bucket TOML files that the resolver pulls
 into a machine's resolved manifest based on the machine's
@@ -10,7 +10,7 @@ The resolver compiles `manifests/defaults.toml` plus the active machine's
 `manifests/machines/<name>.toml` into
 `$XDG_STATE_HOME/dotfiles/resolved.json`. During that compile, for each
 bundle name in the merged `packages.brew.bundles` array, the resolver also
-reads `manifests/shared/<bundle>.toml` and unions its typed buckets
+reads `manifests/bundles/<bundle>.toml` and unions its typed buckets
 (`formulae`, `casks`, `mas`) into `packages.brew.extra_packages` on the
 output.
 
@@ -22,7 +22,7 @@ per entry into the cached Brewfile at `$XDG_CACHE_HOME/dotfiles/Brewfile`.
 Buckets are concatenated in this order, then deduped (machine wins):
 
 1. `manifests/defaults.toml` `[packages.brew.extra_packages]`
-2. `manifests/shared/<bundle>.toml` `[packages.brew]` -- one per bundle in
+2. `manifests/bundles/<bundle>.toml` `[packages.brew]` -- one per bundle in
    `packages.brew.bundles` array order
 3. `manifests/machines/<name>.toml` `[packages.brew.extra_packages]`
 
@@ -35,7 +35,7 @@ Dedupe semantics match the existing `extra_packages` rules:
 ## Schema
 
 ```toml
-# manifests/shared/<name>.toml
+# manifests/bundles/<name>.toml
 [packages.brew]
 formulae = ["pkg1", "pkg2", ...]           # bare strings (canonical)
 casks    = [ { name = "app1" }, ... ]      # { name } objects (required shape)
@@ -59,7 +59,7 @@ When to add a new shared bundle: when a tool set is wanted on two or more
 machines AND has no per-machine variation. Otherwise, put it in the
 machine's `[packages.brew.extra_packages]` typed sub-table.
 
-1. Create `manifests/shared/<purpose>.toml` with `[packages.brew]` and
+1. Create `manifests/bundles/<purpose>.toml` with `[packages.brew]` and
    any of `formulae`, `casks`, `mas`.
 2. Add `<purpose>` to the relevant machines' `packages.brew.bundles`
    array in `manifests/machines/<name>.toml`.
