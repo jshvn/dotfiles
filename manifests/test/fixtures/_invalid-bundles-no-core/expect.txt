@@ -1,2 +1,0 @@
-packages.brew.bundles must include "core"
-bundles missing core in stderr

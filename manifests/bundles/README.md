@@ -47,9 +47,10 @@ files, not machine manifests.
 
 ## Files
 
-- `core.toml` -- server-safe CLI baseline. Every machine includes this
-  (every machine TOML's `bundles = [...]` array must contain `"core"`,
-  enforced by `install/resolver.zsh::validate_manifest`).
+- `dotfiles.toml` -- packages the dotfiles config directly uses, wraps, or
+  configures. Every machine includes this (every machine TOML's
+  `bundles = [...]` array must contain `"dotfiles"`, enforced by
+  `install/resolver.zsh::validate_manifest`).
 - `gui.toml` -- laptop GUI baseline. Any machine with a display includes
   this (laptops add `"gui"` to `bundles`; servers omit it).
 

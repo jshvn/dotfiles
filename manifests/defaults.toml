@@ -37,7 +37,7 @@ server-include = false    # gates identity:server-include (materializes ~/.confi
 
 [packages.brew]
 # Bundle names map to packages/<name>.rb (Phase 5).
-bundles = ["core"]
+bundles = ["dotfiles"]
 
 [packages.brew.extra_packages]
 # Typed sub-table. Resolver concat+dedupes each sub-array

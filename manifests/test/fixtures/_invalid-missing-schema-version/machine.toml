@@ -9,7 +9,7 @@ os = "darwin"
 [features]
 
 [packages.brew]
-bundles = ["core"]
+bundles = ["dotfiles"]
 
 [identity]
 git = "none"

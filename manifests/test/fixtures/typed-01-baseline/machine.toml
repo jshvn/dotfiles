@@ -14,7 +14,7 @@ os = "darwin"
 [features]
 
 [packages.brew]
-bundles = ["core", "util"]
+bundles = ["dotfiles", "util"]
 
 [identity]
 git = "none"

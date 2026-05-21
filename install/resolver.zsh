@@ -127,9 +127,9 @@ validate_manifest() {
         error "packages.brew.bundles must contain at least one bundle"
         errors=$(( errors + 1 ))
       fi
-      contains_core=$(yq '.packages.brew.bundles | contains(["core"])' "$machine_file" 2>/dev/null || echo false)
+      contains_core=$(yq '.packages.brew.bundles | contains(["dotfiles"])' "$machine_file" 2>/dev/null || echo false)
       if [[ "$contains_core" != "true" ]]; then
-        error 'packages.brew.bundles must include "core"'
+        error 'packages.brew.bundles must include "dotfiles"'
         errors=$(( errors + 1 ))
       fi
       # Each bundle name must resolve to a typed-bucket TOML under

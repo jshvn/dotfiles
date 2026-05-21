@@ -1,4 +1,4 @@
-# Test shared bundle -- "core" for typed-bucket fixtures only.
+# Test shared bundle -- "dotfiles" for typed-bucket fixtures only.
 # NEVER referenced by real machine manifests under manifests/machines/;
 # selection happens via the resolver's --shared-dir flag in the test
 # runner. Keep contents stable -- fixture expected.json files lock in

@@ -13,7 +13,7 @@ os = "darwin"
 [features]
 
 [packages.brew]
-bundles = ["core"]
+bundles = ["dotfiles"]
 
 [packages.brew.extra_packages]
 formulae = []

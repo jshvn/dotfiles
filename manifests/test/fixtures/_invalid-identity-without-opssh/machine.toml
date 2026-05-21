@@ -14,7 +14,7 @@ one-password-ssh = false
 one-password-signing = true
 
 [packages.brew]
-bundles = ["core"]
+bundles = ["dotfiles"]
 
 [identity]
 git = "none"

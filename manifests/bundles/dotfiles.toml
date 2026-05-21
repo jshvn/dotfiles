@@ -1,11 +1,13 @@
-# manifests/shared/core.toml -- server-safe CLI baseline. Every machine
-# whose packages.brew.bundles list contains "core" pulls these typed buckets
-# into its resolved.json packages.brew.extra_packages.{formulae,casks,mas}
-# during the resolver's bundle-merge pass.
+# manifests/bundles/dotfiles.toml -- packages the dotfiles config directly
+# uses, wraps, or configures. Every machine includes this bundle (the
+# resolver's validate_manifest rule enforces "dotfiles" presence in
+# packages.brew.bundles). The typed buckets below are folded into
+# resolved.json packages.brew.extra_packages.{formulae,casks,mas} during
+# the resolver's bundle-merge pass.
 #
-# Schema reference: docs/MANIFEST.md "Shared bundles" section.
+# Schema reference: docs/MANIFEST.md "Bundles" section.
 # Merge semantics:  buckets are appended in order
-#     [defaults] -> [shared/<bundle>.toml for each bundle in order] -> [machine]
+#     [defaults] -> [bundles/<bundle>.toml for each bundle in order] -> [machine]
 #   then deduped (machine wins on collision).
 #
 # Notable surgery vs v1 install/Brewfile.rb:

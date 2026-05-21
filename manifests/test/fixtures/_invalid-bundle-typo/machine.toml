@@ -13,7 +13,7 @@ os = "darwin"
 [features]
 
 [packages.brew]
-bundles = ["core", "guii"]
+bundles = ["dotfiles", "guii"]
 
 [identity]
 git = "none"

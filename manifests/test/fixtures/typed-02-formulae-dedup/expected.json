@@ -3,7 +3,7 @@
   "packages": {
     "brew": {
       "bundles": [
-        "core"
+        "dotfiles"
       ],
       "extra_packages": {
         "formulae": [
