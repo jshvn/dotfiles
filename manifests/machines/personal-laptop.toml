@@ -25,46 +25,24 @@ ghostty = true
 jgrid-net = true
 
 [packages.brew]
-bundles = ["dotfiles", "cli", "dotfiles-gui"]
+bundles = ["dotfiles", "cli", "dotfiles-gui", "dev", "productivity", "apps"]
 
 [packages.brew.extra_packages]
-formulae = []  # all CLI lives in core.rb
+formulae = []  # all CLI comes from the dotfiles/cli bundles
 
 casks = [
-  { name = "alcove" },
-  { name = "appcleaner" },
-  { name = "cardhop" },
-  { name = "claude-code" },
   { name = "cloudflare-warp" },
   { name = "cryptomator" },
   { name = "discord" },
-  { name = "docker-desktop" },
   { name = "dropbox" },
-  { name = "fantastical" },
-  { name = "firefox" },
-  { name = "microsoft-excel" },
-  { name = "microsoft-powerpoint" },
-  { name = "microsoft-word" },
-  { name = "miniconda" },
   { name = "nvidia-geforce-now" },
   { name = "proton-drive" },
   { name = "proton-mail" },
   { name = "protonvpn" },
-  { name = "raycast" },
-  { name = "slack" },
-  { name = "sourcetree" },
-  { name = "spotify" },
-  { name = "standard-notes" },
-  { name = "sublime-text" },
-  { name = "visual-studio-code" },
   { name = "whatsapp" },
-  { name = "zoom" },
 ]
 
-mas = [
-  { id = 441258766, name = "Magnet" },
-  { id = 904280696, name = "Things3" },
-]
+mas = []
 
 [identity]
 git = "personal"
