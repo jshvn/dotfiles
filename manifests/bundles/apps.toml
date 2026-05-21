@@ -1,0 +1,20 @@
+# manifests/bundles/apps.toml -- consumer-grade GUI applications shared by
+# every workstation machine (laptops): browser, chat clients, media. Things
+# that are not strictly productivity but are universally wanted on a
+# personal/work laptop.
+#
+# Headless/hybrid servers do NOT take this bundle.
+#
+# Schema reference: docs/MANIFEST.md "Bundles" section.
+
+[packages.brew]
+formulae = []
+
+casks = [
+  { name = "firefox" },
+  { name = "slack" },
+  { name = "spotify" },
+  { name = "zoom" },
+]
+
+mas = []
