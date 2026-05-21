@@ -1,0 +1,23 @@
+# manifests/bundles/dotfiles-gui.toml -- GUI packages the dotfiles config
+# itself depends on. Paired with dotfiles.toml: every machine with a display
+# includes "dotfiles-gui" in packages.brew.bundles; truly headless servers
+# omit it. Contents are the GUI applications the dotfiles features wire up
+# directly (1Password GUI for op-ssh-sign/agent; ghostty as the configured
+# terminal emulator under configs/ghostty/).
+#
+# Schema reference: docs/MANIFEST.md "Bundles" section.
+#
+# The 1Password command-line tool is NOT here -- it lives in dotfiles.toml
+# as a binary-only cask (1password-cli; no /Applications/.app bundle).
+# Other GUI applications (dev IDEs, office, chat, browsers, etc.) live in
+# the dev/productivity/apps bundles or per-machine extras, not here.
+
+[packages.brew]
+formulae = []
+
+casks = [
+  { name = "1password" },
+  { name = "ghostty" },
+]
+
+mas = []

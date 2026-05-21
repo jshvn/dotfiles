@@ -51,8 +51,10 @@ files, not machine manifests.
   configures. Every machine includes this (every machine TOML's
   `bundles = [...]` array must contain `"dotfiles"`, enforced by
   `install/resolver.zsh::validate_manifest`).
-- `gui.toml` -- laptop GUI baseline. Any machine with a display includes
-  this (laptops add `"gui"` to `bundles`; servers omit it).
+- `dotfiles-gui.toml` -- GUI packages the dotfiles config depends on
+  (1Password GUI, ghostty). Any machine with a display includes this
+  (laptops + hybrid-headless machines add `"dotfiles-gui"` to `bundles`;
+  truly headless servers omit it).
 
 ## Adding a bundle
 

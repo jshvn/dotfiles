@@ -18,7 +18,7 @@ macos-security = true
 ghostty = true
 
 [packages.brew]
-bundles = ["dotfiles", "cli", "gui"]
+bundles = ["dotfiles", "cli", "dotfiles-gui"]
 
 [packages.brew.extra_packages]
 formulae = []
