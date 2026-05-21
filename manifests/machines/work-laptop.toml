@@ -23,7 +23,7 @@ claude-marketplace = true
 ghostty = true
 
 [packages.brew]
-bundles = ["dotfiles", "gui"]
+bundles = ["dotfiles", "cli", "gui"]
 
 [packages.brew.extra_packages]
 formulae = []

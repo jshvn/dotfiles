@@ -1,0 +1,27 @@
+# manifests/bundles/cli.toml -- useful CLI utilities that the dotfiles
+# config does not directly wire (no alias, function, hook, or task
+# references them). Included on every shell machine -- laptops + headless
+# servers -- because they are sysadmin/dev ergonomic upgrades over the
+# system defaults.
+#
+# Schema reference: docs/MANIFEST.md "Bundles" section.
+# Merge semantics: see manifests/bundles/README.md.
+#
+# Promotion rule: if a tool here grows a config under configs/<tool>/ or
+# gets wrapped by a shell alias/function, move it to dotfiles.toml.
+
+[packages.brew]
+formulae = [
+  "bat",
+  "bottom",
+  "doggo",
+  "duf",
+  "fd",
+  "htop",
+  "hugo",
+  "wget",
+]
+
+casks = []
+
+mas = []

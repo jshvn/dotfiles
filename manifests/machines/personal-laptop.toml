@@ -25,7 +25,7 @@ ghostty = true
 jgrid-net = true
 
 [packages.brew]
-bundles = ["dotfiles", "gui"]
+bundles = ["dotfiles", "cli", "gui"]
 
 [packages.brew.extra_packages]
 formulae = []  # all CLI lives in core.rb
