@@ -1,0 +1,27 @@
+# manifests/bundles/productivity.toml -- desktop productivity applications
+# shared by every workstation machine (laptops). Office suite, PIM apps,
+# launchers, window management, notes. MAS productivity apps included.
+#
+# Headless/hybrid servers do NOT take this bundle.
+#
+# Schema reference: docs/MANIFEST.md "Bundles" section.
+
+[packages.brew]
+formulae = []
+
+casks = [
+  { name = "alcove" },
+  { name = "appcleaner" },
+  { name = "cardhop" },
+  { name = "fantastical" },
+  { name = "microsoft-excel" },
+  { name = "microsoft-powerpoint" },
+  { name = "microsoft-word" },
+  { name = "raycast" },
+  { name = "standard-notes" },
+]
+
+mas = [
+  { id = 441258766, name = "Magnet" },
+  { id = 904280696, name = "Things3" },
+]
