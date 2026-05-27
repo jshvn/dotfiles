@@ -16,6 +16,10 @@ $ task install
 ```zsh
 $ update
 ```
+`update` fast-forwards the repo from its remote (`task repo:sync`), then runs `task install`.
+The pull is fast-forward-only and skips cleanly -- with a warning, never blocking the install --
+on a dirty working tree, a diverged branch, or when offline / SSH auth is unavailable. Set
+`repo-auto-update = false` in a machine manifest to skip the pull entirely.
 
 ## ⚙️ Common Tasks
 

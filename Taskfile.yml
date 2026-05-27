@@ -85,6 +85,15 @@ includes:
       XDG_CACHE_HOME: '{{.XDG_CACHE_HOME}}'
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   claude:   ./taskfiles/claude.yml
+  # repo:sync needs the root DOTFILEDIR forwarded (same DOTFILEDIR-leak
+  # reason as manifest/identity/packages); XDG_STATE_HOME resolves
+  # resolved.json for the repo-auto-update feature gate.
+  repo:
+    taskfile: ./taskfiles/repo.yml
+    vars:
+      DOTFILEDIR: '{{.DOTFILEDIR}}'
+      XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
+      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   show:     ./taskfiles/show.yml
   test:
     taskfile: ./taskfiles/test.yml
@@ -150,6 +159,7 @@ tasks:
     cmds:
       - task: test:manifest
       - task: test:hooks
+      - task: test:repo-sync
       - task: lint:test-fixtures
 
   # lint-allow: cmds-without-status

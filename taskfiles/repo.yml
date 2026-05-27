@@ -1,0 +1,46 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/repo.yml -- dotfiles repository sync layer
+#
+# Purpose:      `repo:sync` fast-forwards the dotfiles repo from its remote
+#               before install. The `update` alias chains
+#               `task repo:sync && task install` in two processes so freshly
+#               pulled taskfile changes are parsed by the install run.
+# Depends on:   install/repo-sync.zsh; install/messages.zsh (via the script);
+#               :manifest:resolve (deps); DOTFILEDIR forwarded from the root
+#               Taskfile.yml include (per the DOTFILEDIR-leak Don't-Do).
+# Side effects: at most a `git merge --ff-only` of the dotfiles working tree.
+#               Gated off by feature flag repo-auto-update = false.
+# =============================================================================
+
+vars:
+  XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
+  RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
+
+  # Empty-features stub on a fresh checkout so the status gate evaluates to
+  # "skip" instead of erroring at template-parse time -- same pattern as
+  # taskfiles/packages.yml.
+  MANIFEST_JSON:
+    sh: |
+      if [[ -f "{{.RESOLVED_JSON_PATH}}" ]]; then
+        cat "{{.RESOLVED_JSON_PATH}}"
+      else
+        echo '{"features":{}}'
+      fi
+  MANIFEST:
+    ref: 'fromJson .MANIFEST_JSON'
+
+tasks:
+
+  sync:
+    desc: "Pull latest dotfiles from the git remote (fast-forward only)"
+    deps: [":manifest:resolve"]
+    # LINT-02: template var (not shell var). Flag true -> "true" != "true" is
+    # false -> status non-zero -> task runs. Flag false/absent -> status 0 ->
+    # task skips. The pull itself is warn-only (install/repo-sync.zsh always
+    # exits 0), so the alias `&&` still reaches `task install`.
+    status:
+      - 'test "{{index .MANIFEST.features "repo-auto-update"}}" != "true"'
+    cmds:
+      - DOTFILEDIR="{{.DOTFILEDIR}}" zsh "{{.DOTFILEDIR}}/install/repo-sync.zsh"

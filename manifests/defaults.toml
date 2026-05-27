@@ -26,6 +26,7 @@ os = "darwin"
 one-password-ssh = false
 one-password-signing = false   # gates git commit signing via 1Password op-ssh-sign
 claude-marketplace = true
+repo-auto-update = true   # `update`/`task repo:sync` fast-forwards the dotfiles repo from its remote before install; off skips the pull (e.g. on a dev machine you push from)
 macos-dock = false        # gates os/defaults/dock.zsh + macos:defaults:dock (P6)
 macos-finder = false      # gates shell/aliases/finder.zsh + os/defaults/finder.zsh (same-flag-two-consumers)
 macos-input = false       # gates os/defaults/input.zsh + macos:defaults:input (P6)

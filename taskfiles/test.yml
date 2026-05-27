@@ -52,6 +52,19 @@ tasks:
     status:
       - false
 
+  # lint-allow: cmds-without-status
+  repo-sync:
+    desc: "Run repo:sync fast-forward smoke tests via install/test-repo-sync.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running repo-sync smoke tests"
+        export DOTFILEDIR="{{.DOTFILEDIR}}"
+        zsh "${DOTFILEDIR}/install/test-repo-sync.zsh"
+    status:
+      - false
+
   manifest:
     desc: "Run deep-merge fixtures (positive + negative)"
     internal: true

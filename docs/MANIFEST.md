@@ -481,6 +481,7 @@ as of Phase 1. Each subsequent phase extends this table with the flags it consum
 | `one-password-ssh` | Phase 4 | Enables 1Password SSH agent integration | `false` |
 | `one-password-signing` | Phase 4 | Enables git commit signing via 1Password op-ssh-sign | `false` |
 | `claude-marketplace` | Phase 7 | Installs Claude marketplace plugins | `true` |
+| `repo-auto-update` | repo | Gates `task repo:sync` -- `update` fast-forwards the dotfiles repo from its remote before install (warn-only; ff-only) | `true` |
 | `macos-dock` | Phase 6 | Runs `os/defaults/dock.zsh` | `false` |
 | `macos-finder` | shell + os | Gates `shell/aliases/finder.zsh` + runs `os/defaults/finder.zsh` (same-flag-two-consumers) | `false` |
 | `macos-input` | Phase 6 | Runs `os/defaults/input.zsh` | `false` |
