@@ -1,6 +1,15 @@
 #!/bin/zsh
-# Notification hook: show macOS desktop notification when Claude needs attention.
-# Reads the tool input JSON from stdin (Claude Code hook protocol).
+
+# =============================================================================
+# claude/hooks/notify.zsh -- Notification hook: desktop notification on attn
+#
+# Purpose:      Read Notification event JSON from stdin (Claude Code hook
+#               protocol); fire a macOS Notification Center entry with the
+#               supplied title and message.
+# Depends on:   claude/hooks/lib.zsh; jq; osascript.
+# Side effects: posts a macOS user notification; failure is silent (`|| true`)
+#               so headless boxes do not abort the hook chain.
+# =============================================================================
 
 set -euo pipefail
 source "${0:A:h}/lib.zsh"

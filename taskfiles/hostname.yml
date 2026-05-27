@@ -45,13 +45,13 @@ tasks:
     # match the live LocalHostName (already converged). All other cases run
     # cmds, which branches on state-file presence:
     #   - state file missing -> capture live LocalHostName into state file
-    #     (self-heal: a previously-installed machine whose hostname was set
-    #     via the legacy `sethostname` shell function gets back-filled on
+    #     (self-heal: a machine whose hostname was set via the `sethostname`
+    #     shell function rather than `task install` gets back-filled on
     #     the next `task install`).
     #   - state file present AND mismatch -> apply state -> system.
-    # LINT-01 + LINT-02 -- the only template var in status is
-    # {{.HOSTNAME_STATE_FILE}}; the rest is shell inside the nested zsh -c
-    # body (same false-positive baseline class accepted in manifest.yml).
+    # LINT-02 -- the only template var in status is {{.HOSTNAME_STATE_FILE}};
+    # the rest is shell inside the nested zsh -c body (same false-positive
+    # baseline class accepted in manifest.yml).
     status:
       - |
         if [[ ! -f "{{.HOSTNAME_STATE_FILE}}" ]]; then

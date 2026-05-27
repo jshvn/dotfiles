@@ -242,6 +242,9 @@ tasks:
     desc: "Hard-fail if claude or jq missing"
     # Explicit `[[ $missing -eq 0 ]]` as final expression so the task exits
     # non-zero regardless of shell flags.
+    status:
+      - command -v claude >/dev/null 2>&1
+      - command -v jq >/dev/null 2>&1
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}

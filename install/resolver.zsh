@@ -135,8 +135,7 @@ validate_manifest() {
       # Each bundle name must resolve to a typed-bucket TOML under
       # manifests/bundles/. Catch typos at validate time (a missing bundle
       # file would silently contribute nothing to packages.brew.extra_packages
-      # at resolve time, with no error -- v1 had a similar drop-on-the-floor
-      # bug with mis-named .rb bundles).
+      # at resolve time, with no error).
       local -a bundle_names
       bundle_names=( $(yq -r '.packages.brew.bundles[]' "$machine_file" 2>/dev/null || true) )
       local bn shared_toml available

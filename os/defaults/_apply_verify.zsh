@@ -1,56 +1,20 @@
 #!/bin/zsh
-# os/defaults/_apply_verify.zsh -- shared apply / verify helpers for the
-# os/defaults/<concern>.zsh family.
+
+# =============================================================================
+# os/defaults/_apply_verify.zsh -- shared apply/verify loop for os/defaults/*
 #
-# Purpose:
-#   The per-concern files (dock.zsh, finder.zsh, input.zsh, screenshots.zsh,
-#   security.zsh) all declare a tuple-stride-4 array of macOS defaults keys
-#   and previously hand-rolled near-identical apply_<concern> / verify_<concern>
-#   loops that differed only in the array name, the killall target, and the
-#   scope flag. This file extracts those loops into two parameterized helpers
-#   (rule-of-three; 5 sites > threshold).
-#
-# Caller:
-#   Each os/defaults/<concern>.zsh file sources this helper, then implements
-#   its public apply_<concern> / verify_<concern> entry points as thin wrappers
-#   around _apply_defaults / _verify_defaults. The taskfiles/macos.yml task
-#   surface is unchanged -- it still invokes apply_<concern> and
-#   verify_<concern> by name.
-#
-# Functions:
-#   _apply_defaults <ARRAY_NAME> [<KILLALL_TARGET>] [<SCOPE_FLAG>]
-#     Iterates the named tuple-stride-4 array and writes each key via
-#     `defaults [SCOPE_FLAG] write <domain> <key> -<type> <value>`. After
-#     all writes, runs `killall <KILLALL_TARGET>` if KILLALL_TARGET is set
-#     (`|| true` so headless / pre-launch machines do not abort the script
-#     when the UI process is not running -- RESEARCH Pitfall 5).
-#
-#     SCOPE_FLAG (3rd arg) is "" (global, the default) or "-currentHost"
-#     (per-host plist; RESEARCH Pitfall 3 -- reads/writes to per-host plists
-#     must use the matching scope flag or the value is invisible to the
-#     loop). When SCOPE_FLAG is "-currentHost", the same flag is used by
-#     _verify_defaults below for the read side.
-#
-#     Literal `$HOME` tokens embedded in tuple values are expanded via narrow
-#     substitution (`${value/\$HOME/$HOME}`); the (e)-flag was rejected
-#     because it performs command substitution and would be a code-exec sink
-#     if a future concern starts sourcing tuple values from external data.
-#
-#   _verify_defaults <ARRAY_NAME> <CONCERN_LABEL> [<SCOPE_FLAG>]
-#     Iterates the named tuple-stride-4 array and reads each key via
-#     `defaults [SCOPE_FLAG] read <domain> <key>`. Normalizes booleans (true/
-#     false -> 1/0 -- RESEARCH Pitfall 2 round-trip) before comparing
-#     against the expected value. Emits `check` / `cross` messages prefixed
-#     with `<CONCERN_LABEL>.<key>`; when SCOPE_FLAG is "-currentHost",
-#     appends ` (currentHost)` to messages so converged-state logs are
-#     unambiguous. Returns the count of failures (0 on full convergence).
-#
-# Contract:
-#   Sourced-only. Carries `set -euo pipefail` by v2 convention (CF-06) even
-#   though sourced files are technically exempt from LINT-04.
-#   Expects messages.zsh to already be sourced by the caller (check / cross
-#   functions must be defined). Expects $DOTFILEDIR to be exported by the
-#   ultimate task heredoc (the per-concern files assert it via `:?`).
+# Purpose:      Parameterized helpers _apply_defaults and _verify_defaults
+#               iterate a tuple-stride-4 array (domain, key, value, type) to
+#               write or read macOS `defaults`. Accepts an optional killall
+#               target (post-write UI restart) and an optional scope flag
+#               ("" or "-currentHost"). Verify normalizes bool round-trip
+#               ("true"/"false" vs "1"/"0") before comparison.
+# Depends on:   defaults, killall (optional); install/messages.zsh check/
+#               cross must already be sourced; $DOTFILEDIR exported.
+# Side effects: _apply_defaults writes to macOS user defaults and may kill
+#               UI processes; _verify_defaults emits check/cross to stderr
+#               and returns 0 on full convergence, 1 otherwise.
+# =============================================================================
 
 set -euo pipefail
 
@@ -102,7 +66,7 @@ _verify_defaults() {
     else
       current=$(defaults read "$domain" "$key" 2>/dev/null || echo "<unset>")
     fi
-    # bool round-trip normalization (RESEARCH Pitfall 2).
+    # bool round-trip normalization: defaults read returns "1"/"0" for bools.
     case "$type" in
       bool) [[ "$expanded" == "true" ]] && expected_read="1" || expected_read="0" ;;
       *)    expected_read="$expanded" ;;

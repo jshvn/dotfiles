@@ -1,7 +1,15 @@
 #!/bin/zsh
 
-# Prints permissions of file
-function permissions() {    # permissions() will print human readable permissions for a given file or directory. ex: $ permissions ~
+# =============================================================================
+# shell/functions/permissions.zsh -- human-readable file mode printer
+#
+# Purpose:      Print mode + octal + path for a file or directory; uses
+#               BSD `stat -f` on macOS, GNU `stat -c` on Linux.
+# Depends on:   stat, highlight.
+# Side effects: stdout only.
+# =============================================================================
+
+function permissions() {
 	if [[ -z "${1}" ]]; then
 		echo "ERROR: No file or directory specified";
 		return 1;

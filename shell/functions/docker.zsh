@@ -1,7 +1,16 @@
 #!/bin/zsh
 
-# docker wrapper to customize subcommands
-function docker() { # docker() will customize the functionality of docker. ex: $ docker bash
+# =============================================================================
+# shell/functions/docker.zsh -- docker CLI wrapper
+#
+# Purpose:      Override `docker ps` to a tighter columns layout, and add
+#               `docker <shell> <container>` shortcut for opening a shell
+#               inside a running container.
+# Depends on:   docker.
+# Side effects: shadows the `docker` command for the interactive shell.
+# =============================================================================
+
+function docker() {
     if [[ "$1" == "ps" ]]; then
         shift
         command docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}" "$@"

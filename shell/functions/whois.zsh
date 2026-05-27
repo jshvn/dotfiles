@@ -1,7 +1,16 @@
 #!/bin/zsh
 
-# Whois lookup utility that handles URLs, domains, and IPs
-function whois() {    # whois() wraps whois with URL parsing and colored output. ex: $ whois https://ijosh.com/
+# =============================================================================
+# shell/functions/whois.zsh -- whois wrapper with URL parsing + timeout
+#
+# Purpose:      Strip scheme / path / port / subdomains down to a registrable
+#               domain (or pass an IP straight through), then run whois via
+#               grc with a 5s gtimeout.
+# Depends on:   whois, grc, gtimeout, awk.
+# Side effects: outbound WHOIS query; stdout only.
+# =============================================================================
+
+function whois() {
     if [[ -z "${1}" ]]; then
         echo "ERROR: No domain, IP, or URL specified";
         return 1;

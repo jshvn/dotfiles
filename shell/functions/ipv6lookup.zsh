@@ -1,7 +1,16 @@
 #!/bin/zsh
 
-# lookup machine local and public ipv6 addresses 
-function ipv6lookup() {    # ipv6lookup() will list local and public IPv6 addresses. ex: $ ipv6lookup
+# =============================================================================
+# shell/functions/ipv6lookup.zsh -- local and public IPv6 enumeration
+#
+# Purpose:      List every non-link-local IPv6 address bound to a local
+#               interface, plus the public IPv6 as seen by the first
+#               responsive provider in a small ordered list.
+# Depends on:   ifconfig, curl, awk, grep.
+# Side effects: outbound HTTPS requests to ip-lookup providers; stdout only.
+# =============================================================================
+
+function ipv6lookup() {
     # list of public ipv6 providers to query (tried in order).
     local public_ipv6_providers=(
         "https://ifconfig.co"

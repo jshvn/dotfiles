@@ -1,25 +1,25 @@
 #!/bin/zsh
 
-# reload current configuration
+# =============================================================================
+# shell/aliases/general.zsh -- catch-all interactive shell aliases
+#
+# Purpose:      Reload, env inspection, PATH pretty-print, repo navigation,
+#               directory listing (eza when present), history with colours,
+#               and the `t` shorthand for `task`.
+# Depends on:   eza (optional), ncdu, highlight, omz_history, task.
+# Side effects: defines aliases reload, environment, path, dotfile,
+#               dotfiles, fsa, perms, ls (when eza present), ll,
+#               lastinstalled, history, t.
+# =============================================================================
+
 alias reload='source "$ZDOTDIR"/.zshrc'
-
-# show current environment variables
 alias environment="env"
-
-# Print each PATH entry on a separate line
 alias path='echo -e ${PATH//:/\\n} | highlight --syntax=bash'
-
-# print the dotfile directory
 alias dotfile='cd "$DOTFILEDIR"'
 alias dotfiles='cd "$DOTFILEDIR"'
-
-# enter ncdu
 alias fsa='ncdu'
-
-# shorthand for permissions function
 alias perms='permissions'
 
-# shorthands for directory listing
 # Lazy expansion (single quotes) + presence guard: when eza is absent,
 # the alias is not defined and the system `ls` falls through. Eager
 # `$(command -v eza)` expansion at source time was masking the system
@@ -29,11 +29,8 @@ if command -v eza >/dev/null 2>&1; then
 fi
 alias ll='ls -alh'
 
-# show last time macOS was installed
+# /var/db/.AppleSetupDone is touched when macOS finishes initial setup.
 alias lastinstalled="ls -l /var/db/.AppleSetupDone"
 
-# color history output
 alias history="omz_history -t '%Y-%m-%d %I:%M:%S' | highlight --syntax=bash"
-
-# task alias
 alias t='task'

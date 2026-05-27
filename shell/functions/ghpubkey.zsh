@@ -1,7 +1,15 @@
 #!/bin/zsh
 
-# GitHub public key lookup utility
-function ghpubkey() {    # ghpubkey() will print public key information for a given GitHub username. ex: $ ghpubkey jshvn
+# =============================================================================
+# shell/functions/ghpubkey.zsh -- fetch a GitHub user's public SSH keys
+#
+# Purpose:      Print the SSH public keys associated with a GitHub username
+#               (via the public github.com/<user>.keys endpoint).
+# Depends on:   curl, highlight.
+# Side effects: HTTPS GET to github.com; stdout only.
+# =============================================================================
+
+function ghpubkey() {
     if [[ -z "${1}" ]]; then
 		echo "ERROR: No GitHub username specified";
 		return 1;

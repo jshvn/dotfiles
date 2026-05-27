@@ -1,7 +1,15 @@
 #!/bin/zsh
 
-# Print information related to current system or git repository
-function info() {    # info() print git repository or system info. Pass "all" for detailed output. ex: $ info all
+# =============================================================================
+# shell/functions/info.zsh -- system or git-repo fact sheet
+#
+# Purpose:      Inside a git work tree, print `onefetch` output. Otherwise,
+#               run `fastfetch`; pass "all" for the detailed config.
+# Depends on:   onefetch, fastfetch, git.
+# Side effects: stdout only.
+# =============================================================================
+
+function info() {
     local show_all=false
     if [[ "$1" == "all" ]]; then
         show_all=true

@@ -125,7 +125,15 @@
       "Read(**/secrets/*)",
       "Read(**/*credential*)",
       "Read(**/*.pem)",
-      "Read(**/*.key)"
+      "Read(**/*.key)",
+      "Read(**/.ssh/id_rsa)",
+      "Read(**/.ssh/id_ed25519)",
+      "Read(**/.ssh/id_ecdsa)",
+      "Read(**/.ssh/id_dsa)",
+      "Read(**/.ssh/*_rsa)",
+      "Read(**/.ssh/*_ed25519)",
+      "Read(**/.ssh/*_ecdsa)",
+      "Read(**/.ssh/*_key)"
     ]
   },
   "hooks": {
@@ -134,7 +142,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"/opt/homebrew/bin/node\" \"/Users/josh/.config/claude/hooks/gsd-check-update.js\""
+            "command": "node \"$XDG_CONFIG_HOME/claude/hooks/gsd-check-update.js\""
           }
         ]
       },
@@ -142,7 +150,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/josh/.config/claude/hooks/gsd-session-state.sh"
+            "command": "bash \"$XDG_CONFIG_HOME/claude/hooks/gsd-session-state.sh\""
           }
         ]
       }
@@ -153,7 +161,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"/opt/homebrew/bin/node\" \"/Users/josh/.config/claude/hooks/gsd-context-monitor.js\"",
+            "command": "node \"$XDG_CONFIG_HOME/claude/hooks/gsd-context-monitor.js\"",
             "timeout": 10
           }
         ]
@@ -163,7 +171,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/josh/.config/claude/hooks/gsd-phase-boundary.sh",
+            "command": "bash \"$XDG_CONFIG_HOME/claude/hooks/gsd-phase-boundary.sh\"",
             "timeout": 5
           }
         ]
@@ -173,7 +181,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"/opt/homebrew/bin/node\" \"/Users/josh/.config/claude/hooks/gsd-read-injection-scanner.js\"",
+            "command": "node \"$XDG_CONFIG_HOME/claude/hooks/gsd-read-injection-scanner.js\"",
             "timeout": 5
           }
         ]
@@ -185,7 +193,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"/opt/homebrew/bin/node\" \"/Users/josh/.config/claude/hooks/gsd-prompt-guard.js\"",
+            "command": "node \"$XDG_CONFIG_HOME/claude/hooks/gsd-prompt-guard.js\"",
             "timeout": 5
           }
         ]
@@ -195,7 +203,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"/opt/homebrew/bin/node\" \"/Users/josh/.config/claude/hooks/gsd-read-guard.js\"",
+            "command": "node \"$XDG_CONFIG_HOME/claude/hooks/gsd-read-guard.js\"",
             "timeout": 5
           }
         ]
@@ -205,7 +213,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"/opt/homebrew/bin/node\" \"/Users/josh/.config/claude/hooks/gsd-workflow-guard.js\"",
+            "command": "node \"$XDG_CONFIG_HOME/claude/hooks/gsd-workflow-guard.js\"",
             "timeout": 5
           }
         ]
@@ -215,7 +223,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/josh/.config/claude/hooks/gsd-validate-commit.sh",
+            "command": "bash \"$XDG_CONFIG_HOME/claude/hooks/gsd-validate-commit.sh\"",
             "timeout": 5
           }
         ]
@@ -224,7 +232,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "node \"/Users/josh/.config/claude/hooks/gsd-statusline.js\""
+    "command": "node \"$XDG_CONFIG_HOME/claude/hooks/gsd-statusline.js\""
   },
   "enabledPlugins": {
     "ecc@ecc": true
@@ -237,5 +245,6 @@
       }
     }
   },
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "effortLevel": "max"
 }

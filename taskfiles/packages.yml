@@ -283,8 +283,9 @@ tasks:
         done < <(ggrep -E "^[[:space:]]*brew[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" || true)
 
         # MAS layer. No brew-info equivalent for App Store apps. Skip
-        # gracefully if mas is not on PATH (mas is in core.rb so should
-        # always be installed on a fully-converged machine).
+        # gracefully if mas is not on PATH (mas is declared in
+        # manifests/bundles/dotfiles.toml so should always be installed
+        # on a fully-converged machine).
         if ! command -v mas >/dev/null 2>&1; then
           warn "MAS layer skipped: mas not on PATH"
         else

@@ -144,3 +144,6 @@ claude/agents/gsd-*.md
 claude/commands/gsd-*
 claude/skills/gsd-*/
 claude/hooks/gsd-*
+
+# Per-machine Claude Code overrides. Stay machine-local; never committed.
+.claude/settings.local.json

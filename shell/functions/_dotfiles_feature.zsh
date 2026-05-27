@@ -20,9 +20,15 @@ function _dotfiles_feature() {
     if (( ! _dotfiles_features_loaded )); then
         local resolved="${XDG_STATE_HOME}/dotfiles/resolved.json"
         if [[ -r "$resolved" ]]; then
-            while IFS='=' read -r k v; do
-                _DOTFILES_FEATURES[$k]="$v"
-            done < <(jq -r '.features | to_entries[] | "\(.key)=\(.value)"' "$resolved" 2>/dev/null)
+            local jq_output jq_status=0
+            jq_output=$(jq -r '.features | to_entries[] | "\(.key)=\(.value)"' "$resolved" 2>/dev/null) || jq_status=$?
+            if (( jq_status != 0 )); then
+                echo "_dotfiles_feature: failed to parse $resolved (every feature will read as false)" >&2
+            elif [[ -n "$jq_output" ]]; then
+                while IFS='=' read -r k v; do
+                    _DOTFILES_FEATURES[$k]="$v"
+                done <<< "$jq_output"
+            fi
         fi
         _dotfiles_features_loaded=1
     fi

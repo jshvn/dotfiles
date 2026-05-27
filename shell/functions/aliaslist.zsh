@@ -1,7 +1,16 @@
 #!/bin/zsh
 
-# List all custom aliases defined in the dotfiles and system
-function aliaslist() {    # aliaslist() will list all available dotfiles and system aliases. ex: $ aliaslist
+# =============================================================================
+# shell/functions/aliaslist.zsh -- enumerate dotfiles + system aliases
+#
+# Purpose:      List every alias defined under shell/aliases/ plus every
+#               system alias that is not a dotfiles alias; pretty-print with
+#               highlight under a Dotfiles / System split header.
+# Depends on:   $DOTFILEDIR, highlight, tput, grep.
+# Side effects: stdout only.
+# =============================================================================
+
+function aliaslist() {
     local -A dotfiles_aliases  # Associative array for O(1) lookup
     local yellow=$(tput setaf 3) reset=$(tput sgr0)
 

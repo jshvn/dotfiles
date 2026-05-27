@@ -1,6 +1,13 @@
 #!/bin/zsh
 
-# mkcd - Create directory and cd into it
-function mkcd() {    # mkcd() will create a directory and cd into it. ex: $ mkcd new-project
+# =============================================================================
+# shell/functions/mkcd.zsh -- create a directory and cd into it
+#
+# Purpose:      Convenience helper for `mkdir -p X && cd X`.
+# Depends on:   mkdir.
+# Side effects: creates the directory if absent; changes working directory.
+# =============================================================================
+
+function mkcd() {
     mkdir -p "$1" && cd "$1"
 }

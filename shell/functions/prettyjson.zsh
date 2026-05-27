@@ -1,7 +1,15 @@
 #!/bin/zsh
 
-# pretty print json
-function prettyjson() {    # prettyjson() will print human readable json that has been colorized. ex: $ prettyjson file.json
+# =============================================================================
+# shell/functions/prettyjson.zsh -- pretty-print and syntax-highlight JSON
+#
+# Purpose:      Pipe a JSON file through jq for indentation, then highlight
+#               for color.
+# Depends on:   jq, highlight.
+# Side effects: stdout only.
+# =============================================================================
+
+function prettyjson() {
 	if [[ -z "${1}" ]]; then
 		echo "ERROR: No file specified";
 		return 1;

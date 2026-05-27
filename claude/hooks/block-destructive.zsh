@@ -1,6 +1,16 @@
 #!/bin/zsh
-# Pre-tool hook: block destructive Bash commands.
-# Reads the tool input JSON from stdin (Claude Code hook protocol).
+
+# =============================================================================
+# claude/hooks/block-destructive.zsh -- pre-tool hook: block destructive Bash
+#
+# Purpose:      Read tool input JSON from stdin (Claude Code hook protocol);
+#               block (exit 2) when the command matches a destructive pattern
+#               (force-push, rm -rf, DROP TABLE, --no-verify, remote-fetch-
+#               then-exec via pipe or subshell, etc.); pass through (exit 0)
+#               otherwise.
+# Depends on:   claude/hooks/lib.zsh; jq; ggrep.
+# Side effects: writes BLOCKED line to stderr on match.
+# =============================================================================
 
 set -euo pipefail
 source "${0:A:h}/lib.zsh"
@@ -26,6 +36,9 @@ hook::match_patterns "$command" 2 "BLOCKED: Destructive command detected" \
   'DROP\s+(TABLE|DATABASE|SCHEMA)' \
   'TRUNCATE\s+TABLE' \
   'curl\s.*\|\s*(sh|bash|zsh)' \
-  'wget\s.*\|\s*(sh|bash|zsh)'
+  'wget\s.*\|\s*(sh|bash|zsh)' \
+  '(bash|sh|zsh)\s+-c\s+.*\$\(.*(curl|wget)' \
+  '(python|python3)\s+-c\s+.*\$\(.*(curl|wget)' \
+  '(perl|node|ruby)\s+-e\s+.*\$\(.*(curl|wget)'
 
 exit 0

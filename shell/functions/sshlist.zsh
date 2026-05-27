@@ -1,10 +1,17 @@
 #!/bin/zsh
 
-# Display configured SSH host information from the v2 identity layout.
-# Shows main config Host blocks plus per-identity overlays in
-# identity/ssh/identities/, marking which overlay is currently active
-# (the one symlinked at ~/.ssh/identities/active).
-function sshlist() {    #  sshlist() will list all configured SSH hosts. ex: $ sshlist
+# =============================================================================
+# shell/functions/sshlist.zsh -- enumerate configured SSH host blocks
+#
+# Purpose:      Print Host blocks from identity/ssh/config and from every
+#               file in identity/ssh/identities/, marking which identity
+#               overlay is currently active (symlink at
+#               ~/.ssh/identities/active).
+# Depends on:   $DOTFILEDIR, grep, sed, tput, readlink, basename.
+# Side effects: stdout only.
+# =============================================================================
+
+function sshlist() {
     local main_config="$DOTFILEDIR/identity/ssh/config"
     local identities_dir="$DOTFILEDIR/identity/ssh/identities"
     local active_name=""

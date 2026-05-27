@@ -1,7 +1,15 @@
 #!/bin/zsh
 
-# Host info look up utility
-function host() {    # host() will print information related to a given name or IP. ex: $ host sniffies.com
+# =============================================================================
+# shell/functions/host.zsh -- DNS record lookup via doggo (1.1.1.1)
+#
+# Purpose:      Print A, AAAA, MX, TXT, NS, CNAME records for a hostname,
+#               using Cloudflare DNS (1.1.1.1).
+# Depends on:   doggo, highlight.
+# Side effects: DNS query against 1.1.1.1; stdout only.
+# =============================================================================
+
+function host() {
     if [[ -z "${1}" ]]; then
 		echo "ERROR: No host or IP specified";
 		return 1;

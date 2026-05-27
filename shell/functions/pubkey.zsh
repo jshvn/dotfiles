@@ -1,7 +1,15 @@
 #!/bin/zsh
 
-# copy primary public key to clipboard
-function pubkey() {    # pubkey() will copy a public key to the clipboard. ex: $ pubkey id_ed25519_personal.pub
+# =============================================================================
+# shell/functions/pubkey.zsh -- copy ~/.ssh/<key>.pub to the clipboard
+#
+# Purpose:      Copy the named public key from ~/.ssh/ to the macOS
+#               clipboard; with no argument, list available *.pub files.
+# Depends on:   pbcopy (macOS), highlight.
+# Side effects: writes to the clipboard.
+# =============================================================================
+
+function pubkey() {
     if [[ -z "${1}" ]]; then
         echo "ERROR: No key specified. The possible keys are:";
         local keylist=$(print -l ~/.ssh/*.pub(N))

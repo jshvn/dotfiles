@@ -10,9 +10,8 @@
 #     [defaults] -> [bundles/<bundle>.toml for each bundle in order] -> [machine]
 #   then deduped (machine wins on collision).
 #
-# Notable surgery vs v1 install/Brewfile.rb:
-#   - Carries forward "antigen" (v2 reverted the antidote experiment; see
-#     shell/.zshrc comment for rationale).
+# Notes:
+#   - "antigen" is the zsh plugin manager; see shell/.zshrc for usage.
 #   - 1password-cli is a binary-only cask (Homebrew ships the op binary
 #     to the Homebrew prefix; no /Applications/.app bundle).
 

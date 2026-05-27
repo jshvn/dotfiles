@@ -1,7 +1,16 @@
 #!/bin/zsh
 
-# profile zsh startup time
-function timezsh() {    # timezsh() will time how long it takes to start an interactive zsh shell. ex: $ timezsh
+# =============================================================================
+# shell/functions/timezsh.zsh -- zsh startup profiler
+#
+# Purpose:      Run an interactive zsh four times with /usr/bin/time for an
+#               average startup duration, then once with zsh/zprof for the
+#               function-level breakdown.
+# Depends on:   /usr/bin/time, zsh/zprof.
+# Side effects: spawns short-lived interactive zsh subshells; stdout only.
+# =============================================================================
+
+function timezsh() {
     # first run shell startup 4 times with /usr/bin/time to get average time
     local shell=${1-$SHELL}
     for i in $(seq 1 4); do /usr/bin/time "$shell" -i -c exit; done

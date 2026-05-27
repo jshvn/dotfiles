@@ -1,7 +1,15 @@
 #!/bin/zsh
 
-# Grabs certificates for a given domain name
-function getcertnames() {    # getcertnames() will print SSL certificate information for a given domain. ex: $ getcertnames ijosh.com
+# =============================================================================
+# shell/functions/getcertnames.zsh -- inspect a domain's TLS certificate
+#
+# Purpose:      Open a TLS connection to <domain>:443, print the certificate
+#               Common Name and Subject Alternative Names.
+# Depends on:   openssl, grep, sed.
+# Side effects: outbound TLS handshake to the requested host; stdout only.
+# =============================================================================
+
+function getcertnames() {
 	if [[ -z "${1}" ]]; then
 		echo "ERROR: No domain specified.";
 		return 1;

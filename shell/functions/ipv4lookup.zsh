@@ -1,7 +1,16 @@
 #!/bin/zsh
 
-# lookup machine local and public ipv4 addresses
-function ipv4lookup() {    # ipv4lookup() will list local and public IPv4 addresses. ex: $ ipv4lookup
+# =============================================================================
+# shell/functions/ipv4lookup.zsh -- local and public IPv4 enumeration
+#
+# Purpose:      List every non-loopback IPv4 address bound to a local
+#               interface, plus the public IPv4 as seen by the first
+#               responsive provider in a small ordered list.
+# Depends on:   ifconfig, curl, awk.
+# Side effects: outbound HTTPS requests to ip-lookup providers; stdout only.
+# =============================================================================
+
+function ipv4lookup() {
     # list of public ipv4 providers to query (tried in order).
     local public_ipv4_providers=(
         "https://simpip.com"

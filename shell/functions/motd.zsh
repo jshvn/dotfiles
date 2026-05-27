@@ -1,32 +1,41 @@
 #!/bin/zsh
-# -----------------------------------------------------------------------------
-# motd - Display Tron-themed MOTD with system info
-# Usage: motd
-# -----------------------------------------------------------------------------
 
-function motd() {    # motd() will display a Tron-themed message of the day with system info. ex: $ motd
-    # Tron color scheme using tput for portability
+# =============================================================================
+# shell/functions/motd.zsh -- Tron-themed message-of-the-day banner
+#
+# Purpose:      Display a centered Tron-themed banner with fastfetch system
+#               info, dotfiles repo summary (last commit + uncommitted count),
+#               and a random Tron quote. Helpers _motd_center / _motd_line
+#               live at file scope and rely on zsh dynamic scoping to read
+#               width / reset / cyan from motd()'s locals.
+# Depends on:   tput, fastfetch (optional), shuf or sort, git, sed, tr,
+#               $DOTFILEDIR, configs/motd/motd_sysinfo.jsonc,
+#               configs/motd/motd_tron.txt.
+# Side effects: stdout only.
+# =============================================================================
+
+# Helpers rely on zsh dynamic scoping: motd() declares width/reset/cyan as
+# locals, and these helpers read them at call time.
+_motd_center() {
+    local text="$1"
+    local color="$2"
+    local padding=$(( (width - ${#text}) / 2 ))
+    printf "%*s${color}%s${reset}\n" $padding "" "$text"
+}
+
+_motd_line() {
+    printf "${1:-$cyan}%*s${reset}\n" $width | tr ' ' "${2:-━}"
+}
+
+function motd() {
     local cyan=$(tput setaf 51)
     local orange=$(tput setaf 208)
     local dim=$(tput dim)
     local bold=$(tput bold)
     local reset=$(tput sgr0)
-    
     local width=$(tput cols)
-    
-    # Helper: print centered text
-    _motd_center() {
-        local text="$1"
-        local color="$2"
-        local padding=$(( (width - ${#text}) / 2 ))
-        printf "%*s${color}%s${reset}\n" $padding "" "$text"
-    }
-    
-    # Helper: horizontal line
-    _motd_line() {
-        printf "${1:-$cyan}%*s${reset}\n" $width | tr ' ' "${2:-━}"
-    }
-    
+
+
     # Header
     echo
     _motd_line "$cyan" "━"
@@ -34,7 +43,7 @@ function motd() {    # motd() will display a Tron-themed message of the day with
     echo
     
     # Logo (adaptive to width)
-    if [ $width -ge 80 ]; then
+    if [[ $width -ge 80 ]]; then
         _motd_center "     ██╗ ██████╗ ██████╗ ██╗██████╗ " "${cyan}${bold}"
         _motd_center "     ██║██╔════╝ ██╔══██╗██║██╔══██╗" "${cyan}${bold}"
         _motd_center "     ██║██║  ███╗██████╔╝██║██║  ██║" "${cyan}${bold}"
@@ -87,7 +96,4 @@ function motd() {    # motd() will display a Tron-themed message of the day with
     _motd_line "$cyan" "━"
     _motd_center "━━━ END OF LINE ━━━" "${orange}${dim}"
     echo
-    
-    # Cleanup
-    unset -f _motd_center _motd_line
 }
