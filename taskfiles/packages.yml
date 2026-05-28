@@ -18,42 +18,6 @@ includes:
   _: ./helpers.yml
 
 vars:
-  HOME: '{{.HOME}}'
-
-  XDG_CONFIG_HOME:
-    sh: echo "${XDG_CONFIG_HOME:-$HOME/.config}"
-
-  XDG_STATE_HOME:
-    sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
-
-  # XDG_CACHE_HOME is the destination for the composed Brewfile.
-  XDG_CACHE_HOME:
-    sh: echo "${XDG_CACHE_HOME:-$HOME/.cache}"
-
-  DOTFILEDIR:
-    sh: dirname "{{.TASKFILE_DIR}}"
-
-  RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
-
-  # Empty-features stub on missing resolved.json so
-  # `{{if index .MANIFEST.features "<key>"}}` evaluates to false on a fresh
-  # machine instead of erroring at template-parse time. Stderr warning so
-  # consumers fail loudly rather than silently against {}.
-  MANIFEST_JSON:
-    sh: |
-      if [[ -s '{{.RESOLVED_JSON_PATH}}' ]]; then
-        cat '{{.RESOLVED_JSON_PATH}}'
-      else
-        echo "warning: {{.RESOLVED_JSON_PATH}} missing or empty -- run 'task setup -- <machine>' first" >&2
-        echo '{"features":{}}'
-      fi
-
-  MANIFEST:
-    ref: 'fromJson .MANIFEST_JSON'
-
-  DOTFILES_MESSAGES: |
-    source '{{.DOTFILEDIR}}/install/messages.zsh'
-
   COMPOSED_BREWFILE: '{{.XDG_CACHE_HOME}}/dotfiles/Brewfile'
 
 tasks:
@@ -112,7 +76,7 @@ tasks:
         out=$(find "{{.RESOLVED_JSON_PATH}}" -newer "{{.COMPOSED_BREWFILE}}" -print -quit 2>/dev/null)
         [ -z "$out" ]
     cmds:
-      - DOTFILEDIR="{{.DOTFILEDIR}}" XDG_CACHE_HOME="{{.XDG_CACHE_HOME}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" zsh "{{.DOTFILEDIR}}/install/compose-brewfile.zsh"
+      - DOTFILEDIR="{{.ROOT_DIR}}" XDG_CACHE_HOME="{{.XDG_CACHE_HOME}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" zsh "{{.ROOT_DIR}}/install/compose-brewfile.zsh"
 
   # lint-allow: cmds-without-status
   verify:

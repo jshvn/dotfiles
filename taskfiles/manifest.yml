@@ -14,25 +14,6 @@ includes:
   _: ./helpers.yml
 
 vars:
-  HOME: '{{.HOME}}'
-
-  XDG_STATE_HOME:
-    sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
-
-  DOTFILEDIR:
-    sh: dirname "{{.TASKFILE_DIR}}"
-
-  DOTFILES_MESSAGES: |
-    source '{{.DOTFILEDIR}}/install/messages.zsh'
-
-  STATE_DIR: '{{.XDG_STATE_HOME}}/dotfiles'
-  STATE_FILE: '{{.STATE_DIR}}/machine'
-  RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
-
-  DEFAULTS_TOML: '{{.DOTFILEDIR}}/manifests/defaults.toml'
-  MACHINES_DIR: '{{.DOTFILEDIR}}/manifests/machines'
-  FIXTURES_DIR: '{{.DOTFILEDIR}}/manifests/test/fixtures'
-
   # Read first line + trim edges only. A `cat | tr -d '[:space:]'` would
   # silently strip embedded whitespace (e.g., "bad name" -> "badname") and
   # let malformed state-file values bypass MACHINE_NAME_RE.
@@ -40,22 +21,6 @@ vars:
     sh: head -n1 '{{.STATE_FILE}}' 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
 
   MACHINE_TOML: '{{.MACHINES_DIR}}/{{.MACHINE}}.toml'
-
-  # Empty-features stub on missing resolved.json so consumers fail loudly on
-  # .identity.* / .packages.* but `{{if index .MANIFEST.features "<key>"}}`
-  # still evaluates to false at template-parse time on a fresh machine
-  # (would otherwise raise "index of untyped nil").
-  MANIFEST_JSON:
-    sh: |
-      if [[ -s '{{.RESOLVED_JSON_PATH}}' ]]; then
-        cat '{{.RESOLVED_JSON_PATH}}'
-      else
-        echo "warning: {{.RESOLVED_JSON_PATH}} missing or empty -- run 'task setup -- <machine>' first" >&2
-        echo '{"features":{}}'
-      fi
-
-  MANIFEST:
-    ref: 'fromJson .MANIFEST_JSON'
 
   AVAILABLE_MACHINES:
     sh: ls '{{.MACHINES_DIR}}'/*.toml 2>/dev/null | xargs -n1 basename | sed 's/\.toml$//' | tr '\n' ' '
@@ -113,8 +78,8 @@ tasks:
     cmds:
       - mkdir -p "{{.STATE_DIR}}"
       - |
-        DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
-          zsh "{{.DOTFILEDIR}}/install/resolver.zsh"
+        DOTFILEDIR="{{.ROOT_DIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+          zsh "{{.ROOT_DIR}}/install/resolver.zsh"
     # Idempotency via BSD-find mtime check. resolved.json must be at least
     # as fresh as defaults.toml AND any machine TOML AND any shared-bundle
     # TOML -- a change to manifests/bundles/<bundle>.toml must trigger
@@ -123,7 +88,7 @@ tasks:
     status:
       - test -f "{{.RESOLVED_JSON_PATH}}"
       - |
-        out=$(find "{{.DOTFILEDIR}}/manifests" \( -name 'defaults.toml' -o -path '*/machines/*.toml' -o -path '*/bundles/*.toml' \) -newer "{{.RESOLVED_JSON_PATH}}" -print -quit 2>/dev/null)
+        out=$(find "{{.ROOT_DIR}}/manifests" \( -name 'defaults.toml' -o -path '*/machines/*.toml' -o -path '*/bundles/*.toml' \) -newer "{{.RESOLVED_JSON_PATH}}" -print -quit 2>/dev/null)
         [ -z "$out" ]
 
   show:
@@ -166,8 +131,8 @@ tasks:
           error "  run: task setup -- <machine-name>"
           exit 1
         fi
-        DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
-          zsh "{{.DOTFILEDIR}}/install/resolver.zsh" --machine "$machine_name" --stdout \
+        DOTFILEDIR="{{.ROOT_DIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+          zsh "{{.ROOT_DIR}}/install/resolver.zsh" --machine "$machine_name" --stdout \
           | jq .
 
   validate:
@@ -213,5 +178,5 @@ tasks:
         check "manifests/machines/${machine_name}.toml exists"
         # Delegate schema validation to resolver; non-zero exit propagates
         # the failure through go-task.
-        DOTFILEDIR="{{.DOTFILEDIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
-          zsh "{{.DOTFILEDIR}}/install/resolver.zsh" --validate-only --machine "$machine_name"
+        DOTFILEDIR="{{.ROOT_DIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
+          zsh "{{.ROOT_DIR}}/install/resolver.zsh" --validate-only --machine "$machine_name"

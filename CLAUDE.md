@@ -235,10 +235,12 @@ time. See `docs/CLAUDE-ADDONS.md` for the schema and worked examples.
 - Don't bypass `_:safe-link` when creating symlinks.
 - Don't use `$VAR` (shell variable) where `{{.VAR}}` (task template variable) is expected —
   especially inside `status:` blocks.
-- Don't define `DOTFILEDIR: { sh: dirname ... }` in included taskfiles — it leaks into root
-  scope under include-merge and competes with the root `Taskfile.yml` definition. Source
-  `install/messages.zsh` via `{{.TASKFILE_DIR}}` (per the `Taskfile.yml` comment block warning
-  the same).
+- Don't define a custom `DOTFILEDIR` (or similar) var to hold the repo root. Use the go-task
+  built-in `{{.ROOT_DIR}}` — it always resolves to the directory of the topmost Taskfile
+  (added v3.15.0; repo minimum is v3.37, so always available) and special vars cannot be
+  shadowed by the include-merge leak. Shell scripts that need the repo path receive it via
+  the existing `DOTFILEDIR=` env var passed at invocation, e.g.
+  `DOTFILEDIR="{{.ROOT_DIR}}" zsh "{{.ROOT_DIR}}/install/foo.zsh"`.
 - Don't commit private keys. `identity/ssh/keys/` contains public keys only.
 - Don't edit `claude/settings.json` directly. It's a generated build artifact
   regenerated from `claude/settings.d/*.json` fragments by

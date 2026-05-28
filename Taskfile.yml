@@ -4,9 +4,10 @@
 # Purpose:      Single canonical entry (`task install`) plus public operator
 #               surface (default banner, setup, test, validate). Wires every
 #               included taskfile module under one namespace.
-# Depends on:   taskfiles/{audit,manifest,lint,links,shell,identity,packages,
-#               refresh,claude,show,test,macos}.yml; install/messages.zsh
-#               (sourced via {{.TASKFILE_DIR}}, not DOTFILEDIR).
+# Depends on:   taskfiles/{audit,claude,claude-addons,hostname,identity,links,
+#               lint,macos,manifest,packages,repo,shell,show,test}.yml;
+#               install/messages.zsh (sourced via {{.TASKFILE_DIR}} so the
+#               banner renders the same regardless of include parse order).
 # Side effects: deferred to subtasks; this file declares no direct mutations.
 # =============================================================================
 
@@ -23,8 +24,6 @@ vars:
   XDG_CACHE_HOME: '{{.HOME}}/.cache'
   ZDOTDIR: '{{.XDG_CONFIG_HOME}}/zsh'
 
-  DOTFILEDIR: '{{.TASKFILE_DIR}}'
-
   # Homebrew prefix -- detect from arch when brew not yet installed.
   HOMEBREW_PREFIX:
     sh: |
@@ -34,9 +33,15 @@ vars:
       fi
 
   DOTFILES_MESSAGES: |
-    source '{{.DOTFILEDIR}}/install/messages.zsh'
+    source '{{.ROOT_DIR}}/install/messages.zsh'
 
   RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
+
+  STATE_DIR: '{{.XDG_STATE_HOME}}/dotfiles'
+  STATE_FILE: '{{.STATE_DIR}}/machine'
+  DEFAULTS_TOML: '{{.ROOT_DIR}}/manifests/defaults.toml'
+  MACHINES_DIR: '{{.ROOT_DIR}}/manifests/machines'
+  FIXTURES_DIR: '{{.ROOT_DIR}}/manifests/test/fixtures'
 
   # MANIFEST_JSON cats resolved.json or echoes a stub with a stderr warning
   # so taskfiles that ref: MANIFEST never crash on a fresh checkout. The stub
@@ -58,49 +63,17 @@ vars:
 
 includes:
   audit:    ./taskfiles/audit.yml
-  # manifest / identity / packages / test each need the root's DOTFILEDIR
-  # forwarded explicitly: their own DOTFILEDIR sh:dirname-twice pattern
-  # resolves to the wrong path when invoked as an included taskfile (the
-  # DOTFILEDIR-leak Don't-Do in CLAUDE.md applies here).
-  manifest:
-    taskfile: ./taskfiles/manifest.yml
-    vars:
-      DOTFILEDIR: '{{.DOTFILEDIR}}'
-      XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
-      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
+  manifest: ./taskfiles/manifest.yml
   lint:     ./taskfiles/lint.yml
   links:    ./taskfiles/links.yml
   shell:    ./taskfiles/shell.yml
-  identity:
-    taskfile: ./taskfiles/identity.yml
-    vars:
-      DOTFILEDIR: '{{.DOTFILEDIR}}'
-      XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
-      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
-  packages:
-    taskfile: ./taskfiles/packages.yml
-    vars:
-      DOTFILEDIR: '{{.DOTFILEDIR}}'
-      XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
-      XDG_CACHE_HOME: '{{.XDG_CACHE_HOME}}'
-      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
+  identity: ./taskfiles/identity.yml
+  packages: ./taskfiles/packages.yml
   claude:   ./taskfiles/claude.yml
   claude-addons: ./taskfiles/claude-addons.yml
-  # repo:sync needs the root DOTFILEDIR forwarded (same DOTFILEDIR-leak
-  # reason as manifest/identity/packages); XDG_STATE_HOME resolves
-  # resolved.json for the repo-auto-update feature gate.
-  repo:
-    taskfile: ./taskfiles/repo.yml
-    vars:
-      DOTFILEDIR: '{{.DOTFILEDIR}}'
-      XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
-      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
+  repo: ./taskfiles/repo.yml
   show:     ./taskfiles/show.yml
-  test:
-    taskfile: ./taskfiles/test.yml
-    vars:
-      DOTFILEDIR: '{{.DOTFILEDIR}}'
-      DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
+  test: ./taskfiles/test.yml
   macos:    ./taskfiles/macos.yml
   # hostname:* lives alongside macos: -- both are macOS-only system-state
   # layers. State is per-physical-machine ($XDG_STATE_HOME/dotfiles/hostname),
@@ -119,10 +92,8 @@ tasks:
     status: [false]
     cmds:
       - |
-        # Source messages.zsh via TASKFILE_DIR (NOT the DOTFILES_MESSAGES var)
-        # per the documented DOTFILEDIR pollution workaround -- same pattern
-        # as install: and validate: above. Banner stays render-stable
-        # regardless of include-merge ordering.
+        # Source via TASKFILE_DIR so the banner renders the same regardless
+        # of which included taskfile go-task parses first.
         source '{{.TASKFILE_DIR}}/install/messages.zsh'
         header "Dotfiles -- common tasks"
         echo
@@ -233,12 +204,6 @@ tasks:
       - task: audit:links
         vars: { CLI_ARGS: "--warn-only" }
       - |
-        # Source messages.zsh via TASKFILE_DIR (NOT DOTFILES_MESSAGES):
-        # root DOTFILEDIR var gets polluted to dirname(TASKFILE_DIR) after
-        # include-merge because some included taskfiles (lint.yml:59,
-        # links.yml:61) define DOTFILEDIR via sh-dirname of TASKFILE_DIR
-        # and that definition leaks back to root scope. TASKFILE_DIR is
-        # per-task and not subject to that pollution. Same pattern as
-        # validate: above.
+        # Source via TASKFILE_DIR (mirrors default: and validate: above).
         source '{{.TASKFILE_DIR}}/install/messages.zsh'
         success "install complete"

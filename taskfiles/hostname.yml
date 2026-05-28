@@ -21,18 +21,6 @@ includes:
   _: ./helpers.yml
 
 vars:
-  HOME: '{{.HOME}}'
-
-  XDG_STATE_HOME:
-    sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
-
-  DOTFILEDIR:
-    sh: dirname "{{.TASKFILE_DIR}}"
-
-  DOTFILES_MESSAGES: |
-    source '{{.DOTFILEDIR}}/install/messages.zsh'
-
-  STATE_DIR: '{{.XDG_STATE_HOME}}/dotfiles'
   HOSTNAME_STATE_FILE: '{{.STATE_DIR}}/hostname'
 
 tasks:
@@ -57,7 +45,7 @@ tasks:
         if [[ ! -f "{{.HOSTNAME_STATE_FILE}}" ]]; then
           exit 1
         fi
-        DOTFILEDIR={{.DOTFILEDIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
+        DOTFILEDIR={{.ROOT_DIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
           set -euo pipefail
           source "${DOTFILEDIR}/os/hostname.zsh"
           desired=$(read_hostname_state_file) || exit 1
@@ -65,7 +53,7 @@ tasks:
         '
     cmds:
       - |
-        DOTFILEDIR={{.DOTFILEDIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
+        DOTFILEDIR={{.ROOT_DIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
           set -euo pipefail
           source "${DOTFILEDIR}/install/messages.zsh"
           source "${DOTFILEDIR}/os/hostname.zsh"
@@ -141,7 +129,7 @@ tasks:
             example: task hostname:set -- JMBP
     cmds:
       - |
-        DOTFILEDIR={{.DOTFILEDIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
+        DOTFILEDIR={{.ROOT_DIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
           set -euo pipefail
           source "${DOTFILEDIR}/install/messages.zsh"
           source "${DOTFILEDIR}/os/hostname.zsh"
@@ -159,7 +147,7 @@ tasks:
     status: [false]
     cmds:
       - |
-        DOTFILEDIR={{.DOTFILEDIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
+        DOTFILEDIR={{.ROOT_DIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
           set -euo pipefail
           source "${DOTFILEDIR}/install/messages.zsh"
           source "${DOTFILEDIR}/os/hostname.zsh"
@@ -193,7 +181,7 @@ tasks:
     status: [false]
     cmds:
       - |
-        DOTFILEDIR={{.DOTFILEDIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
+        DOTFILEDIR={{.ROOT_DIR}} XDG_STATE_HOME={{.XDG_STATE_HOME}} zsh -c '
           set -euo pipefail
           source "${DOTFILEDIR}/install/messages.zsh"
           source "${DOTFILEDIR}/os/hostname.zsh"

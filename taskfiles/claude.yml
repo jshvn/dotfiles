@@ -17,8 +17,8 @@ includes:
   _: ./helpers.yml
 
 vars:
-  SETTINGS_PATH: '{{.DOTFILEDIR}}/claude/settings.json'
-  SETTINGS_D:    '{{.DOTFILEDIR}}/claude/settings.d'
+  SETTINGS_PATH: '{{.ROOT_DIR}}/claude/settings.json'
+  SETTINGS_D:    '{{.ROOT_DIR}}/claude/settings.d'
 
 tasks:
 

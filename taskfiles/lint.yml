@@ -17,15 +17,11 @@ vars:
   TASKFILE_GLOB: 'taskfiles/*.yml'
   # ZSH_FIND uses DOTFILEDIR so it works regardless of cwd when task is invoked.
   ZSH_FIND: >-
-    find {{.DOTFILEDIR}} -name '*.zsh'
-    -not -path '{{.DOTFILEDIR}}/.git/*'
-    -not -path '{{.DOTFILEDIR}}/.planning/*'
-    -not -path '{{.DOTFILEDIR}}/taskfiles/test/*'
-    -not -path '{{.DOTFILEDIR}}/.claude/*'
-  DOTFILEDIR:
-    sh: dirname "{{.TASKFILE_DIR}}"
-  DOTFILES_MESSAGES: |
-    source '{{.DOTFILEDIR}}/install/messages.zsh'
+    find {{.ROOT_DIR}} -name '*.zsh'
+    -not -path '{{.ROOT_DIR}}/.git/*'
+    -not -path '{{.ROOT_DIR}}/.planning/*'
+    -not -path '{{.ROOT_DIR}}/taskfiles/test/*'
+    -not -path '{{.ROOT_DIR}}/.claude/*'
 
 tasks:
 
@@ -72,7 +68,7 @@ tasks:
           else
             check "yaml-parse: $f"
           fi
-        done < <(find {{.DOTFILEDIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
+        done < <(find {{.ROOT_DIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
         exit "$failures"
       - |
         # lint-allow: cmds-without-status
@@ -155,7 +151,7 @@ tasks:
           else
             check "LINT-02: $f"
           fi
-        done < <(find {{.DOTFILEDIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
+        done < <(find {{.ROOT_DIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
 
         # LINT-03b: bare ln -s outside taskfiles/helpers.yml.
         # Scope:
@@ -168,7 +164,7 @@ tasks:
         #                           lint:test-fixtures, not production scan.
         violations=$(ggrep -rn -E '\bln[[:space:]]+-s' \
                       --include='*.yml' --exclude-dir='test' \
-                      "{{.DOTFILEDIR}}/taskfiles/" \
+                      "{{.ROOT_DIR}}/taskfiles/" \
                       | ggrep -v 'helpers.yml' \
                       | ggrep -v ':[[:space:]]*#' || true)
         if [[ -n "$violations" ]]; then
@@ -200,7 +196,7 @@ tasks:
             cross "LINT-03a: '$task_name' in $f has cmds: but no status:"
             failures=$(( failures + 1 ))
           done < <(yq '.tasks | to_entries | .[] | select(.value | has("cmds")) | select(.value | has("status") | not) | .key' "$f" 2>/dev/null || true)
-        done < <(find {{.DOTFILEDIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
+        done < <(find {{.ROOT_DIR}}/taskfiles -maxdepth 1 -name '*.yml' | sort)
 
         exit "$failures"
 
@@ -220,11 +216,11 @@ tasks:
             cross "LINT-04: $f missing 'set -euo pipefail' in first 30 lines"
             failures=$(( failures + 1 ))
           fi
-        done < <(find {{.DOTFILEDIR}} -name '*.zsh' -perm +111 \
-                   -not -path '{{.DOTFILEDIR}}/.git/*' \
-                   -not -path '{{.DOTFILEDIR}}/.planning/*' \
-                   -not -path '{{.DOTFILEDIR}}/taskfiles/test/*' \
-                   -not -path '{{.DOTFILEDIR}}/.claude/*' \
+        done < <(find {{.ROOT_DIR}} -name '*.zsh' -perm +111 \
+                   -not -path '{{.ROOT_DIR}}/.git/*' \
+                   -not -path '{{.ROOT_DIR}}/.planning/*' \
+                   -not -path '{{.ROOT_DIR}}/taskfiles/test/*' \
+                   -not -path '{{.ROOT_DIR}}/.claude/*' \
                    2>/dev/null)
         exit "$failures"
 
@@ -265,7 +261,7 @@ tasks:
         # by `task --list` but not by bare `task`.
         {{.DOTFILES_MESSAGES}}
         failures=0
-        ROOT_TASKFILE="{{.DOTFILEDIR}}/Taskfile.yml"
+        ROOT_TASKFILE="{{.ROOT_DIR}}/Taskfile.yml"
         public_top_tasks=$(yq '.tasks | to_entries | .[] | select(.value.internal // false | not) | .key | select(test("^[^:]+$"))' "$ROOT_TASKFILE")
         banner_body=$(yq '.tasks.default.cmds[0]' "$ROOT_TASKFILE")
         for task_name in $public_top_tasks; do
@@ -313,7 +309,7 @@ tasks:
         # lint-allow: cmds-without-status
         {{.DOTFILES_MESSAGES}}
         failures=0
-        fixtures_dir="{{.DOTFILEDIR}}/taskfiles/test/lint-fixtures"
+        fixtures_dir="{{.ROOT_DIR}}/taskfiles/test/lint-fixtures"
         for fix in "$fixtures_dir"/[0-9]*-*/; do
           name=$(basename "$fix")
           expect=$(head -n1 "$fix/expect" | tr -d '[:space:]')
@@ -427,7 +423,7 @@ tasks:
                 plistbuddy)     expect_pat='PlistBuddy'     ;;
                 *)              expect_pat="$pat_slug"      ;;
               esac
-              prod_patterns_line=$(ggrep -oE 'patterns=\([^)]+\)' "{{.DOTFILEDIR}}/taskfiles/lint.yml" | head -1)
+              prod_patterns_line=$(ggrep -oE 'patterns=\([^)]+\)' "{{.ROOT_DIR}}/taskfiles/lint.yml" | head -1)
               if ! echo "$prod_patterns_line" | ggrep -qF "$expect_pat"; then
                 actual=fail
                 echo "    LINT-05 production patterns=(...) does not declare '$expect_pat'" >&2

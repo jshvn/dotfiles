@@ -8,32 +8,11 @@ version: '3'
 #               `task repo:sync && task install` in two processes so freshly
 #               pulled taskfile changes are parsed by the install run.
 # Depends on:   install/repo-sync.zsh; install/messages.zsh (via the script);
-#               :manifest:resolve (deps). The cmd derives the repo root from
-#               {{.TASKFILE_DIR}} (per-task, unpolluted) via shell dirname --
-#               NOT from {{.DOTFILEDIR}}, which can be polluted by the
-#               documented include-merge leak (see CLAUDE.md Don't-Do, and
-#               the JAIR failure mode where {{.DOTFILEDIR}} resolved to
-#               "<repo>/taskfiles" and the script path could not be opened).
+#               :manifest:resolve (deps). Repo root resolved via the go-task
+#               built-in {{.ROOT_DIR}} (special var, leak-proof).
 # Side effects: at most a `git merge --ff-only` of the dotfiles working tree.
 #               Gated off by feature flag repo-auto-update = false.
 # =============================================================================
-
-vars:
-  XDG_STATE_HOME: '{{.XDG_STATE_HOME}}'
-  RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
-
-  # Empty-features stub on a fresh checkout so the status gate evaluates to
-  # "skip" instead of erroring at template-parse time -- same pattern as
-  # taskfiles/packages.yml.
-  MANIFEST_JSON:
-    sh: |
-      if [[ -f "{{.RESOLVED_JSON_PATH}}" ]]; then
-        cat "{{.RESOLVED_JSON_PATH}}"
-      else
-        echo '{"features":{}}'
-      fi
-  MANIFEST:
-    ref: 'fromJson .MANIFEST_JSON'
 
 tasks:
 
@@ -47,9 +26,4 @@ tasks:
     status:
       - 'test "{{index .MANIFEST.features "repo-auto-update"}}" != "true"'
     cmds:
-      # Derive the repo root from TASKFILE_DIR (taskfiles/...) instead of
-      # {{.DOTFILEDIR}} to side-step the include-merge leak. Pass the same
-      # value to the script as DOTFILEDIR (the repo it should pull).
-      - |
-        REPO_ROOT="$(dirname '{{.TASKFILE_DIR}}')"
-        DOTFILEDIR="$REPO_ROOT" zsh "$REPO_ROOT/install/repo-sync.zsh"
+      - DOTFILEDIR="{{.ROOT_DIR}}" zsh "{{.ROOT_DIR}}/install/repo-sync.zsh"

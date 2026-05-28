@@ -21,46 +21,6 @@ version: '3'
 includes:
   _: ./helpers.yml
 
-vars:
-  HOME: '{{.HOME}}'
-
-  XDG_CONFIG_HOME:
-    sh: echo "${XDG_CONFIG_HOME:-$HOME/.config}"
-
-  XDG_STATE_HOME:
-    sh: echo "${XDG_STATE_HOME:-$HOME/.local/state}"
-
-  DOTFILEDIR:
-    sh: dirname "{{.TASKFILE_DIR}}"
-
-  RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
-
-  # Empty-features stub so `{{if index .MANIFEST.features "<key>"}}` evaluates
-  # to false at template-parse time on a fresh machine instead of erroring.
-  MANIFEST_JSON:
-    sh: |
-      if [[ -s '{{.RESOLVED_JSON_PATH}}' ]]; then
-        cat '{{.RESOLVED_JSON_PATH}}'
-      else
-        echo "warning: {{.RESOLVED_JSON_PATH}} missing or empty -- run 'task setup -- <machine>' first" >&2
-        echo '{"features":{}}'
-      fi
-
-  MANIFEST:
-    ref: 'fromJson .MANIFEST_JSON'
-
-  DOTFILES_MESSAGES: |
-    source '{{.DOTFILEDIR}}/install/messages.zsh'
-
-  # HOMEBREW_PREFIX falls back to arch-detection so `task -t taskfiles/macos.yml
-  # shell` works in isolation.
-  HOMEBREW_PREFIX:
-    sh: |
-      if command -v brew >/dev/null 2>&1; then brew --prefix
-      elif [[ "$(uname -m)" == "arm64" ]]; then echo "/opt/homebrew"
-      else echo "/usr/local"
-      fi
-
 tasks:
 
   # lint-allow: cmds-without-status
@@ -107,11 +67,11 @@ tasks:
     cmds:
       - |
         {{if not (index .MANIFEST.features "macos-dock")}}exit 0{{end}}
-        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/dock.zsh"; apply_dock'
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/dock.zsh"; apply_dock'
     status:
       - |
         {{if not (index .MANIFEST.features "macos-dock")}}exit 0{{end}}
-        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/dock.zsh"; verify_dock > /dev/null 2>&1'
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/dock.zsh"; verify_dock > /dev/null 2>&1'
 
   apply-defaults:finder:
     desc: "Apply Finder defaults (gated on macos-finder)"
@@ -121,11 +81,11 @@ tasks:
     cmds:
       - |
         {{if not (index .MANIFEST.features "macos-finder")}}exit 0{{end}}
-        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/finder.zsh"; apply_finder'
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/finder.zsh"; apply_finder'
     status:
       - |
         {{if not (index .MANIFEST.features "macos-finder")}}exit 0{{end}}
-        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/finder.zsh"; verify_finder > /dev/null 2>&1'
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/finder.zsh"; verify_finder > /dev/null 2>&1'
 
   apply-defaults:input:
     desc: "Apply Input defaults (gated on macos-input)"
@@ -135,11 +95,11 @@ tasks:
     cmds:
       - |
         {{if not (index .MANIFEST.features "macos-input")}}exit 0{{end}}
-        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/input.zsh"; apply_input'
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/input.zsh"; apply_input'
     status:
       - |
         {{if not (index .MANIFEST.features "macos-input")}}exit 0{{end}}
-        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/input.zsh"; verify_input > /dev/null 2>&1'
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/input.zsh"; verify_input > /dev/null 2>&1'
 
   apply-defaults:screenshots:
     desc: "Apply Screenshots defaults (gated on macos-screenshots)"
@@ -149,11 +109,11 @@ tasks:
     cmds:
       - |
         {{if not (index .MANIFEST.features "macos-screenshots")}}exit 0{{end}}
-        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/screenshots.zsh"; apply_screenshots'
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/screenshots.zsh"; apply_screenshots'
     status:
       - |
         {{if not (index .MANIFEST.features "macos-screenshots")}}exit 0{{end}}
-        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/screenshots.zsh"; verify_screenshots > /dev/null 2>&1'
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/screenshots.zsh"; verify_screenshots > /dev/null 2>&1'
 
   apply-defaults:security:
     desc: "Apply Security defaults (gated on macos-security)"
@@ -163,11 +123,11 @@ tasks:
     cmds:
       - |
         {{if not (index .MANIFEST.features "macos-security")}}exit 0{{end}}
-        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/security.zsh"; apply_security'
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/security.zsh"; apply_security'
     status:
       - |
         {{if not (index .MANIFEST.features "macos-security")}}exit 0{{end}}
-        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/security.zsh"; verify_security > /dev/null 2>&1'
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/security.zsh"; verify_security > /dev/null 2>&1'
 
   apply-defaults:appearance:
     desc: "Apply Appearance defaults (gated on macos-appearance)"
@@ -177,11 +137,11 @@ tasks:
     cmds:
       - |
         {{if not (index .MANIFEST.features "macos-appearance")}}exit 0{{end}}
-        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/appearance.zsh"; apply_appearance'
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/appearance.zsh"; apply_appearance'
     status:
       - |
         {{if not (index .MANIFEST.features "macos-appearance")}}exit 0{{end}}
-        DOTFILEDIR={{.DOTFILEDIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/appearance.zsh"; verify_appearance > /dev/null 2>&1'
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/appearance.zsh"; verify_appearance > /dev/null 2>&1'
 
   # lint-allow: cmds-without-status
   apply-defaults:refresh-ui:
@@ -224,7 +184,7 @@ tasks:
         sh: id -un
     cmds:
       - |
-        DOTFILEDIR={{.DOTFILEDIR}} BREW_ZSH={{.BREW_ZSH}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/shell-registration.zsh"; apply_shell_registration'
+        DOTFILEDIR={{.ROOT_DIR}} BREW_ZSH={{.BREW_ZSH}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/shell-registration.zsh"; apply_shell_registration'
     status:
       - grep -qxF "{{.BREW_ZSH}}" /etc/shells
       - '[[ "$(dscl . -read "/Users/{{.USER_NAME}}" UserShell 2>/dev/null | awk ''{print $2}'')" = "{{.BREW_ZSH}}" ]]'
@@ -245,7 +205,7 @@ tasks:
       # forwarded via env; the inner script-single-quotes keep ${DOTFILEDIR},
       # ${BREW_ZSH}, $failed unexpanded by the outer mvdan/sh shell.
       - |
-        DOTFILEDIR={{.DOTFILEDIR}} BREW_ZSH={{.HOMEBREW_PREFIX}}/bin/zsh zsh -c '
+        DOTFILEDIR={{.ROOT_DIR}} BREW_ZSH={{.HOMEBREW_PREFIX}}/bin/zsh zsh -c '
           set -euo pipefail
           # messages.zsh self-guards under set -u via the `:-` default
           # expansion on $DOTFILES_MESSAGES_LOADED.

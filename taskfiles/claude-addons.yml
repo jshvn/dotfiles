@@ -30,7 +30,7 @@ tasks:
     status:
       - '{{if index .MANIFEST.features "claude-marketplace"}}false{{else}}true{{end}}'
     cmds:
-      - DOTFILEDIR='{{.DOTFILEDIR}}' zsh '{{.DOTFILEDIR}}/install/claude-addons.zsh' install
+      - DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/install/claude-addons.zsh' install
       - task: :claude:settings-compose
 
   # lint-allow: cmds-without-status
@@ -43,7 +43,7 @@ tasks:
       if present, and recomposes claude/settings.json.
     status: [false]
     cmds:
-      - DOTFILEDIR='{{.DOTFILEDIR}}' zsh '{{.DOTFILEDIR}}/install/claude-addons.zsh' remove '{{.CLI_ARGS}}'
+      - DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/install/claude-addons.zsh' remove '{{.CLI_ARGS}}'
       - task: :claude:settings-compose
 
   # lint-allow: cmds-without-status
@@ -53,7 +53,7 @@ tasks:
     deps: [":manifest:resolve"]
     status: [false]
     cmds:
-      - DOTFILEDIR='{{.DOTFILEDIR}}' zsh '{{.DOTFILEDIR}}/install/claude-addons.zsh' list
+      - DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/install/claude-addons.zsh' list
 
   # lint-allow: cmds-without-status
   validate:
@@ -71,4 +71,4 @@ tasks:
         info "claude-addons: feature disabled -- skipped"
         exit 0
         {{end}}
-        DOTFILEDIR='{{.DOTFILEDIR}}' zsh '{{.DOTFILEDIR}}/install/claude-addons.zsh' validate
+        DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/install/claude-addons.zsh' validate

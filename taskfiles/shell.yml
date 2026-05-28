@@ -14,14 +14,6 @@ includes:
   _: ./helpers.yml
 
 vars:
-  HOME: '{{.HOME}}'
-
-  DOTFILEDIR:
-    sh: dirname "{{.TASKFILE_DIR}}"
-
-  DOTFILES_MESSAGES: |
-    source '{{.DOTFILEDIR}}/install/messages.zsh'
-
   COLD_START_BUDGET: 500
 
 tasks:

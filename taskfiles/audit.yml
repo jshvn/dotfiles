@@ -11,9 +11,6 @@ version: '3'
 # =============================================================================
 
 vars:
-  DOTFILEDIR:
-    sh: dirname "{{.TASKFILE_DIR}}"
-
 tasks:
   # lint-allow: cmds-without-status
   links:
