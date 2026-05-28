@@ -13,7 +13,7 @@
 #               files matching [footprint].file_globs + [footprint].extra_paths.
 # =============================================================================
 
-set -uo pipefail
+set -euo pipefail
 
 : "${DOTFILEDIR:?DOTFILEDIR not set -- invoke via taskfiles/claude-addons.yml}"
 source "${DOTFILEDIR}/install/messages.zsh"
