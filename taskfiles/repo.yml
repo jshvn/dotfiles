@@ -8,8 +8,12 @@ version: '3'
 #               `task repo:sync && task install` in two processes so freshly
 #               pulled taskfile changes are parsed by the install run.
 # Depends on:   install/repo-sync.zsh; install/messages.zsh (via the script);
-#               :manifest:resolve (deps); DOTFILEDIR forwarded from the root
-#               Taskfile.yml include (per the DOTFILEDIR-leak Don't-Do).
+#               :manifest:resolve (deps). The cmd derives the repo root from
+#               {{.TASKFILE_DIR}} (per-task, unpolluted) via shell dirname --
+#               NOT from {{.DOTFILEDIR}}, which can be polluted by the
+#               documented include-merge leak (see CLAUDE.md Don't-Do, and
+#               the JAIR failure mode where {{.DOTFILEDIR}} resolved to
+#               "<repo>/taskfiles" and the script path could not be opened).
 # Side effects: at most a `git merge --ff-only` of the dotfiles working tree.
 #               Gated off by feature flag repo-auto-update = false.
 # =============================================================================
@@ -43,4 +47,9 @@ tasks:
     status:
       - 'test "{{index .MANIFEST.features "repo-auto-update"}}" != "true"'
     cmds:
-      - DOTFILEDIR="{{.DOTFILEDIR}}" zsh "{{.DOTFILEDIR}}/install/repo-sync.zsh"
+      # Derive the repo root from TASKFILE_DIR (taskfiles/...) instead of
+      # {{.DOTFILEDIR}} to side-step the include-merge leak. Pass the same
+      # value to the script as DOTFILEDIR (the repo it should pull).
+      - |
+        REPO_ROOT="$(dirname '{{.TASKFILE_DIR}}')"
+        DOTFILEDIR="$REPO_ROOT" zsh "$REPO_ROOT/install/repo-sync.zsh"
