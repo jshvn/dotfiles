@@ -37,7 +37,7 @@ Comma-separated list of tools with schemas available at top of prompt.
 Comma-separated list of tools available via ToolSearch (schemas NOT loaded).
 
 ## Available Skills
-Grouped summary (meta, suites like gsd-*, everything-claude-code:*, built-ins). Give counts and representative examples — full enumeration only if list is short.
+Grouped summary (meta, suites like everything-claude-code:*, built-ins). Give counts and representative examples — full enumeration only if list is short.
 
 ## This Conversation
 Ordered recap of user turns and your responses in this session. Keep each turn to one line.

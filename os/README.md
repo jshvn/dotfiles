@@ -5,7 +5,7 @@ registration. Each concern is feature-gated via `../manifests/machines/<name>.to
 `task macos:defaults` orchestrates the apply path; `task macos:validate`
 asserts current state matches the in-script expected values. macOS-only in
 v1; the flat layout (no platform subdirectories) collapses when Linux is in
-scope -- see `../.planning/ROADMAP.md` for the deferred migration cost.
+scope.
 
 ## Purpose
 
@@ -71,4 +71,3 @@ v1 task to re-apply on every install.
 - `../CLAUDE.md` -- v2 conventions (flat directories, one concept per
   file, status-block templating rules, the `macos:shell:145` bug class
   fix)
-- `../.planning/REQUIREMENTS.md` -- OSCF-01..05 + DOCS-02 traceability

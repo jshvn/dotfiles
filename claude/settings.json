@@ -139,62 +139,22 @@
   "hooks": {
     "SessionStart": [
       {
+        "matcher": "compact",
         "hooks": [
           {
             "type": "command",
-            "command": "\"/opt/homebrew/bin/node\" \"$XDG_CONFIG_HOME/claude/hooks/gsd-check-update.js\""
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$XDG_CONFIG_HOME/claude/hooks/gsd-session-state.sh\""
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash|Edit|Write|MultiEdit|Agent|Task",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"/opt/homebrew/bin/node\" \"$XDG_CONFIG_HOME/claude/hooks/gsd-context-monitor.js\"",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$XDG_CONFIG_HOME/claude/hooks/gsd-phase-boundary.sh\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"/opt/homebrew/bin/node\" \"$XDG_CONFIG_HOME/claude/hooks/gsd-read-injection-scanner.js\"",
-            "timeout": 5
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/post-compact.zsh\""
           }
         ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Agent",
         "hooks": [
           {
             "type": "command",
-            "command": "\"/opt/homebrew/bin/node\" \"$XDG_CONFIG_HOME/claude/hooks/gsd-prompt-guard.js\"",
-            "timeout": 5
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/agent-transparency.zsh\""
           }
         ]
       },
@@ -203,18 +163,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"/opt/homebrew/bin/node\" \"$XDG_CONFIG_HOME/claude/hooks/gsd-read-guard.js\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"/opt/homebrew/bin/node\" \"$XDG_CONFIG_HOME/claude/hooks/gsd-workflow-guard.js\"",
-            "timeout": 5
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/secret-scan.zsh\""
           }
         ]
       },
@@ -223,16 +172,42 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$XDG_CONFIG_HOME/claude/hooks/gsd-validate-commit.sh\"",
-            "timeout": 5
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/block-destructive.zsh\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/no-ai-comments.zsh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/no-emojis.zsh\""
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/notify.zsh\""
           }
         ]
       }
     ]
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "node \"$XDG_CONFIG_HOME/claude/hooks/gsd-statusline.js\""
   },
   "enabledPlugins": {
     "ecc@ecc": true

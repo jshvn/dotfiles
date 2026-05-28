@@ -3,16 +3,13 @@ version: '3'
 # =============================================================================
 # taskfiles/claude.yml -- Claude Code plugin management
 #
-# Purpose:      Install, upgrade, and validate Claude Code marketplaces,
-#               plugins, and the get-shit-done-cc (GSD) global installer.
-#               `claude:install` ensures presence (status-gated) AND pulls
-#               latest on every run via the internal `upgrade` step; there
-#               is no separate operator-facing update command.
+# Purpose:      Install, upgrade, and validate Claude Code marketplaces and
+#               plugins. `claude:install` ensures presence (status-gated)
+#               AND pulls latest on every run via the internal `upgrade`
+#               step; there is no separate operator-facing update command.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh;
 #               :manifest:resolve (deps); claude + jq CLIs (ensure-cli gate).
-# Side effects: registers marketplaces; installs plugins; runs
-#               `npx -y get-shit-done-cc@latest --claude --global`; writes
-#               GSD presence sentinel to $XDG_STATE_HOME/dotfiles/gsd-installed.
+# Side effects: registers marketplaces; installs plugins.
 # =============================================================================
 
 includes:
@@ -27,14 +24,10 @@ vars:
   CLAUDE_PLUGINS: |
     ecc@ecc
 
-  # Presence sentinel for get-shit-done-cc. Touched after successful
-  # `npx -y get-shit-done-cc@latest --claude --global`. Delete to force re-run.
-  GSD_SENTINEL: '{{.XDG_STATE_HOME}}/dotfiles/gsd-installed'
-
 tasks:
 
   install:
-    desc: "Install + upgrade Claude Code marketplaces, plugins, and get-shit-done-cc"
+    desc: "Install + upgrade Claude Code marketplaces and plugins"
     internal: true
     deps: [":manifest:resolve"]
     # Feature gate via status: block, NOT split-cmd {{if}}/{{end}}. go-task
@@ -48,9 +41,7 @@ tasks:
     #   1. marketplace -- status-gated; ensures marketplace+plugin are present
     #      (first-time install, or repairs missing items).
     #   2. upgrade     -- always-run; pulls latest marketplace index, updates
-    #      plugins to latest, and busts the GSD sentinel so step 3 re-fetches.
-    #   3. gsd         -- sentinel-gated; runs `npx -y get-shit-done-cc@latest`
-    #      iff sentinel missing (upgrade just removed it, so this re-runs).
+    #      plugins to latest.
     # Net effect: `task install` ALWAYS pulls latest claude artifacts.
     status:
       - '{{if index .MANIFEST.features "claude-marketplace"}}false{{else}}true{{end}}'
@@ -58,7 +49,6 @@ tasks:
       - task: ensure-cli
       - task: marketplace
       - task: upgrade
-      - task: gsd
       - |
         {{.DOTFILES_MESSAGES}}
         success "Claude plugins installed + upgraded"
@@ -116,13 +106,12 @@ tasks:
   # lint-allow: cmds-without-status
   upgrade:
     internal: true
-    desc: "Pull latest marketplace + plugins + bust GSD sentinel (always-run; called by install)"
+    desc: "Pull latest marketplace + plugins (always-run; called by install)"
     deps: ["ensure-cli", ":manifest:resolve"]
     # Always-runs by design -- this is the step that makes `task install`
     # equivalent to `task update`. `claude plugin marketplace update` and
     # `claude plugin update <id>` are upstream-no-op when already at latest,
-    # so cost on the happy path is two HTTP HEAD-ish checks. Removing the
-    # GSD sentinel last lets the subsequent `gsd` task re-fetch via npx.
+    # so cost on the happy path is two HTTP HEAD-ish checks.
     status: [false]
     cmds:
       - claude plugin marketplace update
@@ -133,24 +122,6 @@ tasks:
         cmd: |
           [[ -z "{{.ID}}" ]] && exit 0
           claude plugin update "{{.ID}}"
-      - rm -f {{.GSD_SENTINEL}}
-
-  gsd:
-    internal: true
-    desc: "Install get-shit-done-cc (presence-sentinel idempotent)"
-    deps: [ensure-cli]
-    # Sentinel idempotency: touch AFTER npx so bash errexit propagates a
-    # failed npx and the sentinel is never written for a broken install.
-    status:
-      - test -f {{.GSD_SENTINEL}}
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        info "installing get-shit-done-cc (global)"
-        npx -y get-shit-done-cc@latest --claude --global
-        mkdir -p "$(dirname {{.GSD_SENTINEL}})"
-        touch {{.GSD_SENTINEL}}
-        success "GSD installed; sentinel touched at {{.GSD_SENTINEL}}"
 
   # lint-allow: cmds-without-status
   status:
@@ -228,14 +199,6 @@ tasks:
           else
             cross "plugin {{.ID}} missing -- run 'task claude:install'"
           fi
-      - |
-        {{if not (index .MANIFEST.features "claude-marketplace")}}exit 0{{end}}
-        {{.DOTFILES_MESSAGES}}
-        if test -f {{.GSD_SENTINEL}}; then
-          check "GSD installed (sentinel present at {{.GSD_SENTINEL}})"
-        else
-          cross "GSD missing -- run 'task claude:install'"
-        fi
 
   ensure-cli:
     internal: true

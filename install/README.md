@@ -67,7 +67,5 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   `test-hooks.zsh`.
 - `../CLAUDE.md` -- v2 conventions (file-header comment blocks,
   `set -euo pipefail` on every executable `.zsh`, no AI attribution).
-- `../.planning/REQUIREMENTS.md` -- MFST-04, BTSP-01..06, LINT-04,
-  DOCS-02 traceability.
 
 Satisfies DOCS-02 for install/.

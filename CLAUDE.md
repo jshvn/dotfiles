@@ -215,12 +215,50 @@ antigen, `compinit` daily-rebuild cache, theme, functions, aliases) ->
   the same).
 - Don't commit private keys. `identity/ssh/keys/` contains public keys only.
 
-## Project State and Workflow
+## Out of Scope
 
-Use `/gsd-*` commands for any non-trivial change. Direct edits outside a GSD workflow bypass
-the planning artifacts and lose context for AI-assisted maintenance.
+Explicit boundaries with reasoning. The point is to prevent re-litigation; revisit only with
+new evidence.
 
-Entry points:
-- `/gsd-quick` — small fixes, doc updates, and ad-hoc tasks
-- `/gsd-debug` — investigation and bug fixing
-- `/gsd-execute-phase` — planned phase work
+- **Linux / Windows / WSL** — macOS-only is a deliberate simplification. All target machines
+  (laptops + Mac servers) are macOS. Platform-aware directory split, apt/dnf manifests, and
+  Linux bootstrap branch are deferred until a real Linux machine enters scope.
+- **Nix / home-manager** — evaluated; conflicts with go-task lock-in, slows AI iteration loop,
+  Homebrew still needed for macOS GUI apps via `nix-darwin.homebrew` escape hatch. The
+  declarative-manifest goal is already achieved via TOML at lower cost.
+- **chezmoi / stow / yadm** — adds a tool dependency that overlaps with go-task; doesn't
+  solve the manifest problem.
+- **Starship prompt** — the existing alanpeabody-based `theme.zsh` is small, fast, and not on
+  life support. Starship would be a behavior change with no problem to solve.
+- **fish / nu / bash** — zsh is the chosen shell.
+- **Replacing go-task** — locked.
+- **Hostname-based machine detection** — burned us before (the legacy `.zprofile`
+  literal-hostname check). Explicit `task setup -- <machine>` only.
+- **Inline profile branching in shared files** — replaced by manifest-driven feature gates.
+- **Auto-detection of identity / capabilities** — the manifest is the source of truth; no
+  clever inference at runtime.
+
+## Key Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Symlinks + TOML manifests over Nix | Nix conflicts with go-task lock-in, slows AI iteration; manifest layer captures the declarative win without language overhead. |
+| Per-machine manifest with shared `defaults.toml` | Picked clarity (per-machine) over DRY (tags); 4 machines means defaults prevents pure duplication while machine files stay self-describing. |
+| Explicit machine selection at setup | Hostname-based detection has bitten us; explicit selection beats clever auto-detect. |
+| macOS-only | All target machines are macOS (laptops + Mac servers); avoids cross-platform complexity until a real Linux machine enters scope. |
+| Keep alanpeabody-based prompt; reject Starship | The existing `theme.zsh` is small, fast, and not on life support; Starship would be a behavior change with no problem to solve. |
+| Bootstrap without curl-to-shell | Removes supply-chain risk on every fresh install. |
+| One concept per file; README per top-level directory | Reduces AI's inference burden; every directory teaches itself. |
+| `task install` is the canonical entry; update path runs through the same task | Prevents the "add a package to update path, forget install, fresh machine breaks" drift class — single source of truth, single pipeline. |
+| Five-tier testing: static lint, validate, reconcile, smoke, system | Each tier catches different drift; without verify+reconcile we'd ship "looks installed but isn't" or "symlink-soup-after-refactor". |
+| Curated 5-command operator surface (`install / setup / validate / test / lint`) | Audited every exposed task; reduced cognitive load; lint enforces banner drift via LINT-08. |
+
+## Performance and Security Constraints
+
+- **Performance target** — interactive shell cold start under 200ms; `task install` re-run
+  under 30s on a converged machine (includes `brew update` network round-trip; under 5s
+  without network).
+- **Security** — bootstrap verifies install integrity; no curl-to-shell without checksum;
+  no secrets in repo; public SSH keys only.
+- **Idempotency** — every install task has a working `status:` check; re-running
+  `task install` is a fast no-op.

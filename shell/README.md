@@ -2,8 +2,7 @@
 
 Zsh startup files, theme, aliases, and functions. Sourced by every login or
 interactive shell on a converged v2 machine. macOS-only in v1; the flat
-layout (no platform subdirectories) collapses when Linux is in scope --
-see `../.planning/ROADMAP.md` for the deferred migration cost.
+layout (no platform subdirectories) collapses when Linux is in scope.
 
 ## Key files
 
@@ -50,4 +49,3 @@ Re-measure on every plugin change or startup-file edit.
 - `../docs/MANIFEST.md` -- manifest schema and merge semantics
 - `../CLAUDE.md` -- v2 conventions (flat directories, one concept per
   file, status-block templating rules)
-- `../.planning/REQUIREMENTS.md` -- SHEL-01..SHEL-12 + DOCS-02 traceability

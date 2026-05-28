@@ -204,7 +204,7 @@ tasks:
       task install IS task update -- there is no separate update pipeline.
       Subtasks are state-converging: links/packages/macos/hostname short-circuit
       when already at desired state; claude:install always pulls latest
-      marketplace + plugins + GSD so re-running keeps Claude artifacts fresh.
+      marketplace + plugins so re-running keeps Claude artifacts fresh.
     status: [false]
     deps: [manifest:resolve]
     cmds:
