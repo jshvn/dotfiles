@@ -1,127 +1,41 @@
 version: '3'
 
 # =============================================================================
-# taskfiles/claude.yml -- Claude Code plugin management
+# taskfiles/claude.yml -- Claude Code CLI + settings.json composition
 #
-# Purpose:      Install, upgrade, and validate Claude Code marketplaces and
-#               plugins. `claude:install` ensures presence (status-gated)
-#               AND pulls latest on every run via the internal `upgrade`
-#               step; there is no separate operator-facing update command.
+# Purpose:      Ensure the claude CLI is installed, expose a status diagnostic,
+#               and own the settings.d -> settings.json composition pipeline.
+#               Marketplace/plugin lifecycle lives in taskfiles/claude-addons.yml
+#               (one addon per manifests/claude-addons/<name>.toml).
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh;
 #               :manifest:resolve (deps); claude + jq CLIs (ensure-cli gate).
-# Side effects: registers marketplaces; installs plugins.
+# Side effects: writes claude/settings.json atomically from
+#               claude/settings.d/*.json fragments + preserved CLI-managed keys.
 # =============================================================================
 
 includes:
   _: ./helpers.yml
 
 vars:
-  # Marketplaces to keep registered. One per line: `<name> <source>`.
-  CLAUDE_MARKETPLACES: |
-    ecc https://github.com/affaan-m/everything-claude-code.git
-
-  # Plugins to keep installed. One per line: `<plugin-name>@<marketplace-name>`.
-  CLAUDE_PLUGINS: |
-    ecc@ecc
+  SETTINGS_PATH: '{{.DOTFILEDIR}}/claude/settings.json'
+  SETTINGS_D:    '{{.DOTFILEDIR}}/claude/settings.d'
 
 tasks:
 
   install:
-    desc: "Install + upgrade Claude Code marketplaces and plugins"
+    desc: "Ensure claude CLI present + recompose settings.json"
     internal: true
     deps: [":manifest:resolve"]
-    # Feature gate via status: block, NOT split-cmd {{if}}/{{end}}. go-task
-    # parses each cmds entry as an independent template, so an opening {{if}}
-    # in cmds[0] without its matching {{end}} in the same scalar raises
-    # `template: :1: unexpected EOF` on every install run regardless of
-    # feature state. Idempotency for the feature-on path lives inside each
-    # sub-task; this status block is purely a feature gate.
-    #
-    # Sequence:
-    #   1. marketplace -- status-gated; ensures marketplace+plugin are present
-    #      (first-time install, or repairs missing items).
-    #   2. upgrade     -- always-run; pulls latest marketplace index, updates
-    #      plugins to latest.
-    # Net effect: `task install` ALWAYS pulls latest claude artifacts.
+    # Feature gate via status: block (not split-cmd {{if}}/{{end}} -- go-task
+    # parses each cmds entry as an independent template).
     status:
       - '{{if index .MANIFEST.features "claude-marketplace"}}false{{else}}true{{end}}'
     cmds:
       - task: ensure-cli
-      - task: marketplace
-      - task: upgrade
+      - task: settings-compose
       - |
         {{.DOTFILES_MESSAGES}}
-        success "Claude plugins installed + upgraded"
-
-  marketplace:
-    internal: true
-    desc: "Register marketplaces + install plugins"
-    deps: ["ensure-cli", ":manifest:resolve"]
-    # MARKETPLACES_JSON / PLUGINS_JSON are task-scoped so they evaluate only
-    # when this task is actually invoked (not at `task --list` or `task lint`
-    # time). status: block uses go-template-rendered literal names only --
-    # no shell-var references anywhere.
-    vars:
-      MARKETPLACES_JSON:
-        sh: claude plugin marketplace list --json 2>/dev/null || echo '[]'
-      PLUGINS_JSON:
-        sh: claude plugin list --json 2>/dev/null || echo '[]'
-    status:
-      - jq -e '.[] | select(.name == "ecc")' <(claude plugin marketplace list --json 2>/dev/null || echo '[]') >/dev/null
-      # CRITICAL: selector field MUST match the install body and validate body,
-      # both of which select on the `.id` field. Plugin objects expose `.id`
-      # as the fully-qualified `<name>@<marketplace>` token (the same string
-      # declared in CLAUDE_PLUGINS). Mismatching the field here breaks
-      # two-condition idempotency.
-      - jq -e '.[] | select(.id == "ecc@ecc")' <(claude plugin list --json 2>/dev/null || echo '[]') >/dev/null
-    cmds:
-      - for:
-          var: CLAUDE_MARKETPLACES
-          split: "\n"
-          as: ENTRY
-        cmd: |
-          [[ -z "{{.ENTRY}}" ]] && exit 0
-          read -r name source <<< "{{.ENTRY}}"
-          {{.DOTFILES_MESSAGES}}
-          if echo '{{.MARKETPLACES_JSON}}' | jq -e --arg n "$name" '.[] | select(.name == $n)' >/dev/null; then
-            check "marketplace $name already registered"
-          else
-            info "registering marketplace $name from $source"
-            claude plugin marketplace add "$source"
-          fi
-      - for:
-          var: CLAUDE_PLUGINS
-          split: "\n"
-          as: ID
-        cmd: |
-          [[ -z "{{.ID}}" ]] && exit 0
-          {{.DOTFILES_MESSAGES}}
-          if echo '{{.PLUGINS_JSON}}' | jq -e --arg i "{{.ID}}" '.[] | select(.id == $i)' >/dev/null; then
-            check "plugin {{.ID}} already installed"
-          else
-            info "installing plugin {{.ID}}"
-            claude plugin install "{{.ID}}"
-          fi
-
-  # lint-allow: cmds-without-status
-  upgrade:
-    internal: true
-    desc: "Pull latest marketplace + plugins (always-run; called by install)"
-    deps: ["ensure-cli", ":manifest:resolve"]
-    # Always-runs by design -- this is the step that makes `task install`
-    # equivalent to `task update`. `claude plugin marketplace update` and
-    # `claude plugin update <id>` are upstream-no-op when already at latest,
-    # so cost on the happy path is two HTTP HEAD-ish checks.
-    status: [false]
-    cmds:
-      - claude plugin marketplace update
-      - for:
-          var: CLAUDE_PLUGINS
-          split: "\n"
-          as: ID
-        cmd: |
-          [[ -z "{{.ID}}" ]] && exit 0
-          claude plugin update "{{.ID}}"
+        success "claude: CLI + settings.json ready"
 
   # lint-allow: cmds-without-status
   status:
@@ -135,7 +49,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   validate:
-    desc: "Validate Claude install state"
+    desc: "Validate Claude install state (CLI presence + settings.json drift check)"
     internal: true
     deps: [":manifest:resolve"]
     status: [false]
@@ -153,8 +67,7 @@ tasks:
         {{end}}
         # Missing CLIs are hard failures. Track via $rc and exit non-zero at
         # the end of this block so the root validate aggregator renders the
-        # row as `cross`. Without $rc, the block would exit 0 on missing
-        # claude, silently passing a known-broken state.
+        # row as `cross`.
         rc=0
         if command -v claude >/dev/null 2>&1; then
           check "claude CLI installed"
@@ -169,36 +82,7 @@ tasks:
           rc=1
         fi
         exit "$rc"
-      - for:
-          var: CLAUDE_MARKETPLACES
-          split: "\n"
-          as: ENTRY
-        cmd: |
-          # Short-circuit feature-off.
-          {{if not (index .MANIFEST.features "claude-marketplace")}}exit 0{{end}}
-          [[ -z "{{.ENTRY}}" ]] && exit 0
-          read -r name _source <<< "{{.ENTRY}}"
-          {{.DOTFILES_MESSAGES}}
-          marketplaces_json=$(claude plugin marketplace list --json 2>/dev/null || echo '[]')
-          if echo "$marketplaces_json" | jq -e --arg n "$name" '.[] | select(.name == $n)' >/dev/null; then
-            check "marketplace $name registered"
-          else
-            cross "marketplace $name missing -- run 'task claude:install'"
-          fi
-      - for:
-          var: CLAUDE_PLUGINS
-          split: "\n"
-          as: ID
-        cmd: |
-          {{if not (index .MANIFEST.features "claude-marketplace")}}exit 0{{end}}
-          [[ -z "{{.ID}}" ]] && exit 0
-          {{.DOTFILES_MESSAGES}}
-          plugins_json=$(claude plugin list --json 2>/dev/null || echo '[]')
-          if echo "$plugins_json" | jq -e --arg i "{{.ID}}" '.[] | select(.id == $i)' >/dev/null; then
-            check "plugin {{.ID}} installed"
-          else
-            cross "plugin {{.ID}} missing -- run 'task claude:install'"
-          fi
+      - task: settings-check
 
   ensure-cli:
     internal: true
@@ -221,3 +105,112 @@ tasks:
           missing=1
         fi
         [[ $missing -eq 0 ]]
+
+  # lint-allow: cmds-without-status
+  settings-compose:
+    desc: "Compose claude/settings.json from settings.d/*.json + preserved CLI keys"
+    internal: true
+    summary: |
+      Algorithm:
+        1. Read existing claude/settings.json and extract enabledPlugins +
+           extraKnownMarketplaces (CLI-managed -- compose preserves them
+           rather than overwriting).
+        2. jq deep-merge every claude/settings.d/*.json in numeric sort order
+           (later fragments override earlier ones on key conflict; array-
+           typed values are replaced, not concatenated -- matches the resolver
+           pass-1 semantics).
+        3. Layer preserved CLI-managed keys over the composed object.
+        4. Atomic write (mktemp + mv) into claude/settings.json.
+    # Always-runs by design -- the compose pipeline is fast (<100ms typical)
+    # and idempotent: same fragments + same preserved keys produce a
+    # byte-identical settings.json.
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        set -euo pipefail
+        target='{{.SETTINGS_PATH}}'
+        settings_d='{{.SETTINGS_D}}'
+
+        # Phase 1: preserve CLI-managed keys from the existing file.
+        if [[ -f "$target" ]]; then
+          preserved=$(jq -c '{enabledPlugins: (.enabledPlugins // {}), extraKnownMarketplaces: (.extraKnownMarketplaces // {})}' "$target")
+        else
+          preserved='{"enabledPlugins": {}, "extraKnownMarketplaces": {}}'
+        fi
+
+        # Phase 2: glob-guard. compgen returns non-zero when no matches; without
+        # this check a literal "$settings_d/*.json" would reach jq and fail.
+        if ! ls "$settings_d"/*.json >/dev/null 2>&1; then
+          cross "claude:settings-compose: no fragments at ${settings_d}/*.json"
+          exit 1
+        fi
+
+        # Phase 3: deep-merge fragments + layer preserved CLI keys. jq -s
+        # reads all input files into an array; reduce merges them in argv
+        # order (numeric filename prefix = merge priority); final * applies
+        # the preserved keys on top.
+        tmp=$(mktemp)
+        trap 'rm -f "$tmp"' EXIT
+        if ! jq -s --argjson preserved "$preserved" \
+             'reduce .[] as $f ({}; . * $f) | . * $preserved' \
+             "$settings_d"/*.json > "$tmp"; then
+          cross "claude:settings-compose: jq deep-merge failed"
+          exit 1
+        fi
+
+        # Sanity check: composed output must be valid JSON with at least the
+        # repo's own permissions/hooks keys. Empty or malformed output bricks
+        # the live config.
+        if ! jq -e '.permissions and .hooks' "$tmp" >/dev/null 2>&1; then
+          cross "claude:settings-compose: composed output missing required keys (.permissions, .hooks)"
+          exit 1
+        fi
+
+        mv "$tmp" "$target"
+        trap - EXIT
+        fragment_count=$(ls "$settings_d"/*.json 2>/dev/null | wc -l | tr -d ' ')
+        check "claude/settings.json composed from ${fragment_count} fragment(s)"
+
+  # lint-allow: cmds-without-status
+  settings-check:
+    desc: "Verify claude/settings.json matches the compose output (drift detection)"
+    internal: true
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        set -euo pipefail
+        target='{{.SETTINGS_PATH}}'
+        settings_d='{{.SETTINGS_D}}'
+
+        if [[ ! -f "$target" ]]; then
+          cross "claude:settings-check: $target does not exist"
+          exit 1
+        fi
+
+        if ! ls "$settings_d"/*.json >/dev/null 2>&1; then
+          cross "claude:settings-check: no fragments at ${settings_d}/*.json"
+          exit 1
+        fi
+
+        # Same compose algorithm as settings-compose, but writes to /tmp for diff.
+        preserved=$(jq -c '{enabledPlugins: (.enabledPlugins // {}), extraKnownMarketplaces: (.extraKnownMarketplaces // {})}' "$target")
+        expected=$(mktemp)
+        actual=$(mktemp)
+        trap 'rm -f "$expected" "$actual"' EXIT
+
+        jq -s --argjson preserved "$preserved" -S \
+          'reduce .[] as $f ({}; . * $f) | . * $preserved' \
+          "$settings_d"/*.json > "$expected"
+        jq -S . "$target" > "$actual"
+
+        if diff -q "$expected" "$actual" >/dev/null; then
+          check "claude/settings.json matches composed fragments (no drift)"
+        else
+          cross "claude/settings.json DRIFT detected vs composed fragments"
+          echo "--- expected (composed) ---" >&2
+          diff "$actual" "$expected" >&2 || true
+          echo "--- run 'task claude:settings-compose' to fix ---" >&2
+          exit 1
+        fi

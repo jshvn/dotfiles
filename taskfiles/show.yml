@@ -36,3 +36,10 @@ tasks:
     status: [false]
     cmds:
       - task: :hostname:show
+
+  # lint-allow: cmds-without-status
+  claude-addons:
+    desc: "Show known/enabled/installed Claude addons (diagnostic)"
+    status: [false]
+    cmds:
+      - task: :claude-addons:list

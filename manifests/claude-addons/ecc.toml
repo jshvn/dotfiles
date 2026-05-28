@@ -1,0 +1,51 @@
+# manifests/claude-addons/ecc.toml -- Everything Claude Code marketplace plugin
+#
+# See docs/CLAUDE-ADDONS.md for the schema reference + lifecycle.
+# See manifests/claude-addons/README.md for the directory-local quick-reference.
+
+schema_version = 1
+
+[meta]
+name        = "ecc"
+description = "Everything Claude Code -- agents, skills, commands marketplace"
+upstream    = "https://github.com/affaan-m/everything-claude-code"
+
+[install]
+# Marketplace-style addon: register marketplace then install plugin. The
+# claude CLI manages footprint under ~/.config/claude/plugins/ -- no
+# scattered files in hooks/agents/skills/commands.
+commands = [
+  "claude plugin marketplace add https://github.com/affaan-m/everything-claude-code.git",
+  "claude plugin install ecc@ecc",
+]
+# false: ECC does not write hook entries into settings.json that need disarm.
+# Its agents, skills, and hooks live entirely under the plugin directory the
+# claude CLI manages.
+self_healing = false
+
+[upgrade]
+# Run instead of [install].commands when [verify] already passes -- preserves
+# the always-pull-latest behavior of `task install`.
+commands = [
+  "claude plugin marketplace update",
+  "claude plugin update ecc@ecc",
+]
+
+[verify]
+# Detect installed state via the official CLI's JSON output. ECC is installed
+# iff `ecc@ecc` is in the plugin list.
+command = "claude plugin list --json | jq -e '.[] | select(.id == \"ecc@ecc\")' >/dev/null"
+
+[footprint]
+# Empty: ECC's files live under ~/.config/claude/plugins/, managed by the
+# claude CLI. There is nothing for claude-addons:remove to glob and delete.
+file_globs  = []
+extra_paths = []
+
+[remove]
+# Official CLI uninstall sequence. No file_globs to walk after; the claude
+# CLI cleans up its own plugin directory.
+commands = [
+  "claude plugin uninstall ecc@ecc",
+  "claude plugin marketplace remove ecc",
+]

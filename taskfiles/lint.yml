@@ -48,6 +48,8 @@ tasks:
         ignore_error: true
       - task: banner-parity
         ignore_error: true
+      - task: settings-drift
+        ignore_error: true
 
   # lint-allow: cmds-without-status
   syntax:
@@ -277,6 +279,30 @@ tasks:
           fi
         done
         exit "$failures"
+
+  # lint-allow: cmds-without-status
+  settings-drift:
+    desc: "LINT-09: claude/settings.json matches composed settings.d fragments"
+    internal: true
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # The repo owns claude/settings.json as a build artifact composed from
+        # claude/settings.d/*.json fragments. If the live file drifts from the
+        # composed output (third-party installer wrote keys; manual edit; etc.)
+        # this rule fires. Run `task claude:settings-compose` to fix.
+        {{.DOTFILES_MESSAGES}}
+        # Delegate to audit:settings (the public alias for claude:settings-check);
+        # internal tasks cannot be invoked from a shell `task` call so this
+        # public delegate is the supported entry point.
+        if task audit:settings >/dev/null 2>&1; then
+          check "LINT-09: claude/settings.json matches composed fragments"
+        else
+          cross "LINT-09: claude/settings.json drift -- run 'task claude:settings-compose'"
+          # Re-run visibly so the operator sees the diff.
+          task audit:settings 2>&1 || true
+          exit 1
+        fi
 
   # lint-allow: cmds-without-status
   test-fixtures:

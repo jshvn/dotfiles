@@ -87,7 +87,7 @@ form:
 
 Snake_case keys (e.g., `identity.git`, `meta.description`) work with dot access as usual.
 
-### Lint rule catalogue (LINT-01..08)
+### Lint rule catalogue (LINT-01..09)
 
 In-code `# LINT-NN:` citations reference this catalogue. The rule body lives in
 `taskfiles/lint.yml`; this table is the operator-facing summary.
@@ -101,6 +101,7 @@ In-code `# LINT-NN:` citations reference this catalogue. The rule body lives in
 | LINT-05 | shell/ + os/ | Portability-sensitive commands surface as warnings (non-blocking) |
 | LINT-07 | All .zsh | `zsh -n` parse-check (Tier-0 syntax) |
 | LINT-08 | Root Taskfile.yml | `default:` banner lists every public top-level task |
+| LINT-09 | claude/settings.json | Matches the composed output of `claude/settings.d/*.json` + preserved CLI-managed keys |
 
 LINT-01 and LINT-06 are intentionally absent. The original LINT-01 rule
 ("every install task has a status: block") was generalized into LINT-03a
@@ -161,6 +162,30 @@ root `Taskfile.yml` vars block.
 antigen, `compinit` daily-rebuild cache, theme, functions, aliases) ->
 `.zlogin` (login only; MOTD dispatch) -> `.zlogout` (login exit; history flush).
 
+### `claude/settings.json` is a generated build artifact
+
+Edit `claude/settings.d/*.json` fragments and run `task claude:settings-compose`
+to regenerate `claude/settings.json`. Don't hand-edit the generated file.
+LINT-09 fails the lint pipeline if `settings.json` drifts from the composed
+output (third-party installer wrote keys, manual edit, etc.). The composer
+preserves `enabledPlugins` and `extraKnownMarketplaces` from the live file
+(those are managed by the `claude plugin` CLI, not by fragments).
+
+Repo-owned fragments live at `claude/settings.d/{00-base,10-hooks}.json`.
+Each enabled third-party addon with a paired settings template gets its own
+`claude/settings.d/99-addon-<name>.json` written by `task claude-addons:install`
+and deleted by `task claude-addons:remove`. See `docs/CLAUDE-ADDONS.md`.
+
+### Third-party Claude addons are declarative
+
+The set of third-party Claude addons (marketplace plugins, npx installers)
+enabled on a machine is declared in the machine's `[claude].addons` array.
+Each name must have a matching `manifests/claude-addons/<name>.toml` declaring
+install/upgrade/remove commands, verify probe, file footprint, and optional
+settings fragment. `task claude-addons:install` and `task claude-addons:remove`
+are the operator surface; the resolver enforces TOML existence at validation
+time. See `docs/CLAUDE-ADDONS.md` for the schema and worked examples.
+
 ## Where to Add Things
 
 | Adding | Where | Naming |
@@ -172,7 +197,8 @@ antigen, `compinit` daily-rebuild cache, theme, functions, aliases) ->
 | A macOS defaults concern | `os/defaults/<concern>.zsh` + feature flag in `defaults.toml` | one concern per file |
 | A feature flag | `manifests/defaults.toml [features]` block + consuming task in the appropriate taskfile | kebab-case key |
 | A tool config | `configs/<tool>/` + symlink entry in `taskfiles/links.yml` | use the tool's expected config filename |
-| A Claude hook | `claude/hooks/<name>.zsh` + entry in `claude/hooks/hooks.json` | kebab-case |
+| A Claude hook | `claude/hooks/<name>.zsh` + entry in `claude/settings.d/10-hooks.json` (then `task claude:settings-compose`) | kebab-case |
+| A third-party Claude addon | `manifests/claude-addons/<name>.toml` (+ optional `<name>.fragment.json`) + list in machine manifest's `[claude].addons` | kebab-case |
 
 ## Conventions Not Captured Above
 
@@ -214,6 +240,14 @@ antigen, `compinit` daily-rebuild cache, theme, functions, aliases) ->
   `install/messages.zsh` via `{{.TASKFILE_DIR}}` (per the `Taskfile.yml` comment block warning
   the same).
 - Don't commit private keys. `identity/ssh/keys/` contains public keys only.
+- Don't edit `claude/settings.json` directly. It's a generated build artifact
+  regenerated from `claude/settings.d/*.json` fragments by
+  `task claude:settings-compose`. LINT-09 will fail on drift. Edit the
+  fragments instead.
+- Don't add a hook by editing `claude/settings.json` directly. Add it to
+  `claude/settings.d/10-hooks.json` (repo-owned hooks) or, for a third-party
+  addon, to that addon's `manifests/claude-addons/<name>.fragment.json`, then
+  recompose.
 
 ## Out of Scope
 

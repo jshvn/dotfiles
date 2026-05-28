@@ -1,0 +1,55 @@
+# manifests/claude-addons/get-shit-done-redux.toml -- GSD planning workflow
+#
+# Reference case (knowledge preserved). No machine enables this by default.
+# Enable in manifests/machines/<name>.toml via:
+#     [claude]
+#     addons = ["ecc", "get-shit-done-redux"]
+#
+# See docs/CLAUDE-ADDONS.md for the schema reference + lifecycle.
+
+schema_version = 1
+
+[meta]
+name        = "get-shit-done-redux"
+description = "Multi-phase planning workflow (community fork of get-shit-done-cc)"
+upstream    = "https://github.com/open-gsd/get-shit-done-redux"
+
+[install]
+# npx-style addon. Verify the exact npm package name at enable time -- the
+# redux fork may publish under a different npm name than the GitHub repo path.
+commands     = ["npx -y get-shit-done-redux@latest --claude --global"]
+# true: the npx installer writes hook entries into settings.json that re-inject
+# on tool calls. The paired fragment template (get-shit-done-redux.fragment.json)
+# captures those entries declaratively; [remove].commands disarms the hook
+# scripts on disk before file_globs deletion.
+self_healing = true
+
+[upgrade]
+# npx -y always resolves latest; upgrade is identical to install.
+commands = ["npx -y get-shit-done-redux@latest --claude --global"]
+
+[verify]
+# Filesystem-only probe -- the installer creates this directory.
+path = "~/.config/claude/get-shit-done"
+
+[footprint]
+# Glob patterns relative to $XDG_CONFIG_HOME/claude/ that this addon owns.
+# Walked by claude-addons:remove after [remove].commands finish.
+file_globs = [
+  "hooks/gsd-*",
+  "agents/gsd-*.md",
+  "skills/gsd-*/",
+  "commands/gsd-*",
+  "get-shit-done/",
+  "gsd-*",
+]
+# Absolute paths outside $XDG_CONFIG_HOME/claude/.
+extra_paths = [
+  "$XDG_STATE_HOME/dotfiles/gsd-installed",
+]
+
+[remove]
+# Disarm hook scripts on disk BEFORE file_globs deletion so they cannot
+# re-fire mid-removal. The settings.d composition (Part B) kills the
+# settings.json side; this kills the still-on-disk script side.
+commands = ["rm -f $XDG_CONFIG_HOME/claude/hooks/gsd-*"]

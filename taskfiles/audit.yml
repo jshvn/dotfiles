@@ -38,3 +38,17 @@ tasks:
     cmds:
       - task: :manifest:validate
         vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
+
+  # lint-allow: cmds-without-status
+  claude-addons:
+    desc: "Detect orphan Claude addon footprints (installed but not declared)"
+    status: [false]
+    cmds:
+      - task: :claude-addons:validate
+
+  # lint-allow: cmds-without-status
+  settings:
+    desc: "Check claude/settings.json for drift vs composed settings.d fragments"
+    status: [false]
+    cmds:
+      - task: :claude:settings-check

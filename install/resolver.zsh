@@ -220,6 +220,23 @@ validate_manifest() {
       ;;
   esac
 
+  # claude.addons cross-field rule: every name listed must have a matching
+  # manifests/claude-addons/<name>.toml. Compute the merged value the same
+  # way resolve_pipeline pass 1 does -- so the validator sees what install
+  # will see, regardless of which file declares the array.
+  local addons_json
+  addons_json=$(yq -o=json eval-all '. as $i ireduce ({}; . * $i) | .claude.addons // []' \
+                    "$DEFAULTS" "$machine_file" 2>/dev/null) || addons_json='[]'
+
+  local addon
+  while IFS= read -r addon; do
+    [[ -z "$addon" ]] && continue
+    if [[ ! -f "${DOTFILEDIR}/manifests/claude-addons/${addon}.toml" ]]; then
+      error "claude.addons references unknown addon \"${addon}\" -- no manifests/claude-addons/${addon}.toml"
+      errors=$(( errors + 1 ))
+    fi
+  done < <(echo "$addons_json" | jq -r '.[]')
+
   VALIDATE_ERRORS=$errors
   if (( errors > 0 )); then
     return 1
@@ -248,6 +265,8 @@ emit_unknown_key_warnings() {
     "packages.brew.extra_packages.mas"
     "identity.git"
     "identity.ssh"
+    "claude"
+    "claude.addons"
   )
 
   local grep_cmd="grep"

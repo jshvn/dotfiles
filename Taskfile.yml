@@ -85,6 +85,7 @@ includes:
       XDG_CACHE_HOME: '{{.XDG_CACHE_HOME}}'
       DOTFILES_MESSAGES: '{{.DOTFILES_MESSAGES}}'
   claude:   ./taskfiles/claude.yml
+  claude-addons: ./taskfiles/claude-addons.yml
   # repo:sync needs the root DOTFILEDIR forwarded (same DOTFILEDIR-leak
   # reason as manifest/identity/packages); XDG_STATE_HOME resolves
   # resolved.json for the repo-auto-update feature gate.
@@ -132,8 +133,8 @@ tasks:
         info "  lint        Run all lint checks"
         echo
         header "Diagnostics (read-only)"
-        info "  task show:*                   Inspect current state (manifest, claude, hostname)"
-        info "  task audit:*                  Detect drift (manifest, packages, links)"
+        info "  task show:*                   Inspect current state (manifest, claude, claude-addons, hostname)"
+        info "  task audit:*                  Detect drift (manifest, packages, links, claude-addons, settings)"
         echo
         header "State mutations"
         info "  task setup -- <name>          Set active machine manifest (\$XDG_STATE_HOME/dotfiles/machine)"
@@ -194,6 +195,8 @@ tasks:
         ignore_error: true
       - task: claude:validate
         ignore_error: true
+      - task: claude-addons:validate
+        ignore_error: true
       - task: shell:validate
         ignore_error: true
 
@@ -203,14 +206,15 @@ tasks:
     summary: |
       task install IS task update -- there is no separate update pipeline.
       Subtasks are state-converging: links/packages/macos/hostname short-circuit
-      when already at desired state; claude:install always pulls latest
-      marketplace + plugins so re-running keeps Claude artifacts fresh.
+      when already at desired state; claude-addons:install always pulls latest
+      marketplaces + plugins so re-running keeps Claude artifacts fresh.
     status: [false]
     deps: [manifest:resolve]
     cmds:
       - task: links:install
       - task: packages:install
       - task: claude:install
+      - task: claude-addons:install
       - task: macos:install
       # hostname:apply -- status:-gated; no-op when state file missing OR
       # when state file matches live LocalHostName. Sudo prompts only on

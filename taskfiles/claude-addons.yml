@@ -1,0 +1,74 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/claude-addons.yml -- third-party Claude Code addon lifecycle
+#
+# Purpose:      Thin dispatcher to install/claude-addons.zsh. Each task
+#               invokes the script with a subcommand (install/remove/list/
+#               validate) via real zsh (go-task's embedded shell interpreter
+#               does not support the zsh-specific glob and option idioms the
+#               script relies on).
+# Depends on:   install/claude-addons.zsh; install/messages.zsh;
+#               :manifest:resolve (deps); :claude:settings-compose (called
+#               at end of install/remove to regenerate settings.json from
+#               fragments).
+# Side effects: install/claude-addons.zsh runs each addon's install/upgrade/
+#               remove commands; writes/deletes claude/settings.d/
+#               99-addon-<name>.json.
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+tasks:
+
+  install:
+    desc: "Install + upgrade every enabled Claude addon, then recompose settings.json"
+    internal: true
+    deps: [":manifest:resolve"]
+    # Feature gate via status: block (not split-cmd {{if}}/{{end}}).
+    status:
+      - '{{if index .MANIFEST.features "claude-marketplace"}}false{{else}}true{{end}}'
+    cmds:
+      - DOTFILEDIR='{{.DOTFILEDIR}}' zsh '{{.DOTFILEDIR}}/install/claude-addons.zsh' install
+      - task: :claude:settings-compose
+
+  # lint-allow: cmds-without-status
+  remove:
+    desc: "Remove a Claude addon: `task claude-addons:remove -- <name>`"
+    summary: |
+      Reads manifests/claude-addons/<name>.toml, runs [remove].commands,
+      then walks [footprint].file_globs + [footprint].extra_paths with
+      rm -rf, deletes the addon's settings.d/99-addon-<name>.json fragment
+      if present, and recomposes claude/settings.json.
+    status: [false]
+    cmds:
+      - DOTFILEDIR='{{.DOTFILEDIR}}' zsh '{{.DOTFILEDIR}}/install/claude-addons.zsh' remove '{{.CLI_ARGS}}'
+      - task: :claude:settings-compose
+
+  # lint-allow: cmds-without-status
+  list:
+    desc: "List all known addons + their state (Known / Enabled / Installed)"
+    internal: true
+    deps: [":manifest:resolve"]
+    status: [false]
+    cmds:
+      - DOTFILEDIR='{{.DOTFILEDIR}}' zsh '{{.DOTFILEDIR}}/install/claude-addons.zsh' list
+
+  # lint-allow: cmds-without-status
+  validate:
+    desc: "Validate addon state: every enabled has verify=true; no orphans on disk"
+    internal: true
+    deps: [":manifest:resolve"]
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        # Short-circuit when claude-marketplace is off so the validate
+        # aggregator can render this row as `n/a`. Sentinel substring matched
+        # verbatim by the root validate summary block.
+        {{if not (index .MANIFEST.features "claude-marketplace")}}
+        info "claude-addons: feature disabled -- skipped"
+        exit 0
+        {{end}}
+        DOTFILEDIR='{{.DOTFILEDIR}}' zsh '{{.DOTFILEDIR}}/install/claude-addons.zsh' validate

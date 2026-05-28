@@ -59,3 +59,11 @@ mas      = []
 # validation time; no enum to maintain here. Drives Phase 4 git+SSH selection.
 git = "none"
 ssh = "none"
+
+[claude]
+# Third-party Claude Code addons. Each entry must have a matching TOML file at
+# manifests/claude-addons/<name>.toml; the resolver enforces this in
+# validate_manifest(). Resolver deep-merge replaces the array on per-machine
+# override (same semantics as packages.brew.bundles). See
+# docs/CLAUDE-ADDONS.md for the lifecycle and schema.
+addons = ["ecc"]
