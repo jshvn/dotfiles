@@ -66,4 +66,5 @@ ssh = "none"
 # validate_manifest(). Resolver deep-merge replaces the array on per-machine
 # override (same semantics as packages.brew.bundles). See
 # docs/CLAUDE-ADDONS.md for the lifecycle and schema.
-addons = ["ecc"]
+# Empty by default: addons are opted into per-machine (replace semantics).
+addons = []

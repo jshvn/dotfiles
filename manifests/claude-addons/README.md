@@ -58,7 +58,14 @@ manual key stripping unnecessary; addon-injected keys live in the paired
 - [`ecc.toml`](ecc.toml) -- marketplace-style addon. Installed via
   `claude plugin install ecc@ecc`. Empty `file_globs` (claude CLI owns the
   plugin footprint). No paired fragment (CLI manages `enabledPlugins`).
-  **Enabled by default in `manifests/defaults.toml`.**
+  **Enabled on `personal-laptop` only.**
+
+- [`superpowers.toml`](superpowers.toml) -- marketplace-style addon from the
+  official Anthropic marketplace (`anthropics/claude-plugins-official`).
+  Installed via `claude plugin install superpowers@claude-plugins-official`.
+  Empty `file_globs`, no paired fragment. `[remove]` uninstalls the plugin but
+  leaves the shared official marketplace registered. **Enabled on
+  `personal-laptop` only.**
 
 - [`get-shit-done-redux.toml`](get-shit-done-redux.toml) -- npx-style addon
   with self-healing hooks. Installed via `npx -y get-shit-done-redux@latest`.

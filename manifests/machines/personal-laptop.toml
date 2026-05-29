@@ -47,3 +47,9 @@ mas = []
 [identity]
 git = "personal"
 ssh = "personal"
+
+[claude]
+# Replace semantics: list the full set this machine wants (not concat-with-
+# defaults). defaults.toml ships an empty addons array; addons are opted in
+# per-machine. See docs/CLAUDE-ADDONS.md.
+addons = ["ecc", "superpowers"]
