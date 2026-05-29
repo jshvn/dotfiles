@@ -2,6 +2,7 @@
   "agentPushNotifEnabled": true,
   "effortLevel": "max",
   "permissions": {
+    "defaultMode": "auto",
     "allow": [
       "Read",
       "Glob",

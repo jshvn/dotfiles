@@ -35,6 +35,15 @@
       {
         "hooks": [
           {
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/auto-approve-reads.zsh\"",
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
+      },
+      {
+        "hooks": [
+          {
             "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/agent-transparency.zsh\"",
             "type": "command"
           }
