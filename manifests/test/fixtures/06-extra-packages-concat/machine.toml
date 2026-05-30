@@ -1,4 +1,0 @@
-# fixture 06 -- extra-packages-concat (machine side)
-
-[packages.brew]
-extra_packages = ["docker-desktop", "jq"]

@@ -86,29 +86,12 @@ tasks:
             continue
           }
 
-          # Pass 2 (conditional): union extra_packages only when either side
-          # declares it -- avoids incorrectly adding the key to fixtures that
-          # omit extra_packages.
-          has_extras_def=false
-          has_extras_mach=false
-          if yq 'has("packages") and (.packages | has("brew")) and (.packages.brew | has("extra_packages"))' \
-              "$fix/defaults.toml" 2>/dev/null | grep -q true; then
-            has_extras_def=true
-          fi
-          if yq 'has("packages") and (.packages | has("brew")) and (.packages.brew | has("extra_packages"))' \
-              "$fix/machine.toml" 2>/dev/null | grep -q true; then
-            has_extras_mach=true
-          fi
-
-          if [[ "$has_extras_def" == "true" ]] || [[ "$has_extras_mach" == "true" ]]; then
-            extras_def=$(yq -o=json '.packages.brew.extra_packages // []' "$fix/defaults.toml")
-            extras_mach=$(yq -o=json '.packages.brew.extra_packages // []' "$fix/machine.toml")
-            union_extras=$(printf '%s %s' "$extras_def" "$extras_mach" | jq -s 'add | unique')
-            actual=$(printf '%s' "$merged" \
-              | jq --argjson extras "$union_extras" '.packages.brew.extra_packages = $extras')
-          else
-            actual="$merged"
-          fi
+          # The numeric fixtures (01-05) exercise pure yq deep-merge semantics
+          # (map-over-map, list-replace, scalar-override, nested-table,
+          # missing-keys); none declare packages.brew.extra_packages, so the
+          # merged output is compared directly. extra_packages union/dedup is
+          # exercised by the typed-* fixtures against the real resolver below.
+          actual="$merged"
 
           if diff <(printf '%s' "$actual" | jq -S .) <(jq -S . "$fix/expected.json") > /dev/null 2>&1; then
             check "fixture: ${fix_name} -- pass"

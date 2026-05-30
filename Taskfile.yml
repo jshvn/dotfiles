@@ -43,6 +43,34 @@ vars:
   MACHINES_DIR: '{{.ROOT_DIR}}/manifests/machines'
   FIXTURES_DIR: '{{.ROOT_DIR}}/manifests/test/fixtures'
 
+  # Shared machine-name resolution for manifest:show / manifest:validate.
+  # Defined AFTER STATE_FILE so the {{.STATE_FILE}} reference resolves -- go-task
+  # evaluates vars top-to-bottom. Inject after {{.DOTFILES_MESSAGES}} (needs
+  # error()); requires $CLI_ARGS_ENV in scope (env: forwarding). Parses
+  # --machine NAME, then a bare name, then falls back to the STATE_FILE first
+  # line; sets $machine_name or exits 1. sed extraction is portable across
+  # go-task's shell and zsh (no zsh match[]). First line + trim edges only --
+  # never strip embedded whitespace, which would silently mangle a malformed
+  # state-file value into a wrong-but-valid name.
+  RESOLVE_MACHINE_NAME: |
+    machine_name=""
+    cli_args="${CLI_ARGS_ENV}"
+    machine_name=$(printf '%s' "$cli_args" | sed -n 's/.*--machine[[:space:]]\{1,\}\([a-z0-9_][a-z0-9_-]*\).*/\1/p')
+    if [[ -z "$machine_name" ]]; then
+      candidate=$(printf '%s' "$cli_args" | tr -d '[:space:]')
+      if [[ "$candidate" =~ ^[a-z0-9_][a-z0-9_-]*$ ]]; then
+        machine_name="$candidate"
+      fi
+    fi
+    if [[ -z "$machine_name" && -f "{{.STATE_FILE}}" ]]; then
+      machine_name=$(head -n1 "{{.STATE_FILE}}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    fi
+    if [[ -z "$machine_name" ]]; then
+      error "no machine selected and --machine not specified"
+      error "  run: task setup -- <machine-name>"
+      exit 1
+    fi
+
   # MANIFEST_JSON cats resolved.json or echoes a stub with a stderr warning
   # so taskfiles that ref: MANIFEST never crash on a fresh checkout. The stub
   # includes an empty `features` map so `{{if index .MANIFEST.features "<key>"}}`

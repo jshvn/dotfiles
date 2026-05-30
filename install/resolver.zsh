@@ -136,8 +136,15 @@ validate_manifest() {
       # manifests/bundles/. Catch typos at validate time (a missing bundle
       # file would silently contribute nothing to packages.brew.extra_packages
       # at resolve time, with no error).
-      local -a bundle_names
-      bundle_names=( $(yq -r '.packages.brew.bundles[]' "$machine_file" 2>/dev/null || true) )
+      # Word-split-safe accumulation via `while IFS= read -r` -- NOT the
+      # `array=( $(...) )` form (vulnerable to word-splitting; not
+      # shellcheck-clean). See taskfiles/links.yml for the same rule.
+      local -a bundle_names=()
+      local _bn_line
+      while IFS= read -r _bn_line; do
+        [[ -z "$_bn_line" ]] && continue
+        bundle_names+=("$_bn_line")
+      done < <(yq -r '.packages.brew.bundles[]' "$machine_file" 2>/dev/null || true)
       local bn shared_toml available
       for bn in "${bundle_names[@]}"; do
         [[ -z "$bn" ]] && continue
@@ -321,9 +328,8 @@ emit_unknown_key_warnings() {
 #      -- one entry per <b> in the merged packages.brew.bundles array.
 #   3. machine.toml              .packages.brew.extra_packages.{formulae,casks,mas}
 #
-# Pass 2 supports TWO `extra_packages` shapes:
+# Pass 2 uses the typed-bucket `extra_packages` shape:
 #
-#   Typed-bucket (current canonical shape):
 #     [packages.brew.extra_packages]
 #     formulae = [ "hugo" | { name, verify } ... ]
 #     casks    = [ { name } ... ]
@@ -335,17 +341,6 @@ emit_unknown_key_warnings() {
 #                   (carries verify metadata).
 #       casks    -- .name. Machine wins on conflict (last-write-wins).
 #       mas      -- .id. Machine wins on conflict.
-#
-#   Legacy flat-array (backward-compat for old plain-list shape):
-#     [packages.brew]
-#     extra_packages = ["jq", "yq"]
-#
-#     Single `jq -s 'add | unique'` over the concatenated flat array.
-#
-# Detection: probe the tag of `.packages.brew.extra_packages` on either
-# side. If either side is `!!seq`, treat the merged shape as legacy flat
-# (yq `. * .` REPLACES arrays, so a one-sided seq plus a one-sided map
-# would mean the typed-bucket shape was bulldozed).
 resolve_pipeline() {
   local defaults_path="$1"
   local machine_path="$2"
@@ -354,37 +349,8 @@ resolve_pipeline() {
   local merged
   merged=$(yq eval-all '. as $i ireduce ({}; . * $i)' "$defaults_path" "$machine_path" -o json)
 
-  # Pass 2: union + dedupe extra_packages from both sides. Detect canonical
-  # shape: typed-bucket (!!map) vs legacy flat (!!seq).
-  local def_tag mach_tag shape
-  def_tag=$(yq '.packages.brew.extra_packages | tag' "$defaults_path" 2>/dev/null || echo "")
-  mach_tag=$(yq '.packages.brew.extra_packages | tag' "$machine_path" 2>/dev/null || echo "")
-  shape="typed"
-  if [[ "$def_tag" == "!!seq" ]] || [[ "$mach_tag" == "!!seq" ]]; then
-    shape="flat"
-  fi
-
-  if [[ "$shape" == "flat" ]]; then
-    # Legacy flat-array path. `jq -s 'add | unique'` produces sorted output.
-    local def_extras mach_extras union_extras
-    def_extras=$(yq -o=json '.packages.brew.extra_packages // []' "$defaults_path")
-    mach_extras=$(yq -o=json '.packages.brew.extra_packages // []' "$machine_path")
-    union_extras=$(printf '%s %s' "$def_extras" "$mach_extras" | jq -s 'add | unique')
-
-    # Pass 3: backfill platform.arch via uname -m if machine omitted it.
-    local arch
-    arch=$(yq -r '.platform.arch // ""' "$machine_path")
-    if [[ -z "$arch" ]]; then
-      arch=$(uname -m)
-    fi
-
-    printf '%s' "$merged" \
-      | jq --argjson extras "$union_extras" --arg arch "$arch" \
-          '.packages.brew.extra_packages = $extras
-           | .platform.arch = $arch'
-    return 0
-  fi
-
+  # Pass 2: union + dedupe the typed extra_packages buckets from both sides.
+  #
   # Typed-bucket path: one sub-array per kind. Each sub-array is unioned
   # independently with semantics tailored to its entry shape; see the
   # function-header comment.
@@ -399,8 +365,13 @@ resolve_pipeline() {
   #
   # A missing bundle file is a hard error: the operator typoed a bundle name
   # and would otherwise silently lose every package in that bundle.
-  local -a bundle_names
-  bundle_names=( $(printf '%s' "$merged" | jq -r '.packages.brew.bundles[]?' 2>/dev/null || true) )
+  # Word-split-safe accumulation (see the validate_manifest site above).
+  local -a bundle_names=()
+  local _bn_line
+  while IFS= read -r _bn_line; do
+    [[ -z "$_bn_line" ]] && continue
+    bundle_names+=("$_bn_line")
+  done < <(printf '%s' "$merged" | jq -r '.packages.brew.bundles[]?' 2>/dev/null || true)
 
   local def_formulae mach_formulae union_formulae
   local def_casks    mach_casks    union_casks

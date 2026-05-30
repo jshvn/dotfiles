@@ -42,8 +42,16 @@ tasks:
       rm -rf, deletes the addon's settings.d/99-addon-<name>.json fragment
       if present, and recomposes claude/settings.json.
     status: [false]
+    # Pass CLI_ARGS via the environment, not by templating into shell-quoted
+    # text: go-task substitutes {{.CLI_ARGS}} into the rendered shell BEFORE the
+    # shell parses it, so an apostrophe / shell metacharacter in the addon name
+    # would unterminate the surrounding single-quoted string. Reading
+    # $CLI_ARGS_ENV from the environment moves the value past the parser intact.
+    # Mirrors taskfiles/manifest.yml (setup/show/validate) and hostname.yml.
+    env:
+      CLI_ARGS_ENV: '{{.CLI_ARGS}}'
     cmds:
-      - DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/install/claude-addons.zsh' remove '{{.CLI_ARGS}}'
+      - DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/install/claude-addons.zsh' remove "${CLI_ARGS_ENV}"
       - task: :claude:settings-compose
 
   # lint-allow: cmds-without-status

@@ -92,6 +92,6 @@ success "Bootstrap complete. Next steps:"
 echo "  task setup -- <machine-name>     # write machine state"
 echo "  task install                     # install dotfiles"
 echo
-machines=$(ls "${DOTFILEDIR}/manifests/machines"/*.toml 2>/dev/null \
-  | xargs -n1 basename | sed 's/\.toml$//' | tr '\n' ' ')
-echo "  Available machines: ${machines}"
+# zsh glob (N: null-glob, :t tail/basename, :r remove .toml) -- no ls parsing.
+machines=( "${DOTFILEDIR}/manifests/machines"/*.toml(N:t:r) )
+echo "  Available machines: ${machines[*]}"

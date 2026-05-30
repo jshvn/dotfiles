@@ -1,4 +1,0 @@
-# fixture 06 -- extra-packages-concat (defaults side)
-
-[packages.brew]
-extra_packages = ["jq", "yq"]

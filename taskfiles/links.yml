@@ -15,31 +15,42 @@ includes:
   _: ./helpers.yml
 
 vars:
+  # CLAUDE_LINKS -- relative paths under claude/ that each link 1:1 into
+  # $XDG_CONFIG_HOME/claude/ (identical relpath on both sides). Single source
+  # for install-claude (cmds + status) AND the claude block of EXPECTED_TARGETS
+  # below, so adding a claude file/hook is a one-line change here. `|-` strips
+  # the trailing newline so install-claude's `for:`-loop split yields no empty
+  # element. MUST precede EXPECTED_TARGETS (go-task evaluates vars top-to-bottom).
+  CLAUDE_LINKS: |-
+    CLAUDE.md
+    settings.json
+    agents
+    commands
+    skills
+    hooks/post-compact.zsh
+    hooks/agent-transparency.zsh
+    hooks/secret-scan.zsh
+    hooks/block-destructive.zsh
+    hooks/no-ai-comments.zsh
+    hooks/no-emojis.zsh
+    hooks/notify.zsh
+    hooks/lib.zsh
+
   # EXPECTED_TARGETS -- single source of truth for every symlink target owned
   # by this taskfile. Identity-layer symlinks are intentionally EXCLUDED --
   # they live in taskfiles/identity.yml's equivalent and are validated by
   # identity:validate. Feature-gated entries use the inline-ternary form
   # which renders an empty line when the feature is off; consumers skip
-  # empty lines via `[[ -z "$target" ]] && continue`.
+  # empty lines via `[[ -z "$target" ]] && continue`. The claude block is
+  # derived from CLAUDE_LINKS (gated on claude-marketplace).
   EXPECTED_TARGETS: |
     {{.ZDOTDIR}}/.zshenv
     {{.ZDOTDIR}}/.zprofile
     {{.ZDOTDIR}}/.zshrc
     {{.ZDOTDIR}}/.zlogin
     {{.ZDOTDIR}}/.zlogout
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md{{end}}
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/settings.json{{end}}
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/agents{{end}}
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/commands{{end}}
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/skills{{end}}
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh{{end}}
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh{{end}}
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh{{end}}
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh{{end}}
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh{{end}}
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh{{end}}
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh{{end}}
-    {{if index .MANIFEST.features "claude-marketplace"}}{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh{{end}}
+    {{if index .MANIFEST.features "claude-marketplace"}}{{range (splitList "\n" .CLAUDE_LINKS)}}{{$.XDG_CONFIG_HOME}}/claude/{{.}}
+    {{end}}{{end}}
     {{if index .MANIFEST.features "ghostty"}}{{.XDG_CONFIG_HOME}}/ghostty/config{{end}}
     {{.XDG_CONFIG_HOME}}/glow/glow.yml
     {{.XDG_CONFIG_HOME}}/glow/glow_style.json
@@ -118,48 +129,23 @@ tasks:
     internal: true
     deps: [":manifest:resolve"]
     # Feature-gated on claude-marketplace. The status: block mirrors the gate
-    # so status checks also no-op when the flag is off.
+    # so status checks (and therefore cmds) no-op when the flag is off. Both
+    # cmds and status are driven by CLAUDE_LINKS (one line per claude file/hook).
     cmds:
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/CLAUDE.md", TARGET: "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/settings.json", TARGET: "{{.XDG_CONFIG_HOME}}/claude/settings.json" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/agents", TARGET: "{{.XDG_CONFIG_HOME}}/claude/agents" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/commands", TARGET: "{{.XDG_CONFIG_HOME}}/claude/commands" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/skills", TARGET: "{{.XDG_CONFIG_HOME}}/claude/skills" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/hooks/post-compact.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/hooks/agent-transparency.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/hooks/secret-scan.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/hooks/block-destructive.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/hooks/no-ai-comments.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/hooks/no-emojis.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/hooks/notify.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/claude/hooks/lib.zsh", TARGET: "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh" }
+      - for: { var: CLAUDE_LINKS, split: "\n" }
+        task: _:safe-link
+        vars:
+          SOURCE: '{{.ROOT_DIR}}/claude/{{.ITEM}}'
+          TARGET: '{{.XDG_CONFIG_HOME}}/claude/{{.ITEM}}'
     status:
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/CLAUDE.md")" == "{{.ROOT_DIR}}/claude/CLAUDE.md" ]]{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/settings.json" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/settings.json")" == "{{.ROOT_DIR}}/claude/settings.json" ]]{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/agents" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/agents")" == "{{.ROOT_DIR}}/claude/agents" ]]{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/commands" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/commands")" == "{{.ROOT_DIR}}/claude/commands" ]]{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/skills" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/skills")" == "{{.ROOT_DIR}}/claude/skills" ]]{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/post-compact.zsh")" == "{{.ROOT_DIR}}/claude/hooks/post-compact.zsh" ]]{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/agent-transparency.zsh")" == "{{.ROOT_DIR}}/claude/hooks/agent-transparency.zsh" ]]{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/secret-scan.zsh")" == "{{.ROOT_DIR}}/claude/hooks/secret-scan.zsh" ]]{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/block-destructive.zsh")" == "{{.ROOT_DIR}}/claude/hooks/block-destructive.zsh" ]]{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/no-ai-comments.zsh")" == "{{.ROOT_DIR}}/claude/hooks/no-ai-comments.zsh" ]]{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/no-emojis.zsh")" == "{{.ROOT_DIR}}/claude/hooks/no-emojis.zsh" ]]{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/notify.zsh")" == "{{.ROOT_DIR}}/claude/hooks/notify.zsh" ]]{{end}}'
-      - '{{if not (index .MANIFEST.features "claude-marketplace")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/claude/hooks/lib.zsh")" == "{{.ROOT_DIR}}/claude/hooks/lib.zsh" ]]{{end}}'
+      - |
+        {{if not (index .MANIFEST.features "claude-marketplace")}}exit 0{{end}}
+        while IFS= read -r rel; do
+          [[ -z "$rel" ]] && continue
+          tgt="{{.XDG_CONFIG_HOME}}/claude/$rel"
+          src="{{.ROOT_DIR}}/claude/$rel"
+          test -L "$tgt" && [[ "$(readlink -f "$tgt")" == "$src" ]] || exit 1
+        done <<< "{{.CLAUDE_LINKS}}"
 
   install-configs:
     desc: "Link tool config files (ghostty, glow, trippy, tlrc, conda, eza)"
@@ -241,12 +227,9 @@ tasks:
             "$zdotdir/.zshrc")             printf '%s\n' "$dotfiledir/shell/.zshrc" ;;
             "$zdotdir/.zlogin")            printf '%s\n' "$dotfiledir/shell/.zlogin" ;;
             "$zdotdir/.zlogout")           printf '%s\n' "$dotfiledir/shell/.zlogout" ;;
-            "$xdg/claude/CLAUDE.md")       printf '%s\n' "$dotfiledir/claude/CLAUDE.md" ;;
-            "$xdg/claude/settings.json")   printf '%s\n' "$dotfiledir/claude/settings.json" ;;
-            "$xdg/claude/agents")          printf '%s\n' "$dotfiledir/claude/agents" ;;
-            "$xdg/claude/commands")        printf '%s\n' "$dotfiledir/claude/commands" ;;
-            "$xdg/claude/skills")          printf '%s\n' "$dotfiledir/claude/skills" ;;
-            "$xdg/claude/hooks/"*)         printf '%s\n' "$dotfiledir/claude/hooks/${target##*/hooks/}" ;;
+            # All claude links share the relpath on both sides (see CLAUDE_LINKS);
+            # strip the $xdg/claude/ prefix to recover it (covers files + hooks/*).
+            "$xdg/claude/"*)               printf '%s\n' "$dotfiledir/claude/${target#$xdg/claude/}" ;;
             "$xdg/ghostty/config")         printf '%s\n' "$dotfiledir/configs/ghostty/config" ;;
             "$xdg/glow/"*)                 printf '%s\n' "$dotfiledir/configs/glow/${target##*/glow/}" ;;
             "$xdg/trippy/"*)               printf '%s\n' "$dotfiledir/configs/trippy/${target##*/trippy/}" ;;

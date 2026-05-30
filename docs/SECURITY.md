@@ -35,9 +35,11 @@ sniffing.
   outweighs the security delta over HTTPS-only retrieval. We accept the same
   trust boundary as the wider macOS development community.
 - **Audit signal:** before fetching the installer, `bootstrap.zsh` prints an
-  `AUDIT:` line to stderr identifying the source URL and the trust note, and
-  sleeps for 3 seconds so an attentive user has an explicit abort window
-  (Ctrl-C). The audit line wording is:
+  `AUDIT:` block to stderr identifying the source URL and the trust note, then
+  requires an explicit single-keypress consent read from `/dev/tty` (Enter to
+  proceed; any other key aborts). Because consent is read from the terminal,
+  bootstrap intentionally cannot be run non-interactively via a
+  `curl ... | zsh` pipe. The audit line wording is:
   ```
   AUDIT: about to fetch and execute brew install script
     source: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
