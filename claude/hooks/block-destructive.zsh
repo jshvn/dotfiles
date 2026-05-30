@@ -33,6 +33,7 @@ hook::match_patterns "$command" 2 "BLOCKED: Destructive command detected" \
   '--no-gpg-sign' \
   'rm\s+-[a-zA-Z]*r[a-zA-Z]*f' \
   'rm\s+-[a-zA-Z]*f[a-zA-Z]*r' \
+  'find\s+.*-delete\b' \
   'DROP\s+(TABLE|DATABASE|SCHEMA)' \
   'TRUNCATE\s+TABLE' \
   'curl\s.*\|\s*(sh|bash|zsh)' \
@@ -40,5 +41,16 @@ hook::match_patterns "$command" 2 "BLOCKED: Destructive command detected" \
   '(bash|sh|zsh)\s+-c\s+.*\$\(.*(curl|wget)' \
   '(python|python3)\s+-c\s+.*\$\(.*(curl|wget)' \
   '(perl|node|ruby)\s+-e\s+.*\$\(.*(curl|wget)'
+
+# rm with BOTH a recursive flag and a force flag, in any order or split across
+# tokens (rm -r -f, rm --recursive --force, rm -fr). The OR-based
+# hook::match_patterns above cannot express this conjunction, so the simpler
+# adjacent-flag patterns there miss the split-flag forms.
+if "$GGREP" -qE '(^|[[:space:]])rm([[:space:]]|$)' <<< "$command" \
+   && "$GGREP" -qE '(^|[[:space:]])(-[a-zA-Z]*r[a-zA-Z]*|--recursive|-R)([[:space:]]|$)' <<< "$command" \
+   && "$GGREP" -qE '(^|[[:space:]])(-[a-zA-Z]*f[a-zA-Z]*|--force)([[:space:]]|$)' <<< "$command"; then
+  echo "BLOCKED: Destructive command detected (pattern: rm recursive+force)" >&2
+  exit 2
+fi
 
 exit 0

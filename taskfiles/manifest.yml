@@ -22,8 +22,10 @@ vars:
 
   MACHINE_TOML: '{{.MACHINES_DIR}}/{{.MACHINE}}.toml'
 
+  # glob + POSIX parameter expansion (go-task's embedded sh, not zsh) -- no ls
+  # parsing. The `[ -e ]` guard handles the no-match literal-glob case.
   AVAILABLE_MACHINES:
-    sh: ls '{{.MACHINES_DIR}}'/*.toml 2>/dev/null | xargs -n1 basename | sed 's/\.toml$//' | tr '\n' ' '
+    sh: for f in '{{.MACHINES_DIR}}'/*.toml; do [ -e "$f" ] || continue; b=${f##*/}; printf '%s ' "${b%.toml}"; done
 
 tasks:
 
@@ -103,34 +105,7 @@ tasks:
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
-        # Parse --machine NAME from CLI_ARGS if present. Use sed for
-        # extraction -- portable across gosh/sh/zsh (no zsh match[]).
-        machine_name=""
-        cli_args="${CLI_ARGS_ENV}"
-        machine_name=$(printf '%s' "$cli_args" | sed -n 's/.*--machine[[:space:]]\{1,\}\([a-z0-9_][a-z0-9_-]*\).*/\1/p')
-        # Also accept a bare machine name (e.g. `task manifest:show --
-        # personal-laptop`) so usage matches the `task setup -- <name>`
-        # form. Only accepted when --machine was not seen and the entire
-        # CLI_ARGS payload (whitespace-trimmed) is a valid machine name.
-        if [[ -z "$machine_name" ]]; then
-          candidate=$(printf '%s' "$cli_args" | tr -d '[:space:]')
-          if [[ "$candidate" =~ ^[a-z0-9_][a-z0-9_-]*$ ]]; then
-            machine_name="$candidate"
-          fi
-        fi
-        if [[ -z "$machine_name" ]]; then
-          # Read first line + trim edges only -- do not strip embedded
-          # whitespace, which would silently mangle malformed state-file
-          # contents into a wrong-but-valid name.
-          if [[ -f "{{.STATE_FILE}}" ]]; then
-            machine_name=$(head -n1 "{{.STATE_FILE}}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-          fi
-        fi
-        if [[ -z "$machine_name" ]]; then
-          error "no machine selected and --machine not specified"
-          error "  run: task setup -- <machine-name>"
-          exit 1
-        fi
+        {{.RESOLVE_MACHINE_NAME}}
         DOTFILEDIR="{{.ROOT_DIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
           zsh "{{.ROOT_DIR}}/install/resolver.zsh" --machine "$machine_name" --stdout \
           | jq .
@@ -143,28 +118,7 @@ tasks:
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
-        # Mirror of show: parse --machine OR bare-name from CLI_ARGS;
-        # fall back to STATE_FILE first-line+trim-edges. See show: comments
-        # for the apostrophe / state-file-mangling rationale.
-        machine_name=""
-        cli_args="${CLI_ARGS_ENV}"
-        machine_name=$(printf '%s' "$cli_args" | sed -n 's/.*--machine[[:space:]]\{1,\}\([a-z0-9_][a-z0-9_-]*\).*/\1/p')
-        if [[ -z "$machine_name" ]]; then
-          candidate=$(printf '%s' "$cli_args" | tr -d '[:space:]')
-          if [[ "$candidate" =~ ^[a-z0-9_][a-z0-9_-]*$ ]]; then
-            machine_name="$candidate"
-          fi
-        fi
-        if [[ -z "$machine_name" ]]; then
-          if [[ -f "{{.STATE_FILE}}" ]]; then
-            machine_name=$(head -n1 "{{.STATE_FILE}}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-          fi
-        fi
-        if [[ -z "$machine_name" ]]; then
-          error "no machine selected and --machine not specified"
-          error "  run: task setup -- <machine-name>"
-          exit 1
-        fi
+        {{.RESOLVE_MACHINE_NAME}}
         if [[ ! -f "{{.DEFAULTS_TOML}}" ]]; then
           cross "manifests/defaults.toml not found"
           exit 1

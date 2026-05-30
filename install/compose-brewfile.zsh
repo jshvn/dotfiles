@@ -75,8 +75,14 @@ compose() {
   timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   machine_name=$(read_machine_name)
 
-  local -a bundles
-  bundles=( $(jq -r '.packages.brew.bundles[]' "$RESOLVED_JSON") )
+  # Word-split-safe accumulation via `while IFS= read -r` -- NOT the
+  # `array=( $(...) )` form (vulnerable to word-splitting; not shellcheck-clean).
+  local -a bundles=()
+  local _b_line
+  while IFS= read -r _b_line; do
+    [[ -z "$_b_line" ]] && continue
+    bundles+=("$_b_line")
+  done < <(jq -r '.packages.brew.bundles[]' "$RESOLVED_JSON")
 
   local bundles_csv=""
   local b

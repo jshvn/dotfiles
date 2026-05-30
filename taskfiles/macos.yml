@@ -45,103 +45,43 @@ tasks:
           resolved.json missing or empty; cannot resolve features.macos-*
             run: task setup -- <machine-name>
     cmds:
-      - task: apply-defaults:dock
-      - task: apply-defaults:finder
-      - task: apply-defaults:input
-      - task: apply-defaults:screenshots
-      - task: apply-defaults:security
-      - task: apply-defaults:appearance
+      - task: apply-defaults:concern
+        vars: { CONCERN: dock, FEATURE: macos-dock }
+      - task: apply-defaults:concern
+        vars: { CONCERN: finder, FEATURE: macos-finder }
+      - task: apply-defaults:concern
+        vars: { CONCERN: input, FEATURE: macos-input }
+      - task: apply-defaults:concern
+        vars: { CONCERN: screenshots, FEATURE: macos-screenshots }
+      - task: apply-defaults:concern
+        vars: { CONCERN: security, FEATURE: macos-security }
+      - task: apply-defaults:concern
+        vars: { CONCERN: appearance, FEATURE: macos-appearance }
       - task: apply-defaults:refresh-ui
 
-  # Per-concern feature-gate pattern: each status: uses a single-shell-block
-  # with template-time short-circuit. The `{{if not (index .MANIFEST.features
-  # "macos-<concern>")}}exit 0{{end}}` renders to literal `exit 0` when off,
-  # so verify_<concern> never runs. A multi-line status entry would AND the
-  # gate output with verify_<concern>'s exit code, causing the verifier to
-  # run on feature-off machines.
-  apply-defaults:dock:
-    desc: "Apply Dock defaults (gated on macos-dock)"
+  # Parameterized per-concern apply+verify. Called once per concern from
+  # apply-defaults with CONCERN (script basename + apply_/verify_ fn suffix) and
+  # FEATURE (the macos-<concern> feature key). Feature-gate pattern: cmds: and
+  # status: each use a single-shell-block with a template-time short-circuit --
+  # `{{if not (index .MANIFEST.features .FEATURE)}}exit 0{{end}}` renders to a
+  # literal `exit 0` when the feature is off, so apply_/verify_ never run. A
+  # multi-line status entry would otherwise AND the gate output with the
+  # verifier's exit code, causing the verifier to run on feature-off machines.
+  apply-defaults:concern:
+    desc: "Apply one macOS concern's defaults (gated on its macos-* feature)"
     internal: true
     platforms: [darwin]
     deps: [":manifest:resolve"]
+    requires:
+      vars: [CONCERN, FEATURE]
     cmds:
       - |
-        {{if not (index .MANIFEST.features "macos-dock")}}exit 0{{end}}
-        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/dock.zsh"; apply_dock'
+        {{if not (index .MANIFEST.features .FEATURE)}}exit 0{{end}}
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/{{.CONCERN}}.zsh"; apply_{{.CONCERN}}'
     status:
       - |
-        {{if not (index .MANIFEST.features "macos-dock")}}exit 0{{end}}
-        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/dock.zsh"; verify_dock > /dev/null 2>&1'
-
-  apply-defaults:finder:
-    desc: "Apply Finder defaults (gated on macos-finder)"
-    internal: true
-    platforms: [darwin]
-    deps: [":manifest:resolve"]
-    cmds:
-      - |
-        {{if not (index .MANIFEST.features "macos-finder")}}exit 0{{end}}
-        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/finder.zsh"; apply_finder'
-    status:
-      - |
-        {{if not (index .MANIFEST.features "macos-finder")}}exit 0{{end}}
-        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/finder.zsh"; verify_finder > /dev/null 2>&1'
-
-  apply-defaults:input:
-    desc: "Apply Input defaults (gated on macos-input)"
-    internal: true
-    platforms: [darwin]
-    deps: [":manifest:resolve"]
-    cmds:
-      - |
-        {{if not (index .MANIFEST.features "macos-input")}}exit 0{{end}}
-        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/input.zsh"; apply_input'
-    status:
-      - |
-        {{if not (index .MANIFEST.features "macos-input")}}exit 0{{end}}
-        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/input.zsh"; verify_input > /dev/null 2>&1'
-
-  apply-defaults:screenshots:
-    desc: "Apply Screenshots defaults (gated on macos-screenshots)"
-    internal: true
-    platforms: [darwin]
-    deps: [":manifest:resolve"]
-    cmds:
-      - |
-        {{if not (index .MANIFEST.features "macos-screenshots")}}exit 0{{end}}
-        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/screenshots.zsh"; apply_screenshots'
-    status:
-      - |
-        {{if not (index .MANIFEST.features "macos-screenshots")}}exit 0{{end}}
-        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/screenshots.zsh"; verify_screenshots > /dev/null 2>&1'
-
-  apply-defaults:security:
-    desc: "Apply Security defaults (gated on macos-security)"
-    internal: true
-    platforms: [darwin]
-    deps: [":manifest:resolve"]
-    cmds:
-      - |
-        {{if not (index .MANIFEST.features "macos-security")}}exit 0{{end}}
-        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/security.zsh"; apply_security'
-    status:
-      - |
-        {{if not (index .MANIFEST.features "macos-security")}}exit 0{{end}}
-        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/security.zsh"; verify_security > /dev/null 2>&1'
-
-  apply-defaults:appearance:
-    desc: "Apply Appearance defaults (gated on macos-appearance)"
-    internal: true
-    platforms: [darwin]
-    deps: [":manifest:resolve"]
-    cmds:
-      - |
-        {{if not (index .MANIFEST.features "macos-appearance")}}exit 0{{end}}
-        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/defaults/appearance.zsh"; apply_appearance'
-    status:
-      - |
-        {{if not (index .MANIFEST.features "macos-appearance")}}exit 0{{end}}
-        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/appearance.zsh"; verify_appearance > /dev/null 2>&1'
+        {{if not (index .MANIFEST.features .FEATURE)}}exit 0{{end}}
+        DOTFILEDIR={{.ROOT_DIR}} zsh -c 'source "${DOTFILEDIR}/os/defaults/{{.CONCERN}}.zsh"; verify_{{.CONCERN}} > /dev/null 2>&1'
 
   # lint-allow: cmds-without-status
   apply-defaults:refresh-ui:

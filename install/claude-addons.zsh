@@ -23,19 +23,42 @@ typeset -r SETTINGS_D="${DOTFILEDIR}/claude/settings.d"
 typeset -r RESOLVED="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/resolved.json"
 typeset -r XDG_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
 
-# is_addon_installed <toml_path>
-# Returns 0 if [verify].path exists OR [verify].command exits 0.
+# _expand_path <raw> -- expand a fixed allow-list of location tokens WITHOUT
+# eval. Mirrors the os/defaults narrow-substitution philosophy: never run
+# command substitution, globbing, or word-splitting on TOML-supplied values.
+_expand_path() {
+  local p="$1"
+  p="${p//\$\{HOME\}/$HOME}"
+  p="${p//\$HOME/$HOME}"
+  p="${p//\$\{XDG_CONFIG_HOME\}/${XDG_CONFIG_HOME:-$HOME/.config}}"
+  p="${p//\$XDG_CONFIG_HOME/${XDG_CONFIG_HOME:-$HOME/.config}}"
+  p="${p//\$\{XDG_DATA_HOME\}/${XDG_DATA_HOME:-$HOME/.local/share}}"
+  p="${p//\$XDG_DATA_HOME/${XDG_DATA_HOME:-$HOME/.local/share}}"
+  p="${p//\$\{XDG_STATE_HOME\}/${XDG_STATE_HOME:-$HOME/.local/state}}"
+  p="${p//\$XDG_STATE_HOME/${XDG_STATE_HOME:-$HOME/.local/state}}"
+  p="${p//\$\{XDG_CACHE_HOME\}/${XDG_CACHE_HOME:-$HOME/.cache}}"
+  p="${p//\$XDG_CACHE_HOME/${XDG_CACHE_HOME:-$HOME/.cache}}"
+  [[ "$p" == "~/"* ]] && p="${HOME}/${p#\~/}"
+  [[ "$p" == "~" ]] && p="$HOME"
+  printf '%s' "$p"
+}
+
+# is_addon_installed <toml_path> [allow_command=1]
+# Returns 0 if [verify].path exists OR [verify].command exits 0. Path-based
+# verify is eval-free (uses _expand_path). The command-based verify runs only
+# when allow_command=1, so disabled addons never have their [verify].command
+# executed (a merely-present TOML must not run arbitrary commands).
 is_addon_installed() {
-  local toml="$1"
+  local toml="$1" allow_command="${2:-1}"
   local verify_path verify_cmd expanded
   verify_path=$(yq -r '.verify.path // ""' "$toml")
   verify_cmd=$(yq -r '.verify.command // ""' "$toml")
   if [[ -n "$verify_path" ]]; then
-    expanded=$(eval echo "$verify_path")
+    expanded=$(_expand_path "$verify_path")
     [[ -e "$expanded" ]] && return 0
     return 1
   fi
-  if [[ -n "$verify_cmd" ]]; then
+  if [[ -n "$verify_cmd" && "$allow_command" == "1" ]]; then
     eval "$verify_cmd" >/dev/null 2>&1
     return $?
   fi
@@ -151,7 +174,7 @@ cmd_remove() {
   local raw_path expanded
   while IFS= read -r raw_path; do
     [[ -z "$raw_path" ]] && continue
-    expanded=$(eval echo "$raw_path")
+    expanded=$(_expand_path "$raw_path")
     if [[ -e "$expanded" || -L "$expanded" ]]; then
       info "  rm -rf $expanded"
       rm -rf "$expanded"
@@ -186,8 +209,12 @@ cmd_list() {
       if [[ "$e" == "$name" ]]; then enabled="yes"; break; fi
     done
 
+    # Only allow command-based verify for enabled addons; a disabled,
+    # merely-present TOML must not have its [verify].command executed.
     installed="no"
-    if is_addon_installed "$toml"; then installed="yes"; fi
+    if is_addon_installed "$toml" "$([[ "$enabled" == "yes" ]] && echo 1 || echo 0)"; then
+      installed="yes"
+    fi
 
     printf "  %-32s %-8s %-10s %s\n" "$name" "$enabled" "$installed" "$desc"
   done
@@ -234,7 +261,7 @@ cmd_validate() {
 
     while IFS= read -r raw_path; do
       [[ -z "$raw_path" ]] && continue
-      expanded=$(eval echo "$raw_path")
+      expanded=$(_expand_path "$raw_path")
       [[ -e "$expanded" || -L "$expanded" ]] && orphans=$(( orphans + 1 ))
     done < <(yq -r '.footprint.extra_paths[]' "$toml" 2>/dev/null)
 

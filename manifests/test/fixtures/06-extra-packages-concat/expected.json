@@ -1,7 +1,0 @@
-{
-  "packages": {
-    "brew": {
-      "extra_packages": ["docker-desktop", "jq", "yq"]
-    }
-  }
-}

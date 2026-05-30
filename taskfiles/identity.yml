@@ -42,8 +42,9 @@ tasks:
     # Adding a new identity = drop a file in identity/git/identities/; no
     # edits to this task or the resolver.
     vars:
+      # glob + basename (go-task's embedded sh, not zsh) -- no ls parsing.
       GIT_IDENTITY_NAMES:
-        sh: ls "{{.ROOT_DIR}}/identity/git/identities" 2>/dev/null
+        sh: for f in '{{.ROOT_DIR}}/identity/git/identities'/*; do [ -e "$f" ] || continue; printf '%s\n' "${f##*/}"; done
     # MANIFEST_JSON falls back to '{}' when resolved.json is missing, which
     # renders {{.MANIFEST.identity.git}} as the literal string "<no value>".
     # Refuse to install against the empty fallback rather than silently
@@ -114,10 +115,12 @@ tasks:
     desc: "Link SSH identity files; swap active symlink to manifest value"
     internal: true
     vars:
+      # glob + basename (go-task's embedded sh, not zsh) -- no ls parsing.
       SSH_IDENTITY_NAMES:
-        sh: ls "{{.ROOT_DIR}}/identity/ssh/identities" 2>/dev/null
+        sh: for f in '{{.ROOT_DIR}}/identity/ssh/identities'/*; do [ -e "$f" ] || continue; printf '%s\n' "${f##*/}"; done
+      # Only *.pub: not every identity has a pub key (work uses 1Password agent).
       SSH_KEY_NAMES:
-        sh: ls "{{.ROOT_DIR}}/identity/ssh/keys" 2>/dev/null | grep '\.pub$' || true
+        sh: for f in '{{.ROOT_DIR}}/identity/ssh/keys'/*.pub; do [ -e "$f" ] || continue; printf '%s\n' "${f##*/}"; done
     # MANIFEST_JSON falls back to '{}' when resolved.json is missing, which
     # renders {{.MANIFEST.identity.ssh}} as the literal string "<no value>".
     # Without these preconditions the active-symlink swap below would create

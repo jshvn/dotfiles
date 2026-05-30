@@ -3,9 +3,9 @@
 # =============================================================================
 # install/test-hooks.zsh -- smoke tests for the four named Claude hooks
 #
-# Purpose:      Two scenarios per hook (one pass + one block/warn) for
-#               secret-scan, no-emojis, no-ai-comments, agent-transparency.
-#               Does NOT cover block-destructive, notify, or post-compact.
+# Purpose:      Two-plus scenarios per hook (pass + block/warn) for
+#               secret-scan, no-emojis, no-ai-comments, agent-transparency,
+#               block-destructive. Does NOT cover notify or post-compact.
 # Depends on:   DOTFILEDIR env var (exported by taskfiles/test.yml);
 #               install/messages.zsh; claude/hooks/<name>.zsh.
 # Side effects: read-only -- pipes synthetic JSON payloads to each hook on
@@ -136,11 +136,59 @@ test_agent_transparency() {
   fi
 }
 
+# block-destructive: must block (exit 2) destructive Bash. Covers the
+# split-flag rm forms (rm -r -f, rm --recursive --force) and find -delete that
+# the adjacent-flag OR-patterns miss, plus a benign rm that must pass (exit 0).
+# Synthetic commands flow only through the hook's stdin pipe -- never executed.
+test_block_destructive() {
+  local input exit_code
+
+  # Helper: run hook with a command payload, return its exit code in $exit_code.
+  run_block() {
+    input="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"$1\"}}"
+    exit_code=0
+    echo "$input" | zsh "${HOOK_DIR}/block-destructive.zsh" >/dev/null 2>&1 || exit_code=$?
+  }
+
+  run_block 'rm -r -f /tmp/some-dir'
+  if [[ "$exit_code" -eq 2 ]]; then
+    check "block-destructive.rm-split-flags"
+  else
+    cross "block-destructive.rm-split-flags: expected exit 2, got ${exit_code}"
+    failed=$((failed + 1))
+  fi
+
+  run_block 'rm --recursive --force /tmp/some-dir'
+  if [[ "$exit_code" -eq 2 ]]; then
+    check "block-destructive.rm-long-flags"
+  else
+    cross "block-destructive.rm-long-flags: expected exit 2, got ${exit_code}"
+    failed=$((failed + 1))
+  fi
+
+  run_block 'find /tmp/some-dir -delete'
+  if [[ "$exit_code" -eq 2 ]]; then
+    check "block-destructive.find-delete"
+  else
+    cross "block-destructive.find-delete: expected exit 2, got ${exit_code}"
+    failed=$((failed + 1))
+  fi
+
+  run_block 'rm /tmp/single-file.txt'
+  if [[ "$exit_code" -eq 0 ]]; then
+    check "block-destructive.benign-rm-pass"
+  else
+    cross "block-destructive.benign-rm-pass: expected exit 0, got ${exit_code}"
+    failed=$((failed + 1))
+  fi
+}
+
 # Each tallies failures into $failed; runner does NOT abort on first failure
 # (gives complete feedback across all hooks).
 test_secret_scan
 test_no_emojis
 test_no_ai_comments
 test_agent_transparency
+test_block_destructive
 
 exit "$failed"
