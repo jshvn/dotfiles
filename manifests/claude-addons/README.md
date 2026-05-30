@@ -67,13 +67,6 @@ manual key stripping unnecessary; addon-injected keys live in the paired
   leaves the shared official marketplace registered. **Enabled on
   `personal-laptop` only.**
 
-- [`get-shit-done-redux.toml`](get-shit-done-redux.toml) -- npx-style addon
-  with self-healing hooks. Installed via `npx -y get-shit-done-redux@latest`.
-  Populated `file_globs` for the scattered files in `hooks/`, `agents/`,
-  `skills/`, `commands/`, and `get-shit-done/`. Paired
-  [`get-shit-done-redux.fragment.json`](get-shit-done-redux.fragment.json)
-  captures the hook + statusLine entries. **Disabled by default.**
-
 ## Adding a new addon
 
 1. Create `manifests/claude-addons/<name>.toml` with the schema above.

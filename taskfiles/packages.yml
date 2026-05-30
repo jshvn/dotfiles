@@ -210,7 +210,10 @@ tasks:
           # preserved for schema defense).
           bin_override=$(echo "$line" | ggrep -oE "#[[:space:]]*verify:[[:space:]]*[^[:space:]]+" | awk '{print $3}' || true)
 
-          formula_record=$(echo "$brew_info_json" | jq -c --arg n "$formula_name" '.formulae[] | select(.name == $n)')
+          # Match by .name or .full_name: core formulae carry name == full_name,
+          # but tap-qualified entries (e.g. 'oven-sh/bun/bun') appear in the
+          # Brewfile as the full_name while brew info reports .name as the leaf.
+          formula_record=$(echo "$brew_info_json" | jq -c --arg n "$formula_name" '.formulae[] | select(.name == $n or .full_name == $n)')
           if [[ -z "$formula_record" ]]; then
             cross "formula $formula_name: not installed per brew info"
             failures=$(( failures + 1 ))

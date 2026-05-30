@@ -34,7 +34,6 @@ formulae = [
   "jq",
   "mas",
   "ncdu",
-  "node",
   "onefetch",
   "openssh",
   "ruff",

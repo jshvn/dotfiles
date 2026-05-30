@@ -244,47 +244,48 @@ No paired fragment needed -- ECC doesn't write hook entries into
 `settings.json`. Compose preserves `enabledPlugins` and `extraKnownMarketplaces`
 from the live file automatically.
 
-### Adding an npx-style addon with self-healing hooks (the GSD-redux pattern)
+### Adding an npx-style addon with self-healing hooks
 
-GSD-redux's installer scatters files under `~/.config/claude/{hooks,agents,
-skills,commands,get-shit-done}/` and rewrites `settings.json`. The TOML
-captures the scatter via `file_globs`; the paired fragment captures the
-settings.json keys.
+This is a hypothetical worked example -- no machine currently enables an
+npx-style addon -- showing how the schema handles one. Such an installer
+typically scatters files under `~/.config/claude/{hooks,agents,skills,
+commands}/` and rewrites `settings.json`. The TOML captures the scatter via
+`file_globs`; the paired fragment captures the settings.json keys.
 
-`manifests/claude-addons/get-shit-done-redux.toml`:
+`manifests/claude-addons/<name>.toml`:
 
 ```toml
 [install]
-commands     = ["npx -y get-shit-done-redux@latest --claude --global"]
+commands     = ["npx -y <package>@latest --claude --global"]
 self_healing = true
 
 [verify]
-path = "~/.config/claude/get-shit-done"
+path = "~/.config/claude/<marker-dir>"
 
 [footprint]
 file_globs = [
-  "hooks/gsd-*",
-  "agents/gsd-*.md",
-  "skills/gsd-*/",
-  "commands/gsd-*",
-  "get-shit-done/",
-  "gsd-*",
+  "hooks/<prefix>-*",
+  "agents/<prefix>-*.md",
+  "skills/<prefix>-*/",
+  "commands/<prefix>-*",
 ]
-extra_paths = ["$XDG_STATE_HOME/dotfiles/gsd-installed"]
+extra_paths = ["$XDG_STATE_HOME/dotfiles/<name>-installed"]
 
 [remove]
-commands = ["rm -f $XDG_CONFIG_HOME/claude/hooks/gsd-*"]
+commands = ["rm -f $XDG_CONFIG_HOME/claude/hooks/<prefix>-*"]
 ```
 
-Plus `manifests/claude-addons/get-shit-done-redux.fragment.json` with the
-hooks and statusLine entries the installer writes (derive via the diff
-recipe above).
+Plus `manifests/claude-addons/<name>.fragment.json` with the hooks and
+statusLine entries the installer writes (derive via the diff recipe above).
 
-To enable on a machine: list `"get-shit-done-redux"` in that machine's
-`[claude].addons` array. To remove: `task claude-addons:remove --
-get-shit-done-redux`. The `[remove].commands` disarm the hook scripts before
-file_globs deletion, then the fragment is deleted from settings.d, then
-compose runs.
+To enable on a machine: list `"<name>"` in that machine's `[claude].addons`
+array. To remove: `task claude-addons:remove -- <name>`. The
+`[remove].commands` disarm the hook scripts before file_globs deletion, then
+the fragment is deleted from settings.d, then compose runs.
+
+Note: npx-style addons require Node.js on the machine (for `npx` and any
+`node`-based hook commands the installer injects). The repo ships none enabled
+by default for exactly that reason.
 
 ## Self-healing addons
 
