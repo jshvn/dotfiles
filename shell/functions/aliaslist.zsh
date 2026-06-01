@@ -10,7 +10,7 @@
 # Side effects: stdout only.
 # =============================================================================
 
-function aliaslist() {
+function aliaslist() {    # aliaslist() lists all dotfiles and system aliases. ex: $ aliaslist
     local -A dotfiles_aliases  # Associative array for O(1) lookup
     local yellow=$(tput setaf 3) reset=$(tput sgr0)
 

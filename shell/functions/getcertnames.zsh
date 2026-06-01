@@ -9,7 +9,7 @@
 # Side effects: outbound TLS handshake to the requested host; stdout only.
 # =============================================================================
 
-function getcertnames() {
+function getcertnames() {    # getcertnames() prints a domain's TLS cert Common Name + SANs. ex: $ getcertnames github.com
 	if [[ -z "${1}" ]]; then
 		echo "ERROR: No domain specified.";
 		return 1;

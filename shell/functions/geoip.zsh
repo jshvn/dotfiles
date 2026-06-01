@@ -10,7 +10,7 @@
 # Side effects: HTTPS GET to ip.guide; stdout only.
 # =============================================================================
 
-function geoip() {
+function geoip() {    # geoip() prints geolocation data for an IP or host. ex: $ geoip 1.1.1.1
     if [[ -z "${1}" ]]; then
 		echo "ERROR: No IP or host specified";
 		return 1;

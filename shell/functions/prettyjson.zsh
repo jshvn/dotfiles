@@ -9,7 +9,7 @@
 # Side effects: stdout only.
 # =============================================================================
 
-function prettyjson() {
+function prettyjson() {    # prettyjson() pretty-prints and highlights a JSON file. ex: $ prettyjson package.json
 	if [[ -z "${1}" ]]; then
 		echo "ERROR: No file specified";
 		return 1;

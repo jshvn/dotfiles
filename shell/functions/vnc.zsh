@@ -10,7 +10,7 @@
 # Side effects: launches Screen Sharing or the default vnc:// handler.
 # =============================================================================
 
-function vnc() {
+function vnc() {    # vnc() opens macOS Screen Sharing to a host via vnc://. ex: $ vnc 10.0.0.5
     if [[ -z "${1}" ]]; then
         echo "ERROR: No domain specified.";
         return 1;

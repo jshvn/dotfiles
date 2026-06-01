@@ -9,7 +9,7 @@
 # Side effects: stdout only.
 # =============================================================================
 
-function info() {
+function info() {    # info() shows onefetch in a git repo, else fastfetch ('all' for detail). ex: $ info all
     local show_all=false
     if [[ "$1" == "all" ]]; then
         show_all=true

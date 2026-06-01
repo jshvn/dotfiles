@@ -8,6 +8,6 @@
 # Side effects: creates the directory if absent; changes working directory.
 # =============================================================================
 
-function mkcd() {
+function mkcd() {    # mkcd() creates a directory and cd's into it. ex: $ mkcd src/new-module
     mkdir -p "$1" && cd "$1"
 }

@@ -9,7 +9,7 @@
 # Side effects: HTTPS GET to cheat.sh; stdout only.
 # =============================================================================
 
-function cheat() {
+function cheat() {    # cheat() prints the cheat.sh entry for a command. ex: $ cheat tar
 	if [[ -z "${1}" ]]; then
 		echo "ERROR: No command specified. Printing help instead.";
         local result=$(curl "https://cheat.sh" -s)

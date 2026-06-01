@@ -27,7 +27,7 @@ _motd_line() {
     printf "${1:-$cyan}%*s${reset}\n" $width | tr ' ' "${2:-━}"
 }
 
-function motd() {
+function motd() {    # motd() prints the Tron-themed message-of-the-day banner. ex: $ motd
     local cyan=$(tput setaf 51)
     local orange=$(tput setaf 208)
     local dim=$(tput dim)

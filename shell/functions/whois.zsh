@@ -10,7 +10,7 @@
 # Side effects: outbound WHOIS query; stdout only.
 # =============================================================================
 
-function whois() {
+function whois() {    # whois() runs whois on a domain, IP, or URL (5s timeout). ex: $ whois example.com
     if [[ -z "${1}" ]]; then
         echo "ERROR: No domain, IP, or URL specified";
         return 1;

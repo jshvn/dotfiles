@@ -10,7 +10,7 @@
 # Side effects: outbound HTTPS requests to ip-lookup providers; stdout only.
 # =============================================================================
 
-function ipv4lookup() {
+function ipv4lookup() {    # ipv4lookup() lists local and public IPv4 addresses. ex: $ ipv4lookup
     # list of public ipv4 providers to query (tried in order).
     local public_ipv4_providers=(
         "https://simpip.com"

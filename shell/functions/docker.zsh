@@ -10,7 +10,7 @@
 # Side effects: shadows the `docker` command for the interactive shell.
 # =============================================================================
 
-function docker() {
+function docker() {    # docker() wraps docker: tidies 'ps' columns and adds '<shell> <container>'. ex: $ docker sh web
     if [[ "$1" == "ps" ]]; then
         shift
         command docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}" "$@"

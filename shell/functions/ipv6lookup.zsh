@@ -10,7 +10,7 @@
 # Side effects: outbound HTTPS requests to ip-lookup providers; stdout only.
 # =============================================================================
 
-function ipv6lookup() {
+function ipv6lookup() {    # ipv6lookup() lists local and public IPv6 addresses. ex: $ ipv6lookup
     # list of public ipv6 providers to query (tried in order).
     local public_ipv6_providers=(
         "https://ifconfig.co"

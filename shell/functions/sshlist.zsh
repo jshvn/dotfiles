@@ -11,7 +11,7 @@
 # Side effects: stdout only.
 # =============================================================================
 
-function sshlist() {
+function sshlist() {    # sshlist() lists configured SSH host blocks and the active identity. ex: $ sshlist
     local main_config="$DOTFILEDIR/identity/ssh/config"
     local identities_dir="$DOTFILEDIR/identity/ssh/identities"
     local active_name=""

@@ -9,6 +9,6 @@
 # Side effects: puts the display(s) to sleep.
 # =============================================================================
 
-function afk() {
+function afk() {    # afk() sleeps the display immediately (engages the screen lock). ex: $ afk
     pmset displaysleepnow
 }

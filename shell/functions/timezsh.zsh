@@ -10,7 +10,7 @@
 # Side effects: spawns short-lived interactive zsh subshells; stdout only.
 # =============================================================================
 
-function timezsh() {
+function timezsh() {    # timezsh() profiles zsh startup time (4-run average + zprof). ex: $ timezsh
     # first run shell startup 4 times with /usr/bin/time to get average time
     local shell=${1-$SHELL}
     for i in $(seq 1 4); do /usr/bin/time "$shell" -i -c exit; done

@@ -9,7 +9,7 @@
 # Side effects: DNS query against 1.1.1.1; stdout only.
 # =============================================================================
 
-function host() {
+function host() {    # host() looks up A/AAAA/MX/TXT/NS/CNAME records via 1.1.1.1. ex: $ host example.com
     if [[ -z "${1}" ]]; then
 		echo "ERROR: No host or IP specified";
 		return 1;

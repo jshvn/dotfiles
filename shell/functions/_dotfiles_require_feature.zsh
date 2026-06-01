@@ -21,7 +21,7 @@
 #                    }
 # =============================================================================
 
-function _dotfiles_require_feature() {
+function _dotfiles_require_feature() {    # _dotfiles_require_feature() guards a function on a feature flag, warning if disabled. ex: _dotfiles_require_feature macos-finder || return 1
     local feature="$1"
     local fn_name="${2:-${funcstack[2]:-${0}}}"
     [[ "$(_dotfiles_feature "$feature")" == "true" ]] && return 0

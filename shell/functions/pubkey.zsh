@@ -9,7 +9,7 @@
 # Side effects: writes to the clipboard.
 # =============================================================================
 
-function pubkey() {
+function pubkey() {    # pubkey() copies ~/.ssh/<key>.pub to the clipboard (no arg lists keys). ex: $ pubkey id_ed25519.pub
     if [[ -z "${1}" ]]; then
         echo "ERROR: No key specified. The possible keys are:";
         local keylist=$(print -l ~/.ssh/*.pub(N))

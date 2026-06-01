@@ -9,7 +9,7 @@
 # Side effects: stdout only.
 # =============================================================================
 
-function permissions() {
+function permissions() {    # permissions() prints mode + octal + path for a file or dir. ex: $ permissions ~/.ssh
 	if [[ -z "${1}" ]]; then
 		echo "ERROR: No file or directory specified";
 		return 1;

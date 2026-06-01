@@ -10,7 +10,7 @@
 # Side effects: stdout only.
 # =============================================================================
 
-function fs() {
+function fs() {    # fs() reports human-readable size of the given paths (or cwd). ex: $ fs ./node_modules
 	if du -b /dev/null > /dev/null 2>&1; then
 		local arg=-sbh;
 	else

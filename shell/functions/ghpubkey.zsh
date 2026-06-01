@@ -9,7 +9,7 @@
 # Side effects: HTTPS GET to github.com; stdout only.
 # =============================================================================
 
-function ghpubkey() {
+function ghpubkey() {    # ghpubkey() fetches a GitHub user's public SSH keys. ex: $ ghpubkey jshvn
     if [[ -z "${1}" ]]; then
 		echo "ERROR: No GitHub username specified";
 		return 1;

@@ -15,7 +15,7 @@
 typeset -gA _DOTFILES_FEATURES
 _dotfiles_features_loaded=0
 
-function _dotfiles_feature() {
+function _dotfiles_feature() {    # _dotfiles_feature() prints a manifest feature flag's value (true/false). ex: $ _dotfiles_feature one-password-ssh
     local name="$1"
     if (( ! _dotfiles_features_loaded )); then
         local resolved="${XDG_STATE_HOME}/dotfiles/resolved.json"
