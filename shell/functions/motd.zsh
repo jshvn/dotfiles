@@ -58,7 +58,7 @@ function motd() {
     echo
     
     # System info via fastfetch
-    echo "${cyan}${bold}[ SYSTEM ] SYSTEM INFORMATION${reset}"
+    echo "${cyan}${bold}[ SYSTEM INFORMATION ]${reset}"
     local ff_config="${DOTFILEDIR}/configs/motd/motd_sysinfo.jsonc"
     if [[ -f "$ff_config" ]]; then
         fastfetch --config "$ff_config" 2>/dev/null | sed "s/^/   /; s/› /› ${orange}/; s/$/${reset}/"
@@ -70,7 +70,7 @@ function motd() {
     
     # Dotfiles git status (if in repo)
     if [[ -d "${DOTFILEDIR}/.git" ]]; then
-        echo "${cyan}${bold}[ DOTFILES ] DOTFILES${reset}"
+        echo "${cyan}${bold}[ DOTFILES ]${reset}"
         (
             cd "${DOTFILEDIR}" 2>/dev/null || return
             local last_commit=$(git log -1 --format="%ar" 2>/dev/null || echo "unknown")
@@ -86,7 +86,7 @@ function motd() {
     local quotes_file="${DOTFILEDIR}/configs/motd/motd_tron.txt"
     if [[ -f "$quotes_file" ]]; then
         local quote=$(shuf -n 1 "$quotes_file" 2>/dev/null || sort -R "$quotes_file" | head -1)
-        echo "${cyan}${bold}[ TRANSMISSION ] TRANSMISSION${reset}"
+        echo "${cyan}${bold}[ TRANSMISSION ]${reset}"
         echo "   ${dim}${quote}${reset}"
         echo
     fi
