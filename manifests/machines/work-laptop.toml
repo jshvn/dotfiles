@@ -20,6 +20,7 @@ macos-input = true
 macos-screenshots = true
 macos-security = true
 macos-appearance = true
+macos-display = true
 claude-marketplace = true
 ghostty = true
 
