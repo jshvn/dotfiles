@@ -274,9 +274,8 @@ tasks:
         exit "$failures"
 
   # lint-allow: cmds-without-status
-  reconcile:
-    desc: "Detect orphan symlinks (default: exit non-zero); -- --remove for interactive cleanup"
-    internal: true
+  audit:
+    desc: "Audit symlink drift (detect orphans); -- --remove for interactive cleanup"
     deps: [":manifest:resolve"]
     status: [false]
     # Three invocation modes via CLI_ARGS:
@@ -284,7 +283,7 @@ tasks:
     #   --remove    -- interactive cleanup; TTY-gated; y/N per orphan;
     #                  uses `unlink` only (never `rm`).
     #   --warn-only -- non-fatal; emits orphans via warn(); always exits 0.
-    # Public path: audit:links (taskfiles/audit.yml delegate).
+    # This is the public `task links:audit` command (domain-first).
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
@@ -304,7 +303,7 @@ tasks:
         # non-TTY callers fail fast.
         if [[ "$mode" == "remove" ]]; then
           if [[ ! -t 0 ]]; then
-            error "links:reconcile --remove requires an interactive TTY; stdin is not a tty"
+            error "links:audit --remove requires an interactive TTY; stdin is not a tty"
             exit 1
           fi
         fi
@@ -410,7 +409,7 @@ tasks:
             # are the only values $mode can take given the initialization +
             # the two case mutators above; this branch surfaces a future
             # flag-parsing bug as a hard error instead of a silent no-op.
-            error "links:reconcile: internal bug -- unknown mode '$mode'"
+            error "links:audit: internal bug -- unknown mode '$mode'"
             exit 1
             ;;
         esac

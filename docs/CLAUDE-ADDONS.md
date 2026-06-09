@@ -58,8 +58,7 @@ install/
 
 taskfiles/
   claude-addons.yml       Thin dispatcher to install/claude-addons.zsh
-  claude.yml              CLI ensure + settings-compose + settings-check
-  show.yml, audit.yml     Public delegates to the diagnostics
+  claude.yml              CLI ensure + settings-compose + claude:audit (settings drift)
   lint.yml                LINT-09 drift detection
 ```
 
@@ -153,24 +152,24 @@ Operator surface for clean removal. Steps:
 5. Delete `claude/settings.d/99-addon-<name>.json` if present.
 6. Recompose `claude/settings.json`.
 
-After: `task audit:claude-addons` should report no orphan footprints.
+After: `task claude-addons:audit` should report no orphan footprints.
 
-### `task show:claude-addons`
+### `task claude-addons:show`
 
 Diagnostic table: Name | Enabled (in machine manifest) | Installed (verify
 passes) | Description. Read-only.
 
-### `task audit:claude-addons`
+### `task claude-addons:audit`
 
 Drift detection: for every addon TOML NOT enabled on this machine, walk its
 `file_globs` and `extra_paths`. Warn on any orphan paths found. This is the
 "installed but not declared" case the user was in before this system existed.
 
-### `task audit:settings` and `task claude:settings-check`
+### `task claude:audit`
 
-`audit:settings` is the public delegate for `claude:settings-check`. Runs
-compose to stdout, diffs against the committed `claude/settings.json`, exits
-non-zero on drift. LINT-09 wraps this and fails `task lint` on drift.
+The settings.json drift check. Runs compose to stdout, diffs against the
+committed `claude/settings.json`, exits non-zero on drift. LINT-09 wraps this
+and fails `task lint` on drift.
 
 ## Settings.d composition algorithm
 
@@ -307,14 +306,14 @@ live under the CLI-managed plugin directory, not in `settings.json`.
 ### `task lint` fails with "LINT-09: claude/settings.json drift"
 
 Run `task claude:settings-compose` to regenerate. If the recompose still
-shows drift, run `task audit:settings` for the verbose diff. Common causes:
+shows drift, run `task claude:audit` for the verbose diff. Common causes:
 
 - A third-party tool wrote to `settings.json` directly (the very class
   settings.d is designed to neutralize). Recompose; the change is overwritten.
 - You hand-edited `settings.json` expecting changes to stick. Edit the
   matching fragment in `claude/settings.d/` instead.
 
-### `task audit:claude-addons` warns about orphan footprints
+### `task claude-addons:audit` warns about orphan footprints
 
 An addon's `file_globs` match files on disk but the addon isn't enabled in
 the machine manifest. Two possible fixes:

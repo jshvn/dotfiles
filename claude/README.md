@@ -44,13 +44,13 @@ the composed result to `settings.json` (which IS symlinked).
 | Task | When to run |
 |------|-------------|
 | `task claude:install` | First-time install + every-run; ensures CLI present and recomposes settings.json (called by `task install`) |
-| `task claude:status` | Diagnostic: show installed marketplaces and plugins |
+| `task claude:show` | Diagnostic: show installed marketplaces and plugins |
+| `task claude:audit` | Drift detection: settings.json vs composed fragments |
 | `task claude:validate` | State check: CLI presence + LINT-09-equivalent drift check |
 | `task claude-addons:install` | Iterate `[claude].addons`, install/upgrade each, drop fragments into settings.d, recompose |
 | `task claude-addons:remove -- <name>` | Run remove.commands, walk file_globs, drop fragment, recompose |
-| `task show:claude-addons` | Diagnostic table: Name | Enabled | Installed |
-| `task audit:claude-addons` | Drift detection: orphan footprints from non-enabled addons |
-| `task audit:settings` | Drift detection: settings.json vs composed fragments |
+| `task claude-addons:show` | Diagnostic table: Name | Enabled | Installed |
+| `task claude-addons:audit` | Drift detection: orphan footprints from non-enabled addons |
 
 `task claude:install` and `task claude-addons:install` are gated on
 `features.claude-marketplace` in `manifests/defaults.toml`. Machines with

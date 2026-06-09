@@ -286,7 +286,6 @@ tasks:
   # lint-allow: cmds-without-status
   audit:
     desc: "Audit installed brew formulae/casks/mas vs declared. Non-blocking; --strict exits non-zero."
-    internal: true
     deps: [":manifest:resolve"]
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'

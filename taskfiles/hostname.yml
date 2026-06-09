@@ -101,7 +101,7 @@ tasks:
     # requires: hard-fails when CLI_ARGS is absent (no name passed).
     requires:
       vars: [CLI_ARGS]
-    # Forward CLI_ARGS via env (mirror manifest:setup exactly): go-task
+    # Forward CLI_ARGS via env (mirror manifest:set exactly): go-task
     # substitutes {{.CLI_ARGS}} into rendered shell BEFORE parse, so an
     # apostrophe / shell metacharacter in user input would unterminate the
     # surrounding single-quoted string. Reading $CLI_ARGS_ENV from env moves
@@ -116,7 +116,7 @@ tasks:
     # the template-rendered `{{.CLI_ARGS}}` -- making a valid name look
     # rejected. Inline validation against `${CLI_ARGS_ENV}` defaults-empty
     # to "" (NOT unbound) and lets the regex check below produce the right
-    # decision either way. Mirrors `manifest:setup` exactly.
+    # decision either way. Mirrors `manifest:set` exactly.
     preconditions:
       - sh: |
           name="${CLI_ARGS_ENV:-}"
@@ -173,10 +173,8 @@ tasks:
   # lint-allow: cmds-without-status
   show:
     desc: "Show hostname state file + live ComputerName/HostName/LocalHostName/NetBIOSName"
-    internal: true
     platforms: [darwin]
-    # Internal -- public delegate is `task show:hostname` (taskfiles/show.yml),
-    # mirroring the manifest:show / show:manifest split.
+    # Public domain-first read command: `task hostname:show`.
     # status: [false] -- diagnostic read; always re-run.
     status: [false]
     cmds:

@@ -3,7 +3,7 @@ version: '3'
 # =============================================================================
 # taskfiles/claude.yml -- Claude Code CLI + settings.json composition
 #
-# Purpose:      Ensure the claude CLI is installed, expose a status diagnostic,
+# Purpose:      Ensure the claude CLI is installed, expose a show diagnostic,
 #               and own the settings.d -> settings.json composition pipeline.
 #               Marketplace/plugin lifecycle lives in taskfiles/claude-addons.yml
 #               (one addon per manifests/claude-addons/<name>.toml).
@@ -38,9 +38,8 @@ tasks:
         success "claude: CLI + settings.json ready"
 
   # lint-allow: cmds-without-status
-  status:
+  show:
     desc: "Show installed marketplaces + plugins (diagnostic)"
-    internal: true
     status: [false]
     cmds:
       - claude plugin marketplace list
@@ -82,7 +81,7 @@ tasks:
           rc=1
         fi
         exit "$rc"
-      - task: settings-check
+      - task: audit
 
   ensure-cli:
     internal: true
@@ -173,9 +172,8 @@ tasks:
         check "claude/settings.json composed from ${fragment_count} fragment(s)"
 
   # lint-allow: cmds-without-status
-  settings-check:
-    desc: "Verify claude/settings.json matches the compose output (drift detection)"
-    internal: true
+  audit:
+    desc: "Check claude/settings.json for drift vs composed settings.d fragments"
     status: [false]
     cmds:
       - |
@@ -185,12 +183,12 @@ tasks:
         settings_d='{{.SETTINGS_D}}'
 
         if [[ ! -f "$target" ]]; then
-          cross "claude:settings-check: $target does not exist"
+          cross "claude:audit: $target does not exist"
           exit 1
         fi
 
         if ! ls "$settings_d"/*.json >/dev/null 2>&1; then
-          cross "claude:settings-check: no fragments at ${settings_d}/*.json"
+          cross "claude:audit: no fragments at ${settings_d}/*.json"
           exit 1
         fi
 

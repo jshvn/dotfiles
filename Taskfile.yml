@@ -90,7 +90,6 @@ vars:
     ref: 'fromJson .MANIFEST_JSON'
 
 includes:
-  audit:    ./taskfiles/audit.yml
   manifest: ./taskfiles/manifest.yml
   lint:     ./taskfiles/lint.yml
   links:    ./taskfiles/links.yml
@@ -100,7 +99,6 @@ includes:
   claude:   ./taskfiles/claude.yml
   claude-addons: ./taskfiles/claude-addons.yml
   repo: ./taskfiles/repo.yml
-  show:     ./taskfiles/show.yml
   test: ./taskfiles/test.yml
   macos:    ./taskfiles/macos.yml
   # hostname:* lives alongside macos: -- both are macOS-only system-state
@@ -130,27 +128,30 @@ tasks:
         info "  validate    Validate full installation state"
         info "  test        Run all smoke tests"
         info "  lint        Run all lint checks"
+        info "  audit       Detect drift across all domains"
         echo
-        header "Diagnostics (read-only)"
-        info "  task show:*                   Inspect current state (manifest, claude, claude-addons, hostname)"
-        info "  task audit:*                  Detect drift (manifest, packages, links, claude-addons, settings)"
+        header "Diagnostics (read-only, domain-first)"
+        info "  task show                            List inspectable domains"
+        info "  task <domain>:show                   manifest | claude | claude-addons | hostname"
+        info "  task <domain>:audit                  manifest | packages | links | claude | claude-addons"
         echo
         header "State mutations"
-        info "  task setup -- <name>          Set active machine manifest (\$XDG_STATE_HOME/dotfiles/machine)"
-        info "  task hostname:set -- <name>   Set live macOS hostname (requires sudo; self-heals on task install)"
+        info "  task setup -- <name>                 Set active machine manifest (\$XDG_STATE_HOME/dotfiles/machine)"
+        info "  task hostname:set -- <name>          Set live macOS hostname (requires sudo; self-heals on task install)"
+        info "  task claude-addons:remove -- <name>  Remove a Claude addon"
         echo
         echo "Run 'task --list' for the full task graph."
 
   # lint-allow: cmds-without-status
   setup:
     desc: "Persist active machine selection: task setup -- <machine-name>"
-    # Top-level alias for `manifest:setup`. Every doc and operator-facing
+    # Top-level alias for `manifest:set`. Every doc and operator-facing
     # error message says `task setup -- <machine-name>` -- without this
     # alias those instructions fail with `Task "setup" does not exist`.
     # Forwarding CLI_ARGS preserves the `-- <name>` calling convention.
     status: [false]
     cmds:
-      - task: manifest:setup
+      - task: manifest:set
         vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
 
   # lint-allow: cmds-without-status
@@ -194,10 +195,46 @@ tasks:
         ignore_error: true
       - task: claude:validate
         ignore_error: true
-      - task: claude-addons:validate
+      - task: claude-addons:audit
         ignore_error: true
       - task: shell:validate
         ignore_error: true
+
+  # lint-allow: cmds-without-status
+  audit:
+    desc: "Detect drift across all domains (read-only; run-all-aggregate)"
+    status: [false]
+    deps: [manifest:resolve]
+    # Bare-verb aggregate: runs every domain's drift check. The per-domain
+    # form (`task packages:audit`, `task links:audit`, ...) runs just one.
+    # Mirrors validate:'s dispatch -- each `<domain>:audit` is dispatched via
+    # go-task's `task:` keyword with `ignore_error: true`, so every domain
+    # runs regardless of prior drift and reports inline via messages.zsh.
+    cmds:
+      - task: manifest:audit
+        ignore_error: true
+      - task: packages:audit
+        ignore_error: true
+      - task: links:audit
+        ignore_error: true
+      - task: claude:audit
+        ignore_error: true
+      - task: claude-addons:audit
+        ignore_error: true
+
+  # lint-allow: cmds-without-status
+  show:
+    desc: "List inspectable domains (run task <domain>:show for state)"
+    status: [false]
+    cmds:
+      - |
+        source '{{.TASKFILE_DIR}}/install/messages.zsh'
+        header "Inspectable domains -- run task <domain>:show"
+        echo
+        info "  task manifest:show         Resolved manifest (-- [--machine] NAME for any machine)"
+        info "  task claude:show           Installed marketplaces + plugins"
+        info "  task claude-addons:show    Known / enabled / installed Claude addons"
+        info "  task hostname:show         Hostname state file + live system hostnames"
 
   # lint-allow: cmds-without-status
   install:
@@ -224,12 +261,12 @@ tasks:
       # `task install` with exit 1 -- no `success "install complete"` line
       # is printed when verify trips.
       - task: packages:verify
-      # install-time orphan warning -- non-fatal. links:reconcile in
+      # install-time orphan warning -- non-fatal. links:audit in
       # --warn-only mode emits orphans via warn() to stderr and ALWAYS
       # exits 0 (internal to the task body), so install exits 0 even when
-      # an orphan is detected. The standalone `task links:reconcile`
+      # an orphan is detected. The standalone `task links:audit`
       # (default mode) keeps the non-zero-exit-on-orphans contract for CI.
-      - task: audit:links
+      - task: links:audit
         vars: { CLI_ARGS: "--warn-only" }
       - |
         # Source via TASKFILE_DIR (mirrors default: and validate: above).

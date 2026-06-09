@@ -288,15 +288,15 @@ tasks:
         # composed output (third-party installer wrote keys; manual edit; etc.)
         # this rule fires. Run `task claude:settings-compose` to fix.
         {{.DOTFILES_MESSAGES}}
-        # Delegate to audit:settings (the public alias for claude:settings-check);
-        # internal tasks cannot be invoked from a shell `task` call so this
-        # public delegate is the supported entry point.
-        if task audit:settings >/dev/null 2>&1; then
+        # Delegate to claude:audit (settings.json drift detection); internal
+        # tasks cannot be invoked from a shell `task` call, so this public
+        # command is the supported entry point.
+        if task claude:audit >/dev/null 2>&1; then
           check "LINT-09: claude/settings.json matches composed fragments"
         else
           cross "LINT-09: claude/settings.json drift -- run 'task claude:settings-compose'"
           # Re-run visibly so the operator sees the diff.
-          task audit:settings 2>&1 || true
+          task claude:audit 2>&1 || true
           exit 1
         fi
 

@@ -78,7 +78,7 @@ manual key stripping unnecessary; addon-injected keys live in the paired
    `[claude] addons = ["ecc", "<name>"]`.
 4. Run `task setup -- <machine>` to refresh the resolved manifest.
 5. Run `task install` (or `task claude-addons:install`).
-6. Verify: `task show:claude-addons` shows the addon as Installed.
+6. Verify: `task claude-addons:show` shows the addon as Installed.
 
 See [`docs/CLAUDE-ADDONS.md`](../../docs/CLAUDE-ADDONS.md) for the full
 procedure including how to derive the fragment template safely.

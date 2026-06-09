@@ -47,7 +47,7 @@ tasks:
     # shell parses it, so an apostrophe / shell metacharacter in the addon name
     # would unterminate the surrounding single-quoted string. Reading
     # $CLI_ARGS_ENV from the environment moves the value past the parser intact.
-    # Mirrors taskfiles/manifest.yml (setup/show/validate) and hostname.yml.
+    # Mirrors taskfiles/manifest.yml (set/show/audit) and hostname.yml.
     env:
       CLI_ARGS_ENV: '{{.CLI_ARGS}}'
     cmds:
@@ -55,18 +55,16 @@ tasks:
       - task: :claude:settings-compose
 
   # lint-allow: cmds-without-status
-  list:
+  show:
     desc: "List all known addons + their state (Known / Enabled / Installed)"
-    internal: true
     deps: [":manifest:resolve"]
     status: [false]
     cmds:
       - DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/install/claude-addons.zsh' list
 
   # lint-allow: cmds-without-status
-  validate:
-    desc: "Validate addon state: every enabled has verify=true; no orphans on disk"
-    internal: true
+  audit:
+    desc: "Detect orphan Claude addon footprints (installed but not declared)"
     deps: [":manifest:resolve"]
     status: [false]
     cmds:

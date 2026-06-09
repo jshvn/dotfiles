@@ -391,7 +391,7 @@ See that task for the implementation details.
 4. Validate the schema:
 
    ```zsh
-   task audit:manifest -- --machine <name>
+   task manifest:audit -- --machine <name>
    ```
 
 5. Persist the selection and regenerate `resolved.json`:
@@ -406,7 +406,7 @@ See that task for the implementation details.
 6. Inspect the resolved output:
 
    ```zsh
-   task show:manifest
+   task manifest:show
    ```
 
 7. (Optional) Apply the install:
@@ -450,7 +450,7 @@ discover identities at evaluation time.
    ssh = "<name>"
    ```
 
-7. Validate: `task audit:manifest -- --machine <machine>`.
+7. Validate: `task manifest:audit -- --machine <machine>`.
    A typo in `<name>` is rejected with an error naming the missing overlay file.
 
 ## CLI Reference
@@ -458,8 +458,8 @@ discover identities at evaluation time.
 | Command | Description |
 |---------|-------------|
 | `task setup -- <name>` | Persist machine selection; runs validate and resolve |
-| `task show:manifest [-- --machine <name>]` | Print resolved manifest (active machine by default) |
-| `task audit:manifest [-- --machine <name>]` | Schema check -- required fields + unknown-key warnings |
+| `task manifest:show [-- --machine <name>]` | Print resolved manifest (active machine by default) |
+| `task manifest:audit [-- --machine <name>]` | Schema check -- required fields + unknown-key warnings |
 | `task test:manifest` | Run the six golden-output fixture tests |
 
 ## State Files

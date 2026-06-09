@@ -21,7 +21,7 @@ Schema reference: `docs/MANIFEST.md`
 ## Common Tasks (operator surface)
 
 Bare `task` prints the curated two-tier banner. The canonical operator
-surface is exactly five top-level commands:
+surface is six top-level lifecycle commands:
 
 | Command          | Purpose                                                      |
 |------------------|--------------------------------------------------------------|
@@ -30,11 +30,15 @@ surface is exactly five top-level commands:
 | `task validate`  | Validate full installation state                             |
 | `task test`      | Run all smoke tests                                          |
 | `task lint`      | Run all lint checks                                          |
+| `task audit`     | Detect drift across all domains (read-only aggregate)        |
 
-Two diagnostic namespaces:
+Diagnostics follow a domain-first grammar: `<domain>:<verb>` (pick a domain,
+pick a verb). Bare verbs aggregate across all domains.
 
-- `task show:*` -- inspect current state (`show:manifest`, `show:claude`, `show:hostname`)
-- `task audit:*` -- detect drift (`audit:manifest`, `audit:packages`, `audit:links`)
+- `task <domain>:show` -- inspect current state (`manifest:show`, `claude:show`,
+  `claude-addons:show`, `hostname:show`); bare `task show` lists inspectable domains.
+- `task <domain>:audit` -- detect drift (`manifest:audit`, `packages:audit`,
+  `links:audit`, `claude:audit`, `claude-addons:audit`); bare `task audit` runs them all.
 
 `task --list` shows the full curated graph (every public task; internals
 hidden). Per-component install / validate tasks are intentionally
@@ -287,7 +291,7 @@ new evidence.
 | One concept per file; README per top-level directory | Reduces AI's inference burden; every directory teaches itself. |
 | `task install` is the canonical entry; update path runs through the same task | Prevents the "add a package to update path, forget install, fresh machine breaks" drift class — single source of truth, single pipeline. |
 | Five-tier testing: static lint, validate, reconcile, smoke, system | Each tier catches different drift; without verify+reconcile we'd ship "looks installed but isn't" or "symlink-soup-after-refactor". |
-| Curated 5-command operator surface (`install / setup / validate / test / lint`) | Audited every exposed task; reduced cognitive load; lint enforces banner drift via LINT-08. |
+| Curated top-level surface (`install / setup / validate / test / lint / audit`) + domain-first `<domain>:<verb>` diagnostics | Audited every exposed task; one grammar (pick a domain, pick a verb); bare verbs aggregate; lint enforces banner drift via LINT-08. |
 
 ## Performance and Security Constraints
 

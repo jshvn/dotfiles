@@ -29,7 +29,7 @@ vars:
 
 tasks:
 
-  setup:
+  set:
     desc: "Persist active machine selection: task setup -- <machine-name>"
     internal: true
     # requires: is a hard-fail when the var is absent (no arg passed).
@@ -45,7 +45,7 @@ tasks:
     env:
       CLI_ARGS_ENV: '{{.CLI_ARGS}}'
     # Path-traversal guard (kebab-case regex) then file-existence check; both
-    # run before any state-file write. The setup task allows underscore-prefixed
+    # run before any state-file write. The set task allows underscore-prefixed
     # names (e.g. _addmachine-test) so the regex is slightly wider than pure
     # kebab-case, matching the resolver's MACHINE_NAME_RE.
     preconditions:
@@ -95,9 +95,10 @@ tasks:
 
   show:
     desc: "Print resolved manifest (default: active machine; -- [--machine] NAME for any machine)"
-    internal: true
     # No preconditions: resolver hard-fails with actionable error if no state.
-    # No status: read/print task; always re-run.
+    # status: [false] -- diagnostic read; always re-run (mirrors the other
+    # <domain>:show tasks).
+    status: [false]
     # CLI_ARGS via env so apostrophes / shell metacharacters in user input
     # cannot break the rendered shell parse.
     env:
@@ -134,3 +135,15 @@ tasks:
         # the failure through go-task.
         DOTFILEDIR="{{.ROOT_DIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
           zsh "{{.ROOT_DIR}}/install/resolver.zsh" --validate-only --machine "$machine_name"
+
+  # lint-allow: cmds-without-status
+  audit:
+    desc: "Validate active (or -- [--machine] NAME) manifest schema"
+    # Public drift-check face of the internal `validate` task. For manifests,
+    # drift detection IS schema validation, so audit is a thin delegate rather
+    # than a separate measurement -- no duplicate logic. `validate` stays
+    # internal as the `task validate` pipeline step.
+    status: [false]
+    cmds:
+      - task: validate
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
