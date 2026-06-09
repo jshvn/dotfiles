@@ -29,7 +29,10 @@ jgrid-net = true
 bundles = ["dotfiles", "cli", "dotfiles-gui", "dev", "productivity", "apps"]
 
 [packages.brew.extra_packages]
-formulae = ["oven-sh/bun/bun"]  # bun (tap-qualified); rest of CLI comes from the dotfiles/cli bundles
+# bun (tap-qualified) is the JS runtime/pkg-manager; node is also installed
+# because the ecc Claude addon's hooks invoke the `node` binary directly. The
+# rest of the CLI comes from the dotfiles/cli bundles.
+formulae = ["oven-sh/bun/bun", "node"]
 
 casks = [
   { name = "cloudflare-warp" },
