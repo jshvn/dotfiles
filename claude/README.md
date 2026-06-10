@@ -67,8 +67,10 @@ the composed result to `settings.json` (which IS symlinked).
 2. **Preserved CLI-managed keys** read from the existing settings.json:
    - `enabledPlugins`
    - `extraKnownMarketplaces`
-   These are written by `claude plugin install`/`claude plugin marketplace
-   add` and are never owned by fragments.
+   - `model` (only when present)
+   The first two are written by `claude plugin install`/`claude plugin
+   marketplace add`, `model` by the `/model` command; none are owned by
+   fragments.
 
 Atomic write (mktemp + mv) into `claude/settings.json`. The compose step
 runs at the end of `task claude:install` and `task claude-addons:install/

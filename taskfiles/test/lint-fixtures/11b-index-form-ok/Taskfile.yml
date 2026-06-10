@@ -1,0 +1,20 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/11b-index-form-ok/Taskfile.yml
+#
+# Negative fixture for LINT-11: the same kebab-case feature key reached via
+# the index form, which go templates parse correctly. The rule must NOT
+# fire. Snake_case dot-access (.MANIFEST.identity.git) is also legal and
+# included to pin the no-hyphen boundary.
+#
+# Expected outcome: LINT-11 does not fire (expect: pass)
+# =============================================================================
+
+tasks:
+  fixture-task:
+    desc: "fixture: kebab-case feature key via index form"
+    status: [false]
+    cmds:
+      - echo '{{if index .MANIFEST.features "one-password-ssh"}}enabled{{end}}'
+      - echo '{{.MANIFEST.identity.git}}'

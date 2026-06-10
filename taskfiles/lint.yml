@@ -3,9 +3,9 @@ version: '3'
 # =============================================================================
 # taskfiles/lint.yml -- lint suite for v2 dotfiles conventions
 #
-# Purpose:      Enforce LINT-01..08 structural correctness rules that prevent
-#               recurring bug classes. See CLAUDE.md §Lint rule catalogue
-#               for the rule definitions.
+# Purpose:      Enforce LINT-02..12 structural correctness rules that prevent
+#               recurring bug classes (01 and 06 intentionally absent). See
+#               CLAUDE.md §Lint rule catalogue for the rule definitions.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh; yq + ggrep.
 # Side effects: read-only -- emits check/cross output via messages.zsh.
 # =============================================================================
@@ -15,7 +15,7 @@ includes:
 
 vars:
   TASKFILE_GLOB: 'taskfiles/*.yml'
-  # ZSH_FIND uses DOTFILEDIR so it works regardless of cwd when task is invoked.
+  # ZSH_FIND anchors on ROOT_DIR so it works regardless of cwd when task is invoked.
   ZSH_FIND: >-
     find {{.ROOT_DIR}} -name '*.zsh'
     -not -path '{{.ROOT_DIR}}/.git/*'
@@ -45,6 +45,12 @@ tasks:
       - task: banner-parity
         ignore_error: true
       - task: settings-drift
+        ignore_error: true
+      - task: brew-prefix
+        ignore_error: true
+      - task: kebab-access
+        ignore_error: true
+      - task: file-headers
         ignore_error: true
 
   # lint-allow: cmds-without-status
@@ -120,14 +126,21 @@ tasks:
             loop_vars=$(printf '%s\n' "$entry" \
               | ggrep -oE '\bfor[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+in\b' \
               | awk '{print $2}' || true)
-            allowed=$(printf '%s\n%s\n' "$local_vars" "$loop_vars" | sort -u | ggrep -v '^$' || true)
+            # `read [-flags] VAR` defines VAR in the entry's shell context,
+            # same as a `for VAR in` loop head (e.g. `while read -r rel`).
+            read_vars=$(printf '%s\n' "$entry" \
+              | ggrep -oE '\bread([[:space:]]+-[A-Za-z]+)*[[:space:]]+[A-Za-z_][A-Za-z0-9_]*' \
+              | awk '{print $NF}' || true)
+            # Space-separated: BSD awk rejects newlines in -v assignments
+            # ("awk: newline in string"), which silently emptied entry_hits.
+            allowed=$(printf '%s\n%s\n%s\n' "$local_vars" "$loop_vars" "$read_vars" | sort -u | ggrep -v '^$' | tr '\n' ' ' || true)
             entry_hits=$(printf '%s\n' "$entry" \
               | ggrep -nE '\$[A-Za-z_][A-Za-z0-9_]*' \
               | ggrep -vE '\$\(' \
               | ggrep -vE '\{\{' \
               | awk -v allowed="$allowed" '
                   BEGIN {
-                    nlines = split(allowed, arr, "\n")
+                    nlines = split(allowed, arr, " ")
                     for (j = 1; j <= nlines; j++) if (arr[j] != "") locals[arr[j]] = 1
                   }
                   {
@@ -231,13 +244,15 @@ tasks:
     cmds:
       - |
         # lint-allow: cmds-without-status
-        # Scans shell/ and os/ for macOS-only commands. ggrep tolerates
-        # missing directories via 2>/dev/null and || true.
+        # Scans shell/ and os/ for macOS-only commands. Scoped to .zsh
+        # sources so markdown prose describing these commands (e.g.
+        # os/README.md) never trips a warning. ggrep tolerates missing
+        # directories via 2>/dev/null and || true.
         {{.DOTFILES_MESSAGES}}
         patterns=(pbcopy pbpaste osascript 'defaults read' 'defaults write' sw_vers dscl PlistBuddy)
         warnings=0
         for pat in "${patterns[@]}"; do
-          hits=$(ggrep -rnE "\b${pat}\b" shell/ os/ 2>/dev/null \
+          hits=$(ggrep -rnE --include='*.zsh' "\b${pat}\b" shell/ os/ 2>/dev/null \
                  | ggrep -v ':[[:space:]]*#' || true)
           if [[ -n "$hits" ]]; then
             warn "LINT-05: portability hint -- '${pat}' found:"
@@ -301,6 +316,97 @@ tasks:
         fi
 
   # lint-allow: cmds-without-status
+  brew-prefix:
+    desc: "LINT-10: no hardcoded /opt/homebrew or /usr/local outside annotated dispatch sites"
+    internal: true
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # The Homebrew prefix must be resolved via uname -m dispatch and
+        # consumed as $HOMEBREW_PREFIX (shell) / {{"{{"}}.HOMEBREW_PREFIX{{"}}"}} (task).
+        # Hardcoded paths break the Apple Silicon / Intel split. The
+        # legitimate dispatch sites (Taskfile.yml HOMEBREW_PREFIX resolution,
+        # bootstrap.zsh brew shellenv, identity/ssh/cloudflared.zsh arch
+        # dispatch, claude/hooks/lib.zsh fallback default) carry a same-line
+        # `# lint-allow: hardcoded-prefix` annotation. Comment-only lines are
+        # ignored; taskfiles/lint.yml is excluded because this rule body
+        # contains the pattern literally.
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        hits=$(ggrep -rnE '/opt/homebrew|/usr/local' \
+                --include='*.zsh' --include='*.yml' \
+                --exclude-dir='.git' --exclude-dir='.planning' \
+                --exclude-dir='test' --exclude-dir='.claude' \
+                "{{.ROOT_DIR}}" 2>/dev/null \
+               | ggrep -v 'lint-allow: hardcoded-prefix' \
+               | ggrep -v 'taskfiles/lint\.yml:' \
+               | ggrep -v ':[[:space:]]*#' || true)
+        if [[ -n "$hits" ]]; then
+          cross "LINT-10: hardcoded Homebrew prefix -- use \$HOMEBREW_PREFIX or annotate dispatch sites"
+          echo "$hits" >&2
+          failures=$(( failures + 1 ))
+        else
+          check "LINT-10: no hardcoded Homebrew prefix outside annotated dispatch sites"
+        fi
+        exit "$failures"
+
+  # lint-allow: cmds-without-status
+  kebab-access:
+    desc: "LINT-11: kebab-case feature keys use index form, never template dot-access"
+    internal: true
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # Go-template dot-access cannot contain `-` -- it fails at task-graph
+        # parse time. Kebab-case feature keys must use the index form:
+        # `index .MANIFEST.features "one-password-ssh"`. The regex requires a
+        # hyphen after the dot-accessed key head, so snake_case and
+        # non-hyphenated keys stay legal.
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        hits=$(ggrep -rnE '\.MANIFEST\.features\.[A-Za-z0-9_]+-' \
+                "{{.ROOT_DIR}}/Taskfile.yml" "{{.ROOT_DIR}}"/taskfiles/*.yml 2>/dev/null \
+               | ggrep -v ':[[:space:]]*#' || true)
+        if [[ -n "$hits" ]]; then
+          cross "LINT-11: kebab-case feature key via dot-access -- use the index form"
+          echo "$hits" >&2
+          failures=$(( failures + 1 ))
+        else
+          check "LINT-11: no kebab-case feature dot-access in taskfiles"
+        fi
+        exit "$failures"
+
+  # lint-allow: cmds-without-status
+  file-headers:
+    desc: "LINT-12: .zsh files carry the Purpose / Depends on / Side effects header banner"
+    internal: true
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # Every .zsh file opens with a file-header block: the three labels
+        # Purpose / Depends on / Side effects between two `# ===` 77-char
+        # rules (79 chars including the leading `# `), within the first 30
+        # lines (same window as LINT-04).
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        while IFS= read -r f; do
+          h=$(head -30 "$f")
+          rules=$(printf '%s\n' "$h" | ggrep -cE '^# ={77}$' || true)
+          ok=1
+          [[ "$rules" -ge 2 ]] || ok=0
+          printf '%s\n' "$h" | ggrep -qE '^# Purpose:' || ok=0
+          printf '%s\n' "$h" | ggrep -qE '^# Depends on:' || ok=0
+          printf '%s\n' "$h" | ggrep -qE '^# Side effects:' || ok=0
+          if [[ "$ok" -eq 1 ]]; then
+            check "LINT-12: $f"
+          else
+            cross "LINT-12: $f missing header banner (Purpose / Depends on / Side effects between # === rules)"
+            failures=$(( failures + 1 ))
+          fi
+        done < <({{.ZSH_FIND}})
+        exit "$failures"
+
+  # lint-allow: cmds-without-status
   test-fixtures:
     desc: "Self-test the lint suite against fixtures (positive + negative cases)"
     internal: true
@@ -327,6 +433,9 @@ tasks:
               # exercises this path so future drift trips the self-test.
               # LINT-02 per-entry local-vars allow-list mirrors the production
               # implementation; fixtures 02d/02e exercise the new code paths.
+              # Fixture 02f pins the BSD-awk newline bug: a multi-entry
+              # allow-list must survive the space-separated -v handoff or the
+              # undefined-$VAR violation false-passes.
               lint02_hit=""
               n02=$(cd "$fix" && yq -o=json '[.tasks[] | select(.status) | .status[] | select(tag == "!!str")] | length' Taskfile.yml 2>/dev/null || echo 0)
               for ((k02=0; k02<n02; k02++)); do
@@ -337,14 +446,18 @@ tasks:
                 loop_vars=$(printf '%s\n' "$entry" \
                   | ggrep -oE '\bfor[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+in\b' \
                   | awk '{print $2}' || true)
-                allowed=$(printf '%s\n%s\n' "$local_vars" "$loop_vars" | sort -u | ggrep -v '^$' || true)
+                read_vars=$(printf '%s\n' "$entry" \
+                  | ggrep -oE '\bread([[:space:]]+-[A-Za-z]+)*[[:space:]]+[A-Za-z_][A-Za-z0-9_]*' \
+                  | awk '{print $NF}' || true)
+                # Space-separated for BSD awk -v (mirrors production rule).
+                allowed=$(printf '%s\n%s\n%s\n' "$local_vars" "$loop_vars" "$read_vars" | sort -u | ggrep -v '^$' | tr '\n' ' ' || true)
                 eh=$(printf '%s\n' "$entry" \
                   | ggrep -nE '\$[A-Za-z_][A-Za-z0-9_]*' \
                   | ggrep -vE '\$\(' \
                   | ggrep -vE '\{\{' \
                   | awk -v allowed="$allowed" '
                       BEGIN {
-                        nlines = split(allowed, arr, "\n")
+                        nlines = split(allowed, arr, " ")
                         for (j = 1; j <= nlines; j++) if (arr[j] != "") locals[arr[j]] = 1
                       }
                       {
@@ -474,6 +587,45 @@ tasks:
                   if ! echo "$banner_body" | ggrep -qF "$tn"; then any_miss=1; fi
                 done
                 if [[ "$any_miss" -eq 1 ]]; then actual=fail; else actual=pass; fi
+              fi
+              ;;
+            10*)
+              # LINT-10: hardcoded Homebrew prefix. Mirrors production scope:
+              # *.zsh/*.yml files; a same-line `lint-allow: hardcoded-prefix`
+              # annotation exempts; comment-only lines ignored.
+              hits=$(ggrep -rnE '/opt/homebrew|/usr/local' \
+                      --include='*.zsh' --include='*.yml' "$fix" 2>/dev/null \
+                     | ggrep -v 'lint-allow: hardcoded-prefix' \
+                     | ggrep -v ':[[:space:]]*#' || true)
+              if [[ -n "$hits" ]]; then actual=fail; else actual=pass; fi
+              ;;
+            11*)
+              # LINT-11: kebab-case feature key via template dot-access.
+              # Mirrors the production regex (hyphen required after the
+              # dot-accessed key head).
+              file=$(ls "$fix"/*.yml 2>/dev/null | head -1 || true)
+              if [[ -n "$file" ]] && ggrep -E '\.MANIFEST\.features\.[A-Za-z0-9_]+-' "$file" | ggrep -qv '^[[:space:]]*#'; then
+                actual=fail
+              else
+                actual=pass
+              fi
+              ;;
+            12*)
+              # LINT-12: file-header banner. Mirrors production predicate:
+              # two `# ===` 77-char rules + Purpose / Depends on /
+              # Side effects labels within the first 30 lines.
+              file=$(ls "$fix"/*.zsh 2>/dev/null | head -1 || true)
+              if [[ -z "$file" ]]; then
+                actual=unknown
+              else
+                h=$(head -30 "$file")
+                rules=$(printf '%s\n' "$h" | ggrep -cE '^# ={77}$' || true)
+                hdr_ok=1
+                [[ "$rules" -ge 2 ]] || hdr_ok=0
+                printf '%s\n' "$h" | ggrep -qE '^# Purpose:' || hdr_ok=0
+                printf '%s\n' "$h" | ggrep -qE '^# Depends on:' || hdr_ok=0
+                printf '%s\n' "$h" | ggrep -qE '^# Side effects:' || hdr_ok=0
+                if [[ "$hdr_ok" -eq 1 ]]; then actual=pass; else actual=fail; fi
               fi
               ;;
             *) actual=unknown ;;

@@ -1,0 +1,19 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/11a-kebab-dot-access/Taskfile.yml
+#
+# Positive fixture for LINT-11: a kebab-case feature key reached via
+# go-template dot-access. The hyphen is not a valid identifier character in
+# go templates, so this form fails at task-graph parse time; the index form
+# is required instead.
+#
+# Expected outcome: LINT-11 fires (expect: fail)
+# =============================================================================
+
+tasks:
+  fixture-task:
+    desc: "fixture: kebab-case feature key via dot-access"
+    status: [false]
+    cmds:
+      - echo '{{if .MANIFEST.features.one-password-ssh}}enabled{{end}}'

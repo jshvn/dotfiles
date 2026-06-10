@@ -111,9 +111,9 @@ tasks:
     internal: true
     summary: |
       Algorithm:
-        1. Read existing claude/settings.json and extract enabledPlugins +
-           extraKnownMarketplaces (CLI-managed -- compose preserves them
-           rather than overwriting).
+        1. Read existing claude/settings.json and extract enabledPlugins,
+           extraKnownMarketplaces, and model (CLI-managed -- compose
+           preserves them rather than overwriting).
         2. jq deep-merge every claude/settings.d/*.json in numeric sort order
            (later fragments override earlier ones on key conflict; array-
            typed values are replaced, not concatenated -- matches the resolver
@@ -133,7 +133,9 @@ tasks:
 
         # Phase 1: preserve CLI-managed keys from the existing file.
         if [[ -f "$target" ]]; then
-          preserved=$(jq -c '{enabledPlugins: (.enabledPlugins // {}), extraKnownMarketplaces: (.extraKnownMarketplaces // {})}' "$target")
+          # model is CLI-managed (written by the /model command); carry it
+          # over only when present so an absent key never becomes null.
+          preserved=$(jq -c '{enabledPlugins: (.enabledPlugins // {}), extraKnownMarketplaces: (.extraKnownMarketplaces // {})} + (if has("model") then {model} else {} end)' "$target")
         else
           preserved='{"enabledPlugins": {}, "extraKnownMarketplaces": {}}'
         fi
@@ -192,8 +194,11 @@ tasks:
           exit 1
         fi
 
-        # Same compose algorithm as settings-compose, but writes to /tmp for diff.
-        preserved=$(jq -c '{enabledPlugins: (.enabledPlugins // {}), extraKnownMarketplaces: (.extraKnownMarketplaces // {})}' "$target")
+        # Same compose algorithm as settings-compose, but writes to /tmp for
+        # diff. Preserved-keys expression must stay aligned with
+        # settings-compose above (enabledPlugins, extraKnownMarketplaces,
+        # and model when present).
+        preserved=$(jq -c '{enabledPlugins: (.enabledPlugins // {}), extraKnownMarketplaces: (.extraKnownMarketplaces // {})} + (if has("model") then {model} else {} end)' "$target")
         expected=$(mktemp)
         actual=$(mktemp)
         trap 'rm -f "$expected" "$actual"' EXIT
@@ -207,7 +212,7 @@ tasks:
           check "claude/settings.json matches composed fragments (no drift)"
         else
           cross "claude/settings.json DRIFT detected vs composed fragments"
-          echo "--- expected (composed) ---" >&2
+          echo "--- diff: < live settings.json | > expected (composed) ---" >&2
           diff "$actual" "$expected" >&2 || true
           echo "--- run 'task claude:settings-compose' to fix ---" >&2
           exit 1

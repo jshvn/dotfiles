@@ -22,7 +22,7 @@ hook::read_stdin() {
 #   MODE=warn  -> exit 0 with warning if missing (fail open, advisory hooks)
 hook::require_ggrep() {
   local mode="${1:?usage: hook::require_ggrep block|warn}"
-  GGREP="${HOMEBREW_PREFIX:-/opt/homebrew}/bin/ggrep"
+  GGREP="${HOMEBREW_PREFIX:-/opt/homebrew}/bin/ggrep" # lint-allow: hardcoded-prefix
 
   if [[ -x "$GGREP" ]]; then
     return 0

@@ -102,10 +102,13 @@ In-code `# LINT-NN:` citations reference this catalogue. The rule body lives in
 | LINT-03a | Taskfiles | Tasks with `cmds:` have `status:` (or exempt via `internal: true` / all-task-delegates) |
 | LINT-03b | Repo-wide | No bare `ln -s` outside `taskfiles/helpers.yml` |
 | LINT-04 | Executable .zsh | `set -euo pipefail` in first 30 lines |
-| LINT-05 | shell/ + os/ | Portability-sensitive commands surface as warnings (non-blocking) |
+| LINT-05 | shell/ + os/ (.zsh only) | Portability-sensitive commands surface as warnings (non-blocking) |
 | LINT-07 | All .zsh | `zsh -n` parse-check (Tier-0 syntax) |
 | LINT-08 | Root Taskfile.yml | `default:` banner lists every public top-level task |
 | LINT-09 | claude/settings.json | Matches the composed output of `claude/settings.d/*.json` + preserved CLI-managed keys |
+| LINT-10 | .zsh + .yml repo-wide | No hardcoded `/opt/homebrew` or `/usr/local`; dispatch sites carry `# lint-allow: hardcoded-prefix` |
+| LINT-11 | Taskfiles | Kebab-case feature keys use the `index` form, never template dot-access |
+| LINT-12 | All .zsh | File-header banner (Purpose / Depends on / Side effects between `# ===` rules) |
 
 LINT-01 and LINT-06 are intentionally absent. The original LINT-01 rule
 ("every install task has a status: block") was generalized into LINT-03a
@@ -172,8 +175,9 @@ Edit `claude/settings.d/*.json` fragments and run `task claude:settings-compose`
 to regenerate `claude/settings.json`. Don't hand-edit the generated file.
 LINT-09 fails the lint pipeline if `settings.json` drifts from the composed
 output (third-party installer wrote keys, manual edit, etc.). The composer
-preserves `enabledPlugins` and `extraKnownMarketplaces` from the live file
-(those are managed by the `claude plugin` CLI, not by fragments).
+preserves `enabledPlugins`, `extraKnownMarketplaces`, and `model` from the
+live file (the first two are managed by the `claude plugin` CLI, `model` by
+the `/model` command -- none are owned by fragments).
 
 Repo-owned fragments live at `claude/settings.d/{00-base,10-hooks}.json`.
 Each enabled third-party addon with a paired settings template gets its own

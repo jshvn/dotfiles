@@ -18,8 +18,8 @@ set -euo pipefail
 # connection. Detect the prefix locally via `uname -m`.
 if [[ -z "${HOMEBREW_PREFIX:-}" ]]; then
   case "$(uname -m)" in
-    arm64)  HOMEBREW_PREFIX="/opt/homebrew" ;;
-    x86_64) HOMEBREW_PREFIX="/usr/local"    ;;
+    arm64)  HOMEBREW_PREFIX="/opt/homebrew" ;; # lint-allow: hardcoded-prefix
+    x86_64) HOMEBREW_PREFIX="/usr/local"    ;; # lint-allow: hardcoded-prefix
     *)
       echo "cloudflared.zsh: unknown arch $(uname -m); cannot locate cloudflared" >&2
       exit 1

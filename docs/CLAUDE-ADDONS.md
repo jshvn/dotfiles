@@ -176,9 +176,10 @@ and fails `task lint` on drift.
 `task claude:settings-compose` (internal task in `taskfiles/claude.yml`):
 
 1. **Preserve CLI-managed keys.** Read current `claude/settings.json` and
-   extract `enabledPlugins` + `extraKnownMarketplaces`. These are written by
-   `claude plugin install` / `claude plugin marketplace add`; the compose
-   pipeline never owns them.
+   extract `enabledPlugins` + `extraKnownMarketplaces` (written by
+   `claude plugin install` / `claude plugin marketplace add`) plus `model`
+   when present (written by the `/model` command); the compose pipeline
+   never owns them.
 2. **Deep-merge fragments.** Read every `claude/settings.d/*.json` in numeric
    sort order. `jq -s 'reduce .[] as $f ({}; . * $f)'` deep-merges them (same
    `*` operator semantics the resolver uses for TOML; arrays replace, maps

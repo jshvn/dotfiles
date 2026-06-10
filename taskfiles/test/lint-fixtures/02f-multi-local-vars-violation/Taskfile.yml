@@ -1,0 +1,26 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/02f-multi-local-vars-violation/Taskfile.yml
+#
+# Positive fixture for LINT-02: the status entry defines TWO local vars
+# (src, tgt) -- producing a multi-entry allow-list -- and also references an
+# undefined $XDG_STATE_HOME. BSD awk rejects newline-containing -v
+# assignments ("awk: newline in string"); before the tr '\n' ' ' fix the
+# masked awk failure emptied entry_hits and this violation false-passed.
+# This fixture pins that bug class: it only fails when the allow-list
+# survives the awk handoff AND the undefined var is still flagged.
+#
+# Expected outcome: LINT-02 fires (expect: fail)
+# =============================================================================
+
+tasks:
+  fixture-task:
+    desc: "fixture: undefined $VAR alongside two locally assigned vars"
+    status:
+      - |
+        src=$(echo a)
+        tgt=$(echo b)
+        [ "$src" = "$tgt" ] && test -f "$XDG_STATE_HOME/dotfiles/marker"
+    cmds:
+      - echo run

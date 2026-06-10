@@ -55,9 +55,9 @@ if ! command -v brew >/dev/null 2>&1; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   # Re-shellenv so brew is on PATH for the rest of this script.
   if [[ "$(uname -m)" == "arm64" ]]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
+    eval "$(/opt/homebrew/bin/brew shellenv)" # lint-allow: hardcoded-prefix
   else
-    eval "$(/usr/local/bin/brew shellenv)"
+    eval "$(/usr/local/bin/brew shellenv)" # lint-allow: hardcoded-prefix
   fi
 else
   info "brew already installed: $(brew --version | head -1)"

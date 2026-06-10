@@ -28,8 +28,8 @@ vars:
   HOMEBREW_PREFIX:
     sh: |
       if command -v brew >/dev/null 2>&1; then brew --prefix
-      elif [[ "$(uname -m)" == "arm64" ]]; then echo "/opt/homebrew"
-      else echo "/usr/local"
+      elif [[ "$(uname -m)" == "arm64" ]]; then echo "/opt/homebrew" # lint-allow: hardcoded-prefix
+      else echo "/usr/local" # lint-allow: hardcoded-prefix
       fi
 
   DOTFILES_MESSAGES: |

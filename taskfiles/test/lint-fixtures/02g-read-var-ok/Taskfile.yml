@@ -1,0 +1,24 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/test/lint-fixtures/02g-read-var-ok/Taskfile.yml
+#
+# Negative fixture for LINT-02: status: entry references $rel where `rel` is
+# defined by `while IFS= read -r rel` in the SAME entry. read-defined vars
+# are real shell vars in the entry's execution context (the links.yml
+# install-claude shape); the rule must NOT fire on them.
+#
+# Expected outcome: LINT-02 does not fire (expect: pass)
+# =============================================================================
+
+tasks:
+  fixture-task:
+    desc: "fixture: $rel defined via read -r in same status entry"
+    status:
+      - |
+        while IFS= read -r rel; do
+          [ -z "$rel" ] && continue
+          test -e "/tmp/$rel" || exit 1
+        done < /dev/null
+    cmds:
+      - echo run
