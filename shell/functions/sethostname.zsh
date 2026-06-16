@@ -8,12 +8,12 @@
 #               file at $XDG_STATE_HOME/dotfiles/hostname. After running,
 #               the next `task install` reports the hostname step as
 #               up-to-date.
-# Depends on:   os/hostname.zsh; install/messages.zsh; sudo (for the four
-#               scutil + defaults writes inside apply_hostname).
+# Depends on:   os/hostname.zsh; install/messages.zsh; sudo (for the three
+#               scutil writes inside apply_hostname).
 # Side effects: writes $XDG_STATE_HOME/dotfiles/hostname (atomic via mktemp
-#               + mv inside write_hostname_state_file); runs four sudo
+#               + mv inside write_hostname_state_file); runs three sudo
 #               commands via apply_hostname (ComputerName, HostName,
-#               LocalHostName, SMB NetBIOSName).
+#               LocalHostName).
 # =============================================================================
 
 # No `set -euo pipefail` -- this file is sourced by interactive zsh

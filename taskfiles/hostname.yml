@@ -10,9 +10,10 @@ version: '3'
 #               outside the repo, NOT a manifest feature. File existence is
 #               the install-time gate; no feature flag.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh; os/hostname.zsh.
-# Side effects: hostname:apply / hostname:set run four sudo commands (scutil
-#               ComputerName / HostName / LocalHostName + defaults write SMB
-#               NetBIOSName) via os/hostname.zsh::apply_hostname.
+# Side effects: hostname:apply / hostname:set run three sudo commands (scutil
+#               ComputerName / HostName / LocalHostName) via
+#               os/hostname.zsh::apply_hostname. NetBIOSName is not managed --
+#               macOS derives it from the reverse-DNS PTR record.
 #               hostname:set additionally writes the state file atomically.
 #               hostname:validate / hostname:show are read-only.
 # =============================================================================
@@ -172,7 +173,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   show:
-    desc: "Show hostname state file + live ComputerName/HostName/LocalHostName/NetBIOSName"
+    desc: "Show hostname state file + live ComputerName/HostName/LocalHostName"
     platforms: [darwin]
     # Public domain-first read command: `task hostname:show`.
     # status: [false] -- diagnostic read; always re-run.
@@ -193,5 +194,4 @@ tasks:
           info "LocalHostName:  $(scutil --get LocalHostName  2>/dev/null || echo "<unset>")"
           info "ComputerName:   $(scutil --get ComputerName   2>/dev/null || echo "<unset>")"
           info "HostName:       $(scutil --get HostName       2>/dev/null || echo "<unset>")"
-          info "NetBIOSName:    $(defaults read /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName 2>/dev/null || echo "<unset>")"
         '

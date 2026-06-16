@@ -10,8 +10,10 @@
 # Depends on:   install/messages.zsh; $DOTFILEDIR exported by caller
 #               (taskfiles/hostname.yml heredoc, or interactive shell function
 #               sethostname). macOS scutil + defaults (gated by callers).
-# Side effects: apply_hostname runs four sudo commands (scutil ComputerName /
-#               HostName / LocalHostName + defaults write SMB NetBIOSName).
+# Side effects: apply_hostname runs three sudo commands (scutil ComputerName /
+#               HostName / LocalHostName). NetBIOSName is deliberately NOT
+#               managed -- macOS derives it from the reverse-DNS PTR record at
+#               SMB-init and reverts any local write within ~15s.
 #               write_hostname_state_file writes the state file atomically
 #               via mktemp + mv. read / verify / validate helpers are
 #               read-only.
@@ -51,25 +53,28 @@ read_local_hostname() {
   scutil --get LocalHostName 2>/dev/null
 }
 
-# apply_hostname <name> -- validate then run the four canonical hostname
+# apply_hostname <name> -- validate then run the three canonical hostname
 # writes. Sudo password prompts are left to sudo's controlling tty (no
-# redirection); a single sudo timestamp covers all four calls when the
-# caller invokes apply_hostname once.
+# redirection); a single sudo timestamp covers all three calls when the
+# caller invokes apply_hostname once. NetBIOSName is intentionally omitted:
+# macOS derives it from the reverse-DNS PTR record and reverts any
+# `defaults write` to com.apple.smb.server within ~15s, so managing it here
+# only produces dishonest "applied" output. Change the PTR record to rename
+# the NetBIOS name.
 apply_hostname() {
   local name="${1:-}"
   validate_hostname_name "$name" || return 1
   sudo scutil --set ComputerName  "$name"
   sudo scutil --set HostName      "$name"
   sudo scutil --set LocalHostName "$name"
-  sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$name"
   success "hostname applied: ${name}"
 }
 
 # verify_hostname <name> -- silent comparison against live LocalHostName.
-# Returns 0 on match (status:-block "up-to-date"); 1 on mismatch. NetBIOS is
-# fire-and-forget; LocalHostName is the authoritative comparison key (it's
-# what `scutil --set LocalHostName` writes and what users see in `hostname`
-# output).
+# Returns 0 on match (status:-block "up-to-date"); 1 on mismatch.
+# LocalHostName is the authoritative comparison key (it's what
+# `scutil --set LocalHostName` writes and what users see in `hostname`
+# output). NetBIOSName is not managed and not compared (see apply_hostname).
 verify_hostname() {
   local expected="${1:-}"
   local live

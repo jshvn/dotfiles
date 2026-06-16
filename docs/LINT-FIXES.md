@@ -30,7 +30,6 @@ scope, accepting these warnings is the documented default
 | `os/defaults/appearance.zsh:45` | `osascript` | Whole file is a macOS defaults concern; gate the file at the taskfile layer (only run `os/defaults/*` on darwin) rather than per-line. |
 | `os/defaults/_apply_verify.zsh:41,67` | `defaults write` / `defaults read` | Same as above -- the apply/verify engine is inherently `defaults`-based; platform-gate the caller. |
 | `shell/aliases/finder.zsh:23,28` | `defaults write` | Finder-specific aliases; wrap the alias definitions in a darwin guard via `_dotfiles_feature` or `$OSTYPE` check. |
-| `os/hostname.zsh:64` | `defaults write` (SMB NetBIOSName) | macOS hostname stack (`scutil`/`defaults`); Linux port would swap in `hostnamectl`. Platform-gate the script. |
 | `os/shell-registration.zsh:39,56` | `dscl` | macOS directory services; Linux equivalent is `chsh`/`getent`. Platform-gate the script. |
 
 To silence them today (not recommended -- the warnings are the inventory the
