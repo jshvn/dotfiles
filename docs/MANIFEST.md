@@ -103,6 +103,39 @@ supply a value -- silent inheritance of required fields is the drift class being
 | `packages.brew.extra_packages.formulae` | array of strings or `{name, verify}` objects | Per-machine formula extras; concat+dedupe across defaults + machine |
 | `packages.brew.extra_packages.casks` | array of `{name}` objects | Per-machine cask extras; the legacy `verify` field is optional and ignored post-Gap-2 pivot (see ## Verify model) |
 | `packages.brew.extra_packages.mas` | array of `{id, name}` objects | Per-machine MAS app extras; `name` doubles as the `.app` verify name |
+| `packages.vscode.extensions` | array of strings | VSCode extension ids (`publisher.name`); union across defaults + bundles + machine, deduped by value |
+| `packages.cargo.crates` | array of strings | Rust crates (`cargo install`); same union/dedupe as `vscode.extensions` |
+| `packages.uv.tools` | array of strings | Python tools (`uv tool install`); same union/dedupe |
+| `packages.npm.packages` | array of strings | Global npm packages (`npm install -g`); same union/dedupe (requires the `npm`/`node` CLI) |
+
+### Non-brew package managers
+
+`packages.vscode`/`cargo`/`uv`/`npm` are sibling typed buckets to
+`packages.brew`, exposing the non-brew entry types that `brew bundle` gained in
+Homebrew 6.0. Each holds a bare-string array
+(`extensions`/`crates`/`tools`/`packages`). Unlike
+the brew buckets -- whose bundle files use `[packages.brew]` while
+defaults/machine files use `[packages.brew.extra_packages]` -- these use the
+SAME path everywhere: `[packages.vscode] extensions = [...]` in `defaults.toml`,
+any `manifests/bundles/<b>.toml`, or any `manifests/machines/<name>.toml`.
+
+The resolver unions all three sources (`jq -s 'add | unique'`) into
+`resolved.json`; the composer emits them into the same per-machine Brewfile as
+`vscode '<id>'` / `cargo '<name>'` / `uv '<name>'` / `npm '<name>'` lines (after
+casks/mas, so a providing cask like `visual-studio-code` installs first).
+`brew bundle install` installs them and `brew bundle check` (Layer 1 of
+`packages:verify`) verifies declared-but-missing entries -- no separate install
+path. `task audit` drift-checks the reverse direction (installed-but-undeclared)
+via each manager's list command: `code --list-extensions`,
+`cargo install --list`, `uv tool list`, `npm ls -g` (the node-shipped `npm` and
+`corepack` globals are excluded from drift).
+
+Gating is by bundle inclusion: extensions declared in `bundles/dev.toml` reach
+only machines that list `dev` in `packages.brew.bundles`. npm entries require
+the `npm`/`node` CLI; declare them only on machines whose bundles supply node
+(e.g. the `node` formula on `personal-laptop`). `pipx` and `go install` are out
+of scope -- `pipx` is not a `brew bundle` entry type, and `go` was dropped (low
+usage; its installed-package set has no reliable list command to audit drift).
 
 ### Unknown keys
 

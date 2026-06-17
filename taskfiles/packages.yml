@@ -285,7 +285,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   audit:
-    desc: "Audit installed brew formulae/casks/mas vs declared. Non-blocking; --strict exits non-zero."
+    desc: "Audit installed brew formulae/casks/mas + vscode/cargo/uv/npm vs declared. Non-blocking; --strict exits non-zero."
     deps: [":manifest:resolve"]
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
@@ -331,6 +331,17 @@ tasks:
           | awk '{print $2}' \
           | sort -u || true)
 
+        # Non-brew manager declared sets (vscode/cargo/uv). Same prefix-grep
+        # pattern as brew/cask: the entry id is the single-quoted argument.
+        declared_vscode=$(ggrep -E "^[[:space:]]*vscode[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
+          | ggrep -oE "'[^']+'" | tr -d "'" | sort -u || true)
+        declared_cargo=$(ggrep -E "^[[:space:]]*cargo[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
+          | ggrep -oE "'[^']+'" | tr -d "'" | sort -u || true)
+        declared_uv=$(ggrep -E "^[[:space:]]*uv[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
+          | ggrep -oE "'[^']+'" | tr -d "'" | sort -u || true)
+        declared_npm=$(ggrep -E "^[[:space:]]*npm[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
+          | ggrep -oE "'[^']+'" | tr -d "'" | sort -u || true)
+
         # `brew leaves` = top-level formulae only (catches manual installs,
         # not transitive deps).
         installed_formulae=$(brew leaves 2>/dev/null | sort -u || true)
@@ -340,6 +351,56 @@ tasks:
         else
           warn "mas not on PATH -- skipping MAS audit section"
           installed_mas=""
+        fi
+
+        # Installed sets for the non-brew managers. Each is gated on its CLI
+        # being present (a server without the dev bundle has no `code`); a
+        # missing CLI yields an empty installed-set so the section skips
+        # cleanly. The skip is announced only when something was declared, so
+        # a machine that uses none of these stays quiet.
+        if command -v code >/dev/null 2>&1; then
+          installed_vscode=$(code --list-extensions 2>/dev/null | sort -u || true)
+        else
+          installed_vscode=""
+          if [[ -n "$declared_vscode" ]]; then
+            warn "code not on PATH -- skipping vscode audit section"
+          fi
+        fi
+        if command -v cargo >/dev/null 2>&1; then
+          # `cargo install --list`: crate header lines are unindented and end
+          # in ":"; the crate name is field 1. Indented binary lines are skipped.
+          installed_cargo=$(cargo install --list 2>/dev/null \
+            | awk '/^[^[:space:]].*:$/{print $1}' | sort -u || true)
+        else
+          installed_cargo=""
+          if [[ -n "$declared_cargo" ]]; then
+            warn "cargo not on PATH -- skipping cargo audit section"
+          fi
+        fi
+        if command -v uv >/dev/null 2>&1; then
+          # `uv tool list`: tool lines look like "name vX.Y.Z"; indented "- bin"
+          # lines and status messages are filtered by the version anchor.
+          installed_uv=$(uv tool list 2>/dev/null \
+            | awk '/^[A-Za-z0-9._-]+ v[0-9]/{print $1}' | sort -u || true)
+        else
+          installed_uv=""
+          if [[ -n "$declared_uv" ]]; then
+            warn "uv not on PATH -- skipping uv audit section"
+          fi
+        fi
+        if command -v npm >/dev/null 2>&1; then
+          # `npm ls -g --depth=0 --json`: top-level global package names live
+          # under .dependencies. The node formula ships `npm`/`corepack` as
+          # baseline globals (never declared), so exclude them to avoid
+          # mis-flagging them as drift.
+          installed_npm=$(npm ls -g --depth=0 --json 2>/dev/null \
+            | jq -r '.dependencies // {} | keys[]' \
+            | ggrep -vxE 'npm|corepack' | sort -u || true)
+        else
+          installed_npm=""
+          if [[ -n "$declared_npm" ]]; then
+            warn "npm not on PATH -- skipping npm audit section"
+          fi
         fi
 
         total_drift=0
@@ -361,6 +422,30 @@ tasks:
         for item in $(comm -23 <(echo "$installed_mas") <(echo "$declared_mas")); do
           [[ -z "$item" ]] && continue
           warn "drift: mas $item (installed but not declared)"
+          total_drift=$(( total_drift + 1 ))
+        done
+
+        for item in $(comm -23 <(echo "$installed_vscode") <(echo "$declared_vscode")); do
+          [[ -z "$item" ]] && continue
+          warn "drift: vscode $item (installed but not declared)"
+          total_drift=$(( total_drift + 1 ))
+        done
+
+        for item in $(comm -23 <(echo "$installed_cargo") <(echo "$declared_cargo")); do
+          [[ -z "$item" ]] && continue
+          warn "drift: cargo $item (installed but not declared)"
+          total_drift=$(( total_drift + 1 ))
+        done
+
+        for item in $(comm -23 <(echo "$installed_uv") <(echo "$declared_uv")); do
+          [[ -z "$item" ]] && continue
+          warn "drift: uv $item (installed but not declared)"
+          total_drift=$(( total_drift + 1 ))
+        done
+
+        for item in $(comm -23 <(echo "$installed_npm") <(echo "$declared_npm")); do
+          [[ -z "$item" ]] && continue
+          warn "drift: npm $item (installed but not declared)"
           total_drift=$(( total_drift + 1 ))
         done
 

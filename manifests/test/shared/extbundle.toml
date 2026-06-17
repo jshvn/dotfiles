@@ -1,0 +1,11 @@
+# Test shared bundle -- "extbundle" for the typed-04 vscode-union fixture only.
+# NEVER referenced by real machine manifests. Declares a vscode bucket whose
+# entries overlap the machine's (acme.shared-dup) to lock in union+dedupe.
+
+[packages.brew]
+formulae = []
+casks = []
+mas = []
+
+[packages.vscode]
+extensions = ["acme.from-bundle", "acme.shared-dup"]

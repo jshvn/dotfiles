@@ -270,6 +270,10 @@ emit_unknown_key_warnings() {
     "packages.brew.extra_packages.formulae"
     "packages.brew.extra_packages.casks"
     "packages.brew.extra_packages.mas"
+    "packages.vscode.extensions"
+    "packages.cargo.crates"
+    "packages.uv.tools"
+    "packages.npm.packages"
     "identity.git"
     "identity.ssh"
     "claude"
@@ -315,6 +319,26 @@ emit_unknown_key_warnings() {
             | jq -r '[paths(scalars) | join(".")] | .[]' 2>/dev/null || true)
 
   return 0
+}
+
+# union_string_bucket <yq_path> <defaults_path> <machine_path> [bundle_toml...]
+# Union a bare-string-array bucket (packages.vscode.extensions,
+# packages.cargo.crates, packages.uv.tools, packages.npm.packages) across
+# defaults + each shared bundle + machine, deduped by value (order-insensitive
+# via jq `unique`). Unlike the brew buckets -- whose bundles read
+# .packages.brew.* but defaults/machine read .packages.brew.extra_packages.* --
+# all three source kinds share the SAME path here, so one path arg suffices.
+union_string_bucket() {
+  local yq_path="$1" defaults_path="$2" machine_path="$3"
+  shift 3
+  {
+    yq -o=json "${yq_path} // []" "$defaults_path"
+    local toml
+    for toml in "$@"; do
+      yq -o=json "${yq_path} // []" "$toml"
+    done
+    yq -o=json "${yq_path} // []" "$machine_path"
+  } | jq -s 'add | unique'
 }
 
 # resolve_pipeline <defaults_path> <machine_path>
@@ -386,7 +410,7 @@ resolve_pipeline() {
 
   # Shared-bundle arrays gathered in declared order. Each bundle contributes
   # three JSON arrays (one per kind).
-  local -a shared_formulae shared_casks shared_mas
+  local -a shared_formulae shared_casks shared_mas bundle_tomls
   local bn shared_toml
   for bn in "${bundle_names[@]}"; do
     [[ -z "$bn" ]] && continue
@@ -395,6 +419,7 @@ resolve_pipeline() {
       error "bundle '${bn}' referenced in packages.brew.bundles has no shared file at ${shared_toml}"
       return 1
     fi
+    bundle_tomls+=( "$shared_toml" )
     shared_formulae+=( "$(yq -o=json '.packages.brew.formulae // []' "$shared_toml")" )
     shared_casks+=(    "$(yq -o=json '.packages.brew.casks    // []' "$shared_toml")" )
     shared_mas+=(      "$(yq -o=json '.packages.brew.mas      // []' "$shared_toml")" )
@@ -447,6 +472,14 @@ resolve_pipeline() {
     } | jq -s 'add | group_by(.id) | map(.[-1])'
   )
 
+  # Non-brew package-manager buckets (Homebrew >= 6.0 brew bundle entry
+  # types). Bare-string arrays unioned across defaults + bundles + machine.
+  local union_vscode union_cargo union_uv union_npm
+  union_vscode=$(union_string_bucket '.packages.vscode.extensions' "$defaults_path" "$machine_path" "${bundle_tomls[@]}")
+  union_cargo=$(union_string_bucket  '.packages.cargo.crates'      "$defaults_path" "$machine_path" "${bundle_tomls[@]}")
+  union_uv=$(union_string_bucket     '.packages.uv.tools'          "$defaults_path" "$machine_path" "${bundle_tomls[@]}")
+  union_npm=$(union_string_bucket    '.packages.npm.packages'      "$defaults_path" "$machine_path" "${bundle_tomls[@]}")
+
   local arch
   arch=$(yq -r '.platform.arch // ""' "$machine_path")
   if [[ -z "$arch" ]]; then
@@ -457,10 +490,18 @@ resolve_pipeline() {
     | jq --argjson formulae "$union_formulae" \
          --argjson casks    "$union_casks" \
          --argjson mas      "$union_mas" \
+         --argjson vscode   "$union_vscode" \
+         --argjson cargo    "$union_cargo" \
+         --argjson uv       "$union_uv" \
+         --argjson npm      "$union_npm" \
          --arg     arch     "$arch" \
         '.packages.brew.extra_packages.formulae = $formulae
          | .packages.brew.extra_packages.casks  = $casks
          | .packages.brew.extra_packages.mas    = $mas
+         | .packages.vscode.extensions = $vscode
+         | .packages.cargo.crates      = $cargo
+         | .packages.uv.tools          = $uv
+         | .packages.npm.packages      = $npm
          | .platform.arch = $arch'
 }
 

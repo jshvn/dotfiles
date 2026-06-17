@@ -17,8 +17,10 @@ formulae = [
   "doggo",
   "duf",
   "fd",
+  "git-crypt",
   "htop",
   "hugo",
+  "poppler",
   "wget",
 ]
 

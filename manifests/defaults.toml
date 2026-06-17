@@ -54,6 +54,28 @@ formulae = []
 casks    = []
 mas      = []
 
+# Non-brew package managers exposed through `brew bundle` (Homebrew >= 6.0).
+# Each is a sibling typed bucket to packages.brew: the resolver unions the
+# bare-string lists from defaults + included bundles + machine (dedupe by
+# value), and the composer emits them as Brewfile DSL lines that
+# `brew bundle install`/`check` install and verify. Empty here; populate in a
+# bundle (e.g. dev.toml [packages.vscode]) or a machine manifest.
+#   vscode.extensions -- "publisher.name" ids   (requires the `code` CLI)
+#   cargo.crates      -- crate names             (`cargo install`)
+#   uv.tools          -- tool/package names      (`uv tool install`)
+#   npm.packages      -- global npm packages     (requires the `npm`/`node` CLI)
+[packages.vscode]
+extensions = []
+
+[packages.cargo]
+crates = []
+
+[packages.uv]
+tools = []
+
+[packages.npm]
+packages = []
+
 [identity]
 # Allowed values: any name with overlay files at identity/git/identities/<name>
 # AND identity/ssh/identities/<name>. The resolver checks for file presence at

@@ -1,0 +1,24 @@
+# typed-04-vscode-union -- proves packages.vscode.extensions unions across
+# defaults + shared bundle + machine and dedupes by value (acme.shared-dup
+# appears in both the bundle and the machine). cargo/go/uv stay empty,
+# proving the resolver always materializes the buckets.
+
+schema_version = 1
+
+[meta]
+description = "typed-04-vscode-union fixture"
+
+[platform]
+os = "darwin"
+
+[features]
+
+[packages.brew]
+bundles = ["dotfiles", "extbundle"]
+
+[packages.vscode]
+extensions = ["acme.from-machine", "acme.shared-dup"]
+
+[identity]
+git = "none"
+ssh = "none"

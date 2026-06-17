@@ -202,6 +202,7 @@ time. See `docs/CLAUDE-ADDONS.md` for the schema and worked examples.
 | A function | `shell/functions/<name>.zsh` | filename equals function name; lowercase |
 | A new machine | `manifests/machines/<name>.toml` + `task setup -- <name>` | kebab-case |
 | A brew package | `manifests/bundles/<purpose>.toml` (or `extra_packages` in the machine manifest for one-offs) | by purpose, not by machine |
+| A VSCode extension (or cargo/uv/npm tool) | `[packages.vscode].extensions` (resp. `cargo.crates`, `uv.tools`, `npm.packages`) in `manifests/bundles/dev.toml` or a machine manifest | `publisher.name` id; emitted into the Brewfile via `brew bundle` |
 | A macOS defaults concern | `os/defaults/<concern>.zsh` + feature flag in `defaults.toml` | one concern per file |
 | A feature flag | `manifests/defaults.toml [features]` block + consuming task in the appropriate taskfile | kebab-case key |
 | A tool config | `configs/<tool>/` + symlink entry in `taskfiles/links.yml` | use the tool's expected config filename |

@@ -1,28 +1,13 @@
 {
   "features": {},
   "packages": {
-    "brew": {
-      "bundles": [
-        "dotfiles"
-      ],
-      "extra_packages": {
-        "formulae": [
-          "curl",
-          {
-            "name": "git",
-            "verify": "git --version"
-          },
-          {
-            "name": "ripgrep",
-            "verify": "rg --version"
-          }
-        ],
-        "casks": [],
-        "mas": []
-      }
-    },
     "vscode": {
-      "extensions": []
+      "extensions": [
+        "acme.from-bundle",
+        "acme.from-defaults",
+        "acme.from-machine",
+        "acme.shared-dup"
+      ]
     },
     "cargo": {
       "crates": []
@@ -30,13 +15,27 @@
     "uv": {
       "tools": []
     },
+    "brew": {
+      "bundles": [
+        "dotfiles",
+        "extbundle"
+      ],
+      "extra_packages": {
+        "formulae": [
+          "curl",
+          "git"
+        ],
+        "casks": [],
+        "mas": []
+      }
+    },
     "npm": {
       "packages": []
     }
   },
   "schema_version": 1,
   "meta": {
-    "description": "typed-02-formulae-dedup fixture"
+    "description": "typed-04-vscode-union fixture"
   },
   "platform": {
     "os": "darwin",

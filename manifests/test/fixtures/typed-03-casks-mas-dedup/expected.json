@@ -25,6 +25,18 @@
       "bundles": [
         "dotfiles"
       ]
+    },
+    "vscode": {
+      "extensions": []
+    },
+    "cargo": {
+      "crates": []
+    },
+    "uv": {
+      "tools": []
+    },
+    "npm": {
+      "packages": []
     }
   },
   "schema_version": 1,
