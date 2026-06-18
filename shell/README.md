@@ -1,8 +1,8 @@
 # shell
 
 Zsh startup files, theme, aliases, and functions. Sourced by every login or
-interactive shell on a converged v2 machine. macOS-only in v1; the flat
-layout (no platform subdirectories) collapses when Linux is in scope.
+interactive shell on a converged machine. macOS-only; the flat layout (no
+platform subdirectories) reflects that single-platform scope.
 
 ## Key files
 

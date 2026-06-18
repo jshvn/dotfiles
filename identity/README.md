@@ -6,7 +6,7 @@ declare `identity.git` and `identity.ssh` as the basename of any file under
 (filesystem-driven enum — drop a file, the resolver picks it up).
 The gates `features.one-password-ssh`, `features.one-password-signing`, and
 `features.server-include` further shape per-machine behavior. macOS-only
-in v1 (Apple Silicon + Intel); the model carries cleanly to v2's Linux work
+(Apple Silicon + Intel); the model would carry cleanly to other platforms
 because no logic branches on platform here -- only on identity. Symlinks
 deploy via `taskfiles/identity.yml` and `_:safe-link`; the active SSH
 identity is selected by a single symlink swap rather than profile-file-exec.

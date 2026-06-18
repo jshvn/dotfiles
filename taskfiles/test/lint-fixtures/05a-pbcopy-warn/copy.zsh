@@ -4,7 +4,7 @@
 #
 # Positive fixture for LINT-05: portability hint for pbcopy invocation.
 # LINT-05 is warn-only and always exits 0 -- it flags macOS-specific commands
-# that will need porting when Linux support is added in a future version.
+# that are macOS-specific and would need platform guards to port.
 #
 # Expected outcome: LINT-05 warns but exits 0 (expect: warn)
 # -----------------------------------------------------------------------------

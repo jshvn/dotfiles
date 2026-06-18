@@ -17,7 +17,7 @@ schema_version = 1
 description = "default -- machine must override"
 
 [platform]
-# v1 accepts only "darwin"; v2 will open the rule up to "linux" as well.
+# Only "darwin" is accepted.
 os = "darwin"
 
 [features]

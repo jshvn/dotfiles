@@ -67,13 +67,12 @@ rules to the `validate_manifest` block in `resolver.zsh`.
 - One shared bundle per purpose (`manifests/bundles/<purpose>.toml`)
 - One macOS defaults concern per file (`os/defaults/<concern>.zsh`)
 
-### Flat directories in v1
+### Flat directories
 
 No subdirectories inside `shell/aliases/` — all alias files live at the top of that directory.
 No `manifests/bundles/brew/` subdirectory; bundle TOMLs are flat under `manifests/bundles/`. No
-`os/darwin/` nesting. v1 targets macOS only, so the platform dimension collapses to a flat
-layout. When Linux enters scope in a future version, the directory structure will reshape —
-that migration cost is documented in `PROJECT.md` and accepted.
+`os/darwin/` nesting. The project targets macOS only, so the platform dimension collapses to a
+flat layout.
 
 ### kebab-case feature names need `index` access
 

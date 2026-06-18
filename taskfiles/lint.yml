@@ -239,7 +239,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   portability:
-    desc: "Portability hints for future-Linux v2 (warn-only, exit 0)"
+    desc: "Portability hints for platform-specific calls (warn-only, exit 0)"
     internal: true
     cmds:
       - |

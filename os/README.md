@@ -3,9 +3,8 @@
 macOS configuration: per-concern `defaults write` scripts plus shell
 registration. Each concern is feature-gated via `../manifests/machines/<name>.toml`;
 `task macos:defaults` orchestrates the apply path; `task macos:validate`
-asserts current state matches the in-script expected values. macOS-only in
-v1; the flat layout (no platform subdirectories) collapses when Linux is in
-scope.
+asserts current state matches the in-script expected values. macOS-only; the
+flat layout (no platform subdirectories) reflects that single-platform scope.
 
 ## Purpose
 
@@ -60,9 +59,8 @@ v1 task to re-apply on every install.
 - **A note on expected LINT-05 portability warnings.** The `defaults
   read/write` and `dscl` calls in this directory will trip the LINT-05
   portability check (`../taskfiles/lint.yml`). LINT-05 is warn-only
-  (`exit 0`); these warnings are expected and intentional until v2+ Linux
-  support adds platform guards (deferred to `LINUX-V2-05` /
-  `LINUX-V2-06`).
+  (`exit 0`); these warnings are expected and intentional for the
+  macOS-only code paths in this directory.
 
 ## References
 

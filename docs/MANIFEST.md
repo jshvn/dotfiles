@@ -22,7 +22,7 @@ schema_version = 1
 description = "default -- machine must override"
 
 [platform]
-# v1 accepts only "darwin"; v2 will open the rule to "linux" as well.
+# Only "darwin" is accepted.
 os = "darwin"
 
 [features]
@@ -88,7 +88,7 @@ supply a value -- silent inheritance of required fields is the drift class being
 | Field | Type | Allowed values | Notes |
 |-------|------|---------------|-------|
 | `meta.description` | string | any | Free-text purpose statement for the machine |
-| `platform.os` | string | `"darwin"` | v1 only; v2 will add `"linux"` |
+| `platform.os` | string | `"darwin"` | macOS only |
 | `features` | table | any key-value pairs | May be empty `{}`; each key is kebab-case |
 | `packages.brew.bundles` | array of strings | non-empty; must include `"dotfiles"` | Each name N must have a `manifests/bundles/N.toml` file; the resolver folds its `[packages.brew]` typed buckets (formulae/casks/mas) into the resolved extras |
 | `identity.git` | string | basename of a file under `identity/git/identities/` | Drives Phase 4 git config selection; resolver rejects names with no overlay file |
@@ -531,4 +531,4 @@ rejects the `-` character in identifiers.
 - Line numbers in unknown-key warnings may be imprecise for deeply nested keys.
 - The rename flow is manual: rename the TOML file and edit `$XDG_STATE_HOME/dotfiles/machine`
   by hand.
-- No JSON Schema file for editor validation -- deferred to v2 (`TOOL-V2-01`).
+- No JSON Schema file for editor validation.

@@ -18,13 +18,12 @@ rules for keeping the suite clean. Nothing here blocks `task lint` (it exits
 
 ## Remaining: LINT-05 portability hints (warn-only, 5 patterns / 10 lines)
 
-These are deliberate macOS-only commands. LINT-05 exists as a forward signal
-for a future Linux port (see `PROJECT.md`); until a Linux machine enters
-scope, accepting these warnings is the documented default
-(`os/README.md` §expected LINT-05 warnings, deferred to `LINUX-V2-05` /
-`LINUX-V2-06`).
+These are deliberate macOS-only commands. LINT-05 is a forward signal that
+flags platform-specific calls; on a macOS-only repo, accepting these
+warnings is the documented default (`os/README.md` §expected LINT-05
+warnings).
 
-| Location | Command | Remediation when Linux enters scope |
+| Location | Command | Platform-guard remediation |
 |----------|---------|--------------------------------------|
 | `shell/functions/pubkey.zsh:23` | `pbcopy` | Dispatch on `$OSTYPE`: `pbcopy` (darwin) vs `xclip -selection clipboard` / `wl-copy` (linux). |
 | `os/defaults/appearance.zsh:45` | `osascript` | Whole file is a macOS defaults concern; gate the file at the taskfile layer (only run `os/defaults/*` on darwin) rather than per-line. |
@@ -32,9 +31,9 @@ scope, accepting these warnings is the documented default
 | `shell/aliases/finder.zsh:23,28` | `defaults write` | Finder-specific aliases; wrap the alias definitions in a darwin guard via `_dotfiles_feature` or `$OSTYPE` check. |
 | `os/shell-registration.zsh:39,56` | `dscl` | macOS directory services; Linux equivalent is `chsh`/`getent`. Platform-gate the script. |
 
-To silence them today (not recommended -- the warnings are the inventory the
-future Linux port will work from): the rule is warn-only and exits 0, so the
-only "fix" is the real platform guard above. There is deliberately no
+To silence them (not recommended -- the warnings are a useful inventory of
+platform-specific calls): the rule is warn-only and exits 0, so the only
+"fix" is the real platform guard above. There is deliberately no
 `lint-allow` escape for LINT-05.
 
 ## How to keep the suite clean
