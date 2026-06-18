@@ -6,7 +6,7 @@
 # Purpose:      Strip scheme / path / port / subdomains down to a registrable
 #               domain (or pass an IP straight through), then run whois via
 #               grc with a 5s gtimeout.
-# Depends on:   whois, grc, gtimeout, awk.
+# Depends on:   whois, grc, gtimeout, psl (libpsl).
 # Side effects: outbound WHOIS query; stdout only.
 # =============================================================================
 
@@ -31,14 +31,26 @@ function whois() {    # whois() runs whois on a domain, IP, or URL (5s timeout).
     # Strip port if present
     target="${target%%:*}"
 
-    # Extract top-level domain from subdomains (e.g., www.foo.example.com -> example.com)
-    # Only do this for hostnames, not IP addresses
+    # Reduce subdomains to the registrable domain -- the eTLD+1, e.g.
+    # www.bbc.co.uk -> bbc.co.uk -- so the query hits the registry record.
+    # This delegates to libpsl's `psl` tool, which embeds the full, current
+    # Public Suffix List (the same library curl / wget / git use) and resolves
+    # wildcard and exception rules a hand-maintained list cannot express.
+    # libpsl is installed on every machine via the shared `dotfiles` brew
+    # bundle specifically so this function can compute eTLD+1 correctly.
+    #   PSL: https://publicsuffix.org/  --  libpsl: https://github.com/rockdaboot/libpsl
+    # Skipped for IP addresses. If psl is absent, or returns no registrable
+    # domain (e.g. a bare host like "localhost", reported as "(null)"), the
+    # target is queried unchanged rather than guessed at.
     if [[ ! "$target" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] && [[ ! "$target" =~ : ]]; then
-        # Count the dots to determine if we have subdomains
-        local dot_count="${target//[^.]}"
-        if [[ ${#dot_count} -ge 2 ]]; then
-            # Extract last two parts (domain.tld) using awk
-            target=$(echo "$target" | awk -F'.' '{print $(NF-1)"."$NF}')
+        if command -v psl >/dev/null 2>&1; then
+            # `psl --print-reg-domain <host>` prints "<host>: <regdomain>";
+            # strip the "<host>: " prefix and ignore the "(null)" sentinel.
+            local reg="$(psl --print-reg-domain "$target" 2>/dev/null)"
+            reg="${reg##*: }"
+            [[ -n "$reg" && "$reg" != "(null)" ]] && target="$reg"
+        else
+            echo "whois: libpsl not installed (provides 'psl'); querying '$target' without subdomain reduction -- run 'task install'" >&2
         fi
     fi
 

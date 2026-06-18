@@ -12,6 +12,9 @@
 #
 # Notes:
 #   - "antigen" is the zsh plugin manager; see shell/.zshrc for usage.
+#   - "libpsl" provides the `psl` CLI used by shell/functions/whois.zsh to
+#     reduce a host to its registrable domain (eTLD+1) via the Public Suffix
+#     List; without it whois() falls back to querying the host unreduced.
 #   - 1password-cli is a binary-only cask (Homebrew ships the op binary
 #     to the Homebrew prefix; no /Applications/.app bundle).
 
@@ -32,6 +35,7 @@ formulae = [
   "highlight",
   "hyperfine",
   "jq",
+  "libpsl",
   "mas",
   "ncdu",
   "onefetch",
