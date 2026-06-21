@@ -54,6 +54,27 @@ export DOTFILEDIR
 # git_prompt_status, the `l` alias, history/completion defaults, etc.
 export ADOTDIR="$XDG_CONFIG_HOME/antigen"
 if [[ -n "$HOMEBREW_PREFIX" && -f "$HOMEBREW_PREFIX/share/antigen/antigen.zsh" ]]; then
+    # Self-heal a corrupt antigen cache. Antigen can write init.zsh with an
+    # empty bundle section while still setting _ANTIGEN_CACHE_LOADED=true; it
+    # then sources that empty cache on every startup and loads NO plugins --
+    # silently killing prompt_subst (literal $(git_prompt_info) in the
+    # prompt), completions, syntax highlighting, and autosuggestions. The
+    # corruption self-perpetuates: the real bundles never load, so nothing is
+    # ever re-captured into a fresh cache. Detect the empty-bundle cache and
+    # remove it so the next `antigen apply` regenerates a correct one. Pure
+    # parameter expansion -- `$(<file)` does not fork in zsh, so no startup
+    # cost beyond reading one small file.
+    if [[ -f "$ADOTDIR/init.zsh" ]]; then
+        _antigen_bundles="$(<"$ADOTDIR/init.zsh")"
+        _antigen_bundles="${_antigen_bundles##*#--- BUNDLES BEGIN}"
+        _antigen_bundles="${_antigen_bundles%%#--- BUNDLES END*}"
+        if [[ -z "${_antigen_bundles//[[:space:]]/}" ]]; then
+            rm -f "$ADOTDIR/init.zsh" "$ADOTDIR/init.zsh.zwc" \
+                  "$ADOTDIR/.resources" "$ADOTDIR/.resources.zwc"
+        fi
+        unset _antigen_bundles
+    fi
+
     source "$HOMEBREW_PREFIX/share/antigen/antigen.zsh"
 
     # `antigen use ohmyzsh/ohmyzsh` sources lib/*.zsh -- prompt_subst, git
