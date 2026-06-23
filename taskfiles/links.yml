@@ -34,6 +34,7 @@ vars:
     hooks/no-ai-comments.zsh
     hooks/no-emojis.zsh
     hooks/notify.zsh
+    hooks/auto-approve-reads.zsh
     hooks/lib.zsh
 
   # EXPECTED_TARGETS -- single source of truth for every symlink target owned
@@ -52,7 +53,6 @@ vars:
     {{if index .MANIFEST.features "claude-marketplace"}}{{range (splitList "\n" .CLAUDE_LINKS)}}{{$.XDG_CONFIG_HOME}}/claude/{{.}}
     {{end}}{{end}}
     {{if index .MANIFEST.features "ghostty"}}{{.XDG_CONFIG_HOME}}/ghostty/config{{end}}
-    {{.XDG_CONFIG_HOME}}/trippy/trippy.toml
     {{.XDG_CONFIG_HOME}}/tlrc/config.toml
     {{.XDG_CONFIG_HOME}}/conda/condarc
     {{.XDG_CONFIG_HOME}}/eza/theme.yaml
@@ -146,15 +146,13 @@ tasks:
         done <<< "{{.CLAUDE_LINKS}}"
 
   install-configs:
-    desc: "Link tool config files (ghostty, trippy, tlrc, conda, eza)"
+    desc: "Link tool config files (ghostty, tlrc, conda, eza)"
     internal: true
     deps: [":manifest:resolve"]
     # ghostty is feature-gated; the other 4 are always-on. motd is intentionally
     # absent (runtime read from DOTFILEDIR, no symlink needed).
     cmds:
       - task: configs:ghostty
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/configs/trippy/trippy.toml", TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml" }
       - task: _:safe-link
         vars: { SOURCE: "{{.ROOT_DIR}}/configs/tlrc/config.toml", TARGET: "{{.XDG_CONFIG_HOME}}/tlrc/config.toml" }
       - task: _:safe-link
@@ -167,7 +165,6 @@ tasks:
       # healthy, status returns 0 and go-task skips the entire cmds block --
       # including `task: configs:ghostty`.
       - '{{if not (index .MANIFEST.features "ghostty")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/ghostty/config" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/ghostty/config")" == "{{.ROOT_DIR}}/configs/ghostty/config" ]]{{end}}'
-      - test -L "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"   && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml")"   == "{{.ROOT_DIR}}/configs/trippy/trippy.toml"   ]]
       - test -L "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"     && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/tlrc/config.toml")"     == "{{.ROOT_DIR}}/configs/tlrc/config.toml"     ]]
       - test -L "{{.XDG_CONFIG_HOME}}/conda/condarc"        && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/conda/condarc")"        == "{{.ROOT_DIR}}/configs/conda/condarc"        ]]
       - test -L "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"       && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/eza/theme.yaml")"       == "{{.ROOT_DIR}}/configs/eza/theme.yaml"       ]]
@@ -223,7 +220,6 @@ tasks:
             # strip the $xdg/claude/ prefix to recover it (covers files + hooks/*).
             "$xdg/claude/"*)               printf '%s\n' "$dotfiledir/claude/${target#$xdg/claude/}" ;;
             "$xdg/ghostty/config")         printf '%s\n' "$dotfiledir/configs/ghostty/config" ;;
-            "$xdg/trippy/"*)               printf '%s\n' "$dotfiledir/configs/trippy/${target##*/trippy/}" ;;
             "$xdg/tlrc/"*)                 printf '%s\n' "$dotfiledir/configs/tlrc/${target##*/tlrc/}" ;;
             "$xdg/conda/"*)                printf '%s\n' "$dotfiledir/configs/conda/${target##*/conda/}" ;;
             "$xdg/eza/"*)                  printf '%s\n' "$dotfiledir/configs/eza/${target##*/eza/}" ;;

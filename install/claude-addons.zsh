@@ -192,22 +192,17 @@ cmd_remove() {
 }
 
 cmd_list() {
-  local enabled_str
-  enabled_str=$(enabled_addons | tr '\n' ' ')
-
   header "Claude addons"
   printf "  %-32s %-8s %-10s %s\n" "NAME" "ENABLED" "INSTALLED" "DESCRIPTION"
 
-  local toml name desc enabled installed e
+  local toml name desc enabled installed
   for toml in "${ADDONS_DIR}"/*.toml; do
     [[ -f "$toml" ]] || continue
     name=$(basename "$toml" .toml)
     desc=$(yq -r '.meta.description // ""' "$toml")
 
     enabled="no"
-    for e in ${=enabled_str}; do
-      if [[ "$e" == "$name" ]]; then enabled="yes"; break; fi
-    done
+    if is_enabled "$name"; then enabled="yes"; fi
 
     # Only allow command-based verify for enabled addons; a disabled,
     # merely-present TOML must not have its [verify].command executed.

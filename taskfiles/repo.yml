@@ -4,9 +4,8 @@ version: '3'
 # taskfiles/repo.yml -- dotfiles repository sync layer
 #
 # Purpose:      `repo:sync` fast-forwards the dotfiles repo from its remote
-#               before install. The `update` alias chains
-#               `task repo:sync && task install` in two processes so freshly
-#               pulled taskfile changes are parsed by the install run.
+#               before install, so freshly pulled taskfile changes are
+#               parsed by the install run.
 # Depends on:   install/repo-sync.zsh; install/messages.zsh (via the script);
 #               :manifest:resolve (deps). Repo root resolved via the go-task
 #               built-in {{.ROOT_DIR}} (special var, leak-proof).

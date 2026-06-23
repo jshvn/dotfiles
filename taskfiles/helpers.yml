@@ -4,10 +4,9 @@ version: '3'
 # taskfiles/helpers.yml -- shared reusable helper tasks
 #
 # Purpose:      Single source of truth for symlink creation + validation
-#               helpers (_:safe-link, _:check-link, _:check-dir, _:check-file,
-#               _:check-command).
+#               helpers (_:safe-link, _:check-link).
 # Depends on:   nothing.
-# Side effects: _:safe-link creates symlinks (the rest are read-only).
+# Side effects: _:safe-link creates symlinks (_:check-link is read-only).
 # =============================================================================
 
 tasks:
@@ -52,33 +51,3 @@ tasks:
         else
           cross "{{.NAME}} missing"
         fi
-
-  check-dir:
-    desc: "Validate a directory exists"
-    internal: true
-    requires:
-      vars: [TARGET, NAME]
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        test -d "{{.TARGET}}" && check "{{.NAME}} exists" || cross "{{.NAME}} missing"
-
-  check-file:
-    desc: "Validate a file exists"
-    internal: true
-    requires:
-      vars: [TARGET, NAME]
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        test -f "{{.TARGET}}" && check "{{.NAME}} exists" || cross "{{.NAME}} missing"
-
-  check-command:
-    desc: "Validate a command is available in PATH"
-    internal: true
-    requires:
-      vars: [CMD, NAME]
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        command -v "{{.CMD}}" &>/dev/null && check "{{.NAME}} installed" || cross "{{.NAME}} missing"

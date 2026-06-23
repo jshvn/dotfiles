@@ -51,6 +51,21 @@ list_available_machines() {
   echo "${names% }"
 }
 
+# read_nonempty_lines <arrayname>
+# Read stdin into the named array (zsh dynamic scope -- the caller declares the
+# `local -a`), skipping blank lines. Word-split-safe: the `while IFS= read -r`
+# form, NOT `array=( $(...) )`. Used by validate_manifest + resolve_pipeline to
+# slurp `.packages.brew.bundles[]` without copy-pasting the read loop.
+read_nonempty_lines() {
+  local __name="$1" __line
+  local -a __acc=()
+  while IFS= read -r __line; do
+    [[ -z "$__line" ]] && continue
+    __acc+=("$__line")
+  done
+  set -A "$__name" "${__acc[@]}"
+}
+
 # validate_manifest <machine_file>
 # Hand-rolled required-field + enum validator. Returns the error count via
 # the global VALIDATE_ERRORS and exit status 0/1 -- NOT via stdout. Stdout
@@ -136,15 +151,10 @@ validate_manifest() {
       # manifests/bundles/. Catch typos at validate time (a missing bundle
       # file would silently contribute nothing to packages.brew.extra_packages
       # at resolve time, with no error).
-      # Word-split-safe accumulation via `while IFS= read -r` -- NOT the
-      # `array=( $(...) )` form (vulnerable to word-splitting; not
-      # shellcheck-clean). See taskfiles/links.yml for the same rule.
+      # Word-split-safe accumulation via read_nonempty_lines (NOT the
+      # `array=( $(...) )` form). See taskfiles/links.yml for the same rule.
       local -a bundle_names=()
-      local _bn_line
-      while IFS= read -r _bn_line; do
-        [[ -z "$_bn_line" ]] && continue
-        bundle_names+=("$_bn_line")
-      done < <(yq -r '.packages.brew.bundles[]' "$machine_file" 2>/dev/null || true)
+      read_nonempty_lines bundle_names < <(yq -r '.packages.brew.bundles[]' "$machine_file" 2>/dev/null || true)
       local bn shared_toml available
       for bn in "${bundle_names[@]}"; do
         [[ -z "$bn" ]] && continue
@@ -389,13 +399,10 @@ resolve_pipeline() {
   #
   # A missing bundle file is a hard error: the operator typoed a bundle name
   # and would otherwise silently lose every package in that bundle.
-  # Word-split-safe accumulation (see the validate_manifest site above).
+  # Word-split-safe accumulation via read_nonempty_lines (see the
+  # validate_manifest site above).
   local -a bundle_names=()
-  local _bn_line
-  while IFS= read -r _bn_line; do
-    [[ -z "$_bn_line" ]] && continue
-    bundle_names+=("$_bn_line")
-  done < <(printf '%s' "$merged" | jq -r '.packages.brew.bundles[]?' 2>/dev/null || true)
+  read_nonempty_lines bundle_names < <(printf '%s' "$merged" | jq -r '.packages.brew.bundles[]?' 2>/dev/null || true)
 
   local def_formulae mach_formulae union_formulae
   local def_casks    mach_casks    union_casks
@@ -537,8 +544,9 @@ resolve_manifest() {
 
 # resolve_machine_path <machine_name>
 # Validate the machine name against the kebab-case regex (path-traversal
-# guard), build the canonical manifest path, and verify the resolved path
-# equals the canonical form (no traversal).
+# guard), then build the canonical manifest path. NOTE: do not declare a
+# `local path` here -- in zsh `path` is tied to $PATH and shadowing it breaks
+# command lookups for the function scope (see field_path note above).
 resolve_machine_path() {
   local name="$1"
   if [[ -z "$name" ]]; then
@@ -549,12 +557,7 @@ resolve_machine_path() {
     error "invalid machine name: '${name}' (must match ${MACHINE_NAME_RE})"
     return 1
   fi
-  local path="${MACHINES_DIR}/${name}.toml"
-  if [[ "$path" != "${MACHINES_DIR}/${name}.toml" ]]; then
-    error "internal error: machine path mismatch for '${name}'"
-    return 1
-  fi
-  echo "$path"
+  echo "${MACHINES_DIR}/${name}.toml"
 }
 
 main() {

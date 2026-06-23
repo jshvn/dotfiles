@@ -10,7 +10,6 @@ so `_:safe-link` calls are straightforward.
 | Tool | Files | Destination | Feature gate |
 |------|-------|-------------|--------------|
 | ghostty | `ghostty/config` | `~/.config/ghostty/config` | `features.ghostty` |
-| trippy | `trippy/trippy.toml` | `~/.config/trippy/trippy.toml` | always on |
 | tlrc | `tlrc/config.toml` | `~/.config/tlrc/config.toml` | always on |
 | conda | `conda/condarc` | `~/.condarc` | always on |
 | eza | `eza/theme.yaml` | `~/.config/eza/theme.yaml` | always on |

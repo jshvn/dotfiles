@@ -8,7 +8,7 @@
 #               terminal display.
 # Depends on:   highlight, system_profiler, sysctl, diskutil.
 # Side effects: defines aliases gpu, cpu, ram, disk, bluetooth, speaker,
-#               webcam, power, monitor.
+#               webcam, power.
 # =============================================================================
 
 alias gpu="system_profiler SPDisplaysDataType | highlight --syntax=markdown"
@@ -19,4 +19,3 @@ alias bluetooth="system_profiler SPBluetoothDataType | highlight --syntax=markdo
 alias speaker="system_profiler SPAudioDataType | highlight --syntax=markdown"
 alias webcam="system_profiler SPCameraDataType | highlight --syntax=markdown"
 alias power="system_profiler SPPowerDataType | highlight --syntax=markdown"
-alias monitor="system_profiler SPDisplaysDataType | highlight --syntax=markdown"

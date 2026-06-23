@@ -506,21 +506,10 @@ Both files are machine-local and are not committed to the repository.
 
 ## Feature-Flag Reference
 
-The table below is seeded with the features declared in `defaults.toml` and `personal-laptop.toml`
-as of Phase 1. Each subsequent phase extends this table with the flags it consumes.
-
-| Feature | Owner phase | What it does | Default in `defaults.toml` |
-|---------|-------------|--------------|---------------------------|
-| `one-password-ssh` | Phase 4 | Enables 1Password SSH agent integration | `false` |
-| `one-password-signing` | Phase 4 | Enables git commit signing via 1Password op-ssh-sign | `false` |
-| `claude-marketplace` | Phase 7 | Installs Claude marketplace plugins | `true` |
-| `repo-auto-update` | repo | Gates `task repo:sync` -- `update` fast-forwards the dotfiles repo from its remote before install (warn-only; ff-only) | `true` |
-| `macos-dock` | Phase 6 | Runs `os/defaults/dock.zsh` | `false` |
-| `macos-finder` | shell + os | Gates `shell/aliases/finder.zsh` + runs `os/defaults/finder.zsh` (same-flag-two-consumers) | `false` |
-| `macos-input` | Phase 6 | Runs `os/defaults/input.zsh` | `false` |
-| `macos-screenshots` | Phase 6 | Runs `os/defaults/screenshots.zsh` | `false` |
-| `macos-security` | Phase 6 | Runs `os/defaults/security.zsh` | `false` |
-| `macos-appearance` | Phase 6 | Runs `os/defaults/appearance.zsh` (system Dark mode + icon/widget style) | `false` |
+The feature flags -- their names, per-flag descriptions, and defaults -- are
+declared inline under `[features]` in `manifests/defaults.toml`. That file is
+the single source of truth; this doc deliberately does not duplicate the list
+(the old hand-maintained table drifted out of sync with the declared flags).
 
 To access any of these in a taskfile, use `{{index .MANIFEST.features "feature-name"}}`.
 Do not use dot-access (`{{.MANIFEST.features.one-password-ssh}}`) -- Go-template parsing

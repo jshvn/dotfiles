@@ -35,6 +35,9 @@ vars:
   DOTFILES_MESSAGES: |
     source '{{.ROOT_DIR}}/install/messages.zsh'
 
+  DOTFILES_LINT_RULES: |
+    source '{{.ROOT_DIR}}/install/lint-rules.zsh'
+
   RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
 
   STATE_DIR: '{{.XDG_STATE_HOME}}/dotfiles'

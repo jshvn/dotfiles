@@ -36,7 +36,7 @@ the composed result to `settings.json` (which IS symlinked).
 | Count | Type | From (repo) | To (live config) |
 |-------|------|-------------|------------------|
 | 2 | File | `claude/CLAUDE.md`, `claude/settings.json` | `~/.config/claude/{CLAUDE.md,settings.json}` |
-| 8 | File | `claude/hooks/{post-compact,agent-transparency,secret-scan,block-destructive,no-ai-comments,no-emojis,notify,lib}.zsh` | `~/.config/claude/hooks/*` |
+| 9 | File | `claude/hooks/{post-compact,agent-transparency,secret-scan,block-destructive,no-ai-comments,no-emojis,notify,auto-approve-reads,lib}.zsh` | `~/.config/claude/hooks/*` |
 | 3 | Dir | `claude/{agents,commands,skills}` | `~/.config/claude/{agents,commands,skills}` |
 
 ## Task Entry Points
@@ -83,7 +83,7 @@ compose`" message.
 
 ## Hooks
 
-The seven repo-owned hooks plus `lib.zsh` live in `claude/hooks/`. Their
+The eight repo-owned hooks plus `lib.zsh` live in `claude/hooks/`. Their
 wiring is declared in `claude/settings.d/10-hooks.json` and merged into
 `claude/settings.json` by compose. Edit `10-hooks.json`, not `settings.json`.
 
@@ -96,6 +96,7 @@ wiring is declared in `claude/settings.d/10-hooks.json` and merged into
 | `no-ai-comments.zsh` | PostToolUse (Write/Edit/Bash) | Warns on AI attribution |
 | `no-emojis.zsh` | PostToolUse (Write/Edit) | Warns on emojis in code files |
 | `notify.zsh` | Notification | macOS desktop notification |
+| `auto-approve-reads.zsh` | PreToolUse (Bash) | Auto-approves provably read-only Bash commands (skips the prompt) |
 
 All hook scripts declare `set -euo pipefail` and use GNU grep (`ggrep`) per
 LINT-04. Exit 0 = pass or warn; exit 2 = block (gate-style hooks).

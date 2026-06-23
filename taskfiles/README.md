@@ -9,14 +9,12 @@ task is idempotent (`status:` block) and every symlink goes through
 ## Key files
 
 - **Helpers and shared library.** `helpers.yml` -- reusable
-  `_:safe-link`, `_:check-link`, `_:check-dir`, `_:check-file`,
-  `_:check-command`. Every other taskfile pulls it via
+  `_:safe-link` and `_:check-link`. Every other taskfile pulls it via
   `includes: _: ./helpers.yml`. Always go through `_:safe-link`; never
   bypass with a bare `ln -s` (LINT-03b catches it).
 - **Phase 1 (real).** `manifest.yml` -- `task setup -- <machine>`,
   `manifest:resolve`, `manifest:validate`, `manifest:show`,
-  `manifest:test`, `manifest:test:add-machine`. Reads TOMLs; writes
-  `resolved.json`.
+  `manifest:test`. Reads TOMLs; writes `resolved.json`.
 - **Phase 2 (real).** `lint.yml` -- `lint:taskfile`, `lint:shell-headers`,
   `lint:portability`, `lint:syntax`, `lint:test-fixtures`. Enforces
   LINT-01..LINT-07.

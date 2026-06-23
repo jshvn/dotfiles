@@ -406,48 +406,24 @@ tasks:
         total_drift=0
 
         # `comm -23 <installed> <declared>` = present in installed but absent
-        # from declared = drift.
-        for item in $(comm -23 <(echo "$installed_formulae") <(echo "$declared_formulae")); do
-          [[ -z "$item" ]] && continue
-          warn "drift: formula $item (installed but not declared)"
-          total_drift=$(( total_drift + 1 ))
-        done
+        # from declared = drift. report_drift increments the outer total_drift
+        # (plain shell function, not a subshell -- it shares this block's scope).
+        report_drift() {
+          local label="$1" installed="$2" declared="$3" item
+          for item in $(comm -23 <(echo "$installed") <(echo "$declared")); do
+            [[ -z "$item" ]] && continue
+            warn "drift: $label $item (installed but not declared)"
+            total_drift=$(( total_drift + 1 ))
+          done
+        }
 
-        for item in $(comm -23 <(echo "$installed_casks") <(echo "$declared_casks")); do
-          [[ -z "$item" ]] && continue
-          warn "drift: cask $item (installed but not declared)"
-          total_drift=$(( total_drift + 1 ))
-        done
-
-        for item in $(comm -23 <(echo "$installed_mas") <(echo "$declared_mas")); do
-          [[ -z "$item" ]] && continue
-          warn "drift: mas $item (installed but not declared)"
-          total_drift=$(( total_drift + 1 ))
-        done
-
-        for item in $(comm -23 <(echo "$installed_vscode") <(echo "$declared_vscode")); do
-          [[ -z "$item" ]] && continue
-          warn "drift: vscode $item (installed but not declared)"
-          total_drift=$(( total_drift + 1 ))
-        done
-
-        for item in $(comm -23 <(echo "$installed_cargo") <(echo "$declared_cargo")); do
-          [[ -z "$item" ]] && continue
-          warn "drift: cargo $item (installed but not declared)"
-          total_drift=$(( total_drift + 1 ))
-        done
-
-        for item in $(comm -23 <(echo "$installed_uv") <(echo "$declared_uv")); do
-          [[ -z "$item" ]] && continue
-          warn "drift: uv $item (installed but not declared)"
-          total_drift=$(( total_drift + 1 ))
-        done
-
-        for item in $(comm -23 <(echo "$installed_npm") <(echo "$declared_npm")); do
-          [[ -z "$item" ]] && continue
-          warn "drift: npm $item (installed but not declared)"
-          total_drift=$(( total_drift + 1 ))
-        done
+        report_drift formula "$installed_formulae" "$declared_formulae"
+        report_drift cask    "$installed_casks"    "$declared_casks"
+        report_drift mas     "$installed_mas"      "$declared_mas"
+        report_drift vscode  "$installed_vscode"   "$declared_vscode"
+        report_drift cargo   "$installed_cargo"    "$declared_cargo"
+        report_drift uv      "$installed_uv"       "$declared_uv"
+        report_drift npm     "$installed_npm"      "$declared_npm"
 
         if [[ "$total_drift" -eq 0 ]]; then
           success "no drift detected"

@@ -18,13 +18,8 @@ function ipv6lookup() {    # ipv6lookup() lists local and public IPv6 addresses.
         "https://ident.me"
     )
     
-	if command -v ifconfig >/dev/null 2>&1; then
-		# macOS / BSD: parse inet6 lines, skip link-local (fe80) and localhost
-		ifconfig | awk '/^[^[:space:]]+:/ { iface=$1; sub(/:$/,"",iface) } $1=="inet6" { addr=$2; sub(/%.*/,"",addr); if (addr!~"^fe80" && addr!="::1") print iface": "addr }'
-	else
-		echo "No suitable tool found (ifconfig) to list IPv6 addresses." >&2
-		return 1
-	fi
+	# macOS / BSD: parse inet6 lines, skip link-local (fe80) and localhost
+	ifconfig | awk '/^[^[:space:]]+:/ { iface=$1; sub(/:$/,"",iface) } $1=="inet6" { addr=$2; sub(/%.*/,"",addr); if (addr!~"^fe80" && addr!="::1") print iface": "addr }'
 
 	# Public ipv6 address (try a list of providers that support ipv6) with short timeout
 	local public_ipv6

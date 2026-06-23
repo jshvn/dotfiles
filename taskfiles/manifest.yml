@@ -14,14 +14,6 @@ includes:
   _: ./helpers.yml
 
 vars:
-  # Read first line + trim edges only. A `cat | tr -d '[:space:]'` would
-  # silently strip embedded whitespace (e.g., "bad name" -> "badname") and
-  # let malformed state-file values bypass MACHINE_NAME_RE.
-  MACHINE:
-    sh: head -n1 '{{.STATE_FILE}}' 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
-
-  MACHINE_TOML: '{{.MACHINES_DIR}}/{{.MACHINE}}.toml'
-
   # glob + POSIX parameter expansion (go-task's embedded sh, not zsh) -- no ls
   # parsing. The `[ -e ]` guard handles the no-match literal-glob case.
   AVAILABLE_MACHINES:

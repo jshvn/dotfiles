@@ -7,15 +7,12 @@
 #               directory listing (eza when present), history with colours,
 #               and the `t` shorthand for `task`.
 # Depends on:   eza (optional), ncdu, highlight, omz_history, task.
-# Side effects: defines aliases reload, environment, path, dotfile,
-#               dotfiles, fsa, perms, ls (when eza present), ll,
-#               lastinstalled, history, t.
+# Side effects: defines aliases reload, path, dotfiles, fsa, perms,
+#               ls (when eza present), ll, lastinstalled, history, t.
 # =============================================================================
 
 alias reload='source "$ZDOTDIR"/.zshrc'
-alias environment="env"
 alias path='echo -e ${PATH//:/\\n} | highlight --syntax=bash'
-alias dotfile='cd "$DOTFILEDIR"'
 alias dotfiles='cd "$DOTFILEDIR"'
 alias fsa='ncdu'
 alias perms='permissions'

@@ -127,18 +127,16 @@ tasks:
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
+        source '{{.ROOT_DIR}}/install/compose-settings.zsh'
         set -euo pipefail
         target='{{.SETTINGS_PATH}}'
         settings_d='{{.SETTINGS_D}}'
 
-        # Phase 1: preserve CLI-managed keys from the existing file.
-        if [[ -f "$target" ]]; then
-          # model is CLI-managed (written by the /model command); carry it
-          # over only when present so an absent key never becomes null.
-          preserved=$(jq -c '{enabledPlugins: (.enabledPlugins // {}), extraKnownMarketplaces: (.extraKnownMarketplaces // {})} + (if has("model") then {model} else {} end)' "$target")
-        else
-          preserved='{"enabledPlugins": {}, "extraKnownMarketplaces": {}}'
-        fi
+        # Phase 1: preserve CLI-managed keys from the existing file (model is
+        # CLI-managed via the /model command; carried over only when present).
+        # settings_preserved_keys / settings_compose_fragments live in
+        # install/compose-settings.zsh, shared with claude:audit.
+        preserved=$(settings_preserved_keys "$target")
 
         # Phase 2: glob-guard. compgen returns non-zero when no matches; without
         # this check a literal "$settings_d/*.json" would reach jq and fail.
@@ -153,9 +151,7 @@ tasks:
         # the preserved keys on top.
         tmp=$(mktemp)
         trap 'rm -f "$tmp"' EXIT
-        if ! jq -s --argjson preserved "$preserved" \
-             'reduce .[] as $f ({}; . * $f) | . * $preserved' \
-             "$settings_d"/*.json > "$tmp"; then
+        if ! settings_compose_fragments "$settings_d" "$preserved" > "$tmp"; then
           cross "claude:settings-compose: jq deep-merge failed"
           exit 1
         fi
@@ -180,6 +176,7 @@ tasks:
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
+        source '{{.ROOT_DIR}}/install/compose-settings.zsh'
         set -euo pipefail
         target='{{.SETTINGS_PATH}}'
         settings_d='{{.SETTINGS_D}}'
@@ -194,18 +191,15 @@ tasks:
           exit 1
         fi
 
-        # Same compose algorithm as settings-compose, but writes to /tmp for
-        # diff. Preserved-keys expression must stay aligned with
-        # settings-compose above (enabledPlugins, extraKnownMarketplaces,
-        # and model when present).
-        preserved=$(jq -c '{enabledPlugins: (.enabledPlugins // {}), extraKnownMarketplaces: (.extraKnownMarketplaces // {})} + (if has("model") then {model} else {} end)' "$target")
+        # Same compose algorithm as settings-compose (shared via
+        # install/compose-settings.zsh); -S sorts keys so the diff ignores key
+        # order. Output goes to a tmp file, never to the live settings.json.
+        preserved=$(settings_preserved_keys "$target")
         expected=$(mktemp)
         actual=$(mktemp)
         trap 'rm -f "$expected" "$actual"' EXIT
 
-        jq -s --argjson preserved "$preserved" -S \
-          'reduce .[] as $f ({}; . * $f) | . * $preserved' \
-          "$settings_d"/*.json > "$expected"
+        settings_compose_fragments "$settings_d" "$preserved" -S > "$expected"
         jq -S . "$target" > "$actual"
 
         if diff -q "$expected" "$actual" >/dev/null; then
