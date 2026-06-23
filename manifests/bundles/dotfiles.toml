@@ -28,7 +28,6 @@ formulae = [
   "fastfetch",
   "git",
   "git-delta",
-  "glow",
   "go-task",
   "grc",
   "grep",

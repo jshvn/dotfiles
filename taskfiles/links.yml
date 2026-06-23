@@ -52,8 +52,6 @@ vars:
     {{if index .MANIFEST.features "claude-marketplace"}}{{range (splitList "\n" .CLAUDE_LINKS)}}{{$.XDG_CONFIG_HOME}}/claude/{{.}}
     {{end}}{{end}}
     {{if index .MANIFEST.features "ghostty"}}{{.XDG_CONFIG_HOME}}/ghostty/config{{end}}
-    {{.XDG_CONFIG_HOME}}/glow/glow.yml
-    {{.XDG_CONFIG_HOME}}/glow/glow_style.json
     {{.XDG_CONFIG_HOME}}/trippy/trippy.toml
     {{.XDG_CONFIG_HOME}}/tlrc/config.toml
     {{.XDG_CONFIG_HOME}}/conda/condarc
@@ -148,17 +146,13 @@ tasks:
         done <<< "{{.CLAUDE_LINKS}}"
 
   install-configs:
-    desc: "Link tool config files (ghostty, glow, trippy, tlrc, conda, eza)"
+    desc: "Link tool config files (ghostty, trippy, tlrc, conda, eza)"
     internal: true
     deps: [":manifest:resolve"]
-    # ghostty is feature-gated; the other 6 are always-on. motd is intentionally
+    # ghostty is feature-gated; the other 4 are always-on. motd is intentionally
     # absent (runtime read from DOTFILEDIR, no symlink needed).
     cmds:
       - task: configs:ghostty
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/configs/glow/glow.yml", TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow.yml" }
-      - task: _:safe-link
-        vars: { SOURCE: "{{.ROOT_DIR}}/configs/glow/glow_style.json", TARGET: "{{.XDG_CONFIG_HOME}}/glow/glow_style.json" }
       - task: _:safe-link
         vars: { SOURCE: "{{.ROOT_DIR}}/configs/trippy/trippy.toml", TARGET: "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml" }
       - task: _:safe-link
@@ -173,8 +167,6 @@ tasks:
       # healthy, status returns 0 and go-task skips the entire cmds block --
       # including `task: configs:ghostty`.
       - '{{if not (index .MANIFEST.features "ghostty")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/ghostty/config" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/ghostty/config")" == "{{.ROOT_DIR}}/configs/ghostty/config" ]]{{end}}'
-      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow.yml"        && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/glow/glow.yml")"        == "{{.ROOT_DIR}}/configs/glow/glow.yml"        ]]
-      - test -L "{{.XDG_CONFIG_HOME}}/glow/glow_style.json" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/glow/glow_style.json")" == "{{.ROOT_DIR}}/configs/glow/glow_style.json" ]]
       - test -L "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml"   && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/trippy/trippy.toml")"   == "{{.ROOT_DIR}}/configs/trippy/trippy.toml"   ]]
       - test -L "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"     && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/tlrc/config.toml")"     == "{{.ROOT_DIR}}/configs/tlrc/config.toml"     ]]
       - test -L "{{.XDG_CONFIG_HOME}}/conda/condarc"        && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/conda/condarc")"        == "{{.ROOT_DIR}}/configs/conda/condarc"        ]]
@@ -231,7 +223,6 @@ tasks:
             # strip the $xdg/claude/ prefix to recover it (covers files + hooks/*).
             "$xdg/claude/"*)               printf '%s\n' "$dotfiledir/claude/${target#$xdg/claude/}" ;;
             "$xdg/ghostty/config")         printf '%s\n' "$dotfiledir/configs/ghostty/config" ;;
-            "$xdg/glow/"*)                 printf '%s\n' "$dotfiledir/configs/glow/${target##*/glow/}" ;;
             "$xdg/trippy/"*)               printf '%s\n' "$dotfiledir/configs/trippy/${target##*/trippy/}" ;;
             "$xdg/tlrc/"*)                 printf '%s\n' "$dotfiledir/configs/tlrc/${target##*/tlrc/}" ;;
             "$xdg/conda/"*)                printf '%s\n' "$dotfiledir/configs/conda/${target##*/conda/}" ;;
