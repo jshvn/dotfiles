@@ -33,6 +33,9 @@ typeset -ga DOCK_DEFAULTS=(
   "com.apple.dock"  "mineffect"     "genie"   "string"
   "com.apple.dock"  "show-recents"  "false"   "bool"
   "com.apple.dock"  "mru-spaces"    "false"   "bool"
+  # Hot corners: disable bottom-right (1 = no action). modifier 0 = no key held.
+  "com.apple.dock"  "wvous-br-corner"   "1"  "int"
+  "com.apple.dock"  "wvous-br-modifier" "0"  "int"
 )
 
 apply_dock() {

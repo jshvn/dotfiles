@@ -18,6 +18,7 @@ one-password-signing = true
 macos-dock = true
 macos-finder = true
 macos-input = true
+macos-spotlight = true
 macos-screenshots = true
 macos-security = true
 macos-appearance = true

@@ -53,6 +53,8 @@ tasks:
       - task: apply-defaults:concern
         vars: { CONCERN: input, FEATURE: macos-input }
       - task: apply-defaults:concern
+        vars: { CONCERN: spotlight, FEATURE: macos-spotlight }
+      - task: apply-defaults:concern
         vars: { CONCERN: screenshots, FEATURE: macos-screenshots }
       - task: apply-defaults:concern
         vars: { CONCERN: security, FEATURE: macos-security }
@@ -170,6 +172,10 @@ tasks:
           {{if index .MANIFEST.features "macos-input"}}
           source "${DOTFILEDIR}/os/defaults/input.zsh"
           verify_input || failed=1
+          {{end}}
+          {{if index .MANIFEST.features "macos-spotlight"}}
+          source "${DOTFILEDIR}/os/defaults/spotlight.zsh"
+          verify_spotlight || failed=1
           {{end}}
           {{if index .MANIFEST.features "macos-screenshots"}}
           source "${DOTFILEDIR}/os/defaults/screenshots.zsh"

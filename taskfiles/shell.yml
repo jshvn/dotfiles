@@ -3,11 +3,13 @@ version: '3'
 # =============================================================================
 # taskfiles/shell.yml -- shell-layer measurement + validation tasks
 #
-# Purpose:      Cold-start measurement (startup-time) + shell-layer
-#               validation (XDG dirs, ZDOTDIR, /etc/zshenv, DOTFILES_MACHINE).
-# Depends on:   taskfiles/helpers.yml; install/messages.zsh;
+# Purpose:      Antigen bundle update (OMZ + plugins), cold-start measurement
+#               (startup-time), and shell-layer validation (XDG dirs, ZDOTDIR,
+#               /etc/zshenv, DOTFILES_MACHINE).
+# Depends on:   taskfiles/helpers.yml; install/messages.zsh; antigen (brew);
 #               hyperfine + jq + bc + awk.
-# Side effects: read-only -- emits check/cross output via messages.zsh.
+# Side effects: antigen-update git-pulls cloned bundles + resets the antigen
+#               cache; measurement/validation tasks are read-only.
 # =============================================================================
 
 includes:
@@ -46,6 +48,35 @@ tasks:
             exit 1
         fi
         check "shell start within budget"
+
+  # lint-allow: cmds-without-status
+  antigen-update:
+    desc: "Update antigen-managed zsh bundles (OMZ + plugins) to latest upstream"
+    internal: true
+    # always-rerun: bundle git-pull is a network refresh, mirroring
+    # packages:install's `brew update`. There is no separate update pipeline --
+    # `task install` IS `task update`, so bundles refresh on every invocation.
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        if [[ ! -f "{{.HOMEBREW_PREFIX}}/share/antigen/antigen.zsh" ]]; then
+            warn "antigen not installed -- skipping bundle update"
+            exit 0
+        fi
+        info "running antigen update (OMZ + plugin bundles)"
+        # `antigen update` git-pulls every registered bundle, but the bundle
+        # records only exist inside an interactive shell that has sourced
+        # .zshrc (where the `antigen bundle ...` lines run). -ic loads .zshrc
+        # -- records populate even when the antigen cache is warm -- then we
+        # update and reset so the next shell regenerates the bundle cache
+        # against the freshly pulled repos. Network failure is non-fatal:
+        # `task install` must not abort on an offline machine.
+        if zsh -ic 'antigen update && antigen reset' >/dev/null 2>&1; then
+            success "antigen bundles updated"
+        else
+            warn "antigen update failed (offline?) -- bundles unchanged"
+        fi
 
   validate:
     desc: "Validate shell layer (XDG dirs, ZDOTDIR dir, /etc/zshenv ZDOTDIR line, DOTFILES_MACHINE state)"

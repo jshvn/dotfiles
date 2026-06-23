@@ -40,6 +40,19 @@ tasks:
     status:
       - false
 
+  # lint-allow: cmds-without-status
+  links-audit:
+    desc: "Run links:audit orphan-scan smoke tests via install/test-links-audit.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running links-audit smoke tests"
+        export DOTFILEDIR="{{.ROOT_DIR}}"
+        zsh "${DOTFILEDIR}/install/test-links-audit.zsh"
+    status:
+      - false
+
   manifest:
     desc: "Run deep-merge fixtures (positive + negative)"
     internal: true

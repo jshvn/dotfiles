@@ -297,50 +297,23 @@ tasks:
 
         dotfiledir="{{.ROOT_DIR}}"
 
-        expected=()
-        while IFS= read -r line; do
-          [[ -n "$line" ]] && expected+=("$line")
-        done <<< "{{.EXPECTED_TARGETS}}"
-
-        # Derive deduplicated parent_dirs from expected. CRITICAL: word-split-safe
-        # assignment via `while IFS= read -r` -- NOT the `array=($(...))` form,
-        # which is vulnerable to word-splitting on path components containing
-        # spaces and is not shellcheck-clean.
-        raw_parents=()
-        for t in "${expected[@]}"; do
-          raw_parents+=("$(dirname "$t")")
-        done
-        parent_dirs=()
-        while IFS= read -r dir; do
-          [[ -n "$dir" ]] && parent_dirs+=("$dir")
-        done < <(printf '%s\n' "${raw_parents[@]}" | sort -u)
-
-        # Bounded scan (-maxdepth 2). A symlink is an orphan iff its readlink -f
-        # target is under $dotfiledir AND the link path itself is not in
-        # EXPECTED_TARGETS.
+        # Orphan detection is delegated to install/links-audit-scan.zsh (the
+        # single source of detection logic, unit-tested by
+        # install/test-links-audit.zsh). EXPECTED_TARGETS is piped on stdin;
+        # the repo root plus the scan roots ($XDG_CONFIG_HOME, $ZDOTDIR) are
+        # args. The scanner flags two orphan kinds: a live symlink into the repo
+        # that is not expected, AND a dangling symlink whose literal target was
+        # under the repo (a tool removed + its config deleted) -- the latter is
+        # the case a readlink -f-only gate silently dropped.
         #
         # `(( expr ))` evaluates to exit-1 when expr is zero -- under errexit
-        # that aborts the script. Use `if ... ; then ... ; fi` instead of
-        # `(( ... )) && cmd` or bare `(( ... ))`.
+        # that aborts the script. Use `if ... ; then ... ; fi` instead.
         orphans=()
-        for dir in "${parent_dirs[@]}"; do
-          [[ -d "$dir" ]] || continue
-          while IFS= read -r lnk; do
-            [[ -z "$lnk" ]] && continue
-            target="$(readlink -f "$lnk" 2>/dev/null || true)"
-            [[ "$target" == "$dotfiledir"* ]] || continue
-            found=0
-            for e in "${expected[@]}"; do
-              if [[ "$lnk" == "$e" ]]; then
-                found=1
-                break
-              fi
-            done
-            if [[ "$found" == "0" ]]; then
-              orphans+=("$lnk")
-            fi
-          done < <(find "$dir" -maxdepth 2 -type l 2>/dev/null)
-        done
+        while IFS= read -r lnk; do
+          [[ -n "$lnk" ]] && orphans+=("$lnk")
+        done < <(zsh "{{.ROOT_DIR}}/install/links-audit-scan.zsh" \
+          "$dotfiledir" "{{.XDG_CONFIG_HOME}}" "{{.ZDOTDIR}}" \
+          <<< "{{.EXPECTED_TARGETS}}")
 
         orphan_count=${#orphans[@]}
 
@@ -371,6 +344,7 @@ tasks:
               info "no orphan symlinks detected"
               exit 0
             fi
+            removed_dirs=()
             for orphan in "${orphans[@]}"; do
               tgt="$(readlink "$orphan" 2>/dev/null || echo unreadable)"
               info "orphan: $orphan -> $tgt"
@@ -382,6 +356,7 @@ tasks:
                 # directory if a real path slipped through orphan detection.
                 if unlink "$orphan"; then
                   success "removed: $orphan"
+                  removed_dirs+=("$(dirname "$orphan")")
                 else
                   error "failed to unlink: $orphan"
                 fi
@@ -389,6 +364,18 @@ tasks:
                 info "skipped: $orphan"
               fi
             done
+            # Prune now-empty parent dirs left behind by removed orphans (e.g.
+            # ~/.config/glow after its last link is gone). rmdir is inherently
+            # safe: it refuses non-empty dirs, so a directory that still holds
+            # real files or other links is never touched.
+            if [[ "${#removed_dirs[@]}" -gt 0 ]]; then
+              while IFS= read -r d; do
+                [[ -n "$d" && -d "$d" ]] || continue
+                if rmdir "$d" 2>/dev/null; then
+                  info "pruned empty dir: $d"
+                fi
+              done < <(printf '%s\n' "${removed_dirs[@]}" | sort -u)
+            fi
             exit 0
             ;;
           *)
