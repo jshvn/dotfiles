@@ -22,7 +22,18 @@ hook::read_stdin() {
 #   MODE=warn  -> exit 0 with warning if missing (fail open, advisory hooks)
 hook::require_ggrep() {
   local mode="${1:?usage: hook::require_ggrep block|warn}"
-  GGREP="${HOMEBREW_PREFIX:-/opt/homebrew}/bin/ggrep" # lint-allow: hardcoded-prefix
+  # Hooks run in a subprocess that does NOT source .zprofile, so
+  # $HOMEBREW_PREFIX may be unset. Detect it via `uname -m` rather than
+  # defaulting to the Apple-Silicon path -- a wrong fallback on Intel would
+  # leave $GGREP missing and (in block mode) fail closed on EVERY command.
+  local prefix="${HOMEBREW_PREFIX:-}"
+  if [[ -z "$prefix" ]]; then
+    case "$(uname -m)" in
+      arm64)  prefix="/opt/homebrew" ;; # lint-allow: hardcoded-prefix
+      x86_64) prefix="/usr/local"    ;; # lint-allow: hardcoded-prefix
+    esac
+  fi
+  GGREP="${prefix}/bin/ggrep"
 
   if [[ -x "$GGREP" ]]; then
     return 0

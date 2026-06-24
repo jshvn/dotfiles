@@ -11,10 +11,15 @@
 
 function host() {    # host() looks up A/AAAA/MX/TXT/NS/CNAME records via 1.1.1.1. ex: $ host example.com
     if [[ -z "${1}" ]]; then
-		echo "ERROR: No host or IP specified";
+		echo "ERROR: No host or IP specified" >&2
 		return 1;
 	fi
+    # Permissive host/IP guard (matches geoip/vnc) before passing to doggo.
+    if [[ ! "${1}" =~ ^[A-Za-z0-9.:_-]+$ ]]; then
+        echo "ERROR: invalid host/ip: ${1}" >&2
+        return 2
+    fi
 
-    local records=$(doggo --type=A --type=AAAA --type=MX --type=TXT --type=NS --type=CNAME --nameserver=1.1.1.1 "${1}") 
+    local records=$(doggo --type=A --type=AAAA --type=MX --type=TXT --type=NS --type=CNAME --nameserver=1.1.1.1 "${1}")
     echo "$records" | highlight --syntax=bash
 }

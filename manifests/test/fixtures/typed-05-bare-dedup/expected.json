@@ -1,0 +1,43 @@
+{
+  "features": {},
+  "packages": {
+    "brew": {
+      "bundles": [
+        "dotfiles"
+      ],
+      "extra_packages": {
+        "formulae": [
+          "curl",
+          "git",
+          "ripgrep"
+        ],
+        "casks": [],
+        "mas": []
+      }
+    },
+    "vscode": {
+      "extensions": []
+    },
+    "cargo": {
+      "crates": []
+    },
+    "uv": {
+      "tools": []
+    },
+    "npm": {
+      "packages": []
+    }
+  },
+  "schema_version": 1,
+  "meta": {
+    "description": "typed-05-bare-dedup fixture"
+  },
+  "platform": {
+    "os": "darwin",
+    "arch": "FROM_UNAME"
+  },
+  "identity": {
+    "git": "none",
+    "ssh": "none"
+  }
+}

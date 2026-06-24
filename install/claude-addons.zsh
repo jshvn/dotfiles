@@ -59,6 +59,10 @@ is_addon_installed() {
     return 1
   fi
   if [[ -n "$verify_cmd" && "$allow_command" == "1" ]]; then
+    # ponytail: eval of a TOML-supplied command. TRUST BOUNDARY: addon TOMLs
+    # under manifests/claude-addons/ are operator-owned and reviewed at merge;
+    # a malicious TOML here would be arbitrary code execution. Do not source
+    # addon manifests from untrusted locations.
     eval "$verify_cmd" >/dev/null 2>&1
     return $?
   fi
@@ -115,6 +119,8 @@ cmd_install() {
       while IFS= read -r cmd; do
         [[ -z "$cmd" ]] && continue
         info "  > $cmd"
+        # ponytail: eval of TOML-supplied install/upgrade commands -- same
+        # operator-owned trust boundary as the verify eval above.
         eval "$cmd" || { cross "claude-addons: ${addon}: command failed: $cmd"; return 1; }
       done < <(yq -r "$jq_path" "$toml")
     fi
@@ -150,6 +156,8 @@ cmd_remove() {
     while IFS= read -r cmd; do
       [[ -z "$cmd" ]] && continue
       info "  > $cmd"
+      # ponytail: eval of TOML-supplied remove commands -- same operator-owned
+      # trust boundary as the install/verify evals.
       eval "$cmd" || warn "  remove command failed (continuing): $cmd"
     done < <(yq -r '.remove.commands[]' "$toml")
   fi

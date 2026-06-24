@@ -197,7 +197,7 @@
             "type": "command"
           }
         ],
-        "matcher": "Write|Edit"
+        "matcher": "Write|Edit|Bash"
       },
       {
         "hooks": [

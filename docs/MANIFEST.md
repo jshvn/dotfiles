@@ -325,7 +325,11 @@ key = "value"
 Rule: a key present only in defaults and a key present only in the machine both appear in
 the resolved output -- neither side's unique keys are dropped.
 
-#### Fixture 06 -- extra-packages-concat (per-sub-array additive union)
+#### Example -- extra-packages-concat (per-sub-array additive union)
+
+This behavior has no numbered `06` fixture; it is exercised by the typed-bucket
+fixtures (`typed-02-formulae-dedup`, `typed-03-casks-mas-dedup`,
+`typed-04-vscode-union`). The worked example below is illustrative.
 
 `defaults.toml`:
 ```toml
@@ -413,7 +417,8 @@ See that task for the implementation details.
 ## Adding a New Machine
 
 1. Choose a kebab-case name (e.g., `atium`, `work-laptop`). Machine names must match
-   the regex `^[a-z0-9][a-z0-9-]*$`.
+   the regex `^[a-z0-9_][a-z0-9_-]*$` (a leading underscore is reserved for the
+   `_invalid-*` / `_warn-*` test fixtures; real machines start with a letter or digit).
 
 2. Create `manifests/machines/<name>.toml`. Copy an existing machine file as a starting
    point and edit the values. Keep the same field structure.
@@ -493,7 +498,7 @@ discover identities at evaluation time.
 | `task setup -- <name>` | Persist machine selection; runs validate and resolve |
 | `task manifest:show [-- --machine <name>]` | Print resolved manifest (active machine by default) |
 | `task manifest:audit [-- --machine <name>]` | Schema check -- required fields + unknown-key warnings |
-| `task test:manifest` | Run the six golden-output fixture tests |
+| `task test:manifest` | Run the golden-output fixture tests (deep-merge `01`-`05` plus the `typed-*` bucket fixtures) |
 
 ## State Files
 

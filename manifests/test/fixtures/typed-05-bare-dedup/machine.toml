@@ -1,0 +1,28 @@
+# typed-05-bare-dedup -- regression for the formula-dedup null bug. The
+# shared "dotfiles" bundle declares bare "git" + "curl"; the machine ALSO
+# declares bare "git" (plus a unique bare "ripgrep"). A bare-string formula
+# duplicated across sources must dedup to a single bare string -- it must NOT
+# collapse to null (the jq `first // .[0]` precedence bug). Expected formulae:
+# ["curl", "git", "ripgrep"], all bare.
+
+schema_version = 1
+
+[meta]
+description = "typed-05-bare-dedup fixture"
+
+[platform]
+os = "darwin"
+
+[features]
+
+[packages.brew]
+bundles = ["dotfiles"]
+
+[packages.brew.extra_packages]
+formulae = ["git", "ripgrep"]
+casks = []
+mas = []
+
+[identity]
+git = "none"
+ssh = "none"

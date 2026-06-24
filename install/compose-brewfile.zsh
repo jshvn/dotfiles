@@ -86,7 +86,7 @@ compose() {
   while IFS= read -r _b_line; do
     [[ -z "$_b_line" ]] && continue
     bundles+=("$_b_line")
-  done < <(jq -r '.packages.brew.bundles[]' "$RESOLVED_JSON")
+  done < <(jq -r '.packages.brew.bundles[]?' "$RESOLVED_JSON")
 
   local bundles_csv=""
   local b

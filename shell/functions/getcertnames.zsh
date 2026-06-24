@@ -11,8 +11,13 @@
 
 function getcertnames() {    # getcertnames() prints a domain's TLS cert Common Name + SANs. ex: $ getcertnames github.com
 	if [[ -z "${1}" ]]; then
-		echo "ERROR: No domain specified.";
+		echo "ERROR: No domain specified." >&2
 		return 1;
+	fi
+	# Permissive host/IP guard (matches geoip/vnc) before passing to openssl.
+	if [[ ! "${1}" =~ ^[A-Za-z0-9.:_-]+$ ]]; then
+		echo "ERROR: invalid domain: ${1}" >&2
+		return 2
 	fi
 
 	local domain="${1}";

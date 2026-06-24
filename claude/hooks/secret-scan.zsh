@@ -16,8 +16,10 @@ source "${0:A:h}/lib.zsh"
 hook::require_ggrep block
 hook::read_stdin
 
-# Both new_string (Edit) and content (Write) flow through here.
-content="$(hook::extract '(.tool_input.content // "") + (.tool_input.new_string // "")')"
+# content (Write), new_string (Edit), and command (Bash) all flow through here
+# -- a secret pasted into a Bash command (e.g. a curl Authorization header) is
+# scanned the same as one written to a file.
+content="$(hook::extract '(.tool_input.content // "") + (.tool_input.new_string // "") + (.tool_input.command // "")')"
 [[ -z "$content" ]] && exit 0
 
 # High-confidence secret patterns only (avoids false positives on legitimate

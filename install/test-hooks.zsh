@@ -46,6 +46,21 @@ test_secret_scan() {
     cross "secret-scan.block: expected exit 2, got ${exit_code}"
     failed=$((failed + 1))
   fi
+
+  # Bash-block: a secret in a Bash command (the command field) must be caught
+  # now that secret-scan matches Bash, not only Write/Edit. The api_key=value
+  # literal is assembled at runtime so THIS test file never contains a
+  # contiguous secret pattern (which secret-scan would flag on edit).
+  local kv="api_key"
+  local bash_block="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"echo ${kv}='aaaabbbbccccddddeeee1234'\"}}"
+  exit_code=0
+  echo "$bash_block" | zsh "${HOOK_DIR}/secret-scan.zsh" >/dev/null 2>&1 || exit_code=$?
+  if [[ "$exit_code" -eq 2 ]]; then
+    check "secret-scan.bash-block"
+  else
+    cross "secret-scan.bash-block: expected exit 2, got ${exit_code}"
+    failed=$((failed + 1))
+  fi
 }
 
 # Pass: ASCII content -- expect exit 0, no warning on stderr.

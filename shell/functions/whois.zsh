@@ -54,6 +54,14 @@ function whois() {    # whois() runs whois on a domain, IP, or URL (5s timeout).
         fi
     fi
 
+    # Guard the parsed target (a bare domain or IP after URL stripping) before
+    # it reaches whois. Validated here, not on $1, so URL input is still
+    # accepted and reduced above.
+    if [[ ! "$target" =~ ^[A-Za-z0-9.:_-]+$ ]]; then
+        echo "ERROR: invalid whois target: ${target}" >&2
+        return 2
+    fi
+
     # Run whois through grc for colored output, with timeout to avoid slow WHOIS servers
     gtimeout "$timeout_seconds" grc --colour=auto $(whence -p whois) "$target"
     local exit_code=$?

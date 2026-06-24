@@ -30,6 +30,18 @@ dotfiledir="${1:?usage: links-audit-scan.zsh <repo-root> <scan-root>... < expect
 shift
 roots=("$@")
 
+# Boundary-safe repo prefix. Matching `== "$dotfiledir"*` (raw prefix) would
+# treat a sibling like `/Users/josh/dotfiles-backup/x` as repo-targeted when
+# the repo root is `/Users/josh/dotfiles`. Compare against the repo root plus a
+# trailing slash (strip any existing one first), or the root itself.
+repo_root="${dotfiledir%/}"
+repo_prefix="${repo_root}/"
+
+# is_under_repo PATH -- true when PATH is the repo root or strictly under it.
+is_under_repo() {
+  [[ "$1" == "$repo_root" || "$1" == "$repo_prefix"* ]]
+}
+
 # Expected targets on stdin (blank lines ignored).
 expected=()
 while IFS= read -r line; do
@@ -80,7 +92,7 @@ for dir in "${roots[@]}"; do
     [[ -z "$lnk" ]] && continue
     [[ -e "$lnk" ]] && continue
     literal="$(readlink "$lnk" 2>/dev/null || true)"
-    if [[ "$literal" == "$dotfiledir"* ]]; then
+    if is_under_repo "$literal"; then
       already_listed "$lnk" || orphans+=("$lnk")
     fi
   done < <(find "$dir" -maxdepth 2 -type l 2>/dev/null)
@@ -95,7 +107,7 @@ for dir in "${parent_dirs[@]}"; do
   while IFS= read -r lnk; do
     [[ -z "$lnk" ]] && continue
     resolved="$(readlink -f "$lnk" 2>/dev/null || true)"
-    [[ "$resolved" == "$dotfiledir"* ]] || continue
+    is_under_repo "$resolved" || continue
     if ! is_expected "$lnk" && ! already_listed "$lnk"; then
       orphans+=("$lnk")
     fi

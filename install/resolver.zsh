@@ -125,8 +125,8 @@ validate_manifest() {
     fi
   fi
 
-  # packages.brew.bundles must be a non-empty !!seq containing "core".
-  local bundles_present bundles_tag bundles_length contains_core
+  # packages.brew.bundles must be a non-empty !!seq containing "dotfiles".
+  local bundles_present bundles_tag bundles_length contains_dotfiles
   bundles_present=$(yq '.packages.brew | has("bundles")' "$machine_file" 2>/dev/null || echo false)
   if [[ "$bundles_present" != "true" ]]; then
     error "missing required field: packages.brew.bundles"
@@ -142,8 +142,8 @@ validate_manifest() {
         error "packages.brew.bundles must contain at least one bundle"
         errors=$(( errors + 1 ))
       fi
-      contains_core=$(yq '.packages.brew.bundles | contains(["dotfiles"])' "$machine_file" 2>/dev/null || echo false)
-      if [[ "$contains_core" != "true" ]]; then
+      contains_dotfiles=$(yq '.packages.brew.bundles | contains(["dotfiles"])' "$machine_file" 2>/dev/null || echo false)
+      if [[ "$contains_dotfiles" != "true" ]]; then
         error 'packages.brew.bundles must include "dotfiles"'
         errors=$(( errors + 1 ))
       fi
@@ -433,10 +433,13 @@ resolve_pipeline() {
   done
 
   # formulae dedupe: lift bare strings to { name: ., __bare: true }; group_by
-  # .name; within each group prefer an object (drops __bare) over a bare
+  # .name; within each group prefer the LAST object (drops __bare) over a bare
   # string; demote surviving __bare objects back to their string-name form.
   # jq -s slurps each source array as one list element; `add` flattens in
-  # declaration order so the last collision wins.
+  # declaration order so the last collision wins (symmetric with casks/mas
+  # `.[-1]`). The `(map(...) | last)` parens are load-bearing: jq's `|` binds
+  # looser than `//`, so without them the fallback `.[-1]` would index the
+  # emptied mapped array and a duplicated bare formula would resolve to null.
   union_formulae=$(
     {
       print -r -- "$def_formulae"
@@ -451,7 +454,7 @@ resolve_pipeline() {
         | group_by(.name)
         | map(if length == 1
               then .[0]
-              else (map(select(.__bare | not)) | first // .[0])
+              else ((map(select(.__bare | not)) | last) // .[-1])
               end)
         | map(if .__bare then .name else . end)
       '
@@ -682,6 +685,17 @@ USAGE
   fi
   if [[ ! -f "$DEFAULTS" ]]; then
     error "defaults not found: ${DEFAULTS}"
+    return 1
+  fi
+
+  # Fail closed: resolve must never emit a resolved.json from an invalid
+  # manifest. `task setup` validates before resolving, but a direct
+  # `resolver.zsh --machine X [--stdout]` (or the manifest:resolve mtime
+  # status path) would otherwise resolve unvalidated input. `|| true` lets us
+  # read VALIDATE_ERRORS under `set -e` before deciding.
+  validate_manifest "$machine_file" || true
+  if (( VALIDATE_ERRORS > 0 )); then
+    error "validation failed for ${machine_name}: ${VALIDATE_ERRORS} error(s)"
     return 1
   fi
 
