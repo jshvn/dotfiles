@@ -53,12 +53,15 @@ changes, not when a feature flag flips.
 
 ## atium
 
-- Purpose: Mac atium, headless ops machine, core packages only.
+- Purpose: Mac atium, mostly-headless Mac server.
 - Hardware: Apple Silicon or Intel -- arch detected by the resolver via
   `uname -m` because `[platform].arch` is absent in the atium TOML.
-- Role narrative: headless operations machine. Runs only the `core`
-  Brewfile bundle (CLI tooling); no GUI bundle, no extra casks, no MAS
-  apps. The atium git/ssh identity isolates this machine's commits and
+- Role narrative: mostly-headless Mac server -- usually headless but
+  occasionally connected to a display, so it still takes the GUI bundle.
+  Runs the `dotfiles`, `cli`, and `dotfiles-gui` bundles, plus the extra
+  casks `appcleaner`, `cloudflare-warp`, `docker-desktop`, `dropbox`, and
+  `miniconda`; no MAS apps. The atium git/ssh identity isolates this
+  machine's commits and
   remote access from the personal and work identities so logs and
   authorized-key sets stay attributable. `claude-marketplace` is off
   because the machine has no interactive Claude Code surface; the GUI

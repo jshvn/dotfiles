@@ -14,7 +14,7 @@ platform subdirectories) reflects that single-platform scope.
 - `theme.zsh` -- alanpeabody-based prompt; consumed by `.zshrc` after
   antigen loads `ohmyzsh/ohmyzsh git` (the v1 prompt is small, fast, and
   not on life support; no Starship swap in v1). antidote was evaluated
-  and reverted; see `.zshrc:75` comment for rationale.
+  and reverted; see `.zshrc:51` comment for rationale.
 - `aliases/<topic>.zsh` -- flat layout, one topic per file. Gating
   happens inside the file: wrapper functions for 1-3 aliases;
   source-time `return 0` for bulk-alias loops.
@@ -39,9 +39,10 @@ platform subdirectories) reflects that single-platform scope.
 
 ## Performance budget
 
-Cold interactive shell start: <= 200ms (SHEL-12). Measured via
+Target: cold interactive shell start <= 200ms. Measured via
 `task shell:startup-time`, which runs `hyperfine --warmup 1 --runs 5 'zsh
--lic exit'` and fails non-zero when the 5-run mean exceeds the budget.
+-lic exit'` and fails non-zero when the 5-run mean exceeds the
+`COLD_START_BUDGET` gate (currently 500ms in `../taskfiles/shell.yml`).
 Re-measure on every plugin change or startup-file edit.
 
 ## References

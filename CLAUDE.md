@@ -90,7 +90,7 @@ form:
 
 Snake_case keys (e.g., `identity.git`, `meta.description`) work with dot access as usual.
 
-### Lint rule catalogue (LINT-01..09)
+### Lint rule catalogue (LINT-02..12)
 
 In-code `# LINT-NN:` citations reference this catalogue. The rule body lives in
 `taskfiles/lint.yml`; this table is the operator-facing summary.

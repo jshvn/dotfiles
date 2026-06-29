@@ -2,9 +2,9 @@
 
 Modular taskfile concerns wired into `../Taskfile.yml` via go-task
 `includes:`. One taskfile per concern: manifest, lint, links, shell,
-identity, packages, macos, claude, test, helpers. Every install-style
-task is idempotent (`status:` block) and every symlink goes through
-`_:safe-link` in `helpers.yml`.
+identity, packages, macos, claude, claude-addons, hostname, repo, test,
+helpers. Every install-style task is idempotent (`status:` block) and
+every symlink goes through `_:safe-link` in `helpers.yml`.
 
 ## Key files
 
@@ -12,17 +12,19 @@ task is idempotent (`status:` block) and every symlink goes through
   `_:safe-link` and `_:check-link`. Every other taskfile pulls it via
   `includes: _: ./helpers.yml`. Always go through `_:safe-link`; never
   bypass with a bare `ln -s` (LINT-03b catches it).
-- **Phase 1 (real).** `manifest.yml` -- `task setup -- <machine>`,
-  `manifest:resolve`, `manifest:validate`, `manifest:show`,
-  `manifest:test`. Reads TOMLs; writes `resolved.json`.
-- **Phase 2 (real).** `lint.yml` -- `lint:taskfile`, `lint:shell-headers`,
-  `lint:portability`, `lint:syntax`, `lint:test-fixtures`. Enforces
-  LINT-01..LINT-07.
-- **Phase 3 (real).** `links.yml` -- shell symlinks via `_:safe-link` plus
+- **Manifest.** `manifest.yml` -- `task setup -- <machine>`,
+  `manifest:resolve`, `manifest:show`, `manifest:validate`,
+  `manifest:audit`. Reads TOMLs; writes `resolved.json`.
+- **Lint.** `lint.yml` -- `lint:syntax`, `lint:taskfile`,
+  `lint:shell-headers`, `lint:portability`, `lint:banner-parity`,
+  `lint:settings-drift`, `lint:brew-prefix`, `lint:kebab-access`,
+  `lint:file-headers`, `lint:test-fixtures`. Enforces LINT-02..LINT-12
+  (see the catalogue in `../CLAUDE.md`).
+- **Links.** `links.yml` -- shell symlinks via `_:safe-link` plus
   the zdotdir step (antigen is the live plugin manager; antidote was
-  evaluated and reverted -- see `shell/.zshrc:75` comment
-  for rationale). `shell.yml` exposes `task shell:startup-time` (SHEL-12
-  cold-start gate); `shell:validate` is internal-only (invoked by root
+  evaluated and reverted -- see `shell/.zshrc:51` comment
+  for rationale). `shell.yml` exposes `task shell:startup-time`
+  (cold-start gate); `shell:validate` is internal-only (invoked by root
   `task validate`).
 - **Smoke-test fixtures.** `test/` -- lint-fixture taskfiles consumed by
   `task lint:test-fixtures`.
@@ -32,7 +34,7 @@ task is idempotent (`status:` block) and every symlink goes through
 - **A new taskfile.** Create `taskfiles/<concern>.yml` starting with
   `version: '3'` and a `# =====`-style file-header banner naming purpose,
   callers, and conventions. Add `includes: _: ./helpers.yml`. Every
-  install-style task MUST have a `status:` block (LINT-01) that uses
+  install-style task MUST have a `status:` block (LINT-03a) that uses
   `{{.X}}` template vars only -- never `$X` shell vars (LINT-02 catches
   this; the v1 `macos:shell:145` regression class). For diagnostic-only
   tasks (validate, perf, etc.) that re-run by design, add an inline
@@ -60,8 +62,5 @@ task is idempotent (`status:` block) and every symlink goes through
 - `../docs/MANIFEST.md` -- manifest schema; many tasks consume
   `resolved.json` via `fromJson`.
 - `../CLAUDE.md` -- v2 conventions (status-block templating, no bare
-  `ln -s`, `set -euo pipefail` on every executable `.zsh`).
-- `../.planning/REQUIREMENTS.md` -- LINT-01..LINT-07, DOCS-02
-  traceability.
-
-Satisfies DOCS-02 for taskfiles/.
+  `ln -s`, `set -euo pipefail` on every executable `.zsh`, the lint
+  catalogue LINT-02..LINT-12).

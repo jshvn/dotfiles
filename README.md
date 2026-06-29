@@ -23,7 +23,7 @@ on a dirty working tree, a diverged branch, or when offline / SSH auth is unavai
 
 ## ⚙️ Common Tasks
 
-The five top-level commands are:
+The six top-level commands are:
 
 | Command          | Purpose                                                |
 |------------------|--------------------------------------------------------|
@@ -32,6 +32,7 @@ The five top-level commands are:
 | `task validate`  | Validate full installation state                       |
 | `task test`      | Run all smoke tests                                    |
 | `task lint`      | Run all lint checks                                    |
+| `task audit`     | Detect drift across all domains (read-only)            |
 
 Run `task` (no arguments) to see the curated task surface; `task --list` for
 the full graph.

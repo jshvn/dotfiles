@@ -29,6 +29,26 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   hooks (`secret-scan`, `no-emojis`, `no-ai-comments`, `agent-transparency`).
   Invoked by `taskfiles/test.yml :: test:hooks`; exit code is the count of
   scenario failures (0 == all pass).
+- `compose-settings.zsh` -- Single source of truth for the settings-compose
+  algorithm shared by `claude:settings-compose` (writes `claude/settings.json`
+  from `claude/settings.d/*.json` fragments) and `claude:audit` (drift check).
+- `claude-addons.zsh` -- Install / upgrade / remove / list / validate the
+  third-party Claude addons declared in `manifests/claude-addons/<name>.toml`
+  and selected per machine via `[claude].addons`. Invoked by
+  `taskfiles/claude-addons.yml`.
+- `lint-rules.zsh` -- Shared lint detectors used by both the production scan
+  (`taskfiles/lint.yml :: lint:taskfile`) and the fixture self-test
+  (`lint:test-fixtures`), so one implementation backs both.
+- `links-audit-scan.zsh` -- Orphan-detection logic for `task links:audit`.
+  Reads expected symlink targets on stdin and prints repo-targeted links that
+  are dangling or unexpected under the scan roots.
+- `repo-sync.zsh` -- Fast-forward pull run before install (the `update` alias
+  runs this, then `task install`). Fetches then fast-forwards the current
+  branch; never merges or rebases. Invoked by `taskfiles/repo.yml :: repo:sync`.
+- `test-links-audit.zsh` -- Smoke test for `links-audit-scan.zsh` against a
+  throwaway repo + config tree. Invoked by `test:links-audit`.
+- `test-repo-sync.zsh` -- Smoke test exercising every guard branch of
+  `repo-sync.zsh` against throwaway git repos. Invoked by `test:repo-sync`.
 
 ## Adding a pattern
 
@@ -67,5 +87,3 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   `test-hooks.zsh`.
 - `../CLAUDE.md` -- v2 conventions (file-header comment blocks,
   `set -euo pipefail` on every executable `.zsh`, no AI attribution).
-
-Satisfies DOCS-02 for install/.

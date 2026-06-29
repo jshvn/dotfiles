@@ -42,11 +42,14 @@ identity is selected by a single symlink swap rather than profile-file-exec.
 ## Adding a pattern
 
 **An identity.** Create `git/identities/<name>` and `ssh/identities/<name>`.
-Add the new value to the resolver enum (`install/resolver.zsh`
-`validate_manifest()` case statement) and add any cross-field rules if the new
-identity carries 1Password directives. Add a corresponding negative fixture
-under `manifests/test/fixtures/_invalid-*/` so `manifest:test` verifies the
-rule. Update `docs/MANIFEST.md` `identity.*` Allowed-values columns.
+The resolver is filesystem-driven -- it accepts any identity whose file exists
+under `identity/git/identities/` and `identity/ssh/identities/`, so no enum
+edit is needed. Add a cross-field rule to `install/resolver.zsh`
+`validate_manifest()` only if the new identity carries 1Password directives
+(the `personal|work` case statements gate the `one-password-*` features). If
+you add such a rule, cover it with a negative fixture under
+`manifests/test/fixtures/_invalid-*/` so `task test:manifest` verifies it.
+Update `docs/MANIFEST.md` `identity.*` Allowed-values columns.
 
 **A machine.** Create `manifests/machines/<name>.toml`, then
 `task setup -- <name>`. Set `identity.git` and `identity.ssh` to the desired
@@ -63,6 +66,3 @@ implied by an identity value. Cover it with a negative fixture.
 - `../docs/MANIFEST.md` -- manifest schema and merge semantics (Phase 1)
 - `../CLAUDE.md` -- v2 conventions (status-block templating, `_:safe-link`,
   no AI attribution, no emojis)
-- `../.planning/REQUIREMENTS.md` -- IDNT-01..IDNT-08 + DOCS-02 traceability
-
-Satisfies DOCS-02 for identity/.

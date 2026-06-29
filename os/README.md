@@ -2,19 +2,20 @@
 
 macOS configuration: per-concern `defaults write` scripts plus shell
 registration. Each concern is feature-gated via `../manifests/machines/<name>.toml`;
-`task macos:defaults` orchestrates the apply path; `task macos:validate`
+`task macos:apply-defaults` orchestrates the apply path; `task macos:validate`
 asserts current state matches the in-script expected values. macOS-only; the
 flat layout (no platform subdirectories) reflects that single-platform scope.
 
 ## Purpose
 
-Six `defaults/<concern>.zsh` sourced libraries declare a single tuple-array
+Eight `defaults/<concern>.zsh` sourced libraries declare a single tuple-array
 source of truth per concern (`(domain, key, expected_value, write_type)`
-rows). Each library exposes `apply_<concern>` (iterates the tuples and runs
-`defaults write`) and `verify_<concern>` (iterates the same tuples and reads
-back, printing `check`/`cross` via `../install/messages.zsh` and returning
-non-zero on any drift). The taskfile sources the script for both write and
-read paths, so the array is the contract for both sides.
+rows). Each library exposes `apply_<concern>` and `verify_<concern>`, which
+delegate to the shared `_apply_defaults` / `_verify_defaults` loop in
+`defaults/_apply_verify.zsh` (apply runs `defaults write`; verify reads back,
+printing `check`/`cross` via `../install/messages.zsh` and returning non-zero
+on any drift). The taskfile sources the script for both write and read paths,
+so the array is the contract for both sides.
 
 `shell-registration.zsh` is the always-on sibling (no feature gate): it adds
 Homebrew zsh to `/etc/shells` and `chsh`es the user to it. The v2 task's
@@ -33,8 +34,16 @@ v1 task to re-apply on every install.
 - `defaults/screenshots.zsh` -- Screen capture keys (gated on `macos-screenshots`)
 - `defaults/security.zsh` -- Security / privacy keys (gated on `macos-security`)
 - `defaults/appearance.zsh` -- System appearance + icon/widget style (gated on `macos-appearance`)
+- `defaults/display.zsh` -- Built-in display "More Space" HiDPI scaling
+  (gated on `macos-display`; drives the `defaults/display-mode.swift` helper)
+- `defaults/spotlight.zsh` -- Disable the Spotlight Cmd+Space binding to free
+  it for Raycast (gated on `macos-spotlight`)
+- `defaults/_apply_verify.zsh` -- Shared `_apply_defaults` / `_verify_defaults`
+  loop that every concern library delegates to (not feature-gated; sourced).
 - `shell-registration.zsh` -- `/etc/shells` + chsh (always-on, no gate;
   structural fix for the v1 `macos:shell:145` `$BREW_ZSH`-in-status bug)
+- `hostname.zsh` -- `apply_hostname` / `verify_hostname` plus state-file
+  helpers, consumed by `../taskfiles/hostname.yml`
 
 ## Adding a pattern
 
@@ -43,10 +52,11 @@ v1 task to re-apply on every install.
   `(domain, key, expected_value, write_type)`) plus `apply_<concern>` and
   `verify_<concern>` functions -- one source of truth per concern.
   Add `features.macos-<concern>` to `../manifests/defaults.toml`
-  `[features]` with `false`. Add a `macos:defaults:<concern>` task to
-  `../taskfiles/macos.yml` (sources the script; gates on the feature flag
-  via `index .MANIFEST.features "macos-<concern>"` -- kebab-case keys
-  require the `index` form). Wire the task into the `macos:defaults`
+  `[features]` with `false`. Add the concern to the parameterized
+  `macos:apply-defaults:concern` task in `../taskfiles/macos.yml` (sources
+  the script; gates on the feature flag via
+  `index .MANIFEST.features "macos-<concern>"` -- kebab-case keys
+  require the `index` form). Wire it into the `macos:apply-defaults`
   aggregator's `cmds:` list. Wire the verify call into the
   `macos:validate` task body. Enable on machines that want it via
   `../manifests/machines/<name>.toml`.

@@ -57,7 +57,8 @@ os = "darwin"
 arch = "arm64"   # optional; resolver auto-detects via uname -m when absent
 
 [features]
-one-password-ssh = true
+one-password-ssh = true       # required because identity.ssh is "personal"
+one-password-signing = true   # required because identity.git is "personal"
 macos-dock = true
 macos-finder = true
 macos-input = true

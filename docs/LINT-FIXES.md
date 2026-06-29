@@ -7,7 +7,7 @@ hints and their remediation. Nothing here blocks `task lint` (it exits 0 by
 design); "perfectly clean" means zero warnings as well. The LINT-02..12 rule
 catalogue lives in `../CLAUDE.md`; the rule bodies live in `taskfiles/lint.yml`.
 
-## LINT-05 portability hints (warn-only, 5 patterns / 10 lines)
+## LINT-05 portability hints (warn-only, 6 patterns / 10 lines)
 
 These are deliberate macOS-only commands. LINT-05 is a forward signal that
 flags platform-specific calls; on a macOS-only repo, accepting these
@@ -20,6 +20,7 @@ warnings).
 | `os/defaults/appearance.zsh:45` | `osascript` | Whole file is a macOS defaults concern; gate the file at the taskfile layer (only run `os/defaults/*` on darwin) rather than per-line. |
 | `os/defaults/_apply_verify.zsh:41,67` | `defaults write` / `defaults read` | Same as above -- the apply/verify engine is inherently `defaults`-based; platform-gate the caller. |
 | `shell/aliases/finder.zsh:23,28` | `defaults write` | Finder-specific aliases; wrap the alias definitions in a darwin guard via `_dotfiles_feature` or `$OSTYPE` check. |
+| `os/defaults/spotlight.zsh:32,46` | `defaults write` / `PlistBuddy` | macOS symbolic-hotkeys plist; gate the file at the taskfile layer like the other `os/defaults/*` concerns. |
 | `os/shell-registration.zsh:39,56` | `dscl` | macOS directory services; Linux equivalent is `chsh`/`getent`. Platform-gate the script. |
 
 To silence them (not recommended -- the warnings are a useful inventory of
