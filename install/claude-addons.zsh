@@ -103,7 +103,11 @@ cmd_install() {
     fi
 
     if is_addon_installed "$toml"; then
-      if yq -e '.upgrade.commands' "$toml" >/dev/null 2>&1; then
+      # -o=json: without an output format, yq tries to re-encode the matched
+      # array as TOML and errors ("TOML encoder expects a mapping at the root
+      # level"), which read as "no upgrade defined" and silently skipped every
+      # addon's [upgrade] block.
+      if yq -e -o=json '.upgrade.commands' "$toml" >/dev/null 2>&1; then
         info "claude-addons: upgrading ${addon}"
         jq_path='.upgrade.commands[]'
       else

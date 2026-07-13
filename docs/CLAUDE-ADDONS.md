@@ -200,49 +200,45 @@ override earlier ones on key conflict. The convention is:
 
 ## Worked examples
 
-### Adding a marketplace-style addon (the ECC pattern)
+### Adding a marketplace-style addon (the superpowers pattern)
 
-ECC is installed via the official `claude plugin` CLI; files live under
-`~/.config/claude/plugins/` (CLI-managed). The TOML is short:
+Superpowers is installed via the official `claude plugin` CLI; files live
+under `~/.config/claude/plugins/` (CLI-managed). The TOML is short: install
+registers the marketplace + plugin, verify probes `claude plugin list --json`,
+footprint is empty (the CLI owns the plugin directory), remove uninstalls the
+plugin. See [`manifests/claude-addons/superpowers.toml`](../manifests/claude-addons/superpowers.toml).
 
-```toml
-schema_version = 1
-
-[meta]
-name        = "ecc"
-description = "Everything Claude Code -- agents, skills, commands marketplace"
-upstream    = "https://github.com/affaan-m/everything-claude-code"
-
-[install]
-commands = [
-  "claude plugin marketplace add https://github.com/affaan-m/everything-claude-code.git",
-  "claude plugin install ecc@ecc",
-]
-self_healing = false
-
-[upgrade]
-commands = [
-  "claude plugin marketplace update",
-  "claude plugin update ecc@ecc",
-]
-
-[verify]
-command = "claude plugin list --json | jq -e '.[] | select(.id == \"ecc@ecc\")' >/dev/null"
-
-[footprint]
-file_globs  = []
-extra_paths = []
-
-[remove]
-commands = [
-  "claude plugin uninstall ecc@ecc",
-  "claude plugin marketplace remove ecc",
-]
-```
-
-No paired fragment needed -- ECC doesn't write hook entries into
+No paired fragment needed -- the plugin doesn't write hook entries into
 `settings.json`. Compose preserves `enabledPlugins` and `extraKnownMarketplaces`
 from the live file automatically.
+
+### Installer-script addon with cherry-picked hooks (the ECC pattern)
+
+ECC deliberately does NOT use the plugin path: the full ecc@ecc plugin injects
+~228 skills, ~60 agents, ~93 commands, and ~29 always-on hooks into every
+session, and the plugin mechanism offers no way to trim skills or disable
+individual plugin hooks. Instead [`ecc.toml`](../manifests/claude-addons/ecc.toml):
+
+- keeps the ecc *marketplace* registered (the clone is where `install.sh`
+  lives; `claude plugin marketplace update ecc` is the upgrade fetch),
+- runs `install.sh --target claude --profile minimal --without
+  baseline:commands --with baseline:hooks` to copy a trimmed payload into
+  `~/.claude/` (upstream hardcodes that target),
+- symlinks the payload into `$XDG_CONFIG_HOME/claude/` where Claude Code
+  reads it: one flat link per skill (user-scope skill discovery does not
+  traverse a nested `skills/ecc/` dir) plus a single `agents/ecc` dir link
+  (agent discovery does recurse). The links land in the repo working tree
+  via the `claude/` symlink and are appended to `.git/info/exclude`,
+- registers ONLY the three session-persistence hooks via the paired
+  [`ecc.fragment.json`](../manifests/claude-addons/ecc.fragment.json) --
+  per-hook cherry-picking the plugin path cannot do.
+
+**Array-replace caveat:** compose deep-merges with jq `*`, which merges maps
+but REPLACES arrays. A fragment that defines `hooks.<Event>` replaces that
+event's whole array from earlier fragments. `ecc.fragment.json` defines
+`hooks.SessionStart`, so it restates the repo's post-compact entry from
+`10-hooks.json`; editing the SessionStart wiring in `10-hooks.json` requires
+mirroring the change there. Events a fragment doesn't mention are unaffected.
 
 ### Adding an npx-style addon with self-healing hooks
 

@@ -55,10 +55,14 @@ manual key stripping unnecessary; addon-injected keys live in the paired
 
 ## Two reference cases
 
-- [`ecc.toml`](ecc.toml) -- marketplace-style addon. Installed via
-  `claude plugin install ecc@ecc`. Empty `file_globs` (claude CLI owns the
-  plugin footprint). No paired fragment (CLI manages `enabledPlugins`).
-  **Enabled on `personal-laptop` only.**
+- [`ecc.toml`](ecc.toml) -- installer-script addon with cherry-picked hooks.
+  NOT the ecc@ecc plugin (untrimmable ~228-skill context tax): the ecc
+  marketplace stays registered as the upgrade fetch, `install.sh` copies the
+  minimal profile into `~/.claude/`, flat per-skill symlinks + an `agents/ecc`
+  dir link expose it under `$XDG_CONFIG_HOME/claude/`, and the paired
+  [`ecc.fragment.json`](ecc.fragment.json)
+  registers only the three session-persistence hooks (see the array-replace
+  caveat in `docs/CLAUDE-ADDONS.md`). **Enabled on `personal-laptop` only.**
 
 - [`superpowers.toml`](superpowers.toml) -- marketplace-style addon from the
   official Anthropic marketplace (`anthropics/claude-plugins-official`).

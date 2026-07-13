@@ -211,18 +211,51 @@
     ],
     "SessionStart": [
       {
+        "matcher": "compact",
         "hooks": [
           {
             "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/post-compact.zsh\"",
             "type": "command"
           }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "command": "CLAUDE_PLUGIN_ROOT=\"$HOME/.claude\" node \"$HOME/.claude/scripts/hooks/session-start-bootstrap.js\"",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "command": "CLAUDE_PLUGIN_ROOT=\"$HOME/.claude\" node \"$HOME/.claude/scripts/hooks/pre-compact.js\"",
+            "type": "command"
+          }
         ],
-        "matcher": "compact"
+        "matcher": ""
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "CLAUDE_PLUGIN_ROOT=\"$HOME/.claude\" node \"$HOME/.claude/scripts/hooks/session-end.js\"",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
       }
     ]
   },
+  "env": {
+    "ECC_SESSION_START_MAX_CHARS": "4000"
+  },
   "enabledPlugins": {
-    "ecc@ecc": true,
     "superpowers@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
