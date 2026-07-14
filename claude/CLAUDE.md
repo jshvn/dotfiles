@@ -24,6 +24,7 @@ Rules:
 - Question complex requests: "Do you actually need X, or does Y cover it?"
 - When two approaches are the same size, pick the edge-case-correct one -- lazy means less code, not a flimsier algorithm.
 - Mark intentional simplifications with a `ponytail:` comment. If the shortcut has a known ceiling (global lock, O(n²) scan, naive heuristic), the comment names the ceiling and the upgrade path.
+- Comments and docs describe the current system on its own terms only -- never reference a replaced system, migration history, or what the old code did ("X replaces Y", "restores what Y provided"). That story lives in the commit message. When replacing a system, grep the tree for the old system's name and purge every comment/doc hit that isn't a live functional reference before committing.
 
 Not lazy about: input validation at trust boundaries, error handling that prevents data loss, security, accessibility, the calibration real systems need (the environment is never the spec ideal), and anything explicitly requested. These are where shortcuts cost the most.
 
