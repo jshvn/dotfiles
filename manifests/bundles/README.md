@@ -55,9 +55,9 @@ files, not machine manifests.
   (1Password GUI, ghostty). Any machine with a display includes this
   (laptops + hybrid-headless machines add `"dotfiles-gui"` to `bundles`;
   truly headless servers omit it).
-- `cli.toml` -- unwired CLI utilities (bat, bottom, doggo, duf, fd, htop,
-  hugo, wget). Sysadmin/dev ergonomic upgrades over system defaults;
-  taken by every shell machine.
+- `cli.toml` -- unwired CLI utilities (bat, fd, htop, wget, ...).
+  Sysadmin/dev ergonomic upgrades over system defaults; taken by every
+  shell machine. See the bundle file for the full formula list.
 - `dev.toml` -- GUI developer applications (IDEs, Docker Desktop, etc.).
   Workstation laptops only.
 - `productivity.toml` -- desktop productivity suite (office, PIM, launcher,

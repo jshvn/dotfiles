@@ -158,7 +158,7 @@ calls bypass this guarantee.
 | `$XDG_STATE_HOME` | `~/.local/state` | Machine-local state (resolved.json, machine name) |
 | `$XDG_CACHE_HOME` | `~/.cache` | Caches |
 
-Set in `shell/.zshenv` (Phase 3 populates `shell/`); available as `{{.XDG_*}}` in taskfiles via the
+Set in `shell/.zshenv`; available as `{{.XDG_*}}` in taskfiles via the
 root `Taskfile.yml` vars block.
 
 ### Zsh startup order
@@ -170,8 +170,10 @@ antigen, `compinit` daily-rebuild cache, theme, functions, aliases) ->
 
 ### `claude/settings.json` is a generated build artifact
 
-Edit `claude/settings.d/*.json` fragments and run `task claude:settings-compose`
-to regenerate `claude/settings.json`. Don't hand-edit the generated file.
+Edit `claude/settings.d/*.json` fragments; `task install` recomposes
+`claude/settings.json` from them (composition is an internal pipeline step --
+`claude:settings-compose` is `internal: true`, so there is no public compose
+command to run by hand). Don't hand-edit the generated file.
 LINT-09 fails the lint pipeline if `settings.json` drifts from the composed
 output (third-party installer wrote keys, manual edit, etc.). The composer
 preserves `enabledPlugins`, `extraKnownMarketplaces`, and `model` from the
@@ -180,8 +182,9 @@ the `/model` command -- none are owned by fragments).
 
 Repo-owned fragments live at `claude/settings.d/{00-base,10-hooks}.json`.
 Each enabled third-party addon with a paired settings template gets its own
-`claude/settings.d/99-addon-<name>.json` written by `task claude-addons:install`
-and deleted by `task claude-addons:remove`. See `docs/CLAUDE-ADDONS.md`.
+`claude/settings.d/99-addon-<name>.json` written during addon install (a
+`task install` pipeline step) and deleted by `task claude-addons:remove`. See
+`docs/CLAUDE-ADDONS.md`.
 
 ### Third-party Claude addons are declarative
 
@@ -189,9 +192,11 @@ The set of third-party Claude addons (marketplace plugins, npx installers)
 enabled on a machine is declared in the machine's `[claude].addons` array.
 Each name must have a matching `manifests/claude-addons/<name>.toml` declaring
 install/upgrade/remove commands, verify probe, file footprint, and optional
-settings fragment. `task claude-addons:install` and `task claude-addons:remove`
-are the operator surface; the resolver enforces TOML existence at validation
-time. See `docs/CLAUDE-ADDONS.md` for the schema and worked examples.
+settings fragment. Addons install as part of `task install`; the operator
+surface for the rest is `task claude-addons:remove` (tear one down) and
+`task claude-addons:show` / `claude-addons:audit` (inspect state). The resolver
+enforces TOML existence at validation time. See `docs/CLAUDE-ADDONS.md` for the
+schema and worked examples.
 
 ## Where to Add Things
 
@@ -205,7 +210,7 @@ time. See `docs/CLAUDE-ADDONS.md` for the schema and worked examples.
 | A macOS defaults concern | `os/defaults/<concern>.zsh` + feature flag in `defaults.toml` | one concern per file |
 | A feature flag | `manifests/defaults.toml [features]` block + consuming task in the appropriate taskfile | kebab-case key |
 | A tool config | `configs/<tool>/` + symlink entry in `taskfiles/links.yml` | use the tool's expected config filename |
-| A Claude hook | `claude/hooks/<name>.zsh` + entry in `claude/settings.d/10-hooks.json` (then `task claude:settings-compose`) | kebab-case |
+| A Claude hook | `claude/hooks/<name>.zsh` + entry in `claude/settings.d/10-hooks.json` (recomposed on next `task install`) | kebab-case |
 | A third-party Claude addon | `manifests/claude-addons/<name>.toml` (+ optional `<name>.fragment.json`) + list in machine manifest's `[claude].addons` | kebab-case |
 
 ## Conventions Not Captured Above
@@ -251,13 +256,13 @@ time. See `docs/CLAUDE-ADDONS.md` for the schema and worked examples.
   `DOTFILEDIR="{{.ROOT_DIR}}" zsh "{{.ROOT_DIR}}/install/foo.zsh"`.
 - Don't commit private keys. `identity/ssh/keys/` contains public keys only.
 - Don't edit `claude/settings.json` directly. It's a generated build artifact
-  regenerated from `claude/settings.d/*.json` fragments by
-  `task claude:settings-compose`. LINT-09 will fail on drift. Edit the
-  fragments instead.
+  recomposed from `claude/settings.d/*.json` fragments during `task install`
+  (the internal `claude:settings-compose` step). LINT-09 will fail on drift.
+  Edit the fragments instead.
 - Don't add a hook by editing `claude/settings.json` directly. Add it to
   `claude/settings.d/10-hooks.json` (repo-owned hooks) or, for a third-party
   addon, to that addon's `manifests/claude-addons/<name>.fragment.json`, then
-  recompose.
+  re-run `task install` to recompose.
 
 ## Out of Scope
 
@@ -287,7 +292,7 @@ new evidence.
 | Decision | Rationale |
 |----------|-----------|
 | Symlinks + TOML manifests over Nix | Nix conflicts with go-task lock-in, slows AI iteration; manifest layer captures the declarative win without language overhead. |
-| Per-machine manifest with shared `defaults.toml` | Picked clarity (per-machine) over DRY (tags); 4 machines means defaults prevents pure duplication while machine files stay self-describing. |
+| Per-machine manifest with shared `defaults.toml` | Picked clarity (per-machine) over DRY (tags); a handful of machines means defaults prevents pure duplication while machine files stay self-describing. |
 | Explicit machine selection at setup | Hostname-based detection has bitten us; explicit selection beats clever auto-detect. |
 | macOS-only | All target machines are macOS (laptops + Mac servers); avoids cross-platform complexity until a real Linux machine enters scope. |
 | Keep alanpeabody-based prompt; reject Starship | The existing `theme.zsh` is small, fast, and not on life support; Starship would be a behavior change with no problem to solve. |

@@ -62,22 +62,40 @@ one-password-signing = true   # required because identity.git is "personal"
 macos-dock = true
 macos-finder = true
 macos-input = true
+macos-spotlight = true
 macos-screenshots = true
 macos-security = true
+macos-appearance = true
+macos-display = true
 claude-marketplace = true
+ghostty = true
+jgrid-net = true
 
 [packages.brew]
 bundles = ["dotfiles", "cli", "dotfiles-gui", "dev", "productivity", "apps"]
 
 [packages.brew.extra_packages]
+# node: the ecc Claude addon's hooks invoke the `node` binary directly.
+formulae = ["node"]
 casks = [
-  { name = "cryptomator" },
+  { name = "cloudflare-warp" },
+  { name = "discord" },
+  { name = "dropbox" },
+  { name = "nvidia-geforce-now" },
   { name = "proton-drive" },
+  { name = "proton-mail" },
+  { name = "protonvpn" },
+  { name = "whatsapp" },
 ]
+mas = []
 
 [identity]
 git = "personal"
 ssh = "personal"
+
+[claude]
+# Full replace (not concat-with-defaults); addons are opted in per-machine.
+addons = ["ecc", "superpowers"]
 ```
 
 ### Required fields
@@ -88,6 +106,7 @@ supply a value -- silent inheritance of required fields is the drift class being
 
 | Field | Type | Allowed values | Notes |
 |-------|------|---------------|-------|
+| `schema_version` | integer | `1` | Must equal `1`; the resolver rejects a missing or mismatched value |
 | `meta.description` | string | any | Free-text purpose statement for the machine |
 | `platform.os` | string | `"darwin"` | macOS only |
 | `features` | table | any key-value pairs | May be empty `{}`; each key is kebab-case |

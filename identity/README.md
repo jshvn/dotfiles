@@ -31,6 +31,9 @@ identity is selected by a single symlink swap rather than profile-file-exec.
   a relink, not an edit.
 - `ssh/identities/active` -- symlink to the manifest-selected identity file.
   Created by `taskfiles/identity.yml`'s ssh task.
+- `ssh/agent.toml` -- 1Password SSH agent key-order config; symlinked to
+  `~/.config/1Password/ssh/agent.toml` by `taskfiles/identity.yml` when
+  `features.one-password-ssh = true`.
 - `ssh/keys/<name>.pub` -- public keys only. Private keys NEVER enter the
   repo (IDNT-06); the `keys/.gitignore` allowlist (`*` + `!*.pub` +
   `!.gitignore`) is the enforcement.

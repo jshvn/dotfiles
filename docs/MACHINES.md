@@ -38,16 +38,21 @@ changes, not when a feature flag flips.
   `uname -m` because `[platform].arch` is absent in the work-laptop TOML.
 - Role narrative: primary work development machine. Work identity is
   wired for git and SSH so commits and remote access carry the work
-  attribution; the cask set is the work-flavored subset of the GUI bundle
-  (Sourcetree, Sublime Text, Visual Studio Code, the Microsoft Office
-  trio, Slack, Zoom, Firefox, Raycast, miniconda, Docker Desktop). No
-  personal apps (Discord, WhatsApp, the Proton suite, Cloudflare WARP)
-  install here.
-- Special handling: work-specific tooling (Sourcetree, Microsoft Office)
-  is the divergence point from `personal-laptop`; `claude-marketplace`
-  and `ghostty` are on for the development environment. The
-  `jgrid-net` feature is off because the personal-network identity is
-  not applicable on a work machine.
+  attribution. It takes the same bundle set as `personal-laptop`
+  (`dotfiles`, `cli`, `dotfiles-gui`, `dev`, `productivity`, `apps`) with
+  no per-machine cask extras, so its apps are exactly the shared bundle
+  contents (Sourcetree, Sublime Text, Visual Studio Code, the Microsoft
+  Office trio, Slack, Raycast, Docker Desktop, etc.). No personal-only
+  extras (Discord, WhatsApp, the Proton suite, Cloudflare WARP, Dropbox,
+  NVIDIA GeForce NOW) install here.
+- Special handling: the divergence from `personal-laptop` is the work
+  git/ssh identity, not the shared dev/productivity casks (Sourcetree and
+  Microsoft Office ship from the `dev`/`productivity` bundles to both
+  machines). work-laptop omits the personal-only cask extras (the Proton
+  suite, Discord, WhatsApp, Cloudflare WARP, Dropbox, NVIDIA GeForce NOW)
+  and the `node` formula, and turns off `macos-spotlight` and `jgrid-net`
+  (the personal-network identity is not applicable on a work machine).
+  `claude-marketplace` and `ghostty` are on for the development environment.
 - See `manifests/machines/work-laptop.toml` for declarative state
   (features, identity, package bundles).
 

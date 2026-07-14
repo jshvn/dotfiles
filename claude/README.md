@@ -91,7 +91,7 @@ wiring is declared in `claude/settings.d/10-hooks.json` and merged into
 |------|-------|----------|
 | `post-compact.zsh` | SessionStart (compact) | Re-injects git context after compaction |
 | `agent-transparency.zsh` | PreToolUse (Agent) | Logs subagent dispatch decisions |
-| `secret-scan.zsh` | PreToolUse (Write/Edit) | Blocks writes containing secrets |
+| `secret-scan.zsh` | PreToolUse (Write/Edit/Bash) | Blocks writes/commands containing secrets |
 | `block-destructive.zsh` | PreToolUse (Bash) | Blocks destructive shell commands |
 | `no-ai-comments.zsh` | PostToolUse (Write/Edit/Bash) | Warns on AI attribution |
 | `no-emojis.zsh` | PostToolUse (Write/Edit) | Warns on emojis in code files |
