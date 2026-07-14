@@ -1,16 +1,23 @@
-# manifests/bundles/dev.toml -- GUI developer applications shared by every
+# manifests/bundles/dev.toml -- developer applications shared by every
 # workstation machine (laptops). Headless/hybrid servers do NOT take this
 # bundle; they keep docker-desktop / miniconda as explicit extras when they
 # want those individually.
 #
 # Pure-CLI developer tools that the dotfiles config wires up (biome, ruff,
-# hyperfine) live in dotfiles.toml. Unwired CLI utilities (hugo, bat, fd,
-# etc.) live in cli.toml. This bundle is the GUI half.
+# hyperfine) live in dotfiles.toml. Universally-installed unwired CLI utilities
+# (hugo, bat, fd, etc.) live in cli.toml. This bundle is mostly the GUI half;
+# it also carries the few workstation-only CLI tools that servers must skip
+# (e.g. `container`, which needs macOS 15+ and so cannot run on older servers).
 #
 # Schema reference: docs/MANIFEST.md "Bundles" section.
 
 [packages.brew]
-formulae = []
+# Workstation-only CLI tools. `container` (Apple's container runtime) requires
+# macOS 15+, so it must not land on older servers like atium (Sonoma 14.2.1)
+# that omit this bundle.
+formulae = [
+  "container",
+]
 
 casks = [
   { name = "claude-code" },
