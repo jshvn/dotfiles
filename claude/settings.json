@@ -271,5 +271,6 @@
         "repo": "anthropics/claude-plugins-official"
       }
     }
-  }
+  },
+  "model": "claude-fable-5[1m]"
 }
