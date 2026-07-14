@@ -3,13 +3,14 @@ version: '3'
 # =============================================================================
 # taskfiles/shell.yml -- shell-layer measurement + validation tasks
 #
-# Purpose:      Antigen bundle update (OMZ + plugins), cold-start measurement
+# Purpose:      Antidote bundle update (OMZ + plugins), cold-start measurement
 #               (startup-time), and shell-layer validation (XDG dirs, ZDOTDIR,
 #               /etc/zshenv, DOTFILES_MACHINE).
-# Depends on:   taskfiles/helpers.yml; install/messages.zsh; antigen (brew);
+# Depends on:   taskfiles/helpers.yml; install/messages.zsh; antidote (brew);
 #               hyperfine + jq + bc + awk.
-# Side effects: antigen-update git-pulls cloned bundles + resets the antigen
-#               cache; measurement/validation tasks are read-only.
+# Side effects: antidote-update git-pulls cloned bundles + regenerates the
+#               antidote static file; measurement/validation tasks are
+#               read-only.
 # =============================================================================
 
 includes:
@@ -50,8 +51,8 @@ tasks:
         check "shell start within budget"
 
   # lint-allow: cmds-without-status
-  antigen-update:
-    desc: "Update antigen-managed zsh bundles (OMZ + plugins) to latest upstream"
+  antidote-update:
+    desc: "Update antidote-managed zsh bundles (OMZ + plugins) to latest upstream"
     internal: true
     # always-rerun: bundle git-pull is a network refresh, mirroring
     # packages:install's `brew update`. There is no separate update pipeline --
@@ -60,22 +61,24 @@ tasks:
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
-        if [[ ! -f "{{.HOMEBREW_PREFIX}}/share/antigen/antigen.zsh" ]]; then
-            warn "antigen not installed -- skipping bundle update"
+        if [[ ! -f "{{.HOMEBREW_PREFIX}}/opt/antidote/share/antidote/antidote.zsh" ]]; then
+            warn "antidote not installed -- skipping bundle update"
             exit 0
         fi
-        info "running antigen update (OMZ + plugin bundles)"
-        # `antigen update` git-pulls every registered bundle, but the bundle
-        # records only exist inside an interactive shell that has sourced
-        # .zshrc (where the `antigen bundle ...` lines run). -ic loads .zshrc
-        # -- records populate even when the antigen cache is warm -- then we
-        # update and reset so the next shell regenerates the bundle cache
-        # against the freshly pulled repos. Network failure is non-fatal:
+        info "running antidote update (OMZ + plugin bundles)"
+        # -ic loads .zshrc, which sources antidote and (first run) clones all
+        # bundles. `antidote update --bundles` git-pulls every clone and
+        # deletes the .antidote.load checkfile -- it does NOT rewrite the
+        # static file, so the trailing `zsh -ic exit` regenerates it here
+        # inside the task rather than in the user's next terminal (and doubles
+        # as a startup smoke test). --bundles skips antidote's self-update:
+        # brew owns the antidote package. Network failure is non-fatal:
         # `task install` must not abort on an offline machine.
-        if zsh -ic 'antigen update && antigen reset' >/dev/null 2>&1; then
-            success "antigen bundles updated"
+        if zsh -ic 'antidote update --bundles' >/dev/null 2>&1 \
+           && zsh -ic exit >/dev/null 2>&1; then
+            success "antidote bundles updated"
         else
-            warn "antigen update failed (offline?) -- bundles unchanged"
+            warn "antidote update failed (offline?) -- bundles unchanged"
         fi
 
   validate:

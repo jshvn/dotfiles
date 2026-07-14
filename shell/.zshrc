@@ -3,37 +3,21 @@
 # =============================================================================
 # shell/.zshrc -- zsh interactive shell configuration
 #
-# Purpose:      Interactive-only setup: compinit (daily-rebuild cache),
-#               antigen plugin manager, lazy conda, optional VS Code shell
-#               integration, theme + functions + aliases sourcing, missing-
-#               machine warning.
+# Purpose:      Interactive-only setup: antidote plugin manager (OMZ lib +
+#               plugins via shell/.zsh_plugins.txt; use-omz owns deferred
+#               compinit), lazy conda, optional VS Code shell integration,
+#               theme + functions + aliases sourcing, missing-machine warning.
 # Depends on:   .zshenv (XDG vars + DOTFILES_MACHINE); .zprofile (brew
-#               shellenv); antigen at $HOMEBREW_PREFIX/share/antigen/;
-#               shell/theme.zsh; shell/functions/*.zsh; shell/aliases/*.zsh.
-# Side effects: exports HISTFILE, HIST_STAMPS, HISTSIZE, SAVEHIST; creates
-#               HISTFILE parent dir; enables SHARE_HISTORY setopt; writes
-#               $XDG_CACHE_HOME/zsh/zcompcache; sources antigen + OMZ +
-#               plugin bundles; conditionally sources VS Code shell
-#               integration; prints stderr warning when no machine selected.
+#               shellenv); antidote at $HOMEBREW_PREFIX/opt/antidote/;
+#               shell/.zsh_plugins.txt; shell/theme.zsh;
+#               shell/functions/*.zsh; shell/aliases/*.zsh.
+# Side effects: exports ANTIDOTE_HOME, HISTFILE, HIST_STAMPS, HISTSIZE,
+#               SAVEHIST; creates HISTFILE parent dir; enables SHARE_HISTORY
+#               setopt; clones plugin repos + writes static init file under
+#               $ANTIDOTE_HOME; writes zcompdump under $XDG_CACHE_HOME/zsh;
+#               conditionally sources VS Code shell integration; prints
+#               stderr warning when no machine selected.
 # =============================================================================
-
-# compinit daily-rebuild cache: skip security check (-C) when zcompdump is
-# fresh; full check (-d) once per day.
-export ZSH_COMPDUMP="$XDG_CACHE_HOME/zsh/zcompcache"
-mkdir -p "${ZSH_COMPDUMP%/*}"
-
-autoload -Uz compinit
-# `local` cannot be used at script scope.
-_zcomp_age=0
-if [[ -f "$ZSH_COMPDUMP" ]]; then
-    _zcomp_age=$(( $(date +%s) - $(stat -f %m "$ZSH_COMPDUMP" 2>/dev/null || stat -c %Y "$ZSH_COMPDUMP" 2>/dev/null || echo 0) ))
-fi
-if (( _zcomp_age > 86400 )); then
-    compinit -d "$ZSH_COMPDUMP"
-else
-    compinit -C -d "$ZSH_COMPDUMP"
-fi
-unset _zcomp_age
 
 export TLRC_CONFIG="$XDG_CONFIG_HOME/tlrc"
 
@@ -48,51 +32,47 @@ ZSHDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 DOTFILEDIR="$(dirname "$ZSHDIR")"
 export DOTFILEDIR
 
-# antigen, not antidote: antidote's static bundle did NOT replicate antigen's
-# `antigen use ohmyzsh/ohmyzsh` which implicitly sources all of OMZ's
-# lib/*.zsh files providing setopt prompt_subst, git_prompt_info,
-# git_prompt_status, the `l` alias, history/completion defaults, etc.
-export ADOTDIR="$XDG_CONFIG_HOME/antigen"
-if [[ -n "$HOMEBREW_PREFIX" && -f "$HOMEBREW_PREFIX/share/antigen/antigen.zsh" ]]; then
-    # Self-heal a corrupt antigen cache. Antigen can write init.zsh with an
-    # empty bundle section while still setting _ANTIGEN_CACHE_LOADED=true; it
-    # then sources that empty cache on every startup and loads NO plugins --
-    # silently killing prompt_subst (literal $(git_prompt_info) in the
-    # prompt), completions, syntax highlighting, and autosuggestions. The
-    # corruption self-perpetuates: the real bundles never load, so nothing is
-    # ever re-captured into a fresh cache. Detect the empty-bundle cache and
-    # remove it so the next `antigen apply` regenerates a correct one. Pure
-    # parameter expansion -- `$(<file)` does not fork in zsh, so no startup
-    # cost beyond reading one small file.
-    if [[ -f "$ADOTDIR/init.zsh" ]]; then
-        _antigen_bundles="$(<"$ADOTDIR/init.zsh")"
-        _antigen_bundles="${_antigen_bundles##*#--- BUNDLES BEGIN}"
-        _antigen_bundles="${_antigen_bundles%%#--- BUNDLES END*}"
-        if [[ -z "${_antigen_bundles//[[:space:]]/}" ]]; then
-            rm -f "$ADOTDIR/init.zsh" "$ADOTDIR/init.zsh.zwc" \
-                  "$ADOTDIR/.resources" "$ADOTDIR/.resources.zwc"
+# antidote (static plugin manager). getantidote/use-omz supplies OMZ
+# scaffolding ($ZSH, $ZSH_CACHE_DIR, deferred compinit before first prompt);
+# `ohmyzsh/ohmyzsh path:lib` provides prompt_subst, git_prompt_info/status,
+# the `l` alias, and history/completion defaults that theme.zsh and the rest
+# of this file rely on. Plugin set lives in shell/.zsh_plugins.txt.
+export ANTIDOTE_HOME="$XDG_CACHE_HOME/antidote"
+_antidote_sh="$HOMEBREW_PREFIX/opt/antidote/share/antidote/antidote.zsh"
+_zsh_plugins_txt="$DOTFILEDIR/shell/.zsh_plugins.txt"
+_zsh_plugins_static="$ANTIDOTE_HOME/.zsh_plugins.zsh"
+
+if [[ -n "$HOMEBREW_PREFIX" && -f "$_antidote_sh" && -f "$_zsh_plugins_txt" ]]; then
+    # OMZ self-update (sourced by use-omz) would interactively prompt every
+    # ~2 weeks and git-pull a clone antidote also manages. Updates go through
+    # `task install` instead.
+    zstyle ':omz:update' mode disabled
+
+    # Self-heal a partial static file (e.g. an offline first run writes a
+    # partial static newer than the txt; antidote's mtime check then never
+    # retries). A complete static file must mention the LAST bundle in the
+    # txt -- derived at runtime so reordering the plugin list cannot silently
+    # disarm the check. Pure zsh expansion, no forks.
+    if [[ -f "$_zsh_plugins_static" ]]; then
+        _plugin_lines=(${(f)"$(<"$_zsh_plugins_txt")"})
+        _plugin_lines=(${${_plugin_lines:#[[:space:]]#\#*}:#[[:space:]]#})
+        _last_bundle="${_plugin_lines[-1]%% *}"
+        if [[ -n "$_last_bundle" && "$(<"$_zsh_plugins_static")" != *"$_last_bundle"* ]]; then
+            rm -f "$_zsh_plugins_static" "$_zsh_plugins_static.zwc"
         fi
-        unset _antigen_bundles
+        unset _plugin_lines _last_bundle
     fi
 
-    source "$HOMEBREW_PREFIX/share/antigen/antigen.zsh"
-
-    # `antigen use ohmyzsh/ohmyzsh` sources lib/*.zsh -- prompt_subst, git
-    # prompt helpers, directory aliases, history, completion, key-bindings.
-    antigen use ohmyzsh/ohmyzsh
-
-    antigen bundle ohmyzsh/ohmyzsh git
-    antigen bundle ohmyzsh/ohmyzsh colorize
-    antigen bundle ohmyzsh/ohmyzsh kubectl
-    antigen bundle ohmyzsh/ohmyzsh plugins/extract
-    antigen bundle zsh-users/zsh-syntax-highlighting
-    antigen bundle zsh-users/zsh-completions
-    antigen bundle zsh-users/zsh-autosuggestions
-
-    antigen apply
+    source "$_antidote_sh"
+    antidote load "$_zsh_plugins_txt" "$_zsh_plugins_static"
 else
-    echo "$(tput setaf 3)Warning: antigen not found. Run 'task install' to complete setup.$(tput sgr0)" >&2
+    echo "$(tput setaf 3)Warning: antidote not found. Run 'task install' to complete setup.$(tput sgr0)" >&2
+    # Degraded shell still gets working completion.
+    autoload -Uz compinit
+    mkdir -p "$XDG_CACHE_HOME/zsh"
+    compinit -d "$XDG_CACHE_HOME/zsh/zcompdump-fallback"
 fi
+unset _antidote_sh _zsh_plugins_txt _zsh_plugins_static
 
 # Lazy conda init: wrapper replaces itself after performing hook, then
 # re-runs the original command.
@@ -123,7 +103,7 @@ fi
 #      USER_ZDOTDIR is $HOME when VS Code is launched without ZDOTDIR set in
 #      its parent process (the usual launchd/Dock case), so VS Code's
 #      assignment lands at $HOME/.zsh_history.
-#   3. antigen/OMZ history.zsh: HISTFILE=$HOME/.zsh_history (only if unset).
+#   3. OMZ lib/history.zsh (via antidote): HISTFILE=$HOME/.zsh_history (only if unset).
 # Placing the assignment here means it is the last write, so it wins. Earlier
 # placement (top of .zshrc) is silently clobbered by the VS Code source.
 # SHARE_HISTORY requires HISTFILE to be set before any history I/O begins;

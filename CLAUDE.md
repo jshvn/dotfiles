@@ -165,7 +165,8 @@ root `Taskfile.yml` vars block.
 
 `.zshenv` (always sourced — keep minimal) -> `.zprofile` (login only;
 `brew shellenv`, 1Password SSH socket) -> `.zshrc` (interactive only;
-antigen, `compinit` daily-rebuild cache, theme, functions, aliases) ->
+antidote plugin load from `shell/.zsh_plugins.txt` (use-omz owns deferred
+`compinit`), theme, functions, aliases) ->
 `.zlogin` (login only; MOTD dispatch) -> `.zlogout` (login exit; history flush).
 
 ### `claude/settings.json` is a generated build artifact

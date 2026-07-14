@@ -12,9 +12,11 @@ platform subdirectories) reflects that single-platform scope.
   login, `.zshrc` on interactive, `.zlogin` after `.zshrc` on login, and
   `.zlogout` on login-shell exit.
 - `theme.zsh` -- alanpeabody-based prompt; consumed by `.zshrc` after
-  antigen loads `ohmyzsh/ohmyzsh git` (the v1 prompt is small, fast, and
-  not on life support; no Starship swap in v1). antidote was evaluated
-  and reverted; see `.zshrc:51` comment for rationale.
+  antidote loads OMZ lib + plugins (the v1 prompt is small, fast, and
+  not on life support; no Starship swap in v1).
+- `.zsh_plugins.txt` -- antidote plugin manifest; read via `antidote load`
+  in `.zshrc`. use-omz must stay first; OMZ `path:lib` provides
+  prompt_subst + git prompt helpers that `theme.zsh` requires.
 - `aliases/<topic>.zsh` -- flat layout, one topic per file. Gating
   happens inside the file: wrapper functions for 1-3 aliases;
   source-time `return 0` for bulk-alias loops.

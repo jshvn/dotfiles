@@ -159,12 +159,13 @@ tasks:
 
   # lint-allow: cmds-without-status
   test:
-    desc: "Run all smoke tests (manifest + hook + repo-sync + links-audit + lint fixtures)"
+    desc: "Run all smoke tests (manifest + hook + repo-sync + links-audit + shell-startup + lint fixtures)"
     cmds:
       - task: test:manifest
       - task: test:hooks
       - task: test:repo-sync
       - task: test:links-audit
+      - task: test:shell-startup
       - task: lint:test-fixtures
 
   # lint-allow: cmds-without-status
@@ -253,10 +254,10 @@ tasks:
     cmds:
       - task: links:install
       - task: packages:install
-      # antigen-update follows packages:install so the antigen formula is
+      # antidote-update follows packages:install so the antidote formula is
       # present/refreshed before its cloned bundles (OMZ + plugins) are
       # git-pulled. Non-fatal on network failure.
-      - task: shell:antigen-update
+      - task: shell:antidote-update
       - task: claude:install
       - task: claude-addons:install
       - task: macos:install

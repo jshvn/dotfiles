@@ -4,10 +4,11 @@ version: '3'
 # taskfiles/test.yml -- smoke-test surface
 #
 # Purpose:      Hook smoke tests (install/test-hooks.zsh) plus manifest
-#               deep-merge fixtures. Composed by the root `task test`
-#               aggregator.
+#               deep-merge fixtures and shell-startup smoke tests. Composed
+#               by the root `task test` aggregator.
 # Depends on:   install/test-hooks.zsh; install/resolver.zsh;
-#               install/messages.zsh; manifests/test/fixtures/.
+#               install/test-shell-startup.zsh; install/messages.zsh;
+#               manifests/test/fixtures/.
 # Side effects: temporary copies under manifests/machines/ (negative
 #               fixtures) -- always cleaned up via EXIT trap.
 # =============================================================================
@@ -50,6 +51,19 @@ tasks:
         info "running links-audit smoke tests"
         export DOTFILEDIR="{{.ROOT_DIR}}"
         zsh "${DOTFILEDIR}/install/test-links-audit.zsh"
+    status:
+      - false
+
+  # lint-allow: cmds-without-status
+  shell-startup:
+    desc: "Run shell startup smoke tests via install/test-shell-startup.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running shell startup smoke tests"
+        export DOTFILEDIR="{{.ROOT_DIR}}"
+        zsh "${DOTFILEDIR}/install/test-shell-startup.zsh"
     status:
       - false
 

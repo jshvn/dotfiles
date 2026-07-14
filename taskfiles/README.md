@@ -21,9 +21,8 @@ every symlink goes through `_:safe-link` in `helpers.yml`.
   `lint:file-headers`, `lint:test-fixtures`. Enforces LINT-02..LINT-12
   (see the catalogue in `../CLAUDE.md`).
 - **Links.** `links.yml` -- shell symlinks via `_:safe-link` plus
-  the zdotdir step (antigen is the live plugin manager; antidote was
-  evaluated and reverted -- see `shell/.zshrc:51` comment
-  for rationale). `shell.yml` exposes `task shell:startup-time`
+  the zdotdir step (antidote is the plugin manager; plugin set in
+  `shell/.zsh_plugins.txt`). `shell.yml` exposes `task shell:startup-time`
   (cold-start gate); `shell:validate` is internal-only (invoked by root
   `task validate`).
 - **Smoke-test fixtures.** `test/` -- lint-fixture taskfiles consumed by

@@ -1,0 +1,24 @@
+# =============================================================================
+# shell/.zsh_plugins.txt -- antidote plugin manifest
+#
+# Purpose:      Declares the zsh plugin set loaded by antidote from .zshrc.
+# Depends on:   antidote (brew formula); read via `antidote load` in .zshrc.
+# Side effects: None directly; antidote clones each repo into $ANTIDOTE_HOME
+#               and compiles this list into a static init file.
+# =============================================================================
+
+# use-omz FIRST: sets $ZSH, $ZSH_CACHE_DIR, deferred compinit + compdef queue.
+getantidote/use-omz
+
+# All OMZ lib/*.zsh: prompt_subst + git_prompt_info/status (required by
+# shell/theme.zsh), the `l` alias, history/completion defaults.
+ohmyzsh/ohmyzsh path:lib
+
+ohmyzsh/ohmyzsh path:plugins/git
+ohmyzsh/ohmyzsh path:plugins/colorize
+ohmyzsh/ohmyzsh path:plugins/kubectl
+ohmyzsh/ohmyzsh path:plugins/extract
+
+zsh-users/zsh-completions path:src kind:fpath
+zsh-users/zsh-syntax-highlighting
+zsh-users/zsh-autosuggestions

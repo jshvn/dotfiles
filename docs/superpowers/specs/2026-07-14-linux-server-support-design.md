@@ -17,7 +17,7 @@ not live on remote disk.
 |----------|--------|
 | Linux target | Ubuntu only, headless servers, x86_64. No NixOS (no-Nix decision stands). No desktop Linux. |
 | Package manager | Homebrew on Linux (linuxbrew, `/home/linuxbrew/.linuxbrew`). Reuses the existing bundle -> Brewfile -> `brew bundle` pipeline. No apt package layer beyond bootstrap prerequisites. |
-| Server scope | Full zsh experience (antigen, theme, aliases, functions), MOTD, dev tool configs. No GUI configs. No Claude Code on servers. |
+| Server scope | Full zsh experience (antidote, theme, aliases, functions), MOTD, dev tool configs. No GUI configs. No Claude Code on servers. |
 | Identity | Per-server local ed25519 keys. No 1Password. No commit signing on servers. |
 | Bootstrap | Manual and interactive: SSH in, run bootstrap with consent gates. Repo is public; clone over HTTPS needs no credentials. |
 | Linux OS layer | Hostname (`hostnamectl`) and default-shell registration (`chsh`) only. No systemd/timezone/unattended-upgrades management. |
@@ -69,7 +69,7 @@ goes back. Flat directory conventions are preserved.
   `/opt/homebrew`, Darwin/x86_64 -> `/usr/local`, Linux ->
   `/home/linuxbrew/.linuxbrew`.
 - `shell/.zprofile`: restore the linuxbrew branch in the arch/OS dispatch.
-- `shell/.zshrc` antigen path already flows through `$HOMEBREW_PREFIX` — no
+- `shell/.zshrc` antidote path already flows through `$HOMEBREW_PREFIX` — no
   change.
 - LINT-10 (hardcoded prefix) allowlist covers the new dispatch sites via the
   existing `# lint-allow: hardcoded-prefix` annotation.

@@ -6,7 +6,7 @@
 # Purpose:      Customize PROMPT / RPROMPT (alanpeabody-derived); set
 #               highlight + man + grc colours.
 # Depends on:   OMZ git_prompt_status / git_prompt_info (sourced via
-#               antigen in .zshrc); eza, highlight, grc on PATH.
+#               antidote in .zshrc); eza, highlight, grc on PATH.
 # Side effects: sets EZA_CONFIG_HOME; unsets LS_COLORS; sets PROMPT,
 #               RPROMPT, ZSH_THEME_GIT_PROMPT_*; defines highlight alias;
 #               redefines man() with LESS_TERMCAP_* colour env; aliases
