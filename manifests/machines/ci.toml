@@ -1,0 +1,47 @@
+# manifests/machines/ci.toml -- GitHub Actions macOS runner.
+#
+# Minimal darwin machine consumed by .github/workflows/ci.yml: identity
+# "none" (no 1Password), every feature flag disabled, mandatory dotfiles
+# bundle plus cli. Exercises the real setup -> install -> validate -> test
+# pipeline on a fresh runner; not a machine a human operates.
+#
+# Self-contained: every registry flag this machine deliberately lacks is
+# listed below; nothing is inherited. See docs/MANIFEST.md for the schema
+# reference and manifests/features.toml for the flag registry.
+
+schema_version = 2
+
+[machine]
+description = "GitHub Actions macos-latest runner -- full-pipeline CI"
+os = "darwin"
+arch = "arm64"
+identity = "none"
+
+[features]
+enabled = []
+disabled = [
+  "one-password-ssh",
+  "one-password-signing",
+  "claude-marketplace",
+  "repo-auto-update",
+  "ghostty",
+  "jgrid-net",
+  "server-include",
+  "macos-dock",
+  "macos-finder",
+  "macos-input",
+  "macos-spotlight",
+  "macos-screenshots",
+  "macos-security",
+  "macos-appearance",
+  "macos-display",
+]
+
+[packages]
+bundles = [
+  "dotfiles",
+  "cli",
+]
+
+[claude]
+addons = []

@@ -1,0 +1,115 @@
+# =============================================================================
+# ci.yml -- full install-pipeline regression net
+#
+# Purpose:      Run the real operator pipeline (bootstrap -> setup -> install
+#               -> validate -> test -> lint -> converged re-install) against
+#               manifests/machines/ci.toml on a fresh macOS runner.
+# Depends on:   bootstrap.zsh; manifests/machines/ci.toml; go-task surface.
+# Side effects: none outside the ephemeral runner.
+# =============================================================================
+#
+# COVERS (fails this workflow when broken):
+#   - bootstrap.zsh tool acquisition (go-task, yq) on a machine with brew
+#   - resolver end-to-end on a real manifest: schema validation, total
+#     feature accounting (a new registry flag unaccounted in ci.toml fails
+#     here), bundle merge, resolved.json compile
+#   - every symlink in links.yml via _:safe-link, incl. the sudo /etc/zshenv
+#     ZDOTDIR write and identity overlay links (identity "none")
+#   - Brewfile composition + real `brew bundle` install of every formula in
+#     the dotfiles + cli bundles, then packages:verify binary probes
+#   - antidote plugin clone + first sourcing of the linked .zshrc
+#   - feature gates render to clean no-ops (claude, addons, all macos-*)
+#   - hostname state capture path (fresh runner, no scutil --set)
+#   - all component validators (task validate output grepped for cross
+#     marks, since the aggregate itself always exits 0)
+#   - full smoke suite (task test), incl. shell-startup: login+interactive
+#     zsh boots with theme/git-prompt/highlighting/autosuggest markers
+#   - full lint catalogue (task lint) and orphan-link audit (links:audit)
+#   - status-block idempotency: converged second `task install` must exit 0
+#     with every state-converging task short-circuiting
+#
+# DOES NOT COVER (only exercised on real machines):
+#   - macOS defaults apply/verify paths (all macos-* flags disabled in
+#     ci.toml) and the UI relaunch step
+#   - 1Password identities (personal/work), op agent link, commit signing
+#   - claude-marketplace installs and third-party Claude addons
+#   - the chsh code path in macos:install-shell (pre-satisfied below --
+#     bare chsh needs a tty the runner lacks) and scutil hostname:set
+#   - GUI casks, mas apps, vscode extensions (no such entries in ci.toml
+#     bundles; needs App Store login / .app probes)
+#   - bootstrap's interactive brew consent gate (runners ship brew)
+#   - the 200ms shell cold-start budget (shell:startup-time is not part
+#     of task test) and multi-machine state (JMBP/JAIR hostname split)
+#   - linux: nothing here runs on linux; an ubuntu-latest job is planned
+#     with the linux server support spec (docs/superpowers/specs/)
+
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  install:
+    name: full pipeline (macos)
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      # bootstrap.zsh acquires go-task + yq. Its interactive consent gate
+      # only fires when brew is absent; runners ship brew, so the script is
+      # non-interactive here and gets real CI coverage. jq ships on the
+      # runner image; the guard keeps the resolver's requirement explicit.
+      - name: Bootstrap trust anchors
+        run: |
+          zsh bootstrap.zsh
+          command -v jq >/dev/null || brew install jq
+
+      # chsh for the current user prompts for a password via PAM on a tty;
+      # the runner has none. Satisfy macos:install-shell's status: gate up
+      # front with the passwordless-sudo variants of the same two writes.
+      - name: Pre-register Homebrew zsh as login shell
+        run: |
+          brew install zsh
+          BREW_ZSH="$(brew --prefix)/bin/zsh"
+          grep -qxF "$BREW_ZSH" /etc/shells || echo "$BREW_ZSH" | sudo tee -a /etc/shells
+          sudo chsh -s "$BREW_ZSH" "$(id -un)"
+
+      - name: task setup
+        run: task setup -- ci
+
+      - name: task install
+        run: task install
+
+      # validate is a run-all aggregate: every component runs with
+      # ignore_error, so the task exits 0 regardless. Component failures
+      # surface only as cross-mark lines -- fail the step on any of them.
+      - name: task validate
+        run: |
+          task validate 2>&1 | tee validate.log
+          ! grep -qF "$(printf '✗')" validate.log
+
+      - name: task test
+        run: task test
+
+      - name: task lint
+        run: task lint
+
+      # Standalone links:audit keeps the exit-non-zero-on-orphans contract
+      # (the in-pipeline invocation is --warn-only by design).
+      - name: task links:audit
+        run: task links:audit
+
+      # Converged re-run must exit 0 with every state-converging task
+      # short-circuiting on its status: block. This asserts state-level
+      # idempotency; it is not a zero-work run -- packages:install always
+      # re-runs brew update + brew bundle by design (install IS update).
+      - name: task install (converged re-run)
+        run: task install

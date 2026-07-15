@@ -428,7 +428,13 @@ Docs (the blast radius is wider than MANIFEST.md — these all carry live
 
 ### 5. Interaction with the Linux server spec (2026-07-14)
 
-Sequencing: **Linux lands first.** The Linux work is additive at existing
+Status 2026-07-15: sequencing inverted in practice — v2 landed first
+(commit 2656ab3) and the Linux work has not landed. The consequence is
+favorable: the throwaway cross-field rules described below were never
+written; the Linux work starts directly from registry `platforms`
+metadata, and the "when v2 lands after Linux" cleanup list is moot.
+
+Original sequencing rationale: **Linux lands first.** The Linux work is additive at existing
 seams and delivers operator value now; v2 is internal cleanup. The only
 overlap is ~10 lines of cross-field rules (macos-*/1Password require
 darwin) that the Linux spec adds and v2 later replaces with registry

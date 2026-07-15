@@ -21,7 +21,7 @@ not live on remote disk.
 | Identity | Per-server local ed25519 keys. No 1Password. No commit signing on servers. |
 | Bootstrap | Manual and interactive: SSH in, run bootstrap with consent gates. Repo is public; clone over HTTPS needs no credentials. |
 | Linux OS layer | Hostname (`hostnamectl`) and default-shell registration (`chsh`) only. No systemd/timezone/unattended-upgrades management. |
-| Ongoing testing | GitHub Actions CI on `ubuntu-latest` running the full pipeline. |
+| Ongoing testing | GitHub Actions CI: an `ubuntu-latest` job running the full pipeline, added to the existing macOS workflow (`.github/workflows/ci.yml`). |
 
 ## Structural approach
 
@@ -144,14 +144,25 @@ goes back. Flat directory conventions are preserved.
 
 ### 10. CI (`.github/workflows/`)
 
-- New workflow on `ubuntu-latest` (native x86_64): run the Linux bootstrap
-  steps (non-interactive equivalents for CI), `task setup -- <ci-machine>`
-  (a minimal Linux machine manifest checked in for CI), `task install`,
-  `task validate`, `task test`, `task lint`, then a second `task install`
-  asserting fast no-op (idempotency/status-block check).
+Status 2026-07-15: the macOS half of this exists — `.github/workflows/ci.yml`
+runs the full pipeline (bootstrap -> setup -> install -> validate -> test ->
+lint -> converged re-install) on `macos-latest` against
+`manifests/machines/ci.toml` (identity `none`, all flags disabled, bundles
+`dotfiles` + `cli`). The Linux work adds a job to that workflow rather than
+a new one.
+
+- New `ubuntu-latest` job (native x86_64) in the existing workflow: run the
+  Linux bootstrap steps (non-interactive equivalents for CI),
+  `task setup -- <ci-linux-machine>` (a minimal Linux machine manifest
+  checked in for CI, sibling of `ci.toml`), then the same step sequence as
+  the macOS job, including the converged second `task install`
+  (idempotency/status-block check — state-level: `packages:install`
+  re-runs brew by design, so the assertion is exit 0 with every
+  state-converging task short-circuiting, not zero work).
 - CI needs a consent-gate bypass for automation (env var such as
   `DOTFILES_BOOTSTRAP_ASSUME_YES=1`) — CI-only; interactive remains the
-  documented path for real servers.
+  documented path for real servers. (The macOS job needs no bypass: the
+  gate only fires when brew is absent, and macOS runners ship brew.)
 
 ### 11. Documentation
 
