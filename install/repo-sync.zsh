@@ -93,7 +93,10 @@ fi
 # 7. Behind by a clean fast-forward only.
 step "fast-forwarding ${branch}..."
 if git -C "$repo" merge --ff-only --quiet '@{u}'; then
-  success "dotfiles updated to $(git -C "$repo" rev-parse --short HEAD)"
+  # Most recent tag reachable from HEAD (not necessarily on HEAD); empty if
+  # the repo has no tags yet.
+  latest_tag="$(git -C "$repo" describe --tags --abbrev=0 2>/dev/null || true)"
+  success "dotfiles updated to $(git -C "$repo" rev-parse --short HEAD)${latest_tag:+ (latest release ${latest_tag})}"
 else
   warn "fast-forward failed; resolve manually (git -C ${repo} status)"
 fi

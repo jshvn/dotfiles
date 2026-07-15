@@ -67,15 +67,17 @@ mk_pair() {
   git -C "$work" push -q -u origin main
 }
 
-# advance_remote <bare>: push one extra commit (B) to the bare remote via a
-# throwaway clone, so a working clone left at A is now strictly behind.
+# advance_remote <bare> [tag]: push one extra commit (B) to the bare remote
+# via a throwaway clone, so a working clone left at A is now strictly behind.
+# With [tag], also tag B and push the tag (remote-only until fetch).
 advance_remote() {
-  local bare="$1" c2; c2="$(mktemp -d "${BASE}/clone.XXXXXX")"
+  local bare="$1" tag="${2:-}" c2; c2="$(mktemp -d "${BASE}/clone.XXXXXX")"
   git -c init.defaultBranch=main clone -q "$bare" "$c2"
   echo more >> "$c2/file"
   git -C "$c2" add file
   git -C "$c2" commit -q -m B
-  git -C "$c2" push -q origin main
+  [[ -n "$tag" ]] && git -C "$c2" tag "$tag"
+  git -C "$c2" push -q origin main ${tag:+"$tag"}
   rm -rf "$c2"
 }
 
@@ -125,6 +127,14 @@ else
   cross "repo-sync.fast-forward.head-moved: HEAD != upstream after ff"
   failed=$((failed + 1))
 fi
+
+# 6b. Behind by a clean fast-forward, with a release tag on the remote; the
+# tag must arrive with the fetch and appear in the success line.
+fft_bare="${BASE}/fftag.git"; fft="${BASE}/fftag"
+mk_pair "$fft_bare" "$fft"
+advance_remote "$fft_bare" v9.9.9
+run_sync "$fft"
+assert "fast-forward-tag" "latest release v9.9.9"
 
 # 7. Local ahead of remote -> nothing to pull.
 ahead_bare="${BASE}/ahead.git"; ahead="${BASE}/ahead"
