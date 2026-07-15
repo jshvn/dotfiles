@@ -101,18 +101,22 @@ echo x > "$noup/file"; git -C "$noup" add file; git -C "$noup" commit -q -m A
 run_sync "$noup"
 assert "no-upstream" "no upstream"
 
-# 4. Dirty working tree.
+# 4. Dirty working tree; still reports the release position of HEAD.
 dirty_bare="${BASE}/dirty.git"; dirty="${BASE}/dirty"
 mk_pair "$dirty_bare" "$dirty"
+git -C "$dirty" tag v7.7.7
 echo localedit >> "$dirty/file"  # uncommitted change
 run_sync "$dirty"
 assert "dirty-tree" "uncommitted local changes"
+assert "dirty-tree.release" "currently on dotfiles release v7.7.7"
 
-# 5. Clean and current -> already up to date.
+# 5. Clean and current -> already up to date; still reports release position.
 cur_bare="${BASE}/current.git"; cur="${BASE}/current"
 mk_pair "$cur_bare" "$cur"
+git -C "$cur" tag v6.6.6
 run_sync "$cur"
 assert "up-to-date" "already up to date"
+assert "up-to-date.release" "currently on dotfiles release v6.6.6"
 
 # 6. Behind by a clean fast-forward.
 ff_bare="${BASE}/ff.git"; ff="${BASE}/ff"
@@ -128,13 +132,22 @@ else
   failed=$((failed + 1))
 fi
 
-# 6b. Behind by a clean fast-forward, with a release tag on the remote; the
-# tag must arrive with the fetch and appear in the success line.
+# 6b. Behind by a clean fast-forward, with a release tag on the fetched tip;
+# the tag must arrive with the fetch and HEAD lands exactly on it.
 fft_bare="${BASE}/fftag.git"; fft="${BASE}/fftag"
 mk_pair "$fft_bare" "$fft"
 advance_remote "$fft_bare" v9.9.9
 run_sync "$fft"
-assert "fast-forward-tag" "latest release v9.9.9"
+assert "fast-forward-tag" "currently on dotfiles release v9.9.9"
+
+# 6c. Fast-forward past an older release tag: HEAD ends 1 commit after it.
+ffa_bare="${BASE}/fftagahead.git"; ffa="${BASE}/fftagahead"
+mk_pair "$ffa_bare" "$ffa"
+git -C "$ffa" tag v8.8.8
+git -C "$ffa" push -q origin v8.8.8
+advance_remote "$ffa_bare"
+run_sync "$ffa"
+assert "fast-forward-tag-ahead" "currently on dotfiles release v8.8.8 + 1 commits"
 
 # 7. Local ahead of remote -> nothing to pull.
 ahead_bare="${BASE}/ahead.git"; ahead="${BASE}/ahead"

@@ -29,6 +29,20 @@ source "${0:A:h}/messages.zsh"
 
 repo="${DOTFILEDIR}"
 
+# report_release: one [INFO] line locating HEAD relative to the most recent
+# tag reachable from it; silent if the repo has no tags.
+report_release() {
+  local latest_tag ahead
+  latest_tag="$(git -C "$repo" describe --tags --abbrev=0 2>/dev/null || true)"
+  [[ -z "$latest_tag" ]] && return 0
+  ahead="$(git -C "$repo" rev-list --count "${latest_tag}..HEAD")"
+  if (( ahead == 0 )); then
+    info "currently on dotfiles release ${latest_tag}"
+  else
+    info "currently on dotfiles release ${latest_tag} + ${ahead} commits"
+  fi
+}
+
 # Every guard below is warn-and-skip with `exit 0`: the `update` alias chains
 # `task repo:sync && task install`, so a skipped/failed pull must still let
 # install converge local state (including offline).
@@ -44,18 +58,21 @@ fi
 branch="$(git -C "$repo" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
 if [[ -z "$branch" ]]; then
   warn "detached HEAD; skipping pull (checkout a branch to enable auto-update)"
+  report_release
   exit 0
 fi
 
 # 3. Upstream tracking branch configured?
 if ! git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
   warn "branch '${branch}' has no upstream remote; skipping pull"
+  report_release
   exit 0
 fi
 
 # 4. Clean working tree? Never pull over uncommitted local edits.
 if [[ -n "$(git -C "$repo" status --porcelain 2>/dev/null || true)" ]]; then
   warn "uncommitted local changes; skipping pull to avoid clobbering work"
+  report_release
   exit 0
 fi
 
@@ -69,6 +86,7 @@ if ! GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND='ssh -o BatchMode=yes -o ConnectTimeo
      git -C "$repo" fetch --quiet 2>"$fetch_err"; then
   warn "git fetch failed (offline, or missing/invalid SSH key?); skipping pull"
   [[ -s "$fetch_err" ]] && warn "  $(tail -n1 "$fetch_err")"
+  report_release
   exit 0
 fi
 
@@ -79,25 +97,27 @@ base_rev="$(git -C "$repo" merge-base HEAD '@{u}' 2>/dev/null || true)"
 
 if [[ "$local_rev" == "$remote_rev" ]]; then
   info "dotfiles already up to date"
+  report_release
   exit 0
 fi
 if [[ "$remote_rev" == "$base_rev" ]]; then
   info "local branch is ahead of remote; nothing to pull"
+  report_release
   exit 0
 fi
 if [[ "$local_rev" != "$base_rev" ]]; then
   warn "local and remote have diverged; resolve manually (git -C ${repo} pull --rebase)"
+  report_release
   exit 0
 fi
 
 # 7. Behind by a clean fast-forward only.
 step "fast-forwarding ${branch}..."
 if git -C "$repo" merge --ff-only --quiet '@{u}'; then
-  # Most recent tag reachable from HEAD (not necessarily on HEAD); empty if
-  # the repo has no tags yet.
-  latest_tag="$(git -C "$repo" describe --tags --abbrev=0 2>/dev/null || true)"
-  success "dotfiles updated to $(git -C "$repo" rev-parse --short HEAD)${latest_tag:+ (latest release ${latest_tag})}"
+  success "dotfiles updated to $(git -C "$repo" rev-parse --short HEAD)"
+  report_release
 else
   warn "fast-forward failed; resolve manually (git -C ${repo} status)"
+  report_release
 fi
 exit 0
