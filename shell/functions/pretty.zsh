@@ -11,7 +11,7 @@
 # Side effects: stdout only.
 # =============================================================================
 
-function pretty() {    # pretty() pretty-prints + highlights a JSON/YAML/TOML file. ex: $ pretty manifests/defaults.toml
+function pretty() {    # pretty() pretty-prints + highlights a JSON/YAML/TOML file. ex: $ pretty manifests/features.toml
 	if [[ -z "${1}" ]]; then
 		echo "ERROR: No file specified";
 		return 1;

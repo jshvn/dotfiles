@@ -6,19 +6,19 @@
 #
 # Schema reference: docs/MANIFEST.md "Bundles" section.
 
-[packages.brew]
+[packages]
 formulae = []
 
 casks = [
-  { name = "alcove" },
-  { name = "appcleaner" },
-  { name = "cardhop" },
-  { name = "fantastical" },
-  { name = "microsoft-excel" },
-  { name = "microsoft-powerpoint" },
-  { name = "microsoft-word" },
-  { name = "raycast" },
-  { name = "standard-notes" },
+  "alcove",
+  "appcleaner",
+  "cardhop",
+  "fantastical",
+  "microsoft-excel",
+  "microsoft-powerpoint",
+  "microsoft-word",
+  "raycast",
+  "standard-notes",
 ]
 
 mas = [

@@ -10,7 +10,7 @@
 # Promotion rule: if a tool here grows a config under configs/<tool>/ or
 # gets wrapped by a shell alias/function, move it to dotfiles.toml.
 
-[packages.brew]
+[packages]
 formulae = [
   "bat",
   "bottom",

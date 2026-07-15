@@ -1,0 +1,17 @@
+# negative fixture -- a registry flag left out of both lists must be rejected.
+
+schema_version = 2
+
+[machine]
+description = "unaccounted-feature fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = []
+disabled = []
+
+[packages]
+bundles = [
+  "dotfiles",
+]

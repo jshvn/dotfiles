@@ -11,7 +11,7 @@
 #
 # Schema reference: docs/MANIFEST.md "Bundles" section.
 
-[packages.brew]
+[packages]
 # Workstation-only CLI tools. `container` (Apple's container runtime) requires
 # macOS 15+, so it must not land on older servers like atium (Sonoma 14.2.1)
 # that omit this bundle.
@@ -20,12 +20,12 @@ formulae = [
 ]
 
 casks = [
-  { name = "claude-code" },
-  { name = "docker-desktop" },
-  { name = "miniconda" },
-  { name = "sourcetree" },
-  { name = "sublime-text" },
-  { name = "visual-studio-code" },
+  "claude-code",
+  "docker-desktop",
+  "miniconda",
+  "sourcetree",
+  "sublime-text",
+  "visual-studio-code",
 ]
 
 mas = []
@@ -34,8 +34,7 @@ mas = []
 # Emitted as `vscode '<id>'` Brewfile lines; the visual-studio-code cask above
 # provides the `code` CLI they install through. Headless servers omit this
 # bundle and therefore receive no extensions.
-[packages.vscode]
-extensions = [
+vscode = [
   "1password.op-vscode",
   "anthropic.claude-code",
   "docker.docker",

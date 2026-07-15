@@ -93,33 +93,16 @@ tasks:
         }
         trap cleanup_neg EXIT
 
-        # Positive fixtures: run inline merge pipeline + diff.
-        for fix in "${fix_dir}"/[0-9][0-9]-*; do
-          fix_name=$(basename "$fix")
+        test_shared_dir="{{.ROOT_DIR}}/manifests/test/shared"
+        real_registry="{{.ROOT_DIR}}/manifests/features.toml"
 
-          # Pass 1: deep-merge defaults + machine via yq.
-          merged=$(yq eval-all '. as $i ireduce ({}; . * $i)' \
-            "$fix/defaults.toml" "$fix/machine.toml" -o json 2>/dev/null) || {
-            cross "fixture: ${fix_name} -- yq merge failed"
-            failures=$(( failures + 1 ))
-            continue
-          }
-
-          # The numeric fixtures (01-05) exercise pure yq deep-merge semantics
-          # (map-over-map, list-replace, scalar-override, nested-table,
-          # missing-keys); none declare packages.brew.extra_packages, so the
-          # merged output is compared directly. extra_packages union/dedup is
-          # exercised by the typed-* fixtures against the real resolver below.
-          actual="$merged"
-
-          if diff <(printf '%s' "$actual" | jq -S .) <(jq -S . "$fix/expected.json") > /dev/null 2>&1; then
-            check "fixture: ${fix_name} -- pass"
-          else
-            cross "fixture: ${fix_name} -- FAIL (diff: actual vs expected)"
-            diff <(printf '%s' "$actual" | jq -S .) <(jq -S . "$fix/expected.json") || true
-            failures=$(( failures + 1 ))
-          fi
-        done
+        # registry_for <fixture_dir>: a fixture ships its own minimal
+        # features.toml when it exercises feature validation; otherwise the
+        # real registry is used. Passed via --registry so a feature fixture
+        # need not enumerate all production flags.
+        registry_for() {
+          if [[ -f "$1/features.toml" ]]; then echo "$1/features.toml"; else echo "$real_registry"; fi
+        }
 
         # Negative fixtures: validate-only; assert non-zero exit + stderr
         # fragment. Each fixture under fixtures/_invalid-*/ has:
@@ -140,6 +123,7 @@ tasks:
           local grep_substring="$2"
           local displayed_label="${3:-${grep_substring} in stderr}"
           local neg_dir="${fix_dir}/${fixture_name}"
+          local reg; reg=$(registry_for "$neg_dir")
           local sandboxed_name="${fixture_name}-pid$$"
           local tmp_neg="{{.MACHINES_DIR}}/${sandboxed_name}.toml"
           neg_copies+=("$tmp_neg")
@@ -147,7 +131,7 @@ tasks:
           local neg_stderr
           neg_stderr=$(DOTFILEDIR="{{.ROOT_DIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
             zsh "{{.ROOT_DIR}}/install/resolver.zsh" \
-            --validate-only --machine "$sandboxed_name" 2>&1 >/dev/null || true)
+            --validate-only --machine "$sandboxed_name" --registry "$reg" 2>&1 >/dev/null || true)
           rm -f "$tmp_neg"
           if echo "$neg_stderr" | grep -q "$grep_substring"; then
             check "fixture: ${fixture_name} -- correctly rejected (${displayed_label})"
@@ -158,19 +142,15 @@ tasks:
           fi
         }
 
-        # Typed-bucket positive fixtures (typed-*/): invoke the REAL
-        # resolver via --stdout and diff against expected.json. Each
-        # fixture has:
-        #   defaults.toml -- defaults overlay (resolver --defaults arg)
-        #   machine.toml  -- machine overlay (full valid manifest)
+        # Typed-bucket positive fixtures (typed-*/): invoke the REAL resolver
+        # via --stdout and diff against expected.json. Each fixture has:
+        #   machine.toml  -- a full v2 manifest
         #   expected.json -- golden resolved output
-        # Bundles named in machine.toml must exist under manifests/test/shared/
-        # (passed via --shared-dir). Unlike the numeric positive fixtures
-        # (01-06) which inline yq merge, this loop exercises the entire
-        # resolve_pipeline including shared-bundle folding and typed-bucket
-        # dedup -- the path the numeric fixtures cannot reach.
+        #   features.toml -- optional registry override (else the real registry)
+        # Bundles named in machine.toml resolve under manifests/test/shared/
+        # (via --shared-dir). Exercises the whole pipeline: bundle fold +
+        # per-bucket union/dedup + emit.
         typed_count=0
-        test_shared_dir="{{.ROOT_DIR}}/manifests/test/shared"
         for fix in "${fix_dir}"/typed-*; do
           [[ -d "$fix" ]] || continue
           fix_name=$(basename "$fix")
@@ -179,6 +159,7 @@ tasks:
             failures=$(( failures + 1 ))
             continue
           fi
+          reg=$(registry_for "$fix")
           sandboxed_name="${fix_name}-pid$$"
           tmp_mach="{{.MACHINES_DIR}}/${sandboxed_name}.toml"
           neg_copies+=("$tmp_mach")
@@ -186,7 +167,7 @@ tasks:
           actual=$(DOTFILEDIR="{{.ROOT_DIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
             zsh "{{.ROOT_DIR}}/install/resolver.zsh" \
             --machine "$sandboxed_name" --stdout \
-            --defaults "$fix/defaults.toml" \
+            --registry "$reg" \
             --shared-dir "$test_shared_dir" 2>/dev/null) || {
             cross "fixture: ${fix_name} -- resolver invocation failed"
             rm -f "$tmp_mach"
@@ -194,11 +175,9 @@ tasks:
             continue
           }
           rm -f "$tmp_mach"
-          # platform.arch is backfilled via uname -m at resolve time, so the
-          # expected.json is normalized by stripping platform.arch before
-          # diffing. Fixtures that DO want to test arch backfill explicitly
-          # can include `"arch": "FROM_UNAME"` in expected.json and the runner
-          # will substitute the live uname -m result before comparison.
+          # platform.arch backfills via uname -m; a fixture can pin the
+          # sentinel string "FROM_UNAME" in expected.json and the runner
+          # substitutes the live arch before comparison.
           live_arch=$(uname -m)
           actual_norm=$(printf '%s' "$actual" | jq -S '.')
           expected_norm=$(jq -S --arg arch "$live_arch" \
@@ -214,42 +193,9 @@ tasks:
           typed_count=$(( typed_count + 1 ))
         done
 
-        # _run_warning_fixture: same sandbox machinery as _run_negative_fixture
-        # but asserts exit code == 0 AND stderr contains grep_substring.
-        # Used by _warn-*/ fixtures that exercise advisory paths in the
-        # resolver (currently: emit_unknown_key_warnings).
-        _run_warning_fixture() {
-          local fixture_name="$1"
-          local grep_substring="$2"
-          local displayed_label="${3:-${grep_substring} in stderr}"
-          local warn_dir="${fix_dir}/${fixture_name}"
-          local sandboxed_name="${fixture_name}-pid$$"
-          local tmp_warn="{{.MACHINES_DIR}}/${sandboxed_name}.toml"
-          neg_copies+=("$tmp_warn")
-          cp "$warn_dir/machine.toml" "$tmp_warn"
-          local warn_stderr warn_exit=0
-          warn_stderr=$(DOTFILEDIR="{{.ROOT_DIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
-            zsh "{{.ROOT_DIR}}/install/resolver.zsh" \
-            --validate-only --machine "$sandboxed_name" 2>&1 >/dev/null) || warn_exit=$?
-          rm -f "$tmp_warn"
-          if (( warn_exit != 0 )); then
-            cross "fixture: ${fixture_name} -- expected exit 0 (warning, not error), got ${warn_exit}"
-            echo "stderr was: $warn_stderr" >&2
-            failures=$(( failures + 1 ))
-            return
-          fi
-          if echo "$warn_stderr" | grep -q "$grep_substring"; then
-            check "fixture: ${fixture_name} -- warning emitted (${displayed_label})"
-          else
-            cross "fixture: ${fixture_name} -- expected warning with '${grep_substring}' in stderr"
-            echo "stderr was: $warn_stderr" >&2
-            failures=$(( failures + 1 ))
-          fi
-        }
-
         # Iterate _invalid-*/ directories. Adding a new negative fixture is
-        # purely additive: drop machine.toml + expect.txt under a new
-        # _invalid-<slug>/ dir; no runner edits required.
+        # purely additive: drop machine.toml + expect.txt (+ optional
+        # features.toml) under a new _invalid-<slug>/ dir; no runner edits.
         negative_count=0
         for neg_dir in "${fix_dir}"/_invalid-*/; do
           [[ -d "$neg_dir" ]] || continue
@@ -271,37 +217,9 @@ tasks:
           negative_count=$(( negative_count + 1 ))
         done
 
-        # Iterate _warn-*/ directories. Same expect.txt shape as _invalid-*/,
-        # but the assertion is: exit 0 AND stderr contains the substring.
-        warning_count=0
-        for warn_dir in "${fix_dir}"/_warn-*/; do
-          [[ -d "$warn_dir" ]] || continue
-          fixture_name=$(basename "$warn_dir")
-          expect_file="${warn_dir}/expect.txt"
-          if [[ ! -f "$expect_file" ]]; then
-            cross "fixture: ${fixture_name} -- expect.txt missing"
-            failures=$(( failures + 1 ))
-            continue
-          fi
-          grep_substring=$(sed -n '1p' "$expect_file")
-          displayed_label=$(sed -n '2p' "$expect_file")
-          if [[ -z "$grep_substring" ]]; then
-            cross "fixture: ${fixture_name} -- expect.txt line 1 is empty"
-            failures=$(( failures + 1 ))
-            continue
-          fi
-          _run_warning_fixture "$fixture_name" "$grep_substring" "$displayed_label"
-          warning_count=$(( warning_count + 1 ))
-        done
-
-        # Derive totals from actual fixture counts so adding a positive,
-        # negative, or warning fixture does not require editing a hand-coded
-        # constant.
-        positive_count=0
-        for fix in "${fix_dir}"/[0-9][0-9]-*; do
-          positive_count=$(( positive_count + 1 ))
-        done
-        total=$(( positive_count + negative_count + warning_count ))
+        # Derive totals from actual fixture counts so adding a positive or
+        # negative fixture does not require editing a hand-coded constant.
+        total=$(( typed_count + negative_count ))
         passed=$(( total - failures ))
         if (( failures == 0 )); then
           info "fixtures: ${total} total, ${passed} passed, ${failures} failed"

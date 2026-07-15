@@ -20,23 +20,27 @@ set -euo pipefail
 #
 # The resolver folds each shared-bundle's typed buckets (manifests/bundles/
 # <bundle>.toml `.packages.brew.{formulae,casks,mas}`) into resolved.json's
-# packages.brew.extra_packages during resolve, so the composer no longer
-# concatenates per-bundle .rb files. `bundles` survives in resolved.json
-# for the header-banner trace; it does not gate any composer behavior.
+# packages.brew.{formulae,casks,mas} during resolve, so the composer reads a
+# single flat package set. `bundles` survives in resolved.json for the
+# header-banner trace; it does not gate any composer behavior.
 #
 # Extras line shapes (canonical; literal single-quotes around the name):
-#   brew '<name>'                              (formula -- string OR {name,...} object)
-#   cask '<name>'                              (cask)
+#   brew '<name>'                              (formula -- bare string)
+#   cask '<name>'                              (cask -- { name } object in JSON)
 #   mas  '<name>', id: <id>                    (Mac App Store entry)
 #   vscode '<id>'                              (VSCode extension; needs `code`)
 #   cargo  '<name>'                            (Rust crate -- cargo install)
 #   uv     '<name>'                            (Python tool -- uv tool install)
 #   npm    '<name>'                            (global npm package -- needs node)
 #
-# packages:verify is brew-info-driven (not bundle-comment-driven). The schema
-# still permits {name, verify} formula objects for backward-compat, but the
-# `verify` field is ignored on emit -- both string and object shapes produce
-# the bare `brew '<name>'` line.
+# packages:verify is brew-info-driven (not bundle-comment-driven). Package
+# names are validated against a strict allow-list at resolve time; the `esc`
+# gsub in the emit below escapes any stray single quote as a second guard so a
+# name can never break out of the Ruby string literal a Brewfile line is.
+#
+# .packages.brew.{formulae,casks,mas} hold the full package set for the
+# machine: the union of every included bundle's buckets with the machine's
+# inline entries (deduped, machine wins).
 
 # messages.zsh self-guards under set -u via the `:-` default expansion on
 # $DOTFILES_MESSAGES_LOADED; a bare source is sufficient and idempotent.
@@ -124,32 +128,36 @@ compose() {
     echo "# DO NOT EDIT -- regenerated on every task install."
     echo ""
 
-    # Canonical jq emit forms. Both formula shapes (bare string OR
-    # {name, ...} object) emit the same bare `brew '<name>'` line. SQ
-    # passed as $q so the jq filter stays inside zsh single-quote wrapping.
+    # Canonical jq emit forms. Formulae are bare strings; casks are
+    # { name } objects (resolver wraps them on output). SQ passed as $q so the
+    # jq filter stays inside zsh single-quote wrapping and never contains a
+    # literal quote. `esc` escapes any embedded single quote as Ruby `\'` --
+    # defense in depth, since the resolver's PACKAGE_NAME_RE already rejects
+    # such names, but a Brewfile is executed Ruby and must never emit an
+    # unescaped quote. gsub($q; "\\"+$q) replaces `'` with `\'`.
     echo "# === formulae ==="
-    echo "$formulae_json" | jq -r --arg q "$SQ" '.[] | if type == "string" then "brew " + $q + . + $q else "brew " + $q + .name + $q end'
+    echo "$formulae_json" | jq -r --arg q "$SQ" 'def esc: gsub($q; "\\"+$q); .[] | "brew " + $q + (. | esc) + $q'
 
     echo "# === casks ==="
-    echo "$casks_json" | jq -r --arg q "$SQ" '.[] | "cask " + $q + .name + $q'
+    echo "$casks_json" | jq -r --arg q "$SQ" 'def esc: gsub($q; "\\"+$q); .[] | "cask " + $q + (.name | esc) + $q'
 
     echo "# === mas ==="
-    echo "$mas_json" | jq -r --arg q "$SQ" '.[] | "mas " + $q + .name + $q + ", id: " + (.id | tostring)'
+    echo "$mas_json" | jq -r --arg q "$SQ" 'def esc: gsub($q; "\\"+$q); .[] | "mas " + $q + (.name | esc) + $q + ", id: " + (.id | tostring)'
 
     # Non-brew managers emitted after casks/mas so the providing cask (e.g.
     # visual-studio-code for vscode) is installed first. Each is a bare-string
     # array; the entry id is the line argument verbatim.
     echo "# === vscode ==="
-    echo "$vscode_json" | jq -r --arg q "$SQ" '.[] | "vscode " + $q + . + $q'
+    echo "$vscode_json" | jq -r --arg q "$SQ" 'def esc: gsub($q; "\\"+$q); .[] | "vscode " + $q + (. | esc) + $q'
 
     echo "# === cargo ==="
-    echo "$cargo_json" | jq -r --arg q "$SQ" '.[] | "cargo " + $q + . + $q'
+    echo "$cargo_json" | jq -r --arg q "$SQ" 'def esc: gsub($q; "\\"+$q); .[] | "cargo " + $q + (. | esc) + $q'
 
     echo "# === uv ==="
-    echo "$uv_json" | jq -r --arg q "$SQ" '.[] | "uv " + $q + . + $q'
+    echo "$uv_json" | jq -r --arg q "$SQ" 'def esc: gsub($q; "\\"+$q); .[] | "uv " + $q + (. | esc) + $q'
 
     echo "# === npm ==="
-    echo "$npm_json" | jq -r --arg q "$SQ" '.[] | "npm " + $q + . + $q'
+    echo "$npm_json" | jq -r --arg q "$SQ" 'def esc: gsub($q; "\\"+$q); .[] | "npm " + $q + (. | esc) + $q'
   } > "$out_tmp"
 }
 
@@ -163,9 +171,9 @@ main() {
   # `// []` covers the case where a sub-array is absent (defense-in-depth
   # for ad-hoc resolved.json variants where defaults didn't supply the shape).
   local formulae_json casks_json mas_json
-  formulae_json=$(jq -c '.packages.brew.extra_packages.formulae // []' "$RESOLVED_JSON")
-  casks_json=$(jq -c    '.packages.brew.extra_packages.casks    // []' "$RESOLVED_JSON")
-  mas_json=$(jq -c      '.packages.brew.extra_packages.mas      // []' "$RESOLVED_JSON")
+  formulae_json=$(jq -c '.packages.brew.formulae // []' "$RESOLVED_JSON")
+  casks_json=$(jq -c    '.packages.brew.casks    // []' "$RESOLVED_JSON")
+  mas_json=$(jq -c      '.packages.brew.mas      // []' "$RESOLVED_JSON")
 
   # Atomic write: mktemp in the same directory as the destination so `mv`
   # is an atomic rename across the same filesystem (POSIX rename(2)).

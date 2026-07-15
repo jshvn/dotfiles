@@ -6,7 +6,7 @@ version: '3'
 # Purpose:      Exposes the manifest engine (install/resolver.zsh) to humans
 #               and downstream taskfiles -- setup, resolve, show, validate.
 # Depends on:   install/resolver.zsh; install/messages.zsh; yq >= 4.52.1;
-#               jq >= 1.7; manifests/{defaults.toml,machines/*.toml}.
+#               jq >= 1.7; manifests/{features.toml,machines/*.toml,bundles/*.toml}.
 # Side effects: writes $XDG_STATE_HOME/dotfiles/{machine,resolved.json}.
 # =============================================================================
 
@@ -59,7 +59,7 @@ tasks:
       - task: resolve
 
   resolve:
-    desc: "Compile defaults + active machine TOML to resolved.json (idempotent)"
+    desc: "Compile the active machine TOML to resolved.json (idempotent)"
     internal: true
     # missing-state hard-fails with an actionable error naming the canonical
     # setup task.
@@ -75,14 +75,14 @@ tasks:
         DOTFILEDIR="{{.ROOT_DIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
           zsh "{{.ROOT_DIR}}/install/resolver.zsh"
     # Idempotency via BSD-find mtime check. resolved.json must be at least
-    # as fresh as defaults.toml AND any machine TOML AND any shared-bundle
+    # as fresh as features.toml AND any machine TOML AND any shared-bundle
     # TOML -- a change to manifests/bundles/<bundle>.toml must trigger
-    # regeneration the same way a defaults/machine change does, since the
+    # regeneration the same way a features/machine change does, since the
     # resolver folds shared-bundle buckets into the resolved typed extras.
     status:
       - test -f "{{.RESOLVED_JSON_PATH}}"
       - |
-        out=$(find "{{.ROOT_DIR}}/manifests" \( -name 'defaults.toml' -o -path '*/machines/*.toml' -o -path '*/bundles/*.toml' \) -newer "{{.RESOLVED_JSON_PATH}}" -print -quit 2>/dev/null)
+        out=$(find "{{.ROOT_DIR}}/manifests" \( -name 'features.toml' -o -path '*/machines/*.toml' -o -path '*/bundles/*.toml' \) -newer "{{.RESOLVED_JSON_PATH}}" -print -quit 2>/dev/null)
         [ -z "$out" ]
 
   show:
@@ -112,11 +112,11 @@ tasks:
       - |
         {{.DOTFILES_MESSAGES}}
         {{.RESOLVE_MACHINE_NAME}}
-        if [[ ! -f "{{.DEFAULTS_TOML}}" ]]; then
-          cross "manifests/defaults.toml not found"
+        if [[ ! -f "{{.FEATURES_TOML}}" ]]; then
+          cross "manifests/features.toml not found"
           exit 1
         fi
-        check "manifests/defaults.toml exists"
+        check "manifests/features.toml exists"
         machine_toml="{{.MACHINES_DIR}}/${machine_name}.toml"
         if [[ ! -f "$machine_toml" ]]; then
           cross "manifests/machines/${machine_name}.toml not found"

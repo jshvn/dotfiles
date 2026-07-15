@@ -18,10 +18,10 @@ on any drift). The taskfile sources the script for both write and read paths,
 so the array is the contract for both sides.
 
 `shell-registration.zsh` is the always-on sibling (no feature gate): it adds
-Homebrew zsh to `/etc/shells` and `chsh`es the user to it. The v2 task's
-`status:` block uses the `{{.BREW_ZSH}}` template variable -- the structural
-fix for the v1 `macos:shell:145` `$BREW_ZSH`-in-status bug that caused the
-v1 task to re-apply on every install.
+Homebrew zsh to `/etc/shells` and `chsh`es the user to it. The task's
+`status:` block uses the `{{.BREW_ZSH}}` template variable (not a `$BREW_ZSH`
+shell variable, which is empty in status context), so a converged machine
+skips the re-apply.
 
 ## Key files
 
@@ -41,7 +41,7 @@ v1 task to re-apply on every install.
 - `defaults/_apply_verify.zsh` -- Shared `_apply_defaults` / `_verify_defaults`
   loop that every concern library delegates to (not feature-gated; sourced).
 - `shell-registration.zsh` -- `/etc/shells` + chsh (always-on, no gate;
-  structural fix for the v1 `macos:shell:145` `$BREW_ZSH`-in-status bug)
+  `status:` uses the `{{.BREW_ZSH}}` template var, not `$BREW_ZSH`)
 - `hostname.zsh` -- `apply_hostname` / `verify_hostname` plus state-file
   helpers, consumed by `../taskfiles/hostname.yml`
 
@@ -51,14 +51,16 @@ v1 task to re-apply on every install.
   `<CONCERN>_DEFAULTS` tuple array (rows of
   `(domain, key, expected_value, write_type)`) plus `apply_<concern>` and
   `verify_<concern>` functions -- one source of truth per concern.
-  Add `features.macos-<concern>` to `../manifests/defaults.toml`
-  `[features]` with `false`. Add the concern to the parameterized
+  Register a `[macos-<concern>]` block in `../manifests/features.toml`
+  (`description` plus `platforms = ["darwin"]`), and list the key in every
+  machine's `[features]` enabled or disabled array. Add the concern to the parameterized
   `macos:apply-defaults:concern` task in `../taskfiles/macos.yml` (sources
   the script; gates on the feature flag via
   `index .MANIFEST.features "macos-<concern>"` -- kebab-case keys
   require the `index` form). Wire it into the `macos:apply-defaults`
   aggregator's `cmds:` list. Wire the verify call into the
-  `macos:validate` task body. Enable on machines that want it via
+  `macos:validate` task body. Add it to the `[features] enabled` array on
+  machines that want it (and `disabled` elsewhere) in
   `../manifests/machines/<name>.toml`.
 - **A new key inside an existing concern.** Append one 4-tuple to the
   existing `<CONCERN>_DEFAULTS` array; both apply and verify pick it up
@@ -74,8 +76,8 @@ v1 task to re-apply on every install.
 
 ## References
 
-- `../docs/MANIFEST.md` -- manifest schema, merge semantics, feature-flag
-  reference table (where `macos-*` keys are documented)
-- `../CLAUDE.md` -- v2 conventions (flat directories, one concept per
-  file, status-block templating rules, the `macos:shell:145` bug class
-  fix)
+- `../docs/MANIFEST.md` -- manifest schema and merge semantics
+- `../manifests/features.toml` -- feature-flag registry (where `macos-*`
+  keys are declared)
+- `../CLAUDE.md` -- project conventions (flat directories, one concept per
+  file, status-block templating rules)

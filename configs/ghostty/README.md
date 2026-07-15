@@ -17,11 +17,11 @@ Wired via the `_:safe-link` entry in `taskfiles/links.yml` `configs:` sub-task.
 
 ## Feature gate
 
-`features.ghostty` -- set to `true` in a machine manifest to enable the
-Ghostty alias group and the symlink registration. Machines without Ghostty
-installed leave this flag `false`.
+`features.ghostty` -- list `ghostty` in a machine's `[features] enabled` array
+to enable the Ghostty alias group and the symlink registration. Machines
+without Ghostty installed list it in `[features] disabled` instead.
 
 ## References
 
 - `taskfiles/links.yml` -- `configs:` sub-task registers the symlink (Plan 06)
-- `manifests/defaults.toml` -- `[features]` block declares `ghostty = false`
+- `manifests/features.toml` -- registers the `ghostty` flag

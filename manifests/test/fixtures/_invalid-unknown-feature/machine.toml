@@ -1,0 +1,20 @@
+# negative fixture -- a feature name not in the registry must be rejected.
+
+schema_version = 2
+
+[machine]
+description = "unknown-feature fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = [
+  "ghostty",
+  "bogus-flag",
+]
+disabled = []
+
+[packages]
+bundles = [
+  "dotfiles",
+]

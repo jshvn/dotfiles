@@ -1,4 +1,0 @@
-# fixture 02 -- list-replace (machine side)
-
-[packages.brew]
-bundles = ["core", "gui", "dev", "personal"]

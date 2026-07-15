@@ -1,7 +1,10 @@
 # Test shared bundle -- "util" for typed-bucket fixtures only.
 # See manifests/test/shared/core.toml for the non-production contract.
 
-[packages.brew]
-formulae = ["jq", "yq"]
+[packages]
+formulae = [
+  "jq",
+  "yq",
+]
 casks = []
 mas = []

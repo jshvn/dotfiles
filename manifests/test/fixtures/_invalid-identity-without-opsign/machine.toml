@@ -1,21 +1,35 @@
-# negative fixture -- identity.git = "personal" but features.one-password-signing = false
-# validator must reject with cross-field error
+# negative fixture -- identity "personal" declares the one-password-signing
+# capability sentinel, but the machine disables one-password-signing. Reject.
 
-schema_version = 1
+schema_version = 2
 
-[meta]
-description = "negative fixture: identity-git-without-opsign"
-
-[platform]
+[machine]
+description = "identity-without-opsign fixture"
 os = "darwin"
+identity = "personal"
 
 [features]
-one-password-ssh = true
-one-password-signing = false
+enabled = [
+  "one-password-ssh",
+  "claude-marketplace",
+  "repo-auto-update",
+  "ghostty",
+  "jgrid-net",
+  "macos-dock",
+  "macos-finder",
+  "macos-input",
+  "macos-spotlight",
+  "macos-screenshots",
+  "macos-security",
+  "macos-appearance",
+  "macos-display",
+]
+disabled = [
+  "one-password-signing",
+  "server-include",
+]
 
-[packages.brew]
-bundles = ["dotfiles"]
-
-[identity]
-git = "personal"
-ssh = "none"
+[packages]
+bundles = [
+  "dotfiles",
+]

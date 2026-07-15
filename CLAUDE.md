@@ -2,17 +2,19 @@
 
 ## What This Is
 
-These dotfiles use the manifest model: each machine is described by a single TOML file in
-`manifests/machines/<name>.toml` that inherits from a shared `manifests/defaults.toml`. The
-resolver compiles them into a JSON cache that every go-task task reads — no profile suffixes,
-no hostname inference, no hidden branching. macOS only in v1 (Apple Silicon and Intel).
+These dotfiles use the manifest model: each machine is described by a single self-contained TOML
+file in `manifests/machines/<name>.toml`. Feature-flag names are declared once in a registry,
+`manifests/features.toml`; the resolver validates a machine against that registry and compiles it
+into a JSON cache that every go-task task reads — no profile suffixes, no hostname inference, no
+hidden branching. macOS only in v1 (Apple Silicon and Intel).
 
 ## The Manifest Model (the keystone)
 
 | Concept | Location |
 |---------|----------|
-| Shared baseline | `manifests/defaults.toml` |
+| Feature-flag registry | `manifests/features.toml` |
 | Per-machine declaration | `manifests/machines/<name>.toml` |
+| Shared package bundles | `manifests/bundles/<purpose>.toml` |
 | Compiled output (machine-local) | `$XDG_STATE_HOME/dotfiles/resolved.json` |
 | Active machine name (machine-local) | `$XDG_STATE_HOME/dotfiles/machine` |
 
@@ -52,10 +54,16 @@ Never infer state from hostname. Never branch on a filename suffix. v2 has no pr
 there is only a machine name. When you need to know whether a machine wants a feature, read
 `resolved.json`; it is already loaded as `{{.MANIFEST}}` in every taskfile via `ref: 'fromJson .MANIFEST_JSON'`.
 
-Cross-field validation: the resolver enforces conditional rules across manifest sections
-(e.g., `identity.ssh in {personal, work}` requires `features.one-password-ssh = true`;
-`identity.git in {personal, work}` requires `features.one-password-signing = true`). Failing
-rules surface at `task setup` time with a clear error from `install/resolver.zsh`. Add new
+Feature accounting: a machine's `[features]` table lists `enabled` and `disabled`, which together
+must account for every registry flag applicable to the machine's `os` (a flag whose `platforms`
+excludes the machine's os is inapplicable and appears in neither list). A flag left unaccounted, in
+both lists, or absent from `manifests/features.toml` is a hard error at `task setup`. This forces
+an explicit on/off decision for every flag on every machine.
+
+Cross-field validation: the resolver enforces conditional rules at `task setup` time with a clear
+error from `install/resolver.zsh`. Identity capability sentinels are one such rule -- an identity
+overlay carrying `# capability: one-password-ssh` (ssh overlay) or `# capability:
+one-password-signing` (git overlay) requires the machine to enable the matching feature. Add new
 rules to the `validate_manifest` block in `resolver.zsh`.
 
 ### One concept per file
@@ -108,6 +116,7 @@ In-code `# LINT-NN:` citations reference this catalogue. The rule body lives in
 | LINT-10 | .zsh + .yml repo-wide | No hardcoded `/opt/homebrew` or `/usr/local`; dispatch sites carry `# lint-allow: hardcoded-prefix` |
 | LINT-11 | Taskfiles | Kebab-case feature keys use the `index` form, never template dot-access |
 | LINT-12 | All .zsh | File-header banner (Purpose / Depends on / Side effects between `# ===` rules) |
+| LINT-13 | `manifests/**/*.toml` | Multi-element arrays span one element per line (empty/single-element inline arrays exempt) |
 
 LINT-01 and LINT-06 are intentionally absent. The original LINT-01 rule
 ("every install task has a status: block") was generalized into LINT-03a
@@ -206,13 +215,17 @@ schema and worked examples.
 | An alias | `shell/aliases/<topic>.zsh` | kebab-case topic; one topic per file; flat (no subdir) |
 | A function | `shell/functions/<name>.zsh` | filename equals function name; lowercase |
 | A new machine | `manifests/machines/<name>.toml` + `task setup -- <name>` | kebab-case |
-| A brew package | `manifests/bundles/<purpose>.toml` (or `extra_packages` in the machine manifest for one-offs) | by purpose, not by machine |
-| A VSCode extension (or cargo/uv/npm tool) | `[packages.vscode].extensions` (resp. `cargo.crates`, `uv.tools`, `npm.packages`) in `manifests/bundles/dev.toml` or a machine manifest | `publisher.name` id; emitted into the Brewfile via `brew bundle` |
-| A macOS defaults concern | `os/defaults/<concern>.zsh` + feature flag in `defaults.toml` | one concern per file |
-| A feature flag | `manifests/defaults.toml [features]` block + consuming task in the appropriate taskfile | kebab-case key |
+| A brew package | `manifests/bundles/<purpose>.toml [packages]` (or the machine's own `[packages]` for one-offs) | by purpose, not by machine |
+| A VSCode extension (or cargo/uv/npm tool) | `[packages] vscode` (resp. `cargo`, `uv`, `npm`) in `manifests/bundles/dev.toml` or a machine manifest | `publisher.name` id; emitted into the Brewfile via `brew bundle` |
+| A macOS defaults concern | `os/defaults/<concern>.zsh` + a flag in `manifests/features.toml` (with `platforms = ["darwin"]`) | one concern per file |
+| A feature flag | `manifests/features.toml` registry block, then account for it (`enabled`/`disabled`) in every machine + a consuming task | kebab-case key |
 | A tool config | `configs/<tool>/` + symlink entry in `taskfiles/links.yml` | use the tool's expected config filename |
 | A Claude hook | `claude/hooks/<name>.zsh` + entry in `claude/settings.d/10-hooks.json` (recomposed on next `task install`) | kebab-case |
 | A third-party Claude addon | `manifests/claude-addons/<name>.toml` (+ optional `<name>.fragment.json`) + list in machine manifest's `[claude].addons` | kebab-case |
+
+A machine's own `[packages]` entries are one-off extras for that machine. Anything shared across
+machines belongs in a bundle under `manifests/bundles/` — the inline `[packages]` table and a
+bundle file use the identical shape, so promoting a one-off to shared is a copy into a bundle.
 
 ## Conventions Not Captured Above
 
@@ -231,7 +244,7 @@ schema and worked examples.
 
 | Tool | Minimum | Reason |
 |------|---------|--------|
-| `yq` (mikefarah) | 4.52.1 | Full TOML read/write roundtrip; `. * .` deep-merge operator |
+| `yq` (mikefarah) | 4.52.1 | Full TOML read/write roundtrip; TOML-to-JSON for the resolver |
 | `go-task` | 3.37 | `ref:` keyword + `fromJson` template function for structured vars |
 | `jq` | 1.7 | Sorted-key output (`-S`) for stable fixture diffs; `--argjson` |
 
@@ -245,7 +258,7 @@ schema and worked examples.
 - Don't add a profile-suffixed bundle (e.g., `manifests/bundles/personal.toml`).
   Bundles are named by purpose (`dotfiles.toml`, `cli.toml`, `dotfiles-gui.toml`,
   `dev.toml`, `productivity.toml`, `apps.toml`), not by machine. Per-machine variation
-  goes in `manifests/machines/<name>.toml [packages.brew.extra_packages]`.
+  goes in `manifests/machines/<name>.toml [packages]`.
 - Don't bypass `_:safe-link` when creating symlinks.
 - Don't use `$VAR` (shell variable) where `{{.VAR}}` (task template variable) is expected —
   especially inside `status:` blocks.
@@ -293,7 +306,7 @@ new evidence.
 | Decision | Rationale |
 |----------|-----------|
 | Symlinks + TOML manifests over Nix | Nix conflicts with go-task lock-in, slows AI iteration; manifest layer captures the declarative win without language overhead. |
-| Per-machine manifest with shared `defaults.toml` | Picked clarity (per-machine) over DRY (tags); a handful of machines means defaults prevents pure duplication while machine files stay self-describing. |
+| Self-contained per-machine manifests + a feature registry | Picked clarity (per-machine, no inheritance) over DRY (tags); a machine file records every flag it wants and deliberately lacks, while `manifests/features.toml` keeps the flag vocabulary in one place. |
 | Explicit machine selection at setup | Hostname-based detection has bitten us; explicit selection beats clever auto-detect. |
 | macOS-only | All target machines are macOS (laptops + Mac servers); avoids cross-platform complexity until a real Linux machine enters scope. |
 | Keep alanpeabody-based prompt; reject Starship | The existing `theme.zsh` is small, fast, and not on life support; Starship would be a behavior change with no problem to solve. |

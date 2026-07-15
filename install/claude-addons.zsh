@@ -23,6 +23,13 @@ typeset -r SETTINGS_D="${DOTFILEDIR}/claude/settings.d"
 typeset -r RESOLVED="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/resolved.json"
 typeset -r XDG_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
 
+# Addon-name path guard. Addon names are concatenated into ADDONS_DIR paths
+# (and drive an eval of the TOML's commands). The resolver applies the same
+# regex before writing resolved.json, but `claude-addons:remove -- <name>`
+# takes its name straight from the CLI, bypassing the resolver -- so guard
+# here too. Rejects `/`, `.`, `..`, whitespace: no traversal out of ADDONS_DIR.
+typeset -r ADDON_NAME_RE='^[a-z0-9_][a-z0-9_-]*$'
+
 # _expand_path <raw> -- expand a fixed allow-list of location tokens WITHOUT
 # eval. Mirrors the os/defaults narrow-substitution philosophy: never run
 # command substitution, globbing, or word-splitting on TOML-supplied values.
@@ -144,6 +151,10 @@ cmd_remove() {
   local name="$1"
   if [[ -z "$name" ]]; then
     cross "claude-addons:remove requires an addon name"
+    return 1
+  fi
+  if ! [[ "$name" =~ $ADDON_NAME_RE ]]; then
+    cross "claude-addons:remove invalid addon name '${name}' (must match ${ADDON_NAME_RE})"
     return 1
   fi
 

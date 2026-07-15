@@ -12,12 +12,12 @@
 # Other GUI applications (dev IDEs, office, chat, browsers, etc.) live in
 # the dev/productivity/apps bundles or per-machine extras, not here.
 
-[packages.brew]
+[packages]
 formulae = []
 
 casks = [
-  { name = "1password" },
-  { name = "ghostty" },
+  "1password",
+  "ghostty",
 ]
 
 mas = []

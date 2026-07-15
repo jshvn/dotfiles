@@ -1,0 +1,21 @@
+# negative fixture -- a feature listed in both enabled and disabled. Reject.
+
+schema_version = 2
+
+[machine]
+description = "feature-both-lists fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = [
+  "ghostty",
+]
+disabled = [
+  "ghostty",
+]
+
+[packages]
+bundles = [
+  "dotfiles",
+]

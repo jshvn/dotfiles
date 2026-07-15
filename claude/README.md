@@ -52,9 +52,10 @@ the composed result to `settings.json` (which IS symlinked).
 | `task claude-addons:show` | Diagnostic table: Name | Enabled | Installed |
 | `task claude-addons:audit` | Drift detection: orphan footprints from non-enabled addons |
 
-`task claude:install` and `task claude-addons:install` are gated on
-`features.claude-marketplace` in `manifests/defaults.toml`. Machines with
-`claude-marketplace = false` skip both.
+`task claude:install` and `task claude-addons:install` are gated on the
+`claude-marketplace` feature (declared in `manifests/features.toml`). Machines
+that leave `claude-marketplace` out of their `[features] enabled` list skip
+both.
 
 ## Settings Composition
 
@@ -125,15 +126,15 @@ Short version: write `manifests/claude-addons/<name>.toml` (+ optional
 
 ## Feature Gate Reference
 
-The `features.claude-marketplace` flag in `manifests/defaults.toml` (default
-`true`) controls whether `task claude:install` and `task claude-addons:install`
-run at all. Machines that set `claude-marketplace = false` in their machine
-TOML skip the Claude install path entirely. Consuming tasks use the index
-form for kebab-case feature keys:
+The `claude-marketplace` flag (declared in `manifests/features.toml`) controls
+whether `task claude:install` and `task claude-addons:install` run at all.
+Machines that list `claude-marketplace` in their `[features] disabled` array
+skip the Claude install path entirely. Consuming tasks use the index form for
+kebab-case feature keys:
 
 ```
 {{if index .MANIFEST.features "claude-marketplace"}}
 ```
 
-See `manifests/defaults.toml` and `taskfiles/claude.yml` /
+See `manifests/features.toml` and `taskfiles/claude.yml` /
 `taskfiles/claude-addons.yml` for the canonical implementations.

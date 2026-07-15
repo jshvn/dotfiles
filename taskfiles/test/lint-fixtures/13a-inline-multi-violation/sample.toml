@@ -1,0 +1,3 @@
+# LINT-13 fixture -- a multi-element inline array must be flagged.
+[packages]
+casks = ["firefox", "slack"]

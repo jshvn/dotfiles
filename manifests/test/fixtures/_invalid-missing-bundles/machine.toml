@@ -1,17 +1,15 @@
-# negative fixture -- packages.brew.bundles absent; required field.
+# negative fixture -- packages.bundles omitted; validator must reject.
 
-schema_version = 1
+schema_version = 2
 
-[meta]
-description = "missing-bundles negative fixture"
-
-[platform]
+[machine]
+description = "missing bundles fixture"
 os = "darwin"
+identity = "none"
 
 [features]
+enabled = []
+disabled = []
 
-[packages.brew]
-
-[identity]
-git = "none"
-ssh = "none"
+[packages]
+formulae = []

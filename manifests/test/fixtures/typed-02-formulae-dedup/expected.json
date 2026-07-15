@@ -1,25 +1,28 @@
 {
+  "meta": {
+    "description": "typed-02-formulae-dedup fixture"
+  },
+  "platform": {
+    "os": "darwin",
+    "arch": "FROM_UNAME"
+  },
   "features": {},
+  "identity": {
+    "git": "none",
+    "ssh": "none"
+  },
   "packages": {
     "brew": {
       "bundles": [
         "dotfiles"
       ],
-      "extra_packages": {
-        "formulae": [
-          "curl",
-          {
-            "name": "git",
-            "verify": "git --version"
-          },
-          {
-            "name": "ripgrep",
-            "verify": "rg --version"
-          }
-        ],
-        "casks": [],
-        "mas": []
-      }
+      "formulae": [
+        "curl",
+        "git",
+        "ripgrep"
+      ],
+      "casks": [],
+      "mas": []
     },
     "vscode": {
       "extensions": []
@@ -34,16 +37,7 @@
       "packages": []
     }
   },
-  "schema_version": 1,
-  "meta": {
-    "description": "typed-02-formulae-dedup fixture"
-  },
-  "platform": {
-    "os": "darwin",
-    "arch": "FROM_UNAME"
-  },
-  "identity": {
-    "git": "none",
-    "ssh": "none"
+  "claude": {
+    "addons": []
   }
 }

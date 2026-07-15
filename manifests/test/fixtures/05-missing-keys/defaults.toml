@@ -1,4 +1,0 @@
-# fixture 05 -- missing-keys (defaults side)
-
-[only_in_defaults]
-key = "value"

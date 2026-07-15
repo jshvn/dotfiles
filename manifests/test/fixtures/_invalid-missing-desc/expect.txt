@@ -1,2 +1,2 @@
-meta.description
-meta.description in stderr
+machine.description
+machine.description in stderr

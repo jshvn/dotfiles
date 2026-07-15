@@ -3,7 +3,7 @@
 # Loaded via [includeIf "gitdir/i:~/git/work/"] in identity/git/config.
 # Overrides: [user] name; [gpg] format + program; [commit] gpgsign.
 # Side effects: enables 1Password SSH signing for all repos under ~/git/work/.
-# Requires: features.one-password-signing = true in the machine manifest.
+# capability: one-password-signing (a machine using this identity must enable features.one-password-signing)
 #
 # Note: work email is not yet set. Fill in before activating work identity.
 # Open question tracked in .planning/phases/04-identity-layer-git-ssh-per-machine/04-CONTEXT.md.

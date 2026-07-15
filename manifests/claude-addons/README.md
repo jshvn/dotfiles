@@ -49,8 +49,8 @@ extra_paths = ["<absolute path>", "..."]
 commands = ["<shell command>", "..."]      # run BEFORE file_globs deletion
 ```
 
-**Removed in v1:** `[remove].settings_strip` -- settings.d composition makes
-manual key stripping unnecessary; addon-injected keys live in the paired
+**No `[remove].settings_strip` key:** settings.d composition makes manual key
+stripping unnecessary; addon-injected keys live in the paired
 `<name>.fragment.json` and disappear when the addon is removed.
 
 ## Two reference cases

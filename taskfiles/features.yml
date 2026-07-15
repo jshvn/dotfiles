@@ -1,0 +1,35 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/features.yml -- feature-flag inspection
+#
+# Purpose:      Show the feature registry joined with the active machine's
+#               resolved feature map -- one line per flag (state + description),
+#               the runtime complement to the in-file enabled/disabled lists.
+# Depends on:   install/messages.zsh; yq; jq; manifests/features.toml;
+#               $XDG_STATE_HOME/dotfiles/resolved.json.
+# Side effects: read-only.
+# =============================================================================
+
+tasks:
+
+  # lint-allow: cmds-without-status
+  show:
+    desc: "Show feature flags (enabled/disabled) for the active machine"
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        registry="{{.FEATURES_TOML}}"
+        resolved="{{.RESOLVED_JSON_PATH}}"
+        if [[ ! -f "$resolved" ]]; then
+          error "resolved.json not found -- run: task setup -- <machine-name>"
+          exit 1
+        fi
+        header "Feature flags -- active machine"
+        state=$(jq -c '.features // {}' "$resolved")
+        yq -o=json '.' "$registry" | jq -r --argjson st "$state" '
+          keys[] as $k
+          | (if ($st[$k] // false) then "on " else "off" end) as $s
+          | "  \($s)  \($k)  --  \(.[$k].description // "")"'
+    status:
+      - false

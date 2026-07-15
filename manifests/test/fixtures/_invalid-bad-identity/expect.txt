@@ -1,2 +1,2 @@
-no overlay file at
+overlay
 missing overlay file in stderr

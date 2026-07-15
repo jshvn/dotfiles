@@ -1,0 +1,13 @@
+# Test shared bundle -- "extras" for the typed-03 casks/mas fixture only.
+# NEVER referenced by real machine manifests. Declares a cask and a mas entry
+# whose id overlaps the machine's, to lock in bundle-vs-machine union + the
+# machine-wins mas dedup.
+
+[packages]
+formulae = []
+casks = [
+  "iterm2",
+]
+mas = [
+  { id = 497799835, name = "Xcode-bundle" },
+]

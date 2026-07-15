@@ -1,0 +1,3 @@
+[macos-dock]
+description = "test darwin flag"
+platforms = ["darwin"]

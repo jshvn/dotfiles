@@ -1,2 +1,2 @@
-one-password-ssh
-one-password-ssh in stderr
+must include one-password-ssh
+one-password-ssh capability in stderr

@@ -42,7 +42,7 @@ vars:
 
   STATE_DIR: '{{.XDG_STATE_HOME}}/dotfiles'
   STATE_FILE: '{{.STATE_DIR}}/machine'
-  DEFAULTS_TOML: '{{.ROOT_DIR}}/manifests/defaults.toml'
+  FEATURES_TOML: '{{.ROOT_DIR}}/manifests/features.toml'
   MACHINES_DIR: '{{.ROOT_DIR}}/manifests/machines'
   FIXTURES_DIR: '{{.ROOT_DIR}}/manifests/test/fixtures'
 
@@ -94,6 +94,7 @@ vars:
 
 includes:
   manifest: ./taskfiles/manifest.yml
+  features: ./taskfiles/features.yml
   lint:     ./taskfiles/lint.yml
   links:    ./taskfiles/links.yml
   shell:    ./taskfiles/shell.yml
@@ -135,7 +136,7 @@ tasks:
         echo
         header "Diagnostics (read-only, domain-first)"
         info "  task show                            List inspectable domains"
-        info "  task <domain>:show                   manifest | claude | claude-addons | hostname"
+        info "  task <domain>:show                   manifest | features | claude | claude-addons | hostname"
         info "  task <domain>:audit                  manifest | packages | links | claude | claude-addons"
         echo
         header "State mutations"
@@ -237,6 +238,7 @@ tasks:
         header "Inspectable domains -- run task <domain>:show"
         echo
         info "  task manifest:show         Resolved manifest (-- [--machine] NAME for any machine)"
+        info "  task features:show         Feature flags: enabled/disabled per the active machine"
         info "  task claude:show           Installed marketplaces + plugins"
         info "  task claude-addons:show    Known / enabled / installed Claude addons"
         info "  task hostname:show         Hostname state file + live system hostnames"

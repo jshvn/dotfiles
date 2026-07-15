@@ -20,9 +20,9 @@ Wired via the `_:safe-link` entry in `taskfiles/links.yml` `configs:` sub-task.
 ## Feature gate
 
 Always on -- no feature flag. `miniconda` is declared as a cask in
-`manifests/machines/<name>.toml [packages.brew.extra_packages]` for machines
-that use it (currently `personal-laptop`); the condarc is lightweight enough
-to be always-on (it simply redirects data paths and disables telemetry).
+`manifests/machines/<name>.toml [packages].casks` for machines that use it
+(currently `atium`); the condarc is lightweight enough to be always-on (it
+simply redirects data paths and disables telemetry).
 
 ## References
 

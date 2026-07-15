@@ -1,0 +1,70 @@
+# manifests/features.toml -- the feature-flag registry.
+#
+# Every valid feature flag is declared here exactly once, with a one-line
+# description and an optional `platforms` constraint. This file is the single
+# source of truth for the flag vocabulary: a machine manifest that names a
+# flag absent from this registry is rejected at `task setup`, and each machine
+# must account for every applicable flag (in its [features] enabled or
+# disabled list). A flag whose `platforms` excludes a machine's os is
+# inapplicable to that machine and must appear in neither list.
+#
+# Schema reference: docs/MANIFEST.md.
+#
+# platforms: when present, the flag applies only on the listed operating
+# systems (machine.os). Omit it for platform-neutral flags (the default:
+# applies everywhere). Only "darwin" and "linux" are valid entries.
+
+[one-password-ssh]
+description = "link the 1Password SSH agent config; agent socket exported in .zprofile"
+platforms = ["darwin"]
+
+[one-password-signing]
+description = "git commit signing via the 1Password op-ssh-sign program"
+platforms = ["darwin"]
+
+[claude-marketplace]
+description = "install Claude config symlinks and marketplace plugins"
+
+[repo-auto-update]
+description = "fast-forward the dotfiles repo from its remote before install"
+
+[ghostty]
+description = "gate shell/aliases/ghostty.zsh and the ghostty config link"
+
+[jgrid-net]
+description = "gate shell/aliases/jgrid.zsh"
+
+[server-include]
+description = "materialize ~/.config/git/server-include.config for headless server identities"
+
+[macos-dock]
+description = "gate os/defaults/dock.zsh and macos:defaults:dock"
+platforms = ["darwin"]
+
+[macos-finder]
+description = "gate shell/aliases/finder.zsh and os/defaults/finder.zsh"
+platforms = ["darwin"]
+
+[macos-input]
+description = "gate os/defaults/input.zsh and macos:defaults:input"
+platforms = ["darwin"]
+
+[macos-spotlight]
+description = "gate os/defaults/spotlight.zsh (free Cmd+Space for Raycast)"
+platforms = ["darwin"]
+
+[macos-screenshots]
+description = "gate os/defaults/screenshots.zsh and macos:defaults:screenshots"
+platforms = ["darwin"]
+
+[macos-security]
+description = "gate os/defaults/security.zsh and macos:defaults:security"
+platforms = ["darwin"]
+
+[macos-appearance]
+description = "gate os/defaults/appearance.zsh (system Dark mode, icon/widget style)"
+platforms = ["darwin"]
+
+[macos-display]
+description = "gate os/defaults/display.zsh (built-in panel More Space HiDPI scaling)"
+platforms = ["darwin"]

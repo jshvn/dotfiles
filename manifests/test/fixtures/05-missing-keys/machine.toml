@@ -1,4 +1,0 @@
-# fixture 05 -- missing-keys (machine side)
-
-[only_in_machine]
-key = "value"

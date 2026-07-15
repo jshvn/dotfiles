@@ -13,7 +13,7 @@ so `_:safe-link` calls are straightforward.
 | tlrc | `tlrc/config.toml` | `~/.config/tlrc/config.toml` | always on |
 | conda | `conda/condarc` | `~/.condarc` | always on |
 | eza | `eza/theme.yaml` | `~/.config/eza/theme.yaml` | always on |
-| motd | `motd/motd_tron.txt`, `motd/motd_sysinfo.jsonc` | no symlink -- read at runtime | `features.motd` (runtime) |
+| motd | `motd/motd_tron.txt`, `motd/motd_sysinfo.jsonc` | no symlink -- read at runtime | always on (runtime-read) |
 
 ## How to add a tool config
 
@@ -23,18 +23,18 @@ so `_:safe-link` calls are straightforward.
    destination, and feature gate.
 3. Register a `_:safe-link` entry in `taskfiles/links.yml` under the `configs:`
    sub-task (never use bare `ln -s`; see `CLAUDE.md` LINT-03b).
-4. If the tool needs feature-gating, declare a kebab-case flag in
-   `manifests/defaults.toml [features]` (default `false`) and wrap the link
+4. If the tool needs feature-gating, register a kebab-case flag in
+   `manifests/features.toml` (its own `[flag-name]` block), account for it in
+   every machine's `[features]` enabled or disabled array, and wrap the link
    entry in `{{if index .MANIFEST.features "flag-name"}}`.
 
 ## Conventions
 
 - **Match-destination-filename:** The source file basename inside
   `configs/<tool>/` must equal the destination basename so `_:safe-link`
-  source and target share the same filename. When the v1 source uses a
-  different name, rename in transit during the port (e.g. v1 `tlrc.toml`
-  becomes `configs/tlrc/config.toml`; v1 `eza_style.yaml` becomes
-  `configs/eza/theme.yaml`).
+  source and target share the same filename (e.g. tlrc's config lives at
+  `configs/tlrc/config.toml` to match `~/.config/tlrc/config.toml`; eza's
+  theme at `configs/eza/theme.yaml` to match `~/.config/eza/theme.yaml`).
 
 - **Per-tool subdirectory always:** Even single-file tools get their
   own subdirectory (never a flat file directly under `configs/`). This keeps

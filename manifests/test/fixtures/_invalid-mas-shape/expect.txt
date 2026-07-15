@@ -1,0 +1,2 @@
+packages.mas entries must be
+mas shape in stderr

@@ -1,7 +1,0 @@
-# typed-05-bare-dedup -- defaults provide no overlapping extras; the
-# interesting case is a bare-string formula declared in BOTH the shared
-# "dotfiles" bundle and the machine (see machine.toml).
-
-[features]
-
-[packages.brew]

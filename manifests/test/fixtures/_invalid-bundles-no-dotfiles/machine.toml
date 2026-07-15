@@ -1,19 +1,17 @@
-# negative fixture -- bundles array does not include "dotfiles"; "dotfiles"
-# is always-on, every machine inherits the base packages.
+# negative fixture -- packages.bundles must always include "dotfiles".
 
-schema_version = 1
+schema_version = 2
 
-[meta]
-description = "bundles-no-dotfiles negative fixture"
-
-[platform]
+[machine]
+description = "bundles without dotfiles fixture"
 os = "darwin"
+identity = "none"
 
 [features]
+enabled = []
+disabled = []
 
-[packages.brew]
-bundles = ["gui"]
-
-[identity]
-git = "none"
-ssh = "none"
+[packages]
+bundles = [
+  "cli",
+]

@@ -1,8 +1,0 @@
-# fixture 04 -- nested-table (defaults side)
-
-[a.b.c.d]
-shared = "defaults-value"
-default_only = true
-
-[a.b.c.d.e]
-deep_nested = true

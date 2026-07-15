@@ -1,2 +1,0 @@
-unknown key: mythical_section.unknown_key
-unknown-key warning in stderr

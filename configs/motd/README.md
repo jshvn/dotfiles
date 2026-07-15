@@ -26,12 +26,11 @@ because the shell function reads the repo path directly.
 
 ## Feature gate
 
-`features.motd` (runtime-side) -- the motd function in `.zlogin` is gated on
-this flag via `_dotfiles_feature motd`. When disabled, the function is never
-called. These data files are always present on disk regardless of the flag;
-they consume no disk footprint when the feature is off.
+Always on -- no feature flag. `.zshrc`'s functions glob defines the `motd`
+function, and `.zlogin` calls it unconditionally on login. These data files
+are always present on disk and consume negligible footprint.
 
 ## References
 
 - `shell/functions/motd.zsh` -- reads these files at render time
-- `manifests/defaults.toml` -- `[features]` block declares `motd = true`
+- `shell/.zlogin` -- calls `motd` on login

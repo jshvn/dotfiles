@@ -1,0 +1,15 @@
+# LINT-13 fixture -- compliant: multi-element arrays span one per line;
+# empty and single-element inline arrays are allowed.
+[machine]
+os = "darwin"
+
+[packages]
+bundles = ["dotfiles"]
+formulae = []
+casks = [
+  "firefox",
+  "slack",
+]
+mas = [
+  { id = 441258766, name = "Magnet" },
+]

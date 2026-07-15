@@ -3,7 +3,7 @@
 # Loaded via [includeIf "gitdir/i:~/git/personal/"] in identity/git/config.
 # Overrides: [user] email, signingkey; [github] user; [gpg] format + program; [commit] gpgsign.
 # Side effects: enables 1Password SSH signing for all repos under ~/git/personal/.
-# Requires: features.one-password-signing = true in the machine manifest.
+# capability: one-password-signing (a machine using this identity must enable features.one-password-signing)
 
 [user]
     name = Josh Vaughen

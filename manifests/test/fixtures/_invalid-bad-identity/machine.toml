@@ -1,18 +1,17 @@
-# negative fixture -- identity.ssh = "alice"; validator must reject (enum check)
+# negative fixture -- machine.identity has no overlay files; must be rejected.
 
-schema_version = 1
+schema_version = 2
 
-[meta]
-description = "negative fixture: bad-identity-ssh enum value"
-
-[platform]
+[machine]
+description = "bad identity fixture"
 os = "darwin"
+identity = "nosuchidentity"
 
 [features]
+enabled = []
+disabled = []
 
-[packages.brew]
-bundles = ["dotfiles"]
-
-[identity]
-git = "none"
-ssh = "alice"
+[packages]
+bundles = [
+  "dotfiles",
+]

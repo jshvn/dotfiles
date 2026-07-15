@@ -52,6 +52,8 @@ tasks:
         ignore_error: true
       - task: file-headers
         ignore_error: true
+      - task: array-style
+        ignore_error: true
 
   # lint-allow: cmds-without-status
   syntax:
@@ -349,6 +351,37 @@ tasks:
         exit "$failures"
 
   # lint-allow: cmds-without-status
+  array-style:
+    desc: "LINT-13: multi-element arrays in manifests span one element per line"
+    internal: true
+    cmds:
+      - |
+        # lint-allow: cmds-without-status
+        # Multi-element arrays in manifests/**/*.toml must be written one
+        # element per line. yq cannot detect this -- its line() returns 0 for
+        # every TOML node (see install/resolver.zsh's note) -- so scan raw
+        # text: an inline array (`= [ ... ]` with both brackets on one line)
+        # whose bracket content, after stripping `{...}` inline tables, still
+        # holds a comma is a multi-element inline array. Empty and
+        # single-element inline arrays carry no top-level comma and are allowed.
+        {{.DOTFILES_MESSAGES}}
+        failures=0
+        while IFS= read -r hit; do
+          [[ -z "$hit" ]] && continue
+          content=$(printf '%s' "$hit" | sed -n 's/.*=[[:space:]]*\[\(.*\)\].*/\1/p')
+          [[ -z "$content" ]] && continue
+          stripped=$(printf '%s' "$content" | sed 's/{[^}]*}//g')
+          if printf '%s' "$stripped" | ggrep -q ','; then
+            cross "LINT-13: multi-element inline array (split one per line): ${hit}"
+            failures=$(( failures + 1 ))
+          fi
+        done < <(ggrep -rnE '=[[:space:]]*\[[^]]*\]' "{{.ROOT_DIR}}/manifests" --include='*.toml' 2>/dev/null || true)
+        if [[ "$failures" -eq 0 ]]; then
+          check "LINT-13: manifest arrays are one element per line"
+        fi
+        exit "$failures"
+
+  # lint-allow: cmds-without-status
   test-fixtures:
     desc: "Self-test the lint suite against fixtures (positive + negative cases)"
     internal: true
@@ -517,6 +550,26 @@ tasks:
                 printf '%s\n' "$h" | ggrep -qE '^# Depends on:' || hdr_ok=0
                 printf '%s\n' "$h" | ggrep -qE '^# Side effects:' || hdr_ok=0
                 if [[ "$hdr_ok" -eq 1 ]]; then actual=pass; else actual=fail; fi
+              fi
+              ;;
+            13*)
+              # LINT-13: multi-element inline array in a manifest .toml.
+              # Mirrors the production detector: inline `= [ ... ]` whose
+              # bracket content, after stripping `{...}` inline tables, holds
+              # a comma is a violation.
+              file=$(ls "$fix"/*.toml 2>/dev/null | head -1 || true)
+              if [[ -z "$file" ]]; then
+                actual=unknown
+              else
+                hit_found=0
+                while IFS= read -r hit; do
+                  [[ -z "$hit" ]] && continue
+                  content=$(printf '%s' "$hit" | sed -n 's/.*=[[:space:]]*\[\(.*\)\].*/\1/p')
+                  [[ -z "$content" ]] && continue
+                  stripped=$(printf '%s' "$content" | sed 's/{[^}]*}//g')
+                  if printf '%s' "$stripped" | ggrep -q ','; then hit_found=1; fi
+                done < <(ggrep -nE '=[[:space:]]*\[[^]]*\]' "$file" 2>/dev/null || true)
+                if [[ "$hit_found" -eq 1 ]]; then actual=fail; else actual=pass; fi
               fi
               ;;
             *) actual=unknown ;;

@@ -1,9 +1,0 @@
-# typed-04-vscode-union -- defaults overlay contributing one vscode extension
-# to the three-source union (defaults + extbundle + machine).
-
-[features]
-
-[packages.brew]
-
-[packages.vscode]
-extensions = ["acme.from-defaults"]

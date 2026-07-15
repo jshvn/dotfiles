@@ -7,12 +7,13 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
 
 ## Key files
 
-- `resolver.zsh` -- Compiles `manifests/defaults.toml` plus the active
-  machine's `manifests/machines/<name>.toml` into
-  `$XDG_STATE_HOME/dotfiles/resolved.json` via yq deep-merge
-  (`. as $i ireduce ({}; . * $i)`). Atomic write via `mktemp + mv`. Every
-  downstream task reads `resolved.json` through go-task `fromJson`; no
-  taskfile parses TOML directly.
+- `resolver.zsh` -- Validates the active machine's
+  `manifests/machines/<name>.toml` against the `manifests/features.toml`
+  registry and the `manifests/bundles/` set, then compiles it into
+  `$XDG_STATE_HOME/dotfiles/resolved.json` (bundle union + feature-map
+  materialization). Atomic write via `mktemp + mv`. Every downstream task
+  reads `resolved.json` through go-task `fromJson`; no taskfile parses TOML
+  directly.
 - `messages.zsh` -- Colored-output library exposing `info`, `success`,
   `warn`, `error`, `check`, `cross`, `header`, `step`, `debug`. Sourced
   by task `cmds:` blocks via the `{{.DOTFILES_MESSAGES}}` template var.
@@ -20,7 +21,7 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   guard -- callers source it with a bare `source` line (see the `set -u
   contract` block at the top of the file).
 - `compose-brewfile.zsh` -- Reads `resolved.json`'s typed buckets
-  (`packages.brew.extra_packages.{formulae,casks,mas}`, already folded
+  (`packages.brew.{formulae,casks,mas}`, already folded
   in by `resolver.zsh` from `manifests/bundles/<bundle>.toml`) and writes
   a composed `$XDG_CACHE_HOME/dotfiles/Brewfile` (atomic mktemp+mv).
   Invoked by `taskfiles/packages.yml :: packages:compose` and indirectly
@@ -67,13 +68,13 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   under `install/` following the same conventions.
 - **A new Brew package.** Add to a purpose bundle at
   `manifests/bundles/<purpose>.toml` (named by role, not by profile -- a
-  bundle's `[packages.brew]` table accepts `formulae` / `casks` /
-  `mas` arrays with the same shape as machine extras) or to the machine
-  manifest's `extra_packages` typed sub-table for one-offs.
+  bundle's `[packages]` table accepts `formulae` / `casks` / `mas` arrays
+  with the same shape as a machine's inline entries) or to the machine
+  manifest's own `[packages]` table for one-offs.
 
 ## References
 
-- `../docs/MANIFEST.md` -- manifest schema and deep-merge semantics
+- `../docs/MANIFEST.md` -- manifest schema and package-union semantics
   consumed by `resolver.zsh`.
 - `../docs/SECURITY.md` -- bootstrap trust chain (Phase 2 BTSP-05 /
   DOCS-07).

@@ -1,2 +1,2 @@
-missing required field: packages.brew.bundles
+packages.bundles
 missing bundles in stderr

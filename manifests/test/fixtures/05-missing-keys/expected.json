@@ -1,8 +1,0 @@
-{
-  "only_in_defaults": {
-    "key": "value"
-  },
-  "only_in_machine": {
-    "key": "value"
-  }
-}

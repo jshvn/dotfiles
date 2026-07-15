@@ -1,0 +1,21 @@
+# negative fixture -- a key outside the v2 schema must be rejected (v2 errors
+# on unknown keys rather than warning).
+
+schema_version = 2
+
+[machine]
+description = "unknown-key fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = []
+disabled = []
+
+[packages]
+bundles = [
+  "dotfiles",
+]
+
+[bogus_section]
+mystery_key = "value"

@@ -19,7 +19,7 @@
 #   - 1password-cli is a binary-only cask (Homebrew ships the op binary
 #     to the Homebrew prefix; no /Applications/.app bundle).
 
-[packages.brew]
+[packages]
 formulae = [
   "antidote",
   "biome",
@@ -52,7 +52,7 @@ formulae = [
 ]
 
 casks = [
-  { name = "1password-cli" },
+  "1password-cli",
 ]
 
 mas = []

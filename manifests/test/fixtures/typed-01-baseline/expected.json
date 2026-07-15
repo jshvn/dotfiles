@@ -1,21 +1,30 @@
 {
+  "meta": {
+    "description": "typed-01-baseline fixture"
+  },
+  "platform": {
+    "os": "darwin",
+    "arch": "FROM_UNAME"
+  },
   "features": {},
+  "identity": {
+    "git": "none",
+    "ssh": "none"
+  },
   "packages": {
     "brew": {
       "bundles": [
         "dotfiles",
         "util"
       ],
-      "extra_packages": {
-        "formulae": [
-          "curl",
-          "git",
-          "jq",
-          "yq"
-        ],
-        "casks": [],
-        "mas": []
-      }
+      "formulae": [
+        "curl",
+        "git",
+        "jq",
+        "yq"
+      ],
+      "casks": [],
+      "mas": []
     },
     "vscode": {
       "extensions": []
@@ -30,16 +39,7 @@
       "packages": []
     }
   },
-  "schema_version": 1,
-  "meta": {
-    "description": "typed-01-baseline fixture"
-  },
-  "platform": {
-    "os": "darwin",
-    "arch": "FROM_UNAME"
-  },
-  "identity": {
-    "git": "none",
-    "ssh": "none"
+  "claude": {
+    "addons": []
   }
 }

@@ -1,10 +1,32 @@
 {
+  "meta": {
+    "description": "typed-04-vscode-union fixture"
+  },
+  "platform": {
+    "os": "darwin",
+    "arch": "FROM_UNAME"
+  },
   "features": {},
+  "identity": {
+    "git": "none",
+    "ssh": "none"
+  },
   "packages": {
+    "brew": {
+      "bundles": [
+        "dotfiles",
+        "extbundle"
+      ],
+      "formulae": [
+        "curl",
+        "git"
+      ],
+      "casks": [],
+      "mas": []
+    },
     "vscode": {
       "extensions": [
         "acme.from-bundle",
-        "acme.from-defaults",
         "acme.from-machine",
         "acme.shared-dup"
       ]
@@ -15,34 +37,11 @@
     "uv": {
       "tools": []
     },
-    "brew": {
-      "bundles": [
-        "dotfiles",
-        "extbundle"
-      ],
-      "extra_packages": {
-        "formulae": [
-          "curl",
-          "git"
-        ],
-        "casks": [],
-        "mas": []
-      }
-    },
     "npm": {
       "packages": []
     }
   },
-  "schema_version": 1,
-  "meta": {
-    "description": "typed-04-vscode-union fixture"
-  },
-  "platform": {
-    "os": "darwin",
-    "arch": "FROM_UNAME"
-  },
-  "identity": {
-    "git": "none",
-    "ssh": "none"
+  "claude": {
+    "addons": []
   }
 }

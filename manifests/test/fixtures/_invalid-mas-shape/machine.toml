@@ -1,0 +1,20 @@
+# negative fixture -- a mas entry missing its numeric id must be rejected.
+
+schema_version = 2
+
+[machine]
+description = "mas-shape fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = []
+disabled = []
+
+[packages]
+bundles = [
+  "dotfiles",
+]
+mas = [
+  { name = "NoId" },
+]

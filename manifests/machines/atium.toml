@@ -1,42 +1,50 @@
-# manifests/machines/atium.toml -- Mac atium.
+# manifests/machines/atium.toml -- Mac atium, a mostly-headless Mac server.
 #
-# Mostly-headless Mac server: usually headless but occasionally connected
-# to a display, so it still takes dotfiles-gui (1Password GUI, ghostty)
-# and the cli bundle. Does NOT take dev/productivity/apps -- the few
-# laptop-class casks it wants (docker-desktop, miniconda, etc.) live in
-# extras.
-# See docs/MANIFEST.md for the schema reference and field semantics.
+# Usually headless but occasionally connected to a display, so it still takes
+# dotfiles-gui (1Password GUI, ghostty) and the cli bundle. It does NOT take
+# dev/productivity/apps -- the few laptop-class casks it wants (docker-desktop,
+# miniconda, etc.) live inline below. The long disabled list is deliberate: the
+# file itself records every flag this server does not want. See docs/MANIFEST.md
+# for the schema reference and manifests/features.toml for the flag registry.
 
-schema_version = 1
+schema_version = 2
 
-[meta]
+[machine]
 description = "Mac atium -- mostly-headless Mac server"
-
-[platform]
 os = "darwin"
+identity = "atium"
 
 [features]
-one-password-ssh = false
-claude-marketplace = false
-macos-security = true
-ghostty = true
-
-[packages.brew]
-bundles = ["dotfiles", "cli", "dotfiles-gui"]
-
-[packages.brew.extra_packages]
-formulae = []
-
-casks = [
-  { name = "appcleaner" },
-  { name = "cloudflare-warp" },
-  { name = "docker-desktop" },
-  { name = "dropbox" },
-  { name = "miniconda" },
+enabled = [
+  "repo-auto-update",
+  "macos-security",
+  "ghostty",
+]
+disabled = [
+  "one-password-ssh",
+  "one-password-signing",
+  "claude-marketplace",
+  "jgrid-net",
+  "server-include",
+  "macos-dock",
+  "macos-finder",
+  "macos-input",
+  "macos-spotlight",
+  "macos-screenshots",
+  "macos-appearance",
+  "macos-display",
 ]
 
-mas = []
-
-[identity]
-git = "atium"
-ssh = "atium"
+[packages]
+bundles = [
+  "dotfiles",
+  "cli",
+  "dotfiles-gui",
+]
+casks = [
+  "appcleaner",
+  "cloudflare-warp",
+  "docker-desktop",
+  "dropbox",
+  "miniconda",
+]

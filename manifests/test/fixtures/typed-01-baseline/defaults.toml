@@ -1,6 +1,0 @@
-# typed-01-baseline -- minimal defaults overlay; resolver folds core +
-# util shared bundles for the formulae union.
-
-[features]
-
-[packages.brew]

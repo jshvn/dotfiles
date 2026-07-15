@@ -5,7 +5,10 @@
 # the resolved output. Changing a package here cascades to every
 # typed-* fixture's expected output.
 
-[packages.brew]
-formulae = ["git", "curl"]
+[packages]
+formulae = [
+  "git",
+  "curl",
+]
 casks = []
 mas = []

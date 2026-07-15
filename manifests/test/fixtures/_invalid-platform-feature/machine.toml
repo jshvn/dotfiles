@@ -1,0 +1,20 @@
+# negative fixture -- a darwin-only flag listed on a linux machine (it is
+# inapplicable and must appear in neither list). Reject.
+
+schema_version = 2
+
+[machine]
+description = "platform-feature fixture"
+os = "linux"
+identity = "none"
+
+[features]
+enabled = [
+  "macos-dock",
+]
+disabled = []
+
+[packages]
+bundles = [
+  "dotfiles",
+]

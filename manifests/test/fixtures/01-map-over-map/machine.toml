@@ -1,5 +1,0 @@
-# fixture 01 -- map-over-map (machine side)
-
-[features]
-one-password-ssh = true
-macos-dock = true

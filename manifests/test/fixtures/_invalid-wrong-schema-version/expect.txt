@@ -1,2 +1,2 @@
-schema_version must equal 1
+schema_version must equal 2
 schema_version mismatch in stderr

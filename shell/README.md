@@ -12,8 +12,8 @@ platform subdirectories) reflects that single-platform scope.
   login, `.zshrc` on interactive, `.zlogin` after `.zshrc` on login, and
   `.zlogout` on login-shell exit.
 - `theme.zsh` -- alanpeabody-based prompt; consumed by `.zshrc` after
-  antidote loads OMZ lib + plugins (the v1 prompt is small, fast, and
-  not on life support; no Starship swap in v1).
+  antidote loads OMZ lib + plugins (small, fast, not on life support;
+  no Starship swap).
 - `.zsh_plugins.txt` -- antidote plugin manifest; read via `antidote load`
   in `.zshrc`. use-omz must stay first; OMZ `path:lib` provides
   prompt_subst + git prompt helpers that `theme.zsh` requires.
@@ -35,9 +35,11 @@ platform subdirectories) reflects that single-platform scope.
   function name. Add a docstring as an inline comment on the
   function-definition line (the `aliaslist` / `functionlist` discovery
   convention).
-- **A feature flag.** Add the kebab-case key to `../manifests/defaults.toml`
-  `[features]` with `false`. Set `true` in the machine TOMLs that want
-  it. Consumers call `_dotfiles_feature <key>` to test.
+- **A feature flag.** Register the kebab-case key as a `[<key>]` block in
+  `../manifests/features.toml` (with a `description`). Then account for it in
+  every machine's `[features]`: add it to `enabled` on machines that want it,
+  `disabled` on those that don't. Consumers call `_dotfiles_feature <key>`
+  to test.
 
 ## Performance budget
 
@@ -50,5 +52,5 @@ Re-measure on every plugin change or startup-file edit.
 ## References
 
 - `../docs/MANIFEST.md` -- manifest schema and merge semantics
-- `../CLAUDE.md` -- v2 conventions (flat directories, one concept per
+- `../CLAUDE.md` -- project conventions (flat directories, one concept per
   file, status-block templating rules)

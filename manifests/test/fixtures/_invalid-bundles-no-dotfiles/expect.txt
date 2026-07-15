@@ -1,2 +1,2 @@
-packages.brew.bundles must include "dotfiles"
+must include
 bundles missing dotfiles in stderr

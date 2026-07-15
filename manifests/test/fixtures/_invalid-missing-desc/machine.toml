@@ -1,15 +1,16 @@
-# negative fixture -- meta.description omitted; validator must reject
+# negative fixture -- machine.description omitted; validator must reject.
 
-schema_version = 1
+schema_version = 2
 
-[platform]
+[machine]
 os = "darwin"
+identity = "none"
 
 [features]
+enabled = []
+disabled = []
 
-[packages.brew]
-bundles = ["dotfiles"]
-
-[identity]
-git = "none"
-ssh = "none"
+[packages]
+bundles = [
+  "dotfiles",
+]

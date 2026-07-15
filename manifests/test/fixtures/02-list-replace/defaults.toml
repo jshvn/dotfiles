@@ -1,4 +1,0 @@
-# fixture 02 -- list-replace (defaults side)
-
-[packages.brew]
-bundles = ["core"]

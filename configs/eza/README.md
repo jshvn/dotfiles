@@ -10,9 +10,9 @@ categories (permissions, sizes, Git status, and file-type groups).
 - `theme.yaml` -- eza's color theme YAML; read from `~/.config/eza/theme.yaml`
   at launch.
 
-Note: renamed in transit from v1 `eza_style.yaml` to `theme.yaml` per the
-match-destination-filename rule. The eza CLI looks for the file at
-`~/.config/eza/theme.yaml`; the source is renamed to match when porting from v1.
+Note: the basename follows the match-destination-filename rule -- the eza CLI
+looks for the file at `~/.config/eza/theme.yaml`, which dictates the source
+basename.
 
 ## Symlink destination
 
@@ -28,5 +28,4 @@ Always on -- no feature flag. Every machine that installs `eza` (declared in
 ## References
 
 - `taskfiles/links.yml` -- `configs:` sub-task registers the symlink
-- `manifests/defaults.toml` -- rename-in-transit convention documented in
-  `CLAUDE.md`
+- `../README.md` -- match-destination-filename convention

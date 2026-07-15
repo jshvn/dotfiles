@@ -1,2 +1,2 @@
-no shared file
+has no file
 typoed bundle name in stderr

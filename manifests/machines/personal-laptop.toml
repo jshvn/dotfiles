@@ -1,59 +1,63 @@
 # manifests/machines/personal-laptop.toml -- Josh's personal MacBook.
 #
-# Daily driver: full GUI + dev + personal feature set; Apple Silicon.
-# See docs/MANIFEST.md for the schema reference and field semantics.
+# Self-contained: every feature this machine has (and every registry flag it
+# deliberately lacks) is listed below; nothing is inherited. See
+# docs/MANIFEST.md for the schema reference and manifests/features.toml for
+# the flag registry.
 
-schema_version = 1
+schema_version = 2
 
-[meta]
+[machine]
 description = "Josh's personal MacBook -- Apple Silicon, primary dev machine"
-
-[platform]
 os = "darwin"
 arch = "arm64"
+identity = "personal"
 
 [features]
-one-password-ssh = true
-one-password-signing = true
-macos-dock = true
-macos-finder = true
-macos-input = true
-macos-spotlight = true
-macos-screenshots = true
-macos-security = true
-macos-appearance = true
-macos-display = true
-claude-marketplace = true
-ghostty = true
-jgrid-net = true
-
-[packages.brew]
-bundles = ["dotfiles", "cli", "dotfiles-gui", "dev", "productivity", "apps"]
-
-[packages.brew.extra_packages]
-# node is installed because the ecc Claude addon's hooks invoke the `node`
-# binary directly. The rest of the CLI comes from the dotfiles/cli bundles.
-formulae = ["node"]
-
-casks = [
-  { name = "cloudflare-warp" },
-  { name = "discord" },
-  { name = "dropbox" },
-  { name = "nvidia-geforce-now" },
-  { name = "proton-drive" },
-  { name = "proton-mail" },
-  { name = "protonvpn" },
-  { name = "whatsapp" },
+enabled = [
+  "one-password-ssh",
+  "one-password-signing",
+  "claude-marketplace",
+  "repo-auto-update",
+  "ghostty",
+  "jgrid-net",
+  "macos-dock",
+  "macos-finder",
+  "macos-input",
+  "macos-spotlight",
+  "macos-screenshots",
+  "macos-security",
+  "macos-appearance",
+  "macos-display",
+]
+disabled = [
+  "server-include",
 ]
 
-mas = []
-
-[identity]
-git = "personal"
-ssh = "personal"
+[packages]
+bundles = [
+  "dotfiles",
+  "cli",
+  "dotfiles-gui",
+  "dev",
+  "productivity",
+  "apps",
+]
+# node: the ecc Claude addon's hooks invoke the `node` binary directly.
+formulae = ["node"]
+casks = [
+  "cloudflare-warp",
+  "discord",
+  "dropbox",
+  "nvidia-geforce-now",
+  "proton-drive",
+  "proton-mail",
+  "protonvpn",
+  "whatsapp",
+]
 
 [claude]
-# Replace semantics: list the full set this machine wants (not concat-with-
-# defaults). defaults.toml ships an empty addons array; addons are opted in
-# per-machine. See docs/CLAUDE-ADDONS.md.
-addons = ["ecc", "superpowers"]
+addons = [
+  "ecc",
+  "superpowers",
+]

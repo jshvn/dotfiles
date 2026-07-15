@@ -1,20 +1,18 @@
-# negative fixture -- bundle name with no shared file under manifests/shared/
-# Guards the resolver.zsh:131-147 typo-protection branch: a typoed bundle
-# name would silently contribute zero packages in v1; v2 hard-errors.
+# negative fixture -- a bundle name with no matching file must be rejected.
 
-schema_version = 1
+schema_version = 2
 
-[meta]
-description = "bundle-typo negative fixture"
-
-[platform]
+[machine]
+description = "bundle typo fixture"
 os = "darwin"
+identity = "none"
 
 [features]
+enabled = []
+disabled = []
 
-[packages.brew]
-bundles = ["dotfiles", "guii"]
-
-[identity]
-git = "none"
-ssh = "none"
+[packages]
+bundles = [
+  "dotfiles",
+  "nosuchbundle",
+]

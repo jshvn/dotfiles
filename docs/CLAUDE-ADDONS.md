@@ -24,7 +24,7 @@ the right order so the hook scripts couldn't re-fire mid-removal, then surgicall
 strip its entries from `settings.json`. The pain class is documented in
 [`CLAUDE.md`](../CLAUDE.md)'s Context section.
 
-The fix is two-part and ships in v1 together:
+The fix is two-part:
 
 - **Footprint manifests:** one TOML per known addon declares its install
   command, verify probe, file footprint, and remove commands. Add or remove
@@ -100,10 +100,9 @@ extra_paths = ["<path>", "..."]           # required (may be empty)
 commands = ["<cmd>", "..."]               # required (may be empty array)
 ```
 
-`[remove].settings_strip` from earlier design drafts was **dropped in v1**.
-Settings.d composition makes manual key-stripping unnecessary: an addon's
-keys live in `99-addon-<name>.json`; the remove task deletes that file and
-recomposes. Old TOMLs containing `settings_strip` will silently ignore it.
+`[remove]` has no `settings_strip` key. Settings.d composition makes manual
+key-stripping unnecessary: an addon's keys live in `99-addon-<name>.json`; the
+remove task deletes that file and recomposes.
 
 ### Optional paired fragment: `manifests/claude-addons/<name>.fragment.json`
 

@@ -1,0 +1,2 @@
+unknown key
+unknown key in stderr

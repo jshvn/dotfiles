@@ -7,14 +7,14 @@
 #
 # Schema reference: docs/MANIFEST.md "Bundles" section.
 
-[packages.brew]
+[packages]
 formulae = []
 
 casks = [
-  { name = "firefox" },
-  { name = "slack" },
-  { name = "spotify" },
-  { name = "zoom" },
+  "firefox",
+  "slack",
+  "spotify",
+  "zoom",
 ]
 
 mas = []

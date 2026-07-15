@@ -1,18 +1,18 @@
-# negative fixture -- platform.os = "linux"; validator must reject in v1
+# negative fixture -- machine.os = "windows" is outside the {darwin, linux}
+# enum (linux is valid in v2, so the old "linux" trigger no longer rejects).
 
-schema_version = 1
+schema_version = 2
 
-[meta]
+[machine]
 description = "bad-os negative fixture"
-
-[platform]
-os = "linux"
+os = "windows"
+identity = "none"
 
 [features]
+enabled = []
+disabled = []
 
-[packages.brew]
-bundles = ["dotfiles"]
-
-[identity]
-git = "none"
-ssh = "none"
+[packages]
+bundles = [
+  "dotfiles",
+]
