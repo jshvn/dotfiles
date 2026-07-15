@@ -61,7 +61,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # bootstrap.zsh acquires go-task + yq. Its interactive consent gate
       # only fires when brew is absent; runners ship brew, so the script is
