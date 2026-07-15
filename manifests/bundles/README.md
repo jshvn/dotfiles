@@ -56,8 +56,8 @@ manifests.
   headless servers omit it.
 - `cli.toml` -- unwired CLI utilities (bat, fd, htop, wget, ...). Taken by every
   shell machine.
-- `dev.toml` -- GUI developer applications (IDEs, Docker Desktop, etc.) plus the
-  VSCode extension set. Workstation laptops only.
+- `dev.toml` -- GUI developer applications (IDEs, etc.) plus the VSCode
+  extension set. Workstation laptops only.
 - `productivity.toml` -- desktop productivity suite plus MAS productivity apps.
   Workstation laptops only.
 - `apps.toml` -- consumer GUI applications (browser, chat, media). Workstation

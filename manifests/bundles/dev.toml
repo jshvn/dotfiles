@@ -1,7 +1,7 @@
 # manifests/bundles/dev.toml -- developer applications shared by every
 # workstation machine (laptops). Headless/hybrid servers do NOT take this
-# bundle; they keep docker-desktop / miniconda as explicit extras when they
-# want those individually.
+# bundle; they keep miniconda (and other laptop-class casks) as explicit
+# extras when they want those individually.
 #
 # Pure-CLI developer tools that the dotfiles config wires up (biome, ruff,
 # hyperfine) live in dotfiles.toml. Universally-installed unwired CLI utilities
@@ -21,7 +21,6 @@ formulae = [
 
 casks = [
   "claude-code",
-  "docker-desktop",
   "miniconda",
   "sourcetree",
   "sublime-text",
@@ -37,14 +36,12 @@ mas = []
 vscode = [
   "1password.op-vscode",
   "anthropic.claude-code",
-  "docker.docker",
   "eamodio.gitlens",
   "esbenp.prettier-vscode",
   "github.vscode-github-actions",
   "mathematic.vscode-pdf",
   "mechatroner.rainbow-csv",
   "ms-azuretools.vscode-containers",
-  "ms-azuretools.vscode-docker",
   "ms-kubernetes-tools.vscode-kubernetes-tools",
   "ms-python.debugpy",
   "ms-python.isort",
