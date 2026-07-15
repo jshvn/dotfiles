@@ -5,12 +5,18 @@
 #
 # Purpose:      Override `docker ps` to a tighter columns layout, and add
 #               `docker <shell> <container>` shortcut for opening a shell
-#               inside a running container.
-# Depends on:   docker.
+#               inside a running container. When docker is not installed but
+#               Apple `container` is, pass all commands through to `container`
+#               untouched.
+# Depends on:   docker, or container as the fallback runtime.
 # Side effects: shadows the `docker` command for the interactive shell.
 # =============================================================================
 
 function docker() {    # docker() wraps docker: tidies 'ps' columns and adds '<shell> <container>'. ex: $ docker sh web
+    if (( ! $+commands[docker] )) && (( $+commands[container] )); then
+        command container "$@"
+        return
+    fi
     if [[ "$1" == "ps" ]]; then
         shift
         command docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}" "$@"
