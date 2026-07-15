@@ -1,0 +1,51 @@
+# =============================================================================
+# release.yml -- mirror every master tag as a GitHub release
+#
+# Purpose:      On tag push, create a release named exactly after the tag,
+#               with notes composed from the commit messages since the
+#               previous tag (all commits when the tag is the first).
+# Depends on:   gh CLI (preinstalled on runners); GITHUB_TOKEN contents:write.
+# Side effects: creates a GitHub release for the pushed tag.
+# =============================================================================
+#
+# Tags whose commit is not reachable from master are skipped (git tags are
+# not branch-scoped, so the master constraint is enforced here). Re-running
+# for an already-released tag exits cleanly.
+
+name: release
+
+on:
+  push:
+    tags: ['*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # fetch-depth 0 pulls full history for all branches and tags -- needed
+      # for the master-ancestry check and the previous-tag range.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Create release for tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if ! git merge-base --is-ancestor "${TAG}^{commit}" origin/master; then
+            echo "tag ${TAG} is not on master; skipping release"
+            exit 0
+          fi
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "release ${TAG} already exists; nothing to do"
+            exit 0
+          fi
+          PREV=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)
+          if [ -n "$PREV" ]; then RANGE="${PREV}..${TAG}"; else RANGE="${TAG}"; fi
+          NOTES=$(git log --no-merges --pretty='- %s (%h)' $RANGE)
+          gh release create "${TAG}" --title "${TAG}" --notes "${NOTES}"
