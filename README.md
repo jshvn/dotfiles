@@ -1,5 +1,7 @@
 # 👨🏻‍💻 Josh's dotfiles
 
+[![ci](https://github.com/jshvn/dotfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/jshvn/dotfiles/actions/workflows/ci.yml)
+
 macOS dotfiles managed with go-task, symlinks, and XDG base directory spec.
 
 ##  Install or update
