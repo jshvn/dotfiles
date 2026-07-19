@@ -429,6 +429,7 @@ tasks:
           success "no drift detected"
           exit 0
         fi
+        info "to fix: declare in manifests/bundles/*.toml (or the machine manifest) if wanted, or uninstall if not"
         if [[ "$strict" -eq 1 ]]; then
           cross "${total_drift} drift item(s) detected (--strict)"
           exit 1
