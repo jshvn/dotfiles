@@ -326,6 +326,7 @@ tasks:
             for orphan in "${orphans[@]}"; do
               warn "orphan: $orphan -> $(readlink "$orphan" 2>/dev/null || echo unreadable)"
             done
+            info "run 'task links:audit -- --remove' for interactive cleanup"
             exit 1
             ;;
           warn)
@@ -336,6 +337,7 @@ tasks:
             for orphan in "${orphans[@]}"; do
               warn "orphan: $orphan -> $(readlink "$orphan" 2>/dev/null || echo unreadable)"
             done
+            info "run 'task links:audit -- --remove' for interactive cleanup"
             # --warn-only ALWAYS exits 0 regardless of orphan count.
             exit 0
             ;;
