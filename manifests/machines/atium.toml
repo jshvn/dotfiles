@@ -2,7 +2,7 @@
 #
 # Usually headless but occasionally connected to a display, so it still takes
 # dotfiles-gui (1Password GUI, ghostty) and the cli bundle. It does NOT take
-# dev/productivity/apps -- the few laptop-class casks it wants (docker-desktop,
+# dev/productivity/apps -- the few laptop-class casks it wants (orbstack,
 # miniconda, etc.) live inline below. The long disabled list is deliberate: the
 # file itself records every flag this server does not want. See docs/MANIFEST.md
 # for the schema reference and manifests/features.toml for the flag registry.
@@ -44,7 +44,7 @@ bundles = [
 casks = [
   "appcleaner",
   "cloudflare-warp",
-  "docker-desktop",
   "dropbox",
   "miniconda",
+  "orbstack",
 ]
