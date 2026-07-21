@@ -23,12 +23,13 @@ DOTFILES_COMPOSE_SETTINGS_LOADED=1
 # settings_preserved_keys <settings_json>
 # Echo the CLI-managed keys to carry across a recompose: enabledPlugins and
 # extraKnownMarketplaces (written by `claude plugin ...`), plus model (written
-# by the /model command) ONLY when present so an absent key never becomes null.
-# When the file does not exist yet, echo the empty defaults.
+# by the /model command) and tui (written by the fullscreen/inline TUI toggle)
+# ONLY when present so an absent key never becomes null. When the file does not
+# exist yet, echo the empty defaults.
 settings_preserved_keys() {
   local target="$1"
   if [[ -f "$target" ]]; then
-    jq -c '{enabledPlugins: (.enabledPlugins // {}), extraKnownMarketplaces: (.extraKnownMarketplaces // {})} + (if has("model") then {model} else {} end)' "$target"
+    jq -c '{enabledPlugins: (.enabledPlugins // {}), extraKnownMarketplaces: (.extraKnownMarketplaces // {})} + (if has("model") then {model} else {} end) + (if has("tui") then {tui} else {} end)' "$target"
   else
     printf '%s\n' '{"enabledPlugins": {}, "extraKnownMarketplaces": {}}'
   fi

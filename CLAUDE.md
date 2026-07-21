@@ -186,9 +186,10 @@ Edit `claude/settings.d/*.json` fragments; `task install` recomposes
 command to run by hand). Don't hand-edit the generated file.
 LINT-09 fails the lint pipeline if `settings.json` drifts from the composed
 output (third-party installer wrote keys, manual edit, etc.). The composer
-preserves `enabledPlugins`, `extraKnownMarketplaces`, and `model` from the
-live file (the first two are managed by the `claude plugin` CLI, `model` by
-the `/model` command -- none are owned by fragments).
+preserves `enabledPlugins`, `extraKnownMarketplaces`, `model`, and `tui` from
+the live file (the first two are managed by the `claude plugin` CLI, `model` by
+the `/model` command, `tui` by the fullscreen/inline TUI toggle -- none are
+owned by fragments).
 
 Repo-owned fragments live at `claude/settings.d/{00-base,10-hooks}.json`.
 Each enabled third-party addon with a paired settings template gets its own
