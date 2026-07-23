@@ -17,6 +17,7 @@
 # that omit this bundle.
 formulae = [
   "container",
+  "uv",
 ]
 
 casks = [
