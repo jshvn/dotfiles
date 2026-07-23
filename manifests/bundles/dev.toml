@@ -21,8 +21,8 @@ formulae = [
 
 casks = [
   "claude-code",
+  "gitfox",
   "miniconda",
-  "sourcetree",
   "sublime-text",
   "visual-studio-code",
 ]
