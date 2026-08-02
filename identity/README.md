@@ -53,7 +53,7 @@ overlay with a capability sentinel comment (`# capability: one-password-ssh`
 in the ssh overlay, `# capability: one-password-signing` in the git overlay);
 `install/resolver.zsh validate_manifest()` then requires any machine using
 that identity to enable the matching feature. Cover a new sentinel with a
-negative fixture under `manifests/test/fixtures/_invalid-*/` so
+negative fixture under `manifests/tests/fixtures/_invalid-*/` so
 `task test:manifest` verifies it. Update `docs/MANIFEST.md`
 `machine.identity` allowed-values.
 

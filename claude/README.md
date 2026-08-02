@@ -114,7 +114,7 @@ LINT-04. Exit 0 = pass or warn; exit 2 = block (gate-style hooks).
    `taskfiles/links.yml` and add the corresponding `_:check-link` invocation
    in `links:validate`.
 5. If the hook is gate-style (exits 2 on block), add a smoke-test fixture
-   to `install/test-hooks.zsh` (TEST-01).
+   to `install/tests/hooks.zsh` (TEST-01).
 
 ## How to Add a Third-Party Claude Addon
 

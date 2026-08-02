@@ -3,12 +3,12 @@ version: '3'
 # =============================================================================
 # taskfiles/test.yml -- smoke-test surface
 #
-# Purpose:      Hook smoke tests (install/test-hooks.zsh) plus manifest
+# Purpose:      Hook smoke tests (install/tests/hooks.zsh) plus manifest
 #               deep-merge fixtures and shell-startup smoke tests. Composed
 #               by the root `task test` aggregator.
-# Depends on:   install/test-hooks.zsh; install/resolver.zsh;
-#               install/test-shell-startup.zsh; install/messages.zsh;
-#               manifests/test/fixtures/.
+# Depends on:   install/tests/hooks.zsh; install/resolver.zsh;
+#               install/tests/shell-startup.zsh; install/messages.zsh;
+#               manifests/tests/fixtures/.
 # Side effects: temporary copies under manifests/machines/ (negative
 #               fixtures) -- always cleaned up via EXIT trap.
 # =============================================================================
@@ -17,53 +17,53 @@ tasks:
 
   # lint-allow: cmds-without-status
   hooks:
-    desc: "Run Claude hook smoke tests via install/test-hooks.zsh"
+    desc: "Run Claude hook smoke tests via install/tests/hooks.zsh"
     internal: true
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
         info "running hook smoke tests"
         export DOTFILEDIR="{{.ROOT_DIR}}"
-        zsh "${DOTFILEDIR}/install/test-hooks.zsh"
+        zsh "${DOTFILEDIR}/install/tests/hooks.zsh"
     status:
       - false
 
   # lint-allow: cmds-without-status
   repo-sync:
-    desc: "Run repo:sync fast-forward smoke tests via install/test-repo-sync.zsh"
+    desc: "Run repo:sync fast-forward smoke tests via install/tests/repo-sync.zsh"
     internal: true
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
         info "running repo-sync smoke tests"
         export DOTFILEDIR="{{.ROOT_DIR}}"
-        zsh "${DOTFILEDIR}/install/test-repo-sync.zsh"
+        zsh "${DOTFILEDIR}/install/tests/repo-sync.zsh"
     status:
       - false
 
   # lint-allow: cmds-without-status
   links-audit:
-    desc: "Run links:audit orphan-scan smoke tests via install/test-links-audit.zsh"
+    desc: "Run links:audit orphan-scan smoke tests via install/tests/links-audit.zsh"
     internal: true
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
         info "running links-audit smoke tests"
         export DOTFILEDIR="{{.ROOT_DIR}}"
-        zsh "${DOTFILEDIR}/install/test-links-audit.zsh"
+        zsh "${DOTFILEDIR}/install/tests/links-audit.zsh"
     status:
       - false
 
   # lint-allow: cmds-without-status
   shell-startup:
-    desc: "Run shell startup smoke tests via install/test-shell-startup.zsh"
+    desc: "Run shell startup smoke tests via install/tests/shell-startup.zsh"
     internal: true
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
         info "running shell startup smoke tests"
         export DOTFILEDIR="{{.ROOT_DIR}}"
-        zsh "${DOTFILEDIR}/install/test-shell-startup.zsh"
+        zsh "${DOTFILEDIR}/install/tests/shell-startup.zsh"
     status:
       - false
 
@@ -93,7 +93,7 @@ tasks:
         }
         trap cleanup_neg EXIT
 
-        test_base="{{.ROOT_DIR}}/manifests/test/shared/base.toml"
+        test_base="{{.ROOT_DIR}}/manifests/tests/shared/base.toml"
         real_registry="{{.ROOT_DIR}}/manifests/features.toml"
 
         # registry_for <fixture_dir>: a fixture ships its own minimal
@@ -148,7 +148,7 @@ tasks:
         #   machine.toml  -- a full manifest
         #   expected.json -- golden resolved output
         #   features.toml -- optional registry override (else the real registry)
-        # The base tier resolves to manifests/test/shared/base.toml via --base.
+        # The base tier resolves to manifests/tests/shared/base.toml via --base.
         # Exercises the whole pipeline: base fold + enabled-feature packages +
         # per-bucket union/dedup + emit.
         typed_count=0

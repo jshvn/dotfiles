@@ -23,7 +23,7 @@ set -euo pipefail
 
 # Source the messaging library from this script's own directory (${0:A:h}),
 # so DOTFILEDIR is free to point at any repo (notably the throwaway repos in
-# install/test-repo-sync.zsh).
+# install/tests/repo-sync.zsh).
 # shellcheck source=install/messages.zsh
 source "${0:A:h}/messages.zsh"
 

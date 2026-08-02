@@ -1,0 +1,19 @@
+# negative fixture -- a machine listing a package the base tier already provides
+# must be rejected. The test base (manifests/tests/shared/base.toml) declares
+# git; re-declaring it here is redundant.
+
+schema_version = 3
+
+[machine]
+description = "redundant-package fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = []
+disabled = []
+
+[packages]
+formulae = [
+  "git",
+]

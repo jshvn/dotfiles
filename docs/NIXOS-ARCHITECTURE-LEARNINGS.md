@@ -174,21 +174,17 @@ remaining files do not need subdirectories; they need the stage taxonomy
 written down in `install/README.md` so the next script knows which stage
 it belongs to.
 
-### E. Testing -- colocation is right; the convention is inconsistent
+### E. Testing -- colocation plus one uniform convention
 
-Current reality: `install/test-*.zsh` (sibling files),
-`manifests/test/fixtures/` (dir named `test`),
-`taskfiles/test/lint-fixtures/` (nested differently). Colocation is the
-right instinct -- nixpkgs colocates package tests; NixOS keeps module
-tests addressable per component. What Nix adds is uniformity: every
-component's tests are found the same way and aggregated by one runner.
+Colocation is the right instinct -- nixpkgs colocates package tests; NixOS
+keeps module tests addressable per component. What Nix adds is uniformity:
+every component's tests are found the same way and aggregated by one runner.
 
-The fix is a rename, not a redesign: one convention --
-`<domain>/tests/` -- so `install/tests/`, `manifests/tests/`,
-`taskfiles/tests/`, with `task test` remaining the single aggregator
-(this repo's `nix flake check`). Fixture layout inside stays exactly as
-is; the `expect.txt` golden-file pattern is precisely how NixOS module
-assertions are tested.
+One convention carries that here: `<domain>/tests/` -- `install/tests/`,
+`manifests/tests/`, `taskfiles/tests/` -- with `task test` as the single
+aggregator (this repo's `nix flake check`). Fixture layout inside each is
+unconstrained; the `expect.txt` golden-file pattern is precisely how NixOS
+module assertions are tested.
 
 ## What not to take
 

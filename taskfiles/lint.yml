@@ -20,7 +20,7 @@ vars:
     find {{.ROOT_DIR}} -name '*.zsh'
     -not -path '{{.ROOT_DIR}}/.git/*'
     -not -path '{{.ROOT_DIR}}/.planning/*'
-    -not -path '{{.ROOT_DIR}}/taskfiles/test/*'
+    -not -path '{{.ROOT_DIR}}/taskfiles/tests/*'
     -not -path '{{.ROOT_DIR}}/.claude/*'
 
 tasks:
@@ -122,15 +122,19 @@ tasks:
 
         # LINT-03b: bare ln -s outside taskfiles/helpers.yml.
         # Scope:
-        #   --include='*.yml'    -- markdown docs that describe the rule
-        #                           (taskfiles/README.md mentions `ln -s`)
-        #                           must not trip it.
-        #   --exclude-dir='test' -- self-test fixtures intentionally contain
-        #                           bare ln -s to verify the rule fires (e.g.
-        #                           03b-bare-ln/Taskfile.yml); they belong to
-        #                           lint:test-fixtures, not production scan.
+        #   --include='*.yml' -- markdown docs that describe the rule
+        #                        (taskfiles/README.md mentions `ln -s`) must
+        #                        not trip it.
+        #   --exclude-dir='lint-fixtures' -- those fixtures intentionally
+        #                        contain bare ln -s to verify the rule fires
+        #                        (03b-bare-ln/Taskfile.yml); they belong to
+        #                        lint:test-fixtures, not the production scan.
+        #                        Keyed on the fixture dir, not on `tests`:
+        #                        --exclude-dir matches by basename, so `tests`
+        #                        would also drop install/tests and
+        #                        manifests/tests out of scope.
         violations=$(ggrep -rn -E '\bln[[:space:]]+-s' \
-                      --include='*.yml' --exclude-dir='test' \
+                      --include='*.yml' --exclude-dir='lint-fixtures' \
                       "{{.ROOT_DIR}}/taskfiles/" \
                       | ggrep -v 'helpers.yml' \
                       | ggrep -v ':[[:space:]]*#' || true)
@@ -176,7 +180,7 @@ tasks:
         done < <(find {{.ROOT_DIR}} -name '*.zsh' -perm +111 \
                    -not -path '{{.ROOT_DIR}}/.git/*' \
                    -not -path '{{.ROOT_DIR}}/.planning/*' \
-                   -not -path '{{.ROOT_DIR}}/taskfiles/test/*' \
+                   -not -path '{{.ROOT_DIR}}/taskfiles/tests/*' \
                    -not -path '{{.ROOT_DIR}}/.claude/*' \
                    2>/dev/null)
         exit "$failures"
@@ -280,7 +284,7 @@ tasks:
         hits=$(ggrep -rnE '/opt/homebrew|/usr/local' \
                 --include='*.zsh' --include='*.yml' \
                 --exclude-dir='.git' --exclude-dir='.planning' \
-                --exclude-dir='test' --exclude-dir='.claude' \
+                --exclude-dir='lint-fixtures' --exclude-dir='.claude' \
                 "{{.ROOT_DIR}}" 2>/dev/null \
                | ggrep -v 'lint-allow: hardcoded-prefix' \
                | ggrep -v 'taskfiles/lint\.yml:' \
@@ -391,7 +395,7 @@ tasks:
         {{.DOTFILES_MESSAGES}}
         {{.DOTFILES_LINT_RULES}}
         failures=0
-        fixtures_dir="{{.ROOT_DIR}}/taskfiles/test/lint-fixtures"
+        fixtures_dir="{{.ROOT_DIR}}/taskfiles/tests/lint-fixtures"
         for fix in "$fixtures_dir"/[0-9]*-*/; do
           name=$(basename "$fix")
           expect=$(head -n1 "$fix/expect" | tr -d '[:space:]')
@@ -416,7 +420,7 @@ tasks:
             03b-*)
               # LINT-03b: bare ln -s outside helpers.yml.
               # Mirror production scope: scan *.yml only (production uses
-              # --include='*.yml' --exclude-dir='test'). A fixture with no
+              # --include='*.yml' --exclude-dir='lint-fixtures'). A fixture with no
               # .yml file (e.g. 03b-readme-ok/README.md) is out of scope and
               # passes by construction -- exactly as the production rule
               # treats taskfiles/README.md.

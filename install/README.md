@@ -3,9 +3,25 @@
 Install-engine machinery. The scripts and helpers that `bootstrap.zsh` (at the
 repo root) and `task install` (root `Taskfile.yml`) call into: the manifest
 resolver, the messages library every taskfile sources, the per-machine
-Brewfile composer, and the Tier-3 hook smoke-test runner.
+Brewfile composer, and the smoke-test runners.
 
-## Key files
+## Key files, by pipeline stage
+
+Every script here belongs to exactly one stage. A new script must name its
+stage in this list.
+
+### lib (sourced, never executed)
+
+- `messages.zsh` -- Colored-output library exposing `info`, `success`,
+  `warn`, `error`, `check`, `cross`, `header`, `step`, `debug`. Sourced
+  by task `cmds:` blocks via the `{{.DOTFILES_MESSAGES}}` template var.
+  Self-bootstrapping under `set -u` via the `${DOTFILES_MESSAGES_LOADED:-}`
+  guard -- callers source it with a bare `source` line (see the `set -u
+  contract` block at the top of the file).
+- `compose-settings.zsh` -- Single source of truth for the settings-compose
+  algorithm shared by `claude:settings-compose` and `claude:audit`.
+
+### evaluate (manifests -> resolved.json)
 
 - `resolver.zsh` -- Validates the active machine's
   `manifests/machines/<name>.toml` against the `manifests/features.toml`
@@ -14,25 +30,18 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   feature-map materialization). Atomic write via `mktemp + mv`. Every downstream task
   reads `resolved.json` through go-task `fromJson`; no taskfile parses TOML
   directly.
-- `messages.zsh` -- Colored-output library exposing `info`, `success`,
-  `warn`, `error`, `check`, `cross`, `header`, `step`, `debug`. Sourced
-  by task `cmds:` blocks via the `{{.DOTFILES_MESSAGES}}` template var.
-  Self-bootstrapping under `set -u` via the `${DOTFILES_MESSAGES_LOADED:-}`
-  guard -- callers source it with a bare `source` line (see the `set -u
-  contract` block at the top of the file).
+
+### realize (resolved.json + repo source -> build artifacts)
+
 - `compose-brewfile.zsh` -- Reads `resolved.json`'s typed buckets
   (`packages.brew.{formulae,casks,mas}`, already folded
   in by `resolver.zsh` from the base tier and enabled feature flags) and writes
   a composed `$XDG_CACHE_HOME/dotfiles/Brewfile` (atomic mktemp+mv).
   Invoked by `taskfiles/packages.yml :: packages:compose` and indirectly
   by `packages:install`.
-- `test-hooks.zsh` -- Tier-3 smoke-test runner for the four named Claude
-  hooks (`secret-scan`, `no-emojis`, `no-ai-comments`, `agent-transparency`).
-  Invoked by `taskfiles/test.yml :: test:hooks`; exit code is the count of
-  scenario failures (0 == all pass).
-- `compose-settings.zsh` -- Single source of truth for the settings-compose
-  algorithm shared by `claude:settings-compose` (writes `claude/settings.json`
-  from `claude/settings.d/*.json` fragments) and `claude:audit` (drift check).
+
+### operate (drift detection, addon lifecycle, repo hygiene)
+
 - `claude-addons.zsh` -- Install / upgrade / remove / list / validate the
   third-party Claude addons declared in `manifests/claude-addons/<name>.toml`
   and selected per machine via `[claude].addons`. Invoked by
@@ -46,10 +55,20 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
 - `repo-sync.zsh` -- Fast-forward pull run before install (the `update` alias
   runs this, then `task install`). Fetches then fast-forwards the current
   branch; never merges or rebases. Invoked by `taskfiles/repo.yml :: repo:sync`.
-- `test-links-audit.zsh` -- Smoke test for `links-audit-scan.zsh` against a
+
+### tests (`install/tests/`)
+
+- `hooks.zsh` -- Smoke-test runner for the four named Claude hooks
+  (`secret-scan`, `no-emojis`, `no-ai-comments`, `agent-transparency`).
+  Invoked by `taskfiles/test.yml :: test:hooks`; exit code is the count of
+  scenario failures (0 == all pass).
+- `links-audit.zsh` -- Smoke test for `links-audit-scan.zsh` against a
   throwaway repo + config tree. Invoked by `test:links-audit`.
-- `test-repo-sync.zsh` -- Smoke test exercising every guard branch of
+- `repo-sync.zsh` -- Smoke test exercising every guard branch of
   `repo-sync.zsh` against throwaway git repos. Invoked by `test:repo-sync`.
+- `shell-startup.zsh` -- Smoke test for the zsh startup files (`.zshenv`,
+  `.zprofile`, `.zshrc`, `.zlogin`, `.zlogout`). Invoked by
+  `test:shell-startup`.
 
 ## Adding a pattern
 
@@ -85,6 +104,6 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   `packages:install`, and `packages:verify` tasks that invoke
   `compose-brewfile.zsh`.
 - `../taskfiles/test.yml` -- the `test:hooks` task that invokes
-  `test-hooks.zsh`.
+  `tests/hooks.zsh`.
 - `../CLAUDE.md` -- v2 conventions (file-header comment blocks,
   `set -euo pipefail` on every executable `.zsh`, no AI attribution).

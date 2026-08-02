@@ -44,7 +44,7 @@ vars:
   STATE_FILE: '{{.STATE_DIR}}/machine'
   FEATURES_TOML: '{{.ROOT_DIR}}/manifests/features.toml'
   MACHINES_DIR: '{{.ROOT_DIR}}/manifests/machines'
-  FIXTURES_DIR: '{{.ROOT_DIR}}/manifests/test/fixtures'
+  FIXTURES_DIR: '{{.ROOT_DIR}}/manifests/tests/fixtures'
 
   # Shared machine-name resolution for manifest:show / manifest:validate.
   # Defined AFTER STATE_FILE so the {{.STATE_FILE}} reference resolves -- go-task

@@ -299,7 +299,7 @@ tasks:
 
         # Orphan detection is delegated to install/links-audit-scan.zsh (the
         # single source of detection logic, unit-tested by
-        # install/test-links-audit.zsh). EXPECTED_TARGETS is piped on stdin;
+        # install/tests/links-audit.zsh). EXPECTED_TARGETS is piped on stdin;
         # the repo root plus the scan roots ($XDG_CONFIG_HOME, $ZDOTDIR) are
         # args. The scanner flags two orphan kinds: a live symlink into the repo
         # that is not expected, AND a dangling symlink whose literal target was
