@@ -18,13 +18,16 @@ arch = "arm64"
 identity = "none"
 
 [features]
-enabled = []
+enabled = [
+  "repo-dev-toolchain",
+]
 disabled = [
   "one-password-ssh",
   "one-password-signing",
   "claude-marketplace",
   "repo-auto-update",
   "ghostty",
+  "vscode",
   "jgrid-net",
   "server-include",
   "macos-dock",

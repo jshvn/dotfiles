@@ -10,6 +10,13 @@
 #
 # Schema reference: docs/MANIFEST.md.
 #
+# packages: a flag may declare an optional [<flag>.packages] table using the
+# same bucket shape as manifests/base.toml and a machine's [packages]
+# (formulae, casks, mas, vscode, cargo, uv, npm). The resolver unions those
+# buckets into the resolved set when a machine enables the flag; a disabled
+# flag contributes nothing. A feature's own tooling belongs here, so enabling
+# the feature guarantees the tools it needs.
+#
 # platforms: when present, the flag applies only on the listed operating
 # systems (machine.os). Omit it for platform-neutral flags (the default:
 # applies everywhere). Only "darwin" and "linux" are valid entries.
@@ -18,9 +25,19 @@
 description = "link the 1Password SSH agent config; agent socket exported in .zprofile"
 platforms = ["darwin"]
 
+# The agent socket lives inside the 1Password application bundle.
+[one-password-ssh.packages]
+casks = ["1password"]
+
 [one-password-signing]
 description = "git commit signing via the 1Password op-ssh-sign program"
 platforms = ["darwin"]
+
+# op-ssh-sign ships inside the 1Password application bundle; see the [gpg]
+# program path in identity/git/identities/*. The union dedupes against
+# one-password-ssh when both flags are enabled.
+[one-password-signing.packages]
+casks = ["1password"]
 
 [claude-marketplace]
 description = "install Claude config symlinks and marketplace plugins"
@@ -28,8 +45,64 @@ description = "install Claude config symlinks and marketplace plugins"
 [repo-auto-update]
 description = "fast-forward the dotfiles repo from its remote before install"
 
+[repo-dev-toolchain]
+description = "lint and format tooling required to run task lint on this repo"
+
+# Consumed by taskfiles/lint.yml and install/lint-rules.zsh. A machine that
+# only uses these dotfiles (rather than developing them) does not need these.
+[repo-dev-toolchain.packages]
+formulae = [
+  "biome",
+  "hyperfine",
+  "ruff",
+  "shellcheck",
+  "shfmt",
+  "taplo",
+]
+
 [ghostty]
 description = "gate shell/aliases/ghostty.zsh and the ghostty config link"
+
+[ghostty.packages]
+casks = ["ghostty"]
+
+[vscode]
+description = "install Visual Studio Code and its extension set"
+
+# The cask provides the `code` CLI that the extensions install through, so the
+# two must travel together. Extensions are emitted as `vscode '<id>'` Brewfile
+# lines.
+[vscode.packages]
+casks = ["visual-studio-code"]
+vscode = [
+  "1password.op-vscode",
+  "anthropic.claude-code",
+  "biomejs.biome",
+  "charliermarsh.ruff",
+  "docker.docker",
+  "eamodio.gitlens",
+  "github.vscode-github-actions",
+  "mathematic.vscode-pdf",
+  "mechatroner.rainbow-csv",
+  "ms-azuretools.vscode-containers",
+  "ms-python.debugpy",
+  "ms-python.python",
+  "ms-python.vscode-pylance",
+  "ms-python.vscode-python-envs",
+  "ms-toolsai.jupyter",
+  "ms-toolsai.jupyter-keymap",
+  "ms-toolsai.jupyter-renderers",
+  "ms-toolsai.vscode-jupyter-cell-tags",
+  "ms-toolsai.vscode-jupyter-slideshow",
+  "ms-vscode-remote.remote-containers",
+  "ms-vscode-remote.remote-ssh",
+  "ms-vscode-remote.remote-ssh-edit",
+  "ms-vscode.makefile-tools",
+  "ms-vscode.remote-explorer",
+  "pkief.material-icon-theme",
+  "redhat.vscode-yaml",
+  "task.vscode-task",
+]
 
 [jgrid-net]
 description = "gate shell/aliases/jgrid.zsh"

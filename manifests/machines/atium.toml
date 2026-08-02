@@ -24,6 +24,8 @@ disabled = [
   "one-password-ssh",
   "one-password-signing",
   "claude-marketplace",
+  "repo-dev-toolchain",
+  "vscode",
   "jgrid-net",
   "server-include",
   "macos-dock",
