@@ -405,6 +405,39 @@ validate_manifest() {
     done <<< "$bad_shape"
   fi
 
+  # Redundancy: a machine must not list a package that the base tier or an
+  # ENABLED feature already provides -- the machine manifest is the record of
+  # deliberate choices, and a duplicate blurs that. mas is exempt: a machine mas
+  # entry deliberately overrides a base/feature entry with the same id via the
+  # last-wins dedupe. Only enabled flags count; listing a package a DISABLED
+  # flag would have provided is a legitimate deliberate choice.
+  if [[ -f "$BASE_TOML" && -f "$REGISTRY" ]]; then
+    local redundant base_pkgs_json machine_pkgs_json reg_json_local
+    base_pkgs_json=$(yq -o=json '.packages // {}' "$BASE_TOML" 2>/dev/null || echo '{}')
+    machine_pkgs_json=$(yq -o=json '.packages // {}' "$machine_file" 2>/dev/null || echo '{}')
+    reg_json_local=$(yq -o=json '.' "$REGISTRY" 2>/dev/null || echo '{}')
+    [[ -z "$reg_json_local" || "$reg_json_local" == "null" ]] && reg_json_local='{}'
+    redundant=$(jq -rn \
+      --argjson base "$base_pkgs_json" \
+      --argjson reg "$reg_json_local" \
+      --argjson en "$enabled_json" \
+      --argjson mach "$machine_pkgs_json" '
+      ["formulae","casks","vscode","cargo","uv","npm"] as $buckets
+      | [ $buckets[] as $b
+          | ( ($base[$b] // []) + [ $en[] as $f | ($reg[$f].packages[$b] // [])[] ] ) as $provided
+          | ( ($mach[$b] // []) | map(select(IN($provided[])))
+              | .[]
+              | "packages.\($b): \(.) is already provided by the base tier or an enabled feature -- remove it from the machine manifest" ) ]
+      | .[]' 2>/dev/null || true)
+    if [[ -n "$redundant" ]]; then
+      while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        error "$line"
+        errors=$(( errors + 1 ))
+      done <<< "$redundant"
+    fi
+  fi
+
   # claude.addons: shape-guard + existence.
   local addons_json addon
   addons_json=$(yq -o=json '.claude.addons // []' "$machine_file" 2>/dev/null || echo '[]')

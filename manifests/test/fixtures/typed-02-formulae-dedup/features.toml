@@ -1,1 +1,13 @@
-# Empty feature registry for package-only fixtures (no flags to account).
+# Registry for typed-02: an enabled flag re-declares git, which the base tier
+# already provides. Flag-vs-base overlap is legal (only MACHINE entries are
+# subject to the redundancy rule) and is the real-world dedup case --
+# one-password-ssh and one-password-signing both declare 1password.
+
+[dup-flag]
+description = "test flag whose formulae overlap the base tier"
+
+[dup-flag.packages]
+formulae = [
+  "git",
+  "ripgrep",
+]

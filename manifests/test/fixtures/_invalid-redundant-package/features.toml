@@ -1,0 +1,2 @@
+# Empty feature registry: this fixture isolates the redundancy rule, so no flag
+# accounting errors should compete with the error under test.

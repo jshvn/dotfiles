@@ -1,6 +1,7 @@
-# typed-02-formulae-dedup -- bare formulae union across a bundle and the
-# machine. The shared "dotfiles" bundle declares git + curl; the machine
-# re-declares git (dedup) and adds ripgrep. Expected: [curl, git, ripgrep].
+# typed-02-formulae-dedup -- bare formulae union across the base tier, an
+# enabled flag, and the machine. Base declares curl + git; the flag re-declares
+# git and adds ripgrep; the machine adds fzf. `add | unique` collapses the
+# duplicate git. Expected: [curl, fzf, git, ripgrep].
 
 schema_version = 2
 
@@ -10,7 +11,9 @@ os = "darwin"
 identity = "none"
 
 [features]
-enabled = []
+enabled = [
+  "dup-flag",
+]
 disabled = []
 
 [packages]
@@ -18,6 +21,5 @@ bundles = [
   "dotfiles",
 ]
 formulae = [
-  "git",
-  "ripgrep",
+  "fzf",
 ]
