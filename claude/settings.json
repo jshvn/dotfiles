@@ -272,6 +272,5 @@
       }
     }
   },
-  "model": "opus[1m]",
   "tui": "fullscreen"
 }
