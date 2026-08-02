@@ -1,47 +1,126 @@
 # Borrowing from NixOS
 
-A research-backed plan for what this repo should steal from NixOS (and its
-ecosystem: home-manager, nix-darwin, flakes) without adopting Nix itself --
-covering seamlessness, legibility, multi-machine management, and
-macOS + Ubuntu support.
+What this repo takes from NixOS (and its ecosystem: home-manager,
+nix-darwin, flakes) without adopting Nix itself -- covering both how NixOS is
+architected internally and which of its features are worth borrowing.
+
+Two questions, one document. "How is NixOS built?" explains the shape this
+repo converged on; "what should we borrow next?" is the roadmap. Sections
+run in that order: architecture, then what has already been borrowed, then
+the open borrow list, then the standing refusals.
 
 Method: a full walk of this repo (every taskfile, the resolver, shell/os
-layers, docs, and the approved Linux spec), a survey of NixOS concepts and
-best-practice multi-host repo layouts, and community evidence from people who
-have run both systems. Caveat on sources: reddit.com blocks automated
-retrieval entirely, so r/NixOS threads could not be quoted directly; the
-equivalent discussions were captured from Hacker News, lobste.rs, NixOS
-Discourse, and first-person migration blog posts -- the same population
-having the same arguments. All sources are listed at the end.
+layers, docs), a survey of NixOS concepts and best-practice multi-host repo
+layouts, and community evidence from people who have run both systems.
+Caveat on sources: reddit.com blocks automated retrieval entirely, so
+r/NixOS threads could not be quoted directly; the equivalent discussions
+were captured from Hacker News, lobste.rs, NixOS Discourse, and first-person
+migration blog posts -- the same population having the same arguments. All
+sources are listed at the end.
 
 ## TL;DR
 
-This repo has already independently reinvented the *declaration* and
-*validation* halves of NixOS: per-machine manifests are `configuration.nix`,
-the feature registry is a closed option vocabulary, `resolver.zsh` is module
-assertions, `resolved.json` is the evaluated config, `status:` blocks are
-convergence, and the audit tiers are drift detection. What is missing is the
-*feedback* half -- preview, diff, and history -- plus a package-name
-indirection layer, which is the actual key to Ubuntu support. None of the
-missing pieces require a content-addressed store, a configuration language,
-or atomic activation. The highest-leverage borrows, in order:
+This repo independently reinvented the *declaration* and *validation* halves
+of NixOS: per-machine manifests are `configuration.nix`, the feature registry
+is a closed option vocabulary, `resolver.zsh` is module assertions,
+`resolved.json` is the evaluated config, `status:` blocks are convergence,
+and the audit tiers are drift detection. The *feedback* half -- preview and
+diff -- was the gap, and closing it turned out to be a staging problem rather
+than a feature problem. What remains missing is declared-state enforcement
+and a package-name indirection layer, the latter being the actual key to
+Ubuntu support. None of it requires a content-addressed store, a
+configuration language, or atomic activation. The highest-leverage borrows,
+in order:
 
 1. `task diff` -- a dry-run "here is what install would change" plan.
+   **Delivered 2026-08-02**, and it arrived as a corollary of adopting the
+   evaluate/realize/activate staging rather than as a feature in its own
+   right.
 2. Declared-state enforcement -- `brew bundle cleanup` behind a per-machine
    flag, making the manifest authoritative instead of merely sufficient.
-3. Generation snapshots -- record git SHA + package versions + `resolved.json`
-   at each converged install; cheap history and a practical rollback story.
+   **Next.**
+3. Generation snapshots. **Rejected 2026-07-24** -- see item 3.
 4. Per-OS package-name indirection in the resolver -- the overlay idea, and
-   the design center of Linux support.
+   the design center of Linux support. **Blocked on a real Linux machine.**
 5. A periodic clean-VM rebuild drill -- the "wipe and rebuild to 100%"
    property is the single most-defended NixOS benefit, and it is a testing
-   discipline, not a Nix feature.
+   discipline, not a Nix feature. **Blocked on the same.**
 
 And the strongest finding in the other direction: the community's most common
 landing spot after leaving Nix on macOS is Homebrew + a version manager +
 plain declarative dotfiles -- i.e. this repo is the *destination* of that
-migration path, not a stepping stone away from it. Do not adopt Nix; do
-finish the feedback loop it would have provided.
+migration path, not a stepping stone away from it. Do not adopt Nix; do take
+the discipline that made its feedback loop cheap.
+
+## How NixOS is architected
+
+### The five-layer stack
+
+NixOS is five layers, each consuming only the layer below:
+
+| Layer | What it is | This repo's equivalent |
+|---|---|---|
+| Nix language | Pure, lazy, functional *data* language -- no I/O; same inputs always evaluate to the same result | TOML (deliberately dumber -- good) |
+| Nix store | `/nix/store/<hash>-name` -- immutable, content-addressed artifacts | none (deliberately rejected) |
+| Derivations | A build recipe: inputs -> pure function -> output path. Everything is a derivation: a package, a config file, a whole OS | `resolved.json` and the build dir |
+| nixpkgs | ~100k packages + `lib/` + `stdenv`, all plain functions returning derivations | Homebrew (external) |
+| Module system | Merges hundreds of config fragments into one typed tree that builds *one* derivation: the system | `resolver.zsh` + taskfiles |
+
+Each layer is boring on its own. The power is that every layer speaks the
+same currency (files computed from inputs), so the whole OS becomes a
+single build artifact.
+
+### The module system
+
+A NixOS module is a file that can do two things:
+
+- **Declare options** -- typed, documented, defaulted:
+  `options.services.nginx.enable = mkOption { type = bool; default = false; }`
+- **Define config** -- values for options declared *anywhere*:
+  `config = mkIf cfg.enable { systemd.services.nginx = ...; users.users.nginx = ...; environment.systemPackages = [ pkgs.nginx ]; }`
+
+Evaluation is a fixed point: all modules merge simultaneously; any module
+can read the final merged config while contributing to it. Merging is
+type-driven (lists concatenate, attrsets deep-merge, scalars conflict
+unless prioritized with `mkDefault`/`mkForce`), and `assertions` /
+`warnings` fire on the merged result.
+
+The architectural insight: **a module owns its concern end-to-end.**
+`nginx.nix` contains the option vocabulary, the config-file generation, the
+systemd unit, the user account, *and the packages the service needs*.
+Enabling `services.nginx.enable = true` pulls all of it. Host files are thin
+-- 30 lines of toggles -- because modules are thick. That is the argument
+for `[<flag>.packages]` in the feature registry.
+
+### The three-stage pipeline (the deepest idea)
+
+Every `nixos-rebuild switch` is strictly staged:
+
+1. **Evaluate** (pure, fast, no side effects): modules -> one config tree ->
+   one derivation graph. Nothing touches disk.
+2. **Realize** (build; still not the live system): build every artifact. At
+   the end there exists a complete directory -- the "system toplevel" --
+   containing everything the machine should be. The entire desired state is
+   materialized as files before anything is touched.
+3. **Activate** (the only impure step): flip symlinks from the old toplevel
+   to the new one, restart changed services.
+
+Because stage 2 produces a real directory, `dry-activate`, `nvd diff`,
+generations, and rollback come *for free* -- they are all operations on
+directories that already exist. Diff, history, and rollback are not features
+Nix built; they are corollaries of "compute the whole desired state before
+applying any of it." This repo runs the same three stages
+(`resolver.zsh` -> the build dir -> `task install`), which is why `task diff`
+cost so little once the staging was in place.
+
+### How the code is organized
+
+- Hosts thin, modules thick; shared "profiles" are just modules that hosts
+  import.
+- `lib/` (pure helpers) strictly separated from packages and modules.
+- Tests are addressable targets in the same build graph
+  (`nix build .#checks.x86_64.nginx`): colocated with components, uniformly
+  named, aggregated by one runner (`nix flake check`).
 
 ## Where this repo is already NixOS-shaped
 
@@ -56,7 +135,9 @@ finish the feedback loop it would have provided.
 | hosts/ thin, modules/ thick | machine manifests are flag lists + discretionary packages; flags carry their own packages | Have |
 | OS as a host attribute, not a repo fork | `machine.os` field + registry `platforms` | Have (schema accepts `linux`, unused) |
 | Auto-import directories | `shell/aliases/*` and `shell/functions/*` globbing | Have |
-| Dry-run / diff (`dry-activate`, `nvd diff`) | -- | **Missing** |
+| Dry-run / diff (`dry-activate`, `nvd diff`) | `task diff` vs the build dir | Have |
+| Realize stage producing a whole desired state | `$XDG_STATE_HOME/dotfiles/build/` | Have |
+| Build products never in the source tree | repo holds source only; generated files in the state tree | Have |
 | Undeclared-state cleanup | audit reports drift but nothing removes it | **Missing** |
 | Generations / history / rollback | state = two files, no history | **Missing** |
 | Package-name indirection across OSes (overlays) | -- | **Missing** |
@@ -121,32 +202,103 @@ are *convergent* (nudge state toward the manifest), Nix is *congruent*
 true rollback. The realistic goal here is aggressive convergence: detect and
 correct drift in both directions, preview changes before applying.
 
+## What has already been borrowed
+
+Five structural borrows, all delivered. Each is here because it names a
+decision that should not be re-litigated, not to describe the code -- the
+code and its READMEs are authoritative for that.
+
+| Borrow | Delivered |
+|---|---|
+| A -- build-then-activate + `task diff` | 2026-08-02 |
+| B -- repo tree holds source only | 2026-08-02 |
+| C -- feature-to-package mapping | 2026-08-02 |
+| D -- `install/` scripts name their stage | 2026-08-02 |
+| E -- one test convention | 2026-08-02 |
+
+Design records:
+`superpowers/specs/2026-08-02-build-then-activate-design.md` and
+`superpowers/specs/2026-08-02-manifest-tier-restructure-design.md`.
+
+### A. Build-then-activate
+
+Composition is separated from activation. The realize stage emits
+`$XDG_STATE_HOME/dotfiles/build/` holding the composed Brewfile, the composed
+`settings.json`, and `links.map`. Activation applies it.
+
+Because the desired state is materialized as files, `task diff` is a file
+comparison rather than a recomputation. That is the Nix property: diff is a
+corollary of staging, not a feature built on top of it.
+
+### B. The repo tree holds source only
+
+Nix's hardest rule is that build products never live in the source tree.
+Machine-generated addon fragments live at
+`$XDG_STATE_HOME/dotfiles/settings.d/`, and the composed `settings.json` is
+built into the state tree and installed onto `~/.config/claude/settings.json`
+as a real file. Nothing the Claude CLI writes can reach tracked source, so
+`git status` no longer differs per machine.
+
+One impurity remains and is deliberate: compose reads `enabledPlugins`,
+`extraKnownMarketplaces`, `model`, and `tui` back out of the live file,
+because the CLI writes them there and cannot be redirected. Bounded to four
+keys, one direction, and pointed away from the repo -- the honest shape, not
+something to engineer around.
+
+### C. Feature-to-package mapping
+
+Packages arrive in three tiers, mirroring NixOS's base system / modules /
+`environment.systemPackages` split: `manifests/base.toml` (unconditional, no
+machine names it), `[<flag>.packages]` in the registry (a concern owns its
+packages end-to-end), and a machine's `[packages]` (deliberate choices only).
+
+Bundles are gone. The drift class they created -- enable `ghostty` without
+its cask, or vice versa -- is structurally impossible now, and the resolver
+rejects a machine that re-declares anything base or an enabled flag already
+provides. The invariant that makes a machine manifest readable: a package
+appears there if and only if it was a free choice.
+
+On the O(machines x flags) feature accounting: NixOS solves it with defaults
+(`mkDefault`); item 9 below correctly defers that. At four machines, total
+explicitness is the right trade.
+
+### D. `install/` scripts name their pipeline stage
+
+Every script under `install/` belongs to exactly one stage -- lib, evaluate,
+realize, operate, or tests -- and `install/README.md` lists them that way, so
+a new script declares where it fits rather than implying it through a
+filename prefix.
+
+The one file to watch is `resolver.zsh` (668 lines against the 800-line cap).
+The module system's internal split is the natural fracture line when it
+bursts: *declare/validate* vs *merge/emit*.
+
+### E. One test convention
+
+Colocation is the right instinct -- nixpkgs colocates package tests; NixOS
+keeps module tests addressable per component. What Nix adds is uniformity:
+every component's tests are found the same way and aggregated by one runner.
+
+`<domain>/tests/` carries that: `install/tests/`, `manifests/tests/`,
+`taskfiles/tests/`, with `task test` as the single aggregator (this repo's
+`nix flake check`). Fixture layout inside each is unconstrained; the
+`expect.txt` golden-file pattern is precisely how NixOS module assertions are
+tested.
+
 ## The borrow list
 
-### 1. `task diff` -- dry-run preview (DELIVERED 2026-08-02)
+### 1. `task diff` -- dry-run preview (DELIVERED -- see borrow A)
 
-**Nix:** `nixos-rebuild dry-activate` shows what activation would change;
-`nvd diff` renders added/removed/upgraded packages between generations.
-chezmoi independently converged on the identical UX (`chezmoi diff` then
-`chezmoi apply`). Two unrelated ecosystems converging is strong evidence this
-is the load-bearing UX idea, and it is fully separable from Nix's storage
-model.
+`nixos-rebuild dry-activate` shows what activation would change; `nvd diff`
+renders added/removed/upgraded packages between generations. chezmoi
+independently converged on the identical UX (`chezmoi diff` then
+`chezmoi apply`). Two unrelated ecosystems converging is why this ranked
+first, and it is fully separable from Nix's storage model.
 
-**As built:** the realize stage materializes
-`$XDG_STATE_HOME/dotfiles/build/{Brewfile,settings.json,links.map}`, and
-`task diff` compares each against the live system -- packages via
-`brew bundle check` plus `brew outdated` intersected with the declared set,
-links via `readlink -f` against the map, claude via a `jq -S` diff of built
-vs live. Per-domain `packages:diff` / `links:diff` / `claude:diff` each
-refresh only their own artifact.
-
-The lesson worth keeping: diff did not need to be built as a feature. It
-fell out of separating compose from activation. See
-`superpowers/specs/2026-08-02-build-then-activate-design.md`.
-
-Not carried over from the original sketch: addon install/remove deltas, and
-`resolver.zsh --stdout` diffed against the cached `resolved.json`. Both are
-still reasonable additions -- `manifest:audit` covers the second case today.
+Two follow-ups from the original sketch were not carried over and remain
+reasonable: addon install/remove deltas in the preview, and
+`resolver.zsh --stdout` diffed against the cached `resolved.json`
+(`manifest:audit` covers the second case today).
 
 ### 2. Declared-state enforcement -- `task packages:prune` (do)
 
@@ -176,7 +328,19 @@ merely *sufficient*.
 Effort: low. Payoff: high -- this is the single biggest seamlessness gap
 between brew-bundle setups and nix-darwin.
 
-### 3. Generation snapshots and a practical rollback story (do)
+### 3. Generation snapshots and a practical rollback story (REJECTED)
+
+**Rejected 2026-07-24 by operator decision.** Homebrew is rolling-release and
+refuses version pinning, so binaries never roll back regardless of what is
+recorded. The residual value -- a version record for bisecting "it worked
+last week" -- addresses a problem that has not occurred in years of
+operation, and config rollback is already `git checkout` + `task install`.
+The build dir earns its keep on `task diff` alone; nothing snapshot-shaped
+was built alongside it.
+
+Everything below is the design as evaluated, kept so the rejection can be
+re-examined against real evidence rather than re-derived from scratch.
+Revisit only if an actual "which version did I have?" incident happens.
 
 **Nix:** every rebuild is a numbered generation; activation is atomic;
 any generation is bootable/restorable. The felt value is fearlessness.
@@ -200,7 +364,7 @@ But the value decomposes into replicable parts:
   dotfiles; note it and skip.
 
 Effort: low. Payoff: medium (mostly legibility and history; occasionally a
-rescue).
+rescue) -- judged not to clear the bar.
 
 ### 4. What to do about pinning (mostly: don't)
 
@@ -362,6 +526,15 @@ work-identity TODO placeholder.
 Effort: low. Payoff: low-medium.
 
 ## What NOT to borrow
+
+At the architecture level: do not import the fixed-point merge, typed option
+trees, or inheritance between manifests. Those exist because NixOS merges
+thousands of modules written by strangers; this repo has four machines and
+one author. Take the **staging discipline** (evaluate -> realize -> activate)
+and the **purity rule** (no generated files in the source tree), not the
+machinery that enforces them at scale.
+
+Item by item:
 
 Documented to prevent re-litigation; each of these is a known Nix pain point
 or a mismatch with this repo's constraints.

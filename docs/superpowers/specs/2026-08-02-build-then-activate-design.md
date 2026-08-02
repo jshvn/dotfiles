@@ -46,7 +46,7 @@ resolve, plus `task diff` falls out as a corollary rather than a feature.
 
 ## Principle
 
-From `docs/NIXOS-ARCHITECTURE-LEARNINGS.md`, take the staging discipline and
+From `docs/NIXOS-IDEAS.md`, take the staging discipline and
 the purity rule, not the machinery:
 
 | Stage | Purity | This repo |
