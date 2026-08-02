@@ -1,0 +1,22 @@
+# typed-06-base-tier -- the base tier folds into every machine with no machine
+# declaring it. The test base.toml declares curl + git; the machine declares
+# ripgrep and no bundles. Expected: [curl, git, ripgrep].
+
+schema_version = 2
+
+[machine]
+description = "typed-06-base-tier fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = []
+disabled = []
+
+[packages]
+bundles = [
+  "dotfiles",
+]
+formulae = [
+  "ripgrep",
+]

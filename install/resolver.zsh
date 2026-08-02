@@ -4,8 +4,9 @@
 # install/resolver.zsh -- compile a v2 machine manifest into resolved.json
 #
 # Purpose:      Validate a machine manifest (manifests/machines/<name>.toml)
-#               against the feature registry (manifests/features.toml) and the
-#               bundle set (manifests/bundles/), then compile it into
+#               against the feature registry (manifests/features.toml), the
+#               bundle set (manifests/bundles/), and the base tier
+#               (manifests/base.toml), then compile it into
 #               $XDG_STATE_HOME/dotfiles/resolved.json (or stdout).
 # Depends on:   yq (>= 4.52.1), jq (>= 1.7), zsh (>= 5); install/messages.zsh.
 # Side effects: writes $XDG_STATE_HOME/dotfiles/resolved.json (atomic via
@@ -25,6 +26,11 @@ source "${DOTFILEDIR}/install/messages.zsh"
 # assignment here is the production default.
 typeset REGISTRY="${DOTFILEDIR}/manifests/features.toml"
 typeset SHARED_DIR="${DOTFILEDIR}/manifests/bundles"
+
+# BASE_TOML is overridable via the --base CLI flag (testing only -- see main()
+# arg parser). Holds the unconditional package tier: every machine running these
+# dotfiles receives it and no machine declares it.
+typeset BASE_TOML="${DOTFILEDIR}/manifests/base.toml"
 typeset -r MACHINES_DIR="${DOTFILEDIR}/manifests/machines"
 typeset -r STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
 typeset -r STATE_FILE="${STATE_DIR}/machine"
@@ -278,6 +284,12 @@ validate_manifest() {
     fi
   fi
 
+  # Base tier must exist -- every machine's package set is built on top of it.
+  if [[ ! -f "$BASE_TOML" ]]; then
+    error "base manifest not found: ${BASE_TOML}"
+    errors=$(( errors + 1 ))
+  fi
+
   # Identity/1Password sentinel consistency.
   if [[ -n "$ident_val" && "$ident_val" =~ $PATH_NAME_RE ]]; then
     local ssh_overlay git_overlay en_has_ssh en_has_sign
@@ -409,19 +421,22 @@ validate_manifest() {
   return 0
 }
 
-# union_bucket <machine_file> <key> <finalize_jq> <bundle_file...>
-# Concatenate the .packages.<key> arrays from each bundle (declared order) then
-# the machine, and apply the finalize jq expression. Bare-string buckets use
-# `add | unique`; casks wrap to { name } objects; mas dedupes by .id (last
-# wins, so the machine overrides a bundle).
+# union_bucket <machine_file> <key> <finalize_jq> <feature_json> <bundle_file...>
+# Concatenate the .packages.<key> arrays from the base tier, then each bundle
+# (declared order), then the enabled-feature packages, then the machine, and
+# apply the finalize jq expression. Bare-string buckets use `add | unique`;
+# casks wrap to { name } objects; mas dedupes by .id (last wins, so the machine
+# overrides base, a bundle, or a feature).
 union_bucket() {
-  local machine_file="$1" key="$2" finalize="$3"
-  shift 3
+  local machine_file="$1" key="$2" finalize="$3" feature_json="$4"
+  shift 4
   {
+    yq -o=json ".packages.${key} // []" "$BASE_TOML"
     local f
     for f in "$@"; do
       yq -o=json ".packages.${key} // []" "$f"
     done
+    printf '%s\n' "${feature_json:-[]}"
     yq -o=json ".packages.${key} // []" "$machine_file"
   } | jq -s "$finalize"
 }
@@ -456,13 +471,13 @@ resolve_pipeline() {
 
   # Per-bucket union across bundles + machine.
   local union_formulae union_casks union_mas union_vscode union_cargo union_uv union_npm
-  union_formulae=$(union_bucket "$machine_file" formulae 'add | unique' "${bundle_files[@]}")
-  union_casks=$(union_bucket    "$machine_file" casks    'add | unique | map({ name: . })' "${bundle_files[@]}")
-  union_mas=$(union_bucket      "$machine_file" mas      'add | group_by(.id) | map(.[-1])' "${bundle_files[@]}")
-  union_vscode=$(union_bucket   "$machine_file" vscode   'add | unique' "${bundle_files[@]}")
-  union_cargo=$(union_bucket    "$machine_file" cargo    'add | unique' "${bundle_files[@]}")
-  union_uv=$(union_bucket       "$machine_file" uv       'add | unique' "${bundle_files[@]}")
-  union_npm=$(union_bucket      "$machine_file" npm      'add | unique' "${bundle_files[@]}")
+  union_formulae=$(union_bucket "$machine_file" formulae 'add | unique' '[]' "${bundle_files[@]}")
+  union_casks=$(union_bucket    "$machine_file" casks    'add | unique | map({ name: . })' '[]' "${bundle_files[@]}")
+  union_mas=$(union_bucket      "$machine_file" mas      'add | group_by(.id) | map(.[-1])' '[]' "${bundle_files[@]}")
+  union_vscode=$(union_bucket   "$machine_file" vscode   'add | unique' '[]' "${bundle_files[@]}")
+  union_cargo=$(union_bucket    "$machine_file" cargo    'add | unique' '[]' "${bundle_files[@]}")
+  union_uv=$(union_bucket       "$machine_file" uv       'add | unique' '[]' "${bundle_files[@]}")
+  union_npm=$(union_bucket      "$machine_file" npm      'add | unique' '[]' "${bundle_files[@]}")
 
   # Security: every package name reaches the generated Brewfile verbatim (Ruby
   # DSL, executed by `brew bundle`). A name containing a quote/backtick/#/
@@ -582,6 +597,10 @@ main() {
         # Testing only: override path to manifests/bundles/ directory.
         if (( $# < 2 )); then error "--shared-dir requires an argument"; return 1; fi
         SHARED_DIR="$2"; shift 2 ;;
+      --base)
+        # Testing only: override path to base.toml.
+        if (( $# < 2 )); then error "--base requires an argument"; return 1; fi
+        BASE_TOML="$2"; shift 2 ;;
       --help|-h)
         cat <<'USAGE'
 Usage:
@@ -592,6 +611,7 @@ Usage:
 Test-only flags (do not use in production):
   --registry <path>       override features.toml path
   --shared-dir <path>     override manifests/bundles/ directory
+  --base <path>           override manifests/base.toml path
 
 Environment:
   DOTFILEDIR        repo root (required)

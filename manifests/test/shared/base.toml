@@ -1,0 +1,10 @@
+# Test-scope base tier for typed-bucket fixtures only. NEVER referenced by real
+# machine manifests -- selection happens via the resolver's --base flag in the
+# test runner. Keep contents stable: every typed-* fixture's expected.json locks
+# in the resolved output, so changing a package here cascades to all of them.
+
+[packages]
+formulae = [
+  "curl",
+  "git",
+]

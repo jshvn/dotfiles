@@ -94,6 +94,7 @@ tasks:
         trap cleanup_neg EXIT
 
         test_shared_dir="{{.ROOT_DIR}}/manifests/test/shared"
+        test_base="{{.ROOT_DIR}}/manifests/test/shared/base.toml"
         real_registry="{{.ROOT_DIR}}/manifests/features.toml"
 
         # registry_for <fixture_dir>: a fixture ships its own minimal
@@ -131,7 +132,8 @@ tasks:
           local neg_stderr
           neg_stderr=$(DOTFILEDIR="{{.ROOT_DIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
             zsh "{{.ROOT_DIR}}/install/resolver.zsh" \
-            --validate-only --machine "$sandboxed_name" --registry "$reg" 2>&1 >/dev/null || true)
+            --validate-only --machine "$sandboxed_name" --registry "$reg" \
+            --base "$test_base" 2>&1 >/dev/null || true)
           rm -f "$tmp_neg"
           if echo "$neg_stderr" | grep -q "$grep_substring"; then
             check "fixture: ${fixture_name} -- correctly rejected (${displayed_label})"
@@ -168,7 +170,8 @@ tasks:
             zsh "{{.ROOT_DIR}}/install/resolver.zsh" \
             --machine "$sandboxed_name" --stdout \
             --registry "$reg" \
-            --shared-dir "$test_shared_dir" 2>/dev/null) || {
+            --shared-dir "$test_shared_dir" \
+            --base "$test_base" 2>/dev/null) || {
             cross "fixture: ${fix_name} -- resolver invocation failed"
             rm -f "$tmp_mach"
             failures=$(( failures + 1 ))

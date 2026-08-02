@@ -1,0 +1,50 @@
+# manifests/base.toml -- the unconditional package tier.
+#
+# Every machine running these dotfiles receives these packages. No machine
+# manifest declares them, and listing one in a machine's [packages] is a hard
+# error (the resolver's redundancy rule). Two kinds of thing live here:
+#
+#   - Bootstrap toolchain: the resolver and task system cannot run without it
+#     (zsh, git, coreutils, grep, openssh, yq, jq, go-task, mas).
+#   - Shell-config dependencies: aliases, functions, and configs under shell/
+#     and configs/ break without them.
+#
+# A package needed only by a specific feature belongs on that feature's flag in
+# manifests/features.toml, not here. A package you simply want on a machine
+# belongs in that machine's [packages].
+#
+# Schema reference: docs/MANIFEST.md.
+#
+# Notes:
+#   - "antidote" is the zsh plugin manager; see shell/.zshrc and
+#     shell/.zsh_plugins.txt for usage.
+#   - "libpsl" provides the `psl` CLI used by shell/functions/whois.zsh to
+#     reduce a host to its registrable domain (eTLD+1) via the Public Suffix
+#     List; without it whois() falls back to querying the host unreduced.
+#   - "mas" is the Mac App Store CLI that installs every [packages] mas entry.
+
+[packages]
+formulae = [
+  "antidote",
+  "cloudflared",
+  "coreutils",
+  "eza",
+  "fastfetch",
+  "git",
+  "git-delta",
+  "go-task",
+  "grc",
+  "grep",
+  "highlight",
+  "jq",
+  "libpsl",
+  "mas",
+  "ncdu",
+  "onefetch",
+  "openssh",
+  "tlrc",
+  "trippy",
+  "whois",
+  "yq",
+  "zsh",
+]

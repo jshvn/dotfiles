@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "description": "typed-06-base-tier fixture"
+  },
+  "platform": {
+    "os": "darwin",
+    "arch": "FROM_UNAME"
+  },
+  "features": {},
+  "identity": {
+    "git": "none",
+    "ssh": "none"
+  },
+  "packages": {
+    "brew": {
+      "bundles": [
+        "dotfiles"
+      ],
+      "formulae": [
+        "curl",
+        "git",
+        "ripgrep"
+      ],
+      "casks": [],
+      "mas": []
+    },
+    "vscode": {
+      "extensions": []
+    },
+    "cargo": {
+      "crates": []
+    },
+    "uv": {
+      "tools": []
+    },
+    "npm": {
+      "packages": []
+    }
+  },
+  "claude": {
+    "addons": []
+  }
+}
