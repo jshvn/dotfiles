@@ -1,0 +1,15 @@
+# Registry for typed-05: one enabled flag carrying packages, one disabled flag
+# whose packages must not appear in the resolved set.
+
+[flag-with-packages]
+description = "test flag carrying packages"
+
+[flag-with-packages.packages]
+formulae = ["feat-formula"]
+casks = ["feat-cask"]
+
+[flag-disabled-packages]
+description = "disabled flag whose packages must not appear"
+
+[flag-disabled-packages.packages]
+formulae = ["absent-formula"]

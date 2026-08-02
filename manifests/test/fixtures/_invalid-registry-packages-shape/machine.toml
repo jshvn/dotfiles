@@ -1,0 +1,20 @@
+# negative fixture -- a registry flag declaring an unknown packages bucket must
+# be rejected.
+
+schema_version = 2
+
+[machine]
+description = "registry-packages-shape fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = []
+disabled = [
+  "bad-flag",
+]
+
+[packages]
+bundles = [
+  "dotfiles",
+]

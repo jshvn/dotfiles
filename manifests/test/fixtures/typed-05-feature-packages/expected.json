@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "description": "typed-05-feature-packages fixture"
+  },
+  "platform": {
+    "os": "darwin",
+    "arch": "FROM_UNAME"
+  },
+  "features": {
+    "flag-with-packages": true,
+    "flag-disabled-packages": false
+  },
+  "identity": {
+    "git": "none",
+    "ssh": "none"
+  },
+  "packages": {
+    "brew": {
+      "bundles": [
+        "dotfiles"
+      ],
+      "formulae": [
+        "curl",
+        "feat-formula",
+        "git"
+      ],
+      "casks": [
+        {
+          "name": "feat-cask"
+        }
+      ],
+      "mas": []
+    },
+    "vscode": {
+      "extensions": []
+    },
+    "cargo": {
+      "crates": []
+    },
+    "uv": {
+      "tools": []
+    },
+    "npm": {
+      "packages": []
+    }
+  },
+  "claude": {
+    "addons": []
+  }
+}

@@ -282,6 +282,32 @@ validate_manifest() {
         errors=$(( errors + 1 ))
       done <<< "$accounting"
     fi
+
+    # Registry packages shape: a flag's optional [<flag>.packages] table may
+    # only declare the seven bucket keys; bare-string arrays except mas
+    # ({ id, name } objects). One line per violation.
+    local reg_pkg_bad
+    reg_pkg_bad=$(jq -rn --argjson reg "$registry_json" '
+      $reg | to_entries
+      | map(select((.value | type) == "object" and (.value | has("packages"))))
+      | map(.key as $flag | (.value.packages | to_entries | map(
+          .key as $bucket
+          | if (["formulae","casks","mas","vscode","cargo","uv","npm"] | index($bucket)) == null
+          then "registry flag \($flag): unknown packages bucket \($bucket)"
+          elif $bucket == "mas"
+          then (if (.value | map(select((.id | type) != "number" or (.name | type) != "string")) | length) > 0
+                then "registry flag \($flag): packages.mas entries must be { id, name } objects" else empty end)
+          else (if (.value | map(select(type != "string")) | length) > 0
+                then "registry flag \($flag): packages.\($bucket) entries must be bare strings" else empty end)
+          end)))
+      | flatten | .[]' 2>/dev/null || true)
+    if [[ -n "$reg_pkg_bad" ]]; then
+      while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        error "$line"
+        errors=$(( errors + 1 ))
+      done <<< "$reg_pkg_bad"
+    fi
   fi
 
   # Base tier must exist -- every machine's package set is built on top of it.
@@ -463,6 +489,20 @@ resolve_pipeline() {
   features_map=$(jq -n --argjson keys "$registry_keys" --argjson en "$enabled_json" '
     reduce $keys[] as $k ({}; .[$k] = ($en | index($k) != null))')
 
+  # Feature-declared packages: an enabled registry flag's optional
+  # [<flag>.packages] buckets fold into the same union as base + machine.
+  local registry_json
+  registry_json=$(yq -o=json '.' "$REGISTRY" 2>/dev/null || echo '{}')
+  [[ -z "$registry_json" || "$registry_json" == "null" ]] && registry_json='{}'
+
+  # feature_bucket <key>: union of packages.<key> arrays declared by every
+  # ENABLED flag. Disabled flags contribute nothing.
+  feature_bucket() {
+    local key="$1"
+    jq -n --argjson reg "$registry_json" --argjson en "$enabled_json" --arg key "$key" \
+      '[$en[] as $f | ($reg[$f].packages[$key] // [])] | add // []'
+  }
+
   # bundles list (declared order) + their file paths.
   local bundles_json
   bundles_json=$(yq -o=json '.packages.bundles // []' "$machine_file")
@@ -471,13 +511,13 @@ resolve_pipeline() {
 
   # Per-bucket union across bundles + machine.
   local union_formulae union_casks union_mas union_vscode union_cargo union_uv union_npm
-  union_formulae=$(union_bucket "$machine_file" formulae 'add | unique' '[]' "${bundle_files[@]}")
-  union_casks=$(union_bucket    "$machine_file" casks    'add | unique | map({ name: . })' '[]' "${bundle_files[@]}")
-  union_mas=$(union_bucket      "$machine_file" mas      'add | group_by(.id) | map(.[-1])' '[]' "${bundle_files[@]}")
-  union_vscode=$(union_bucket   "$machine_file" vscode   'add | unique' '[]' "${bundle_files[@]}")
-  union_cargo=$(union_bucket    "$machine_file" cargo    'add | unique' '[]' "${bundle_files[@]}")
-  union_uv=$(union_bucket       "$machine_file" uv       'add | unique' '[]' "${bundle_files[@]}")
-  union_npm=$(union_bucket      "$machine_file" npm      'add | unique' '[]' "${bundle_files[@]}")
+  union_formulae=$(union_bucket "$machine_file" formulae 'add | unique' "$(feature_bucket formulae)" "${bundle_files[@]}")
+  union_casks=$(union_bucket    "$machine_file" casks    'add | unique | map({ name: . })' "$(feature_bucket casks)" "${bundle_files[@]}")
+  union_mas=$(union_bucket      "$machine_file" mas      'add | group_by(.id) | map(.[-1])' "$(feature_bucket mas)" "${bundle_files[@]}")
+  union_vscode=$(union_bucket   "$machine_file" vscode   'add | unique' "$(feature_bucket vscode)" "${bundle_files[@]}")
+  union_cargo=$(union_bucket    "$machine_file" cargo    'add | unique' "$(feature_bucket cargo)" "${bundle_files[@]}")
+  union_uv=$(union_bucket       "$machine_file" uv       'add | unique' "$(feature_bucket uv)" "${bundle_files[@]}")
+  union_npm=$(union_bucket      "$machine_file" npm      'add | unique' "$(feature_bucket npm)" "${bundle_files[@]}")
 
   # Security: every package name reaches the generated Brewfile verbatim (Ruby
   # DSL, executed by `brew bundle`). A name containing a quote/backtick/#/

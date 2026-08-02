@@ -1,0 +1,23 @@
+# typed-05-feature-packages -- an ENABLED registry flag's [<flag>.packages]
+# buckets fold into the resolved set; a DISABLED flag's contribute nothing.
+# absent-formula must not appear anywhere in the output.
+
+schema_version = 2
+
+[machine]
+description = "typed-05-feature-packages fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = [
+  "flag-with-packages",
+]
+disabled = [
+  "flag-disabled-packages",
+]
+
+[packages]
+bundles = [
+  "dotfiles",
+]
