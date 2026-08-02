@@ -3,8 +3,9 @@ version: '3'
 # =============================================================================
 # taskfiles/lint.yml -- lint suite for v2 dotfiles conventions
 #
-# Purpose:      Enforce LINT-02..12 structural correctness rules that prevent
-#               recurring bug classes (01 and 06 intentionally absent). See
+# Purpose:      Enforce the LINT-NN structural correctness rules that prevent
+#               recurring bug classes (01, 06, and 09 intentionally absent;
+#               the numbers are retired, not reused). See
 #               CLAUDE.md §Lint rule catalogue for the rule definitions.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh; yq + ggrep.
 # Side effects: read-only -- emits check/cross output via messages.zsh.
@@ -43,8 +44,6 @@ tasks:
       - task: portability
         ignore_error: true
       - task: banner-parity
-        ignore_error: true
-      - task: settings-drift
         ignore_error: true
       - task: brew-prefix
         ignore_error: true
@@ -238,30 +237,6 @@ tasks:
           fi
         done
         exit "$failures"
-
-  # lint-allow: cmds-without-status
-  settings-drift:
-    desc: "LINT-09: claude/settings.json matches composed settings.d fragments"
-    internal: true
-    cmds:
-      - |
-        # lint-allow: cmds-without-status
-        # The repo owns claude/settings.json as a build artifact composed from
-        # claude/settings.d/*.json fragments. If the live file drifts from the
-        # composed output (third-party installer wrote keys; manual edit; etc.)
-        # this rule fires. Run `task claude:settings-compose` to fix.
-        {{.DOTFILES_MESSAGES}}
-        # Delegate to claude:audit (settings.json drift detection); internal
-        # tasks cannot be invoked from a shell `task` call, so this public
-        # command is the supported entry point.
-        if task claude:audit >/dev/null 2>&1; then
-          check "LINT-09: claude/settings.json matches composed fragments"
-        else
-          cross "LINT-09: claude/settings.json drift -- run 'task claude:settings-compose'"
-          # Re-run visibly so the operator sees the diff.
-          task claude:audit 2>&1 || true
-          exit 1
-        fi
 
   # lint-allow: cmds-without-status
   brew-prefix:

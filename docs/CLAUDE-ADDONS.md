@@ -1,7 +1,7 @@
 # Claude Addons + Settings Composition
 
 Canonical reference for the third-party Claude Code addon system + the
-`claude/settings.json` build-artifact composition pipeline. Audience: operators
+settings.json build-artifact composition pipeline. Audience: operators
 and AI agents working in this repo. For directory-local quick-reference see
 [`manifests/claude-addons/README.md`](../manifests/claude-addons/README.md).
 For project rules see [`CLAUDE.md`](../CLAUDE.md).
@@ -11,8 +11,7 @@ For project rules see [`CLAUDE.md`](../CLAUDE.md).
 `~/.config/claude/settings.json` is the file Claude Code reads at runtime.
 Three writers historically fought over it:
 
-1. **The repo.** Hand-edits to `claude/settings.json` (it's symlinked into the
-   live config).
+1. **The repo.** Hand-edits to the live config.
 2. **Third-party installers.** `npx <something>-cc --claude --global` rewrites
    `settings.json` to register hooks, statusLine entries, etc.
 3. **Self-healing hooks.** Once registered, those installed hooks fire on every
@@ -29,10 +28,11 @@ The fix is two-part:
 - **Footprint manifests:** one TOML per known addon declares its install
   command, verify probe, file footprint, and remove commands. Add or remove
   an addon by editing one file + listing it in a machine manifest.
-- **Settings.d composition:** `claude/settings.json` is regenerated from
-  `claude/settings.d/*.json` fragments + preserved CLI-managed keys. The
-  fragments are the source of truth; the live file is a build artifact.
-  LINT-09 catches drift.
+- **Settings.d composition:** the live settings.json is regenerated from
+  `claude/settings.d/*.json` plus `$XDG_STATE_HOME/dotfiles/settings.d/*.json`
+  fragments + preserved CLI-managed keys. The fragments are the source of
+  truth; the live file is an installed build artifact. `task claude:audit`
+  catches drift.
 
 Together they eliminate the "who-writes-settings.json-last-wins" failure mode.
 
@@ -49,17 +49,20 @@ claude/
   settings.d/
     00-base.json          Repo-owned: permissions + scalars
     10-hooks.json         Repo-owned: hook wiring
+  settings.json           GENERATED build artifact (lockfile model)
+
+$XDG_STATE_HOME/dotfiles/
+  settings.d/
     99-addon-<name>.json  Addon-owned: copy of <name>.fragment.json
                           (written by claude-addons:install)
-  settings.json           GENERATED build artifact (lockfile model)
 
 install/
   claude-addons.zsh       Addon lifecycle: install/remove/list/validate
 
 taskfiles/
   claude-addons.yml       Thin dispatcher to install/claude-addons.zsh
-  claude.yml              CLI ensure + settings-compose + claude:audit (settings drift)
-  lint.yml                LINT-09 drift detection
+  claude.yml              CLI ensure + settings-compose + activate +
+                          claude:audit (settings drift)
 ```
 
 ## Schema: `manifests/claude-addons/<name>.toml`
@@ -107,7 +110,7 @@ remove task deletes that file and recomposes.
 ### Optional paired fragment: `manifests/claude-addons/<name>.fragment.json`
 
 JSON conforming to Claude Code's `settings.json` schema. If present, copied
-to `claude/settings.d/99-addon-<name>.json` when the addon enables and
+to `$XDG_STATE_HOME/dotfiles/settings.d/99-addon-<name>.json` when the addon enables and
 included in compose's deep-merge. Deleted on remove. Marketplace-style
 addons that don't write `settings.json` keys directly (ECC) don't need a
 fragment; npx-style addons that inject hooks (GSD-redux) do.
@@ -115,9 +118,9 @@ fragment; npx-style addons that inject hooks (GSD-redux) do.
 To derive a fragment template for a new addon:
 
 ```sh
-cp claude/settings.json /tmp/before.json
+cp ~/.config/claude/settings.json /tmp/before.json
 <addon's install command>
-diff <(jq -S . /tmp/before.json) <(jq -S . claude/settings.json) | less
+diff <(jq -S . /tmp/before.json) <(jq -S . ~/.config/claude/settings.json) | less
 # Capture the additions in manifests/claude-addons/<name>.fragment.json,
 # then re-compose with the fragment in place to make the diff vanish.
 ```
@@ -135,8 +138,9 @@ Wired into `task install` after `task claude:install`. Steps:
    - If installed AND `[upgrade].commands` present: run `[upgrade].commands`
      instead (the "always-pull-latest on every `task install`" behavior).
    - If a paired fragment exists, copy it to
-     `claude/settings.d/99-addon-<name>.json`.
-3. Recompose `claude/settings.json` via `task claude:settings-compose`.
+     `$XDG_STATE_HOME/dotfiles/settings.d/99-addon-<name>.json`.
+3. Recompose and activate settings.json (both internal steps of
+   `task claude:install`).
 
 ### `task claude-addons:remove -- <name>`
 
@@ -148,8 +152,9 @@ Operator surface for clean removal. Steps:
 3. Walk `[footprint].file_globs` under `$XDG_CONFIG_HOME/claude/` with
    `rm -rf`. Path-safety guards reject absolute paths and `../` traversal.
 4. Walk `[footprint].extra_paths` (absolute, env-var-expanded) with `rm -rf`.
-5. Delete `claude/settings.d/99-addon-<name>.json` if present.
-6. Recompose `claude/settings.json`.
+5. Delete `$XDG_STATE_HOME/dotfiles/settings.d/99-addon-<name>.json` if
+   present.
+6. Recompose and activate settings.json.
 
 After: `task claude-addons:audit` should report no orphan footprints.
 
@@ -166,28 +171,32 @@ Drift detection: for every addon TOML NOT enabled on this machine, walk its
 
 ### `task claude:audit`
 
-The settings.json drift check. Runs compose to stdout, diffs against the
-committed `claude/settings.json`, exits non-zero on drift. LINT-09 wraps this
-and fails `task lint` on drift.
+The settings.json drift check. Composes the build artifact, diffs it against
+the live `~/.config/claude/settings.json`, and exits non-zero on drift. Runs
+under both `task audit` and `task validate`.
 
 ## Settings.d composition algorithm
 
 `task claude:settings-compose` (internal task in `taskfiles/claude.yml`):
 
-1. **Preserve CLI-managed keys.** Read current `claude/settings.json` and
+1. **Preserve CLI-managed keys.** Read the live settings.json and
    extract `enabledPlugins` + `extraKnownMarketplaces` (written by
    `claude plugin install` / `claude plugin marketplace add`) plus `model`
    when present (written by the `/model` command); the compose pipeline
    never owns them.
 2. **Deep-merge fragments.** Read every `claude/settings.d/*.json` in numeric
-   sort order. `jq -s 'reduce .[] as $f ({}; . * $f)'` deep-merges them (same
+   sort order, then every `$XDG_STATE_HOME/dotfiles/settings.d/*.json` the
+   same way. `jq -s 'reduce .[] as $f ({}; . * $f)'` deep-merges them (same
    `*` operator semantics the resolver uses for TOML; arrays replace, maps
    merge).
 3. **Layer preserved keys.** Final `. * preserved` puts CLI-managed keys on
    top.
-4. **Atomic write.** `mktemp` + `mv` into `claude/settings.json`. A sanity
-   check asserts the composed output has `.permissions and .hooks` before
-   the rename to avoid bricking the live config.
+4. **Atomic write.** `mktemp` + `mv` into
+   `$XDG_STATE_HOME/dotfiles/build/settings.json`. A sanity check asserts the
+   composed output has `.permissions and .hooks` before the rename, so a
+   malformed compose never reaches activation.
+5. **Activate.** `claude:activate` installs the artifact over
+   `~/.config/claude/settings.json`, again via `mktemp` + `mv`.
 
 Numeric prefixes (`00-`, `10-`, `99-`) drive merge order. Later fragments
 override earlier ones on key conflict. The convention is:
@@ -278,7 +287,7 @@ statusLine entries the installer writes (derive via the diff recipe above).
 To enable on a machine: list `"<name>"` in that machine's `[claude].addons`
 array. To remove: `task claude-addons:remove -- <name>`. The
 `[remove].commands` disarm the hook scripts before file_globs deletion, then
-the fragment is deleted from settings.d, then compose runs.
+the fragment is deleted from the state settings.d, then compose runs.
 
 Note: npx-style addons require Node.js on the machine (for `npx` and any
 `node`-based hook commands the installer injects). The repo ships none enabled
@@ -301,15 +310,15 @@ live under the CLI-managed plugin directory, not in `settings.json`.
 
 ## Troubleshooting
 
-### `task lint` fails with "LINT-09: claude/settings.json drift"
+### `task audit` reports settings.json drift
 
-Run `task claude:settings-compose` to regenerate. If the recompose still
-shows drift, run `task claude:audit` for the verbose diff. Common causes:
+Run `task install` to recompose and reactivate. `task claude:audit` prints
+the verbose diff. Common causes:
 
 - A third-party tool wrote to `settings.json` directly (the very class
   settings.d is designed to neutralize). Recompose; the change is overwritten.
-- You hand-edited `settings.json` expecting changes to stick. Edit the
-  matching fragment in `claude/settings.d/` instead.
+- You hand-edited the live `settings.json` expecting changes to stick. Edit
+  the matching fragment in `claude/settings.d/` instead.
 
 ### `task claude-addons:audit` warns about orphan footprints
 
@@ -329,7 +338,7 @@ idempotency: already-succeeded steps don't repeat unnecessarily.
 
 ### CLI-managed keys (`enabledPlugins`, `extraKnownMarketplaces`) disappeared
 
-Compose preserves these from the existing `claude/settings.json`. If the
+Compose preserves these from the live settings.json. If the
 live file was deleted before compose ran, those keys reset to empty. Re-run
 `task claude-addons:install` for any marketplace-style addon (ECC) to
 re-register the marketplace + plugin. The CLI writes the keys back.

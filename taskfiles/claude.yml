@@ -9,16 +9,29 @@ version: '3'
 #               (one addon per manifests/claude-addons/<name>.toml).
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh;
 #               :manifest:resolve (deps); claude + jq CLIs (ensure-cli gate).
-# Side effects: writes claude/settings.json atomically from
-#               claude/settings.d/*.json fragments + preserved CLI-managed keys.
+# Side effects: writes $XDG_STATE_HOME/dotfiles/build/settings.json from the
+#               two fragment dirs + preserved CLI-managed keys (compose), then
+#               installs it over $XDG_CONFIG_HOME/claude/settings.json
+#               (activate). Both writes are atomic (mktemp + mv).
 # =============================================================================
 
 includes:
   _: ./helpers.yml
 
 vars:
-  SETTINGS_PATH: '{{.ROOT_DIR}}/claude/settings.json'
-  SETTINGS_D:    '{{.ROOT_DIR}}/claude/settings.d'
+  # Live file the Claude CLI reads and writes. A real file, not a symlink --
+  # activation mv's the built artifact over it. Compose reads the CLI-managed
+  # keys back out of it (the CLI writes them here; that cannot be prevented).
+  SETTINGS_PATH:    '{{.XDG_CONFIG_HOME}}/claude/settings.json'
+  # Composed artifact: a pure function of the two fragment dirs + preserved
+  # keys. Nothing writes it but claude:settings-compose.
+  SETTINGS_BUILD:   '{{.STATE_DIR}}/build/settings.json'
+  # Repo-owned fragment source.
+  SETTINGS_D:       '{{.ROOT_DIR}}/claude/settings.d'
+  # Machine-generated addon fragments (99-addon-<name>.json). May not exist:
+  # a machine with no addons never creates it, and the compose helper
+  # tolerates a missing dir.
+  SETTINGS_STATE_D: '{{.STATE_DIR}}/settings.d'
 
 tasks:
 
@@ -33,6 +46,7 @@ tasks:
     cmds:
       - task: ensure-cli
       - task: settings-compose
+      - task: activate
       - |
         {{.DOTFILES_MESSAGES}}
         success "claude: CLI + settings.json ready"
@@ -107,36 +121,47 @@ tasks:
 
   # lint-allow: cmds-without-status
   settings-compose:
-    desc: "Compose claude/settings.json from settings.d/*.json + preserved CLI keys"
+    desc: "Compose the settings.json build artifact from fragments + preserved CLI keys"
     internal: true
     summary: |
+      The realize stage of the claude domain: pure, writes only into the
+      state tree. claude:activate installs the result over the live file.
+
       Algorithm:
-        1. Read existing claude/settings.json and extract enabledPlugins,
-           extraKnownMarketplaces, and model (CLI-managed -- compose
+        1. Read the live settings.json and extract enabledPlugins,
+           extraKnownMarketplaces, model, and tui (CLI-managed -- compose
            preserves them rather than overwriting).
-        2. jq deep-merge every claude/settings.d/*.json in numeric sort order
+        2. jq deep-merge every claude/settings.d/*.json in numeric sort
+           order, then every $XDG_STATE_HOME/dotfiles/settings.d/*.json
            (later fragments override earlier ones on key conflict; array-
            typed values are replaced, not concatenated -- matches the resolver
            pass-1 semantics).
         3. Layer preserved CLI-managed keys over the composed object.
-        4. Atomic write (mktemp + mv) into claude/settings.json.
+        4. Atomic write (mktemp + mv) into
+           $XDG_STATE_HOME/dotfiles/build/settings.json.
     # Always-runs by design -- the compose pipeline is fast (<100ms typical)
     # and idempotent: same fragments + same preserved keys produce a
-    # byte-identical settings.json.
+    # byte-identical artifact.
     status: [false]
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
         source '{{.ROOT_DIR}}/install/compose-settings.zsh'
         set -euo pipefail
-        target='{{.SETTINGS_PATH}}'
+        live='{{.SETTINGS_PATH}}'
+        built='{{.SETTINGS_BUILD}}'
         settings_d='{{.SETTINGS_D}}'
+        state_d='{{.SETTINGS_STATE_D}}'
+        mkdir -p "$(dirname "$built")"
 
-        # Phase 1: preserve CLI-managed keys from the existing file (model is
-        # CLI-managed via the /model command; carried over only when present).
+        # Phase 1: preserve CLI-managed keys from the live file (model is
+        # CLI-managed via the /model command, tui via the fullscreen toggle;
+        # each carried over only when present). This is the one read of the
+        # live system in the realize stage: the Claude CLI writes those keys
+        # there and nothing can redirect it.
         # settings_preserved_keys / settings_compose_fragments live in
         # install/compose-settings.zsh, shared with claude:audit.
-        preserved=$(settings_preserved_keys "$target")
+        preserved=$(settings_preserved_keys "$live")
 
         # Phase 2: glob-guard. compgen returns non-zero when no matches; without
         # this check a literal "$settings_d/*.json" would reach jq and fail.
@@ -151,63 +176,79 @@ tasks:
         # the preserved keys on top.
         tmp=$(mktemp)
         trap 'rm -f "$tmp"' EXIT
-        if ! settings_compose_fragments "$settings_d" "$preserved" > "$tmp"; then
+        if ! settings_compose_fragments "$settings_d" "$state_d" "$preserved" > "$tmp"; then
           cross "claude:settings-compose: jq deep-merge failed"
           exit 1
         fi
 
         # Sanity check: composed output must be valid JSON with at least the
-        # repo's own permissions/hooks keys. Empty or malformed output bricks
-        # the live config.
+        # repo's own permissions/hooks keys. Empty or malformed output would
+        # brick the live config once activated.
         if ! jq -e '.permissions and .hooks' "$tmp" >/dev/null 2>&1; then
           cross "claude:settings-compose: composed output missing required keys (.permissions, .hooks)"
           exit 1
         fi
 
-        mv "$tmp" "$target"
+        mv "$tmp" "$built"
         trap - EXIT
-        fragment_count=$(ls "$settings_d"/*.json 2>/dev/null | wc -l | tr -d ' ')
-        check "claude/settings.json composed from ${fragment_count} fragment(s)"
+        fragment_count=$( { ls "$settings_d"/*.json 2>/dev/null; ls "$state_d"/*.json 2>/dev/null; } | wc -l | tr -d ' ')
+        check "build/settings.json composed from ${fragment_count} fragment(s)"
 
   # lint-allow: cmds-without-status
-  audit:
-    desc: "Check claude/settings.json for drift vs composed settings.d fragments"
+  activate:
+    desc: "Install the built settings.json over the live file"
+    internal: true
     status: [false]
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
-        source '{{.ROOT_DIR}}/install/compose-settings.zsh'
         set -euo pipefail
-        target='{{.SETTINGS_PATH}}'
-        settings_d='{{.SETTINGS_D}}'
+        built='{{.SETTINGS_BUILD}}'
+        live='{{.SETTINGS_PATH}}'
+        if [[ ! -f "$built" ]]; then
+          cross "claude:activate: $built missing -- run claude:settings-compose"
+          exit 1
+        fi
+        mkdir -p "$(dirname "$live")"
+        # mktemp + mv, never cp onto $live: cp follows a symlink and writes
+        # through to its target. mv replaces the directory entry instead, so
+        # a $live left over as a symlink from an earlier layout becomes a
+        # real file rather than clobbering whatever it pointed at.
+        tmp=$(mktemp "$(dirname "$live")/.settings.XXXXXX")
+        trap 'rm -f "$tmp"' EXIT
+        cat "$built" > "$tmp"
+        chmod 644 "$tmp"
+        mv "$tmp" "$live"
+        trap - EXIT
+        check "settings.json activated"
 
-        if [[ ! -f "$target" ]]; then
-          cross "claude:audit: $target does not exist"
+  # lint-allow: cmds-without-status
+  audit:
+    desc: "Check the live settings.json for drift vs the composed artifact"
+    # deps on the realize stage rather than composing inline: settings-compose
+    # writes only into the state tree, never the live system, so this stays
+    # read-only with respect to the machine.
+    deps: [settings-compose]
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        set -euo pipefail
+        built='{{.SETTINGS_BUILD}}'
+        live='{{.SETTINGS_PATH}}'
+
+        if [[ ! -f "$live" ]]; then
+          cross "claude:audit: $live does not exist -- run 'task install'"
           exit 1
         fi
 
-        if ! ls "$settings_d"/*.json >/dev/null 2>&1; then
-          cross "claude:audit: no fragments at ${settings_d}/*.json"
-          exit 1
-        fi
-
-        # Same compose algorithm as settings-compose (shared via
-        # install/compose-settings.zsh); -S sorts keys so the diff ignores key
-        # order. Output goes to a tmp file, never to the live settings.json.
-        preserved=$(settings_preserved_keys "$target")
-        expected=$(mktemp)
-        actual=$(mktemp)
-        trap 'rm -f "$expected" "$actual"' EXIT
-
-        settings_compose_fragments "$settings_d" "$preserved" -S > "$expected"
-        jq -S . "$target" > "$actual"
-
-        if diff -q "$expected" "$actual" >/dev/null; then
-          check "claude/settings.json matches composed fragments (no drift)"
+        # -S sorts keys on both sides so the diff ignores key order.
+        if diff -q <(jq -S . "$built") <(jq -S . "$live") >/dev/null; then
+          check "settings.json matches the composed artifact (no drift)"
         else
-          cross "claude/settings.json DRIFT detected vs composed fragments"
-          echo "--- diff: < live settings.json | > expected (composed) ---" >&2
-          diff "$actual" "$expected" >&2 || true
-          echo "--- run 'task claude:settings-compose' to fix ---" >&2
+          cross "settings.json DRIFT detected vs composed fragments"
+          echo "--- diff: < live | > composed ---" >&2
+          diff <(jq -S . "$live") <(jq -S . "$built") >&2 || true
+          echo "--- run 'task install' to fix ---" >&2
           exit 1
         fi

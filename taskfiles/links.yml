@@ -21,9 +21,10 @@ vars:
   # below, so adding a claude file/hook is a one-line change here. `|-` strips
   # the trailing newline so install-claude's `for:`-loop split yields no empty
   # element. MUST precede EXPECTED_TARGETS (go-task evaluates vars top-to-bottom).
+  # settings.json is intentionally absent: it is a generated artifact
+  # installed as a real file by claude:activate, not a link into the repo.
   CLAUDE_LINKS: |-
     CLAUDE.md
-    settings.json
     agents
     commands
     skills

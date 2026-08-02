@@ -9,8 +9,9 @@
 #               resolved.json.
 # Depends on:   yq (>= 4.52.1), jq (>= 1.7), zsh (>= 5); install/messages.zsh.
 # Side effects: runs each addon's [install].commands, writes/deletes
-#               claude/settings.d/99-addon-<name>.json, removes addon-owned
-#               files matching [footprint].file_globs + [footprint].extra_paths.
+#               $XDG_STATE_HOME/dotfiles/settings.d/99-addon-<name>.json,
+#               removes addon-owned files matching [footprint].file_globs +
+#               [footprint].extra_paths.
 # =============================================================================
 
 set -euo pipefail
@@ -19,7 +20,9 @@ set -euo pipefail
 source "${DOTFILEDIR}/install/messages.zsh"
 
 typeset -r ADDONS_DIR="${DOTFILEDIR}/manifests/claude-addons"
-typeset -r SETTINGS_D="${DOTFILEDIR}/claude/settings.d"
+# Machine-generated fragments live in the state tree, never the repo: they
+# differ per machine and the repo holds source only.
+typeset -r SETTINGS_D="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/settings.d"
 typeset -r RESOLVED="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/resolved.json"
 typeset -r XDG_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
 
@@ -204,7 +207,7 @@ cmd_remove() {
     fi
   done < <(yq -r '.footprint.extra_paths[]' "$toml" 2>/dev/null)
 
-  # Phase 4: delete addon's settings.d fragment if present.
+  # Phase 4: delete addon's state settings.d fragment if present.
   local fragment="${SETTINGS_D}/99-addon-${name}.json"
   if [[ -f "$fragment" ]]; then
     rm -f "$fragment"

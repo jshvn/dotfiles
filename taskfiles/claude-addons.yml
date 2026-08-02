@@ -13,8 +13,8 @@ version: '3'
 #               at end of install/remove to regenerate settings.json from
 #               fragments).
 # Side effects: install/claude-addons.zsh runs each addon's install/upgrade/
-#               remove commands; writes/deletes claude/settings.d/
-#               99-addon-<name>.json.
+#               remove commands; writes/deletes
+#               $XDG_STATE_HOME/dotfiles/settings.d/99-addon-<name>.json.
 # =============================================================================
 
 includes:
@@ -39,8 +39,9 @@ tasks:
     summary: |
       Reads manifests/claude-addons/<name>.toml, runs [remove].commands,
       then walks [footprint].file_globs + [footprint].extra_paths with
-      rm -rf, deletes the addon's settings.d/99-addon-<name>.json fragment
-      if present, and recomposes claude/settings.json.
+      a recursive delete, then deletes the addon's
+      $XDG_STATE_HOME/dotfiles/settings.d/99-addon-<name>.json fragment if
+      present, and recomposes settings.json.
     status: [false]
     # Pass CLI_ARGS via the environment, not by templating into shell-quoted
     # text: go-task substitutes {{.CLI_ARGS}} into the rendered shell BEFORE the

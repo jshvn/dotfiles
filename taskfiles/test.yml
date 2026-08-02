@@ -67,6 +67,19 @@ tasks:
     status:
       - false
 
+  # lint-allow: cmds-without-status
+  settings-compose:
+    desc: "Run settings-compose smoke tests via install/tests/settings-compose.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running settings-compose smoke tests"
+        export DOTFILEDIR="{{.ROOT_DIR}}"
+        zsh "${DOTFILEDIR}/install/tests/settings-compose.zsh"
+    status:
+      - false
+
   manifest:
     desc: "Run deep-merge fixtures (positive + negative)"
     internal: true

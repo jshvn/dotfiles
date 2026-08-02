@@ -97,7 +97,7 @@ form:
 
 Snake_case keys (e.g., `identity.git`, `meta.description`) work with dot access as usual.
 
-### Lint rule catalogue (LINT-02..12)
+### Lint rule catalogue
 
 In-code `# LINT-NN:` citations reference this catalogue. The rule body lives in
 `taskfiles/lint.yml`; this table is the operator-facing summary.
@@ -111,16 +111,17 @@ In-code `# LINT-NN:` citations reference this catalogue. The rule body lives in
 | LINT-05 | shell/ + os/ (.zsh only) | Portability-sensitive commands surface as warnings (non-blocking) |
 | LINT-07 | All .zsh | `zsh -n` parse-check (Tier-0 syntax) |
 | LINT-08 | Root Taskfile.yml | `default:` banner lists every public top-level task |
-| LINT-09 | claude/settings.json | Matches the composed output of `claude/settings.d/*.json` + preserved CLI-managed keys |
 | LINT-10 | .zsh + .yml repo-wide | No hardcoded `/opt/homebrew` or `/usr/local`; dispatch sites carry `# lint-allow: hardcoded-prefix` |
 | LINT-11 | Taskfiles | Kebab-case feature keys use the `index` form, never template dot-access |
 | LINT-12 | All .zsh | File-header banner (Purpose / Depends on / Side effects between `# ===` rules) |
 | LINT-13 | `manifests/**/*.toml` | Multi-element arrays span one element per line (empty/single-element inline arrays exempt) |
 
-LINT-01 and LINT-06 are intentionally absent. The original LINT-01 rule
-("every install task has a status: block") was generalized into LINT-03a
-during v2 refactoring; the gap is preserved so existing `# LINT-NN:`
-citations in code remain unambiguous.
+LINT-01, LINT-06, and LINT-09 are intentionally absent; retired numbers are
+never reused, so existing `# LINT-NN:` citations in code stay unambiguous.
+LINT-01 ("every install task has a status: block") was generalized into
+LINT-03a. LINT-09 checked a generated `settings.json` tracked in the repo;
+the repo tree holds source only, and build-vs-live drift is runtime, covered
+by `task claude:audit` under both `task audit` and `task validate`.
 
 ### Every install task has a `status:` block
 
@@ -177,23 +178,34 @@ antidote plugin load from `shell/.zsh_plugins.txt` (use-omz owns deferred
 `compinit`), theme, functions, aliases) ->
 `.zlogin` (login only; MOTD dispatch) -> `.zlogout` (login exit; history flush).
 
-### `claude/settings.json` is a generated build artifact
+### The repo tree holds source only; `settings.json` is built
 
-Edit `claude/settings.d/*.json` fragments; `task install` recomposes
-`claude/settings.json` from them (composition is an internal pipeline step --
-`claude:settings-compose` is `internal: true`, so there is no public compose
-command to run by hand). Don't hand-edit the generated file.
-LINT-09 fails the lint pipeline if `settings.json` drifts from the composed
-output (third-party installer wrote keys, manual edit, etc.). The composer
-preserves `enabledPlugins`, `extraKnownMarketplaces`, `model`, and `tui` from
-the live file (the first two are managed by the `claude plugin` CLI, `model` by
-the `/model` command, `tui` by the fullscreen/inline TUI toggle -- none are
-owned by fragments).
+The claude domain runs the three stages end to end:
 
-Repo-owned fragments live at `claude/settings.d/{00-base,10-hooks}.json`.
-Each enabled third-party addon with a paired settings template gets its own
-`claude/settings.d/99-addon-<name>.json` written during addon install (a
-`task install` pipeline step) and deleted by `task claude-addons:remove`. See
+| Stage | Path | Written by |
+|-------|------|------------|
+| source | `claude/settings.d/*.json` | you |
+| realize | `$XDG_STATE_HOME/dotfiles/build/settings.json` | `claude:settings-compose` |
+| activate | `$XDG_CONFIG_HOME/claude/settings.json` | `claude:activate` |
+
+Edit the fragments; `task install` recomposes and installs. Both steps are
+internal pipeline steps, so there is no public compose command to run by
+hand. The live file is a real file, not a symlink -- the Claude CLI writes
+`enabledPlugins`, `extraKnownMarketplaces`, `model`, and `tui` into it (the
+first two via the `claude plugin` CLI, `model` via `/model`, `tui` via the
+fullscreen/inline toggle), and compose reads exactly those four keys back out
+and layers them over the fragments. Nothing else about the live file
+survives a recompose: `task claude:audit` reports drift and `task install`
+overwrites it.
+
+Fragments arrive from two directories. Repo-owned source lives at
+`claude/settings.d/{00-base,10-hooks}.json`. Each enabled third-party addon
+with a paired settings template gets its own
+`$XDG_STATE_HOME/dotfiles/settings.d/99-addon-<name>.json`, written during
+addon install (a `task install` pipeline step) and deleted by
+`task claude-addons:remove`. Machine-generated fragments live in the state
+tree, never the repo -- they differ per machine. Compose merges repo
+fragments first, then state fragments, then the preserved CLI keys. See
 `docs/CLAUDE-ADDONS.md`.
 
 ### Third-party Claude addons are declarative
@@ -269,11 +281,12 @@ feature's own tooling. Listing a package base or an enabled flag already provide
   the existing `DOTFILEDIR=` env var passed at invocation, e.g.
   `DOTFILEDIR="{{.ROOT_DIR}}" zsh "{{.ROOT_DIR}}/install/foo.zsh"`.
 - Don't commit private keys. `identity/ssh/keys/` contains public keys only.
-- Don't edit `claude/settings.json` directly. It's a generated build artifact
-  recomposed from `claude/settings.d/*.json` fragments during `task install`
-  (the internal `claude:settings-compose` step). LINT-09 will fail on drift.
-  Edit the fragments instead.
-- Don't add a hook by editing `claude/settings.json` directly. Add it to
+- Don't edit the live `$XDG_CONFIG_HOME/claude/settings.json` directly. It is
+  composed into `$XDG_STATE_HOME/dotfiles/build/settings.json` and installed
+  from there during `task install` (the internal `claude:settings-compose`
+  and `claude:activate` steps). `task claude:audit` reports the drift; the
+  next install erases it. Edit the fragments instead.
+- Don't add a hook by editing the live `settings.json` directly. Add it to
   `claude/settings.d/10-hooks.json` (repo-owned hooks) or, for a third-party
   addon, to that addon's `manifests/claude-addons/<name>.fragment.json`, then
   re-run `task install` to recompose.

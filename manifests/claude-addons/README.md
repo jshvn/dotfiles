@@ -94,9 +94,9 @@ task claude-addons:remove -- <name>
 ```
 
 The task runs `[remove].commands`, walks `[footprint].file_globs` +
-`[footprint].extra_paths` with `rm -rf`, deletes the addon's
-`claude/settings.d/99-addon-<name>.json` if present, and recomposes
-`claude/settings.json`. Self-healing hooks cannot survive -- the fragment
+`[footprint].extra_paths` with a recursive delete, deletes the addon's
+`$XDG_STATE_HOME/dotfiles/settings.d/99-addon-<name>.json` if present, and
+recomposes settings.json. Self-healing hooks cannot survive -- the fragment
 is the source of truth.
 
 To re-enable later: re-add the name to the machine manifest and
