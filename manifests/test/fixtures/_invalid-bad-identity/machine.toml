@@ -1,6 +1,6 @@
 # negative fixture -- machine.identity has no overlay files; must be rejected.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "bad identity fixture"

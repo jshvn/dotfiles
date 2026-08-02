@@ -38,11 +38,13 @@ upstream    = "https://github.com/affaan-m/everything-claude-code"
 # ln -sfn (not _:safe-link) is deliberate: helpers.yml tasks are internal and
 # not CLI-invocable from addon commands; -sfn carries the same idempotent
 # re-link semantics. LINT-03b scopes to taskfiles/*.yml and does not apply
-# here. Skills MUST be linked flat (one link per skill dir): user-scope skill
-# discovery reads skills/<name>/SKILL.md one level deep and does not traverse
-# a nested skills/ecc/ dir (verified empirically; agents ARE discovered in a
-# subdir, so agents get a single dir link). The links land in the repo
-# working tree via the links.yml claude/ symlinks, so each one is appended to
+# here. install.sh writes skills flat into ~/.claude/skills/, a directory
+# that also holds non-ECC runtime dirs, so the bridge derives the ECC-owned
+# skill names from install-state.json (destinationPath records) rather than
+# linking everything in the directory. Bridge links whose target no longer
+# exists are pruned before relinking, so an upstream payload reshuffle
+# self-heals on the next install. The links land in the repo working tree
+# via the links.yml claude/ symlinks, so each one is appended to
 # .git/info/exclude (machine-local, like the gsd-* entries). No mkdir:
 # $XDG_CONFIG_HOME/claude/{skills,agents} are links.yml-owned symlinks that
 # exist before this runs in the `task install` pipeline; if they are missing,
@@ -51,10 +53,11 @@ upstream    = "https://github.com/affaan-m/everything-claude-code"
 commands = [
   "claude plugin marketplace add https://github.com/affaan-m/everything-claude-code.git",
   "bash \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/plugins/marketplaces/ecc/install.sh\" --target claude --profile minimal --without baseline:commands --with baseline:hooks",
-  "find \"$HOME/.claude/skills/ecc\" -mindepth 1 -maxdepth 1 -type d | while read -r d; do ln -sfn \"$d\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$(basename \"$d\")\"; done",
+  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) [ -e \"$l\" ] || rm -f \"$l\";; esac; done",
+  "jq -r --arg p \"$HOME/.claude/skills/\" '.operations[].destinationPath | select(startswith($p)) | ltrimstr($p) | split(\"/\")[0]' \"$HOME/.claude/ecc/install-state.json\" | sort -u | while read -r n; do ln -sfn \"$HOME/.claude/skills/$n\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$n\"; done",
   "ln -sfn \"$HOME/.claude/agents\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/agents/ecc\"",
   "grep -qxF 'claude/agents/ecc' \"$DOTFILEDIR/.git/info/exclude\" || echo 'claude/agents/ecc' >> \"$DOTFILEDIR/.git/info/exclude\"",
-  "find \"$DOTFILEDIR/claude/skills\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/ecc/\"*) grep -qxF \"claude/skills/$(basename \"$l\")\" \"$DOTFILEDIR/.git/info/exclude\" || echo \"claude/skills/$(basename \"$l\")\" >> \"$DOTFILEDIR/.git/info/exclude\";; esac; done",
+  "find \"$DOTFILEDIR/claude/skills\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) grep -qxF \"claude/skills/$(basename \"$l\")\" \"$DOTFILEDIR/.git/info/exclude\" || echo \"claude/skills/$(basename \"$l\")\" >> \"$DOTFILEDIR/.git/info/exclude\";; esac; done",
 ]
 self_healing = false
 
@@ -65,8 +68,9 @@ self_healing = false
 commands = [
   "claude plugin marketplace update ecc",
   "bash \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/plugins/marketplaces/ecc/install.sh\" --target claude --profile minimal --without baseline:commands --with baseline:hooks",
-  "find \"$HOME/.claude/skills/ecc\" -mindepth 1 -maxdepth 1 -type d | while read -r d; do ln -sfn \"$d\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$(basename \"$d\")\"; done",
-  "find \"$DOTFILEDIR/claude/skills\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/ecc/\"*) grep -qxF \"claude/skills/$(basename \"$l\")\" \"$DOTFILEDIR/.git/info/exclude\" || echo \"claude/skills/$(basename \"$l\")\" >> \"$DOTFILEDIR/.git/info/exclude\";; esac; done",
+  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) [ -e \"$l\" ] || rm -f \"$l\";; esac; done",
+  "jq -r --arg p \"$HOME/.claude/skills/\" '.operations[].destinationPath | select(startswith($p)) | ltrimstr($p) | split(\"/\")[0]' \"$HOME/.claude/ecc/install-state.json\" | sort -u | while read -r n; do ln -sfn \"$HOME/.claude/skills/$n\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$n\"; done",
+  "find \"$DOTFILEDIR/claude/skills\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) grep -qxF \"claude/skills/$(basename \"$l\")\" \"$DOTFILEDIR/.git/info/exclude\" || echo \"claude/skills/$(basename \"$l\")\" >> \"$DOTFILEDIR/.git/info/exclude\";; esac; done",
 ]
 
 [verify]
@@ -75,19 +79,21 @@ commands = [
 # (find -exec readlink | grep, not -lname: macOS/BSD find has no -lname.
 # Trailing slash on the skills path: it is itself a links.yml symlink and
 # BSD find does not follow a symlink operand without it.)
-command = "test -f \"$HOME/.claude/ecc/install-state.json\" && test -d \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/agents/ecc\" && find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l -exec readlink {} ';' | grep -q \"^$HOME/.claude/skills/ecc/\""
+command = "test -f \"$HOME/.claude/ecc/install-state.json\" && test -d \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/agents/ecc\" && find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l -exec readlink {} ';' | grep -q \"^$HOME/.claude/skills/\""
 
 [footprint]
 # Only the agents dir link can be expressed as a glob; the flat skill links
-# are identified by their target (they point into ~/.claude/skills/ecc/) and
+# are identified by their target (they point into ~/.claude/skills/) and
 # removed by the [remove] command below -- a name glob like skills/* would
 # also match repo-owned skills.
 file_globs  = ["agents/ecc"]
-# Everything install.sh writes under ~/.claude/. Runtime data ECC accumulated
-# (session-data/, metrics/, *.log) is deliberately NOT listed -- session
-# history is user data and survives addon removal.
+# Everything install.sh writes under ~/.claude/. ~/.claude/skills is NOT
+# listed wholesale: it holds non-ECC runtime dirs, so the ECC-owned skill
+# dirs are deleted per-name by the [remove] state-derived loop below.
+# Runtime data ECC accumulated (session-data/, metrics/, *.log) is
+# deliberately NOT listed -- session history is user data and survives
+# addon removal.
 extra_paths = [
-  "$HOME/.claude/skills/ecc",
   "$HOME/.claude/agents",
   "$HOME/.claude/rules/ecc",
   "$HOME/.claude/scripts",
@@ -105,11 +111,15 @@ extra_paths = [
 [remove]
 # Marketplace is dedicated to ECC (single-plugin marketplace) -- remove it.
 # The find loop deletes exactly the flat skill links that target the ECC
-# payload (repo-owned skills are real dirs, untouched). Remaining file
-# cleanup is handled by file_globs + extra_paths after these commands.
-# Stale .git/info/exclude lines are left behind -- inert by definition
-# (they only ever matched the links being deleted here).
+# payload (repo-owned skills are real dirs, untouched). The jq loop then
+# deletes the ECC-owned skill dirs named in install-state.json, leaving
+# non-ECC dirs in ~/.claude/skills untouched; it runs before extra_paths
+# cleanup deletes the state file. Remaining file cleanup is handled by
+# file_globs + extra_paths after these commands. Stale .git/info/exclude
+# lines are left behind -- inert by definition (they only ever matched the
+# links being deleted here).
 commands = [
-  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/ecc/\"*) rm -f \"$l\";; esac; done",
+  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) rm -f \"$l\";; esac; done",
+  "[ ! -f \"$HOME/.claude/ecc/install-state.json\" ] || jq -r --arg p \"$HOME/.claude/skills/\" '.operations[].destinationPath | select(startswith($p)) | ltrimstr($p) | split(\"/\")[0]' \"$HOME/.claude/ecc/install-state.json\" | sort -u | while read -r n; do rm -rf \"$HOME/.claude/skills/$n\"; done",
   "claude plugin marketplace remove ecc",
 ]

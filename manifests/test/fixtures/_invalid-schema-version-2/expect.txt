@@ -1,0 +1,2 @@
+schema_version 2 is no longer supported
+schema 2 rejected with a migration hint

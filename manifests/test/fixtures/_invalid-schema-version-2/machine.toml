@@ -1,0 +1,15 @@
+# negative fixture -- schema_version = 2 is rejected with a migration hint
+# naming the removed packages.bundles field.
+
+schema_version = 2
+
+[machine]
+description = "schema-version-2 fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = []
+disabled = []
+
+[packages]

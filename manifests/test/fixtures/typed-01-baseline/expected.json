@@ -13,7 +13,6 @@
   },
   "packages": {
     "brew": {
-      "bundles": [],
       "formulae": [
         "curl",
         "git"

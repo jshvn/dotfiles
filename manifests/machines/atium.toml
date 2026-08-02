@@ -1,13 +1,18 @@
 # manifests/machines/atium.toml -- Mac atium, a mostly-headless Mac server.
 #
-# Usually headless but occasionally connected to a display, so it still takes
-# dotfiles-gui (1Password GUI, ghostty) and the cli bundle. It does NOT take
-# dev/productivity/apps -- the few laptop-class casks it wants (orbstack,
-# miniconda, etc.) live inline below. The long disabled list is deliberate: the
-# file itself records every flag this server does not want. See docs/MANIFEST.md
-# for the schema reference and manifests/features.toml for the flag registry.
+# Usually headless but occasionally connected to a display, so it still wants
+# the 1Password GUI and ghostty. The long disabled list is deliberate: the file
+# itself records every flag this server does not want.
+#
+# [packages] lists discretionary choices only -- applications wanted on this
+# machine. Packages required by the dotfiles config itself are not listed here:
+# unconditional tooling lives in manifests/base.toml, and a feature's own
+# dependencies live on its flag in manifests/features.toml. Listing a package
+# that base or an enabled flag already provides is a hard error.
+#
+# Schema reference: docs/MANIFEST.md.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "Mac atium -- mostly-headless Mac server"
@@ -38,12 +43,27 @@ disabled = [
 ]
 
 [packages]
-bundles = [
-  "dotfiles",
-  "cli",
-  "dotfiles-gui",
+# 1password is listed here rather than arriving via one-password-ssh/-signing:
+# identity/ssh/identities/atium uses the local system ssh-agent, not 1Password,
+# so those flags stay off while the application itself is still wanted.
+# container is intentionally absent -- it requires macOS 15+ and this machine
+# runs Sonoma 14.
+formulae = [
+  "bat",
+  "bottom",
+  "doggo",
+  "duf",
+  "fd",
+  "gh",
+  "git-crypt",
+  "htop",
+  "hugo",
+  "poppler",
+  "wget",
 ]
+
 casks = [
+  "1password",
   "appcleaner",
   "cloudflare-warp",
   "dropbox",

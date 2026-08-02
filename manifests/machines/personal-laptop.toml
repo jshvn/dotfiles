@@ -1,11 +1,17 @@
 # manifests/machines/personal-laptop.toml -- Josh's personal MacBook.
 #
 # Self-contained: every feature this machine has (and every registry flag it
-# deliberately lacks) is listed below; nothing is inherited. See
-# docs/MANIFEST.md for the schema reference and manifests/features.toml for
-# the flag registry.
+# deliberately lacks) is listed below; nothing is inherited.
+#
+# [packages] lists discretionary choices only -- applications wanted on this
+# machine. Packages required by the dotfiles config itself are not listed here:
+# unconditional tooling lives in manifests/base.toml, and a feature's own
+# dependencies live on its flag in manifests/features.toml. Listing a package
+# that base or an enabled flag already provides is a hard error.
+#
+# Schema reference: docs/MANIFEST.md.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "Josh's personal MacBook -- Apple Silicon, primary dev machine"
@@ -37,24 +43,57 @@ disabled = [
 ]
 
 [packages]
-bundles = [
-  "dotfiles",
-  "cli",
-  "dotfiles-gui",
-  "dev",
-  "productivity",
-  "apps",
-]
+# container: Apple's container runtime; requires macOS 15+, so machines on
+# older releases must not list it.
 # node: the ecc Claude addon's hooks invoke the `node` binary directly.
-formulae = ["node"]
+formulae = [
+  "bat",
+  "bottom",
+  "container",
+  "doggo",
+  "duf",
+  "fd",
+  "gh",
+  "git-crypt",
+  "htop",
+  "hugo",
+  "node",
+  "poppler",
+  "uv",
+  "wget",
+]
+
 casks = [
+  "1password-cli",
+  "alcove",
+  "appcleaner",
+  "cardhop",
+  "claude-code",
   "cloudflare-warp",
   "discord",
   "dropbox",
+  "fantastical",
+  "firefox",
+  "gitfox",
+  "microsoft-excel",
+  "microsoft-powerpoint",
+  "microsoft-word",
+  "miniconda",
   "nvidia-geforce-now",
   "proton-drive",
   "proton-mail",
   "protonvpn",
+  "raycast",
+  "slack",
+  "spotify",
+  "standard-notes",
+  "sublime-text",
+  "zoom",
+]
+
+mas = [
+  { id = 441258766, name = "Magnet" },
+  { id = 904280696, name = "Things3" },
 ]
 
 [claude]

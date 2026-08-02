@@ -3,7 +3,7 @@
 # (acme.from-machine), deduped by value. cargo/uv/npm stay empty, proving the
 # resolver always materializes every bucket.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "typed-04-vscode-union fixture"

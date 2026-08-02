@@ -1,6 +1,6 @@
 # negative fixture -- a feature listed in both enabled and disabled. Reject.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "feature-both-lists fixture"

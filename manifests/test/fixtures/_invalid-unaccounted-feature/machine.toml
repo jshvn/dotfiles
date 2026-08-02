@@ -1,6 +1,6 @@
 # negative fixture -- a registry flag left out of both lists must be rejected.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "unaccounted-feature fixture"

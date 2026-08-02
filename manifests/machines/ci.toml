@@ -1,15 +1,21 @@
 # manifests/machines/ci.toml -- GitHub Actions macOS runner.
 #
-# Minimal darwin machine consumed by .github/workflows/ci.yml: identity
-# "none" (no 1Password), every feature flag disabled, mandatory dotfiles
-# bundle plus cli. Exercises the real setup -> install -> validate -> test
+# Minimal darwin machine consumed by .github/workflows/ci.yml: identity "none"
+# (no 1Password). Exercises the real setup -> install -> validate -> test
 # pipeline on a fresh runner; not a machine a human operates.
 #
-# Self-contained: every registry flag this machine deliberately lacks is
-# listed below; nothing is inherited. See docs/MANIFEST.md for the schema
-# reference and manifests/features.toml for the flag registry.
+# Self-contained: every registry flag this machine deliberately lacks is listed
+# below; nothing is inherited.
+#
+# [packages] lists discretionary choices only -- applications wanted on this
+# machine. Packages required by the dotfiles config itself are not listed here:
+# unconditional tooling lives in manifests/base.toml, and a feature's own
+# dependencies live on its flag in manifests/features.toml. Listing a package
+# that base or an enabled flag already provides is a hard error.
+#
+# Schema reference: docs/MANIFEST.md.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "GitHub Actions macos-latest runner -- full-pipeline CI"
@@ -41,9 +47,20 @@ disabled = [
 ]
 
 [packages]
-bundles = [
-  "dotfiles",
-  "cli",
+# repo-dev-toolchain is enabled: this machine runs task lint and task test, so
+# it needs the lint and format tooling that flag carries.
+formulae = [
+  "bat",
+  "bottom",
+  "doggo",
+  "duf",
+  "fd",
+  "gh",
+  "git-crypt",
+  "htop",
+  "hugo",
+  "poppler",
+  "wget",
 ]
 
 [claude]

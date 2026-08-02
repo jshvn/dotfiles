@@ -1,4 +1,4 @@
-# negative fixture -- schema_version = 1 is rejected by the v2 resolver.
+# negative fixture -- a schema_version outside the supported set is rejected.
 
 schema_version = 1
 

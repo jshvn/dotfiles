@@ -2,7 +2,7 @@
 # buckets fold into the resolved set; a DISABLED flag's contribute nothing.
 # absent-formula must not appear anywhere in the output.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "typed-05-feature-packages fixture"

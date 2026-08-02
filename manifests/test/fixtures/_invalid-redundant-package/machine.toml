@@ -2,7 +2,7 @@
 # must be rejected. The test base (manifests/test/shared/base.toml) declares
 # git; re-declaring it here is redundant.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "redundant-package fixture"

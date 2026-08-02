@@ -1,6 +1,6 @@
 # negative fixture -- machine.description omitted; validator must reject.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 os = "darwin"

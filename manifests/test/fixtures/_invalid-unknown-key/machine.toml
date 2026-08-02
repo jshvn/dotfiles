@@ -1,7 +1,7 @@
 # negative fixture -- a key outside the v2 schema must be rejected (v2 errors
 # on unknown keys rather than warning).
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "unknown-key fixture"

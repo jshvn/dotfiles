@@ -1,9 +1,16 @@
 # manifests/machines/work-laptop.toml -- Work MacBook.
 #
-# Self-contained; arch is auto-detected by the resolver. See docs/MANIFEST.md
-# for the schema reference and manifests/features.toml for the flag registry.
+# Self-contained; arch is auto-detected by the resolver.
+#
+# [packages] lists discretionary choices only -- applications wanted on this
+# machine. Packages required by the dotfiles config itself are not listed here:
+# unconditional tooling lives in manifests/base.toml, and a feature's own
+# dependencies live on its flag in manifests/features.toml. Listing a package
+# that base or an enabled flag already provides is a hard error.
+#
+# Schema reference: docs/MANIFEST.md.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "Work MacBook -- work identity, GUI + dev environment"
@@ -34,11 +41,45 @@ disabled = [
 ]
 
 [packages]
-bundles = [
-  "dotfiles",
-  "cli",
-  "dotfiles-gui",
-  "dev",
-  "productivity",
-  "apps",
+# container: Apple's container runtime; requires macOS 15+.
+formulae = [
+  "bat",
+  "bottom",
+  "container",
+  "doggo",
+  "duf",
+  "fd",
+  "gh",
+  "git-crypt",
+  "htop",
+  "hugo",
+  "poppler",
+  "uv",
+  "wget",
+]
+
+casks = [
+  "1password-cli",
+  "alcove",
+  "appcleaner",
+  "cardhop",
+  "claude-code",
+  "fantastical",
+  "firefox",
+  "gitfox",
+  "microsoft-excel",
+  "microsoft-powerpoint",
+  "microsoft-word",
+  "miniconda",
+  "raycast",
+  "slack",
+  "spotify",
+  "standard-notes",
+  "sublime-text",
+  "zoom",
+]
+
+mas = [
+  { id = 441258766, name = "Magnet" },
+  { id = 904280696, name = "Things3" },
 ]

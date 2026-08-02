@@ -3,7 +3,7 @@
 # git and adds ripgrep; the machine adds fzf. `add | unique` collapses the
 # duplicate git. Expected: [curl, fzf, git, ripgrep].
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "typed-02-formulae-dedup fixture"

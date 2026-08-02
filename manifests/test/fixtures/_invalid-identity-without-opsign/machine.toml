@@ -1,7 +1,7 @@
 # negative fixture -- identity "personal" declares the one-password-signing
 # capability sentinel, but the machine disables one-password-signing. Reject.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "identity-without-opsign fixture"

@@ -1,6 +1,6 @@
 # negative fixture -- a mas entry missing its numeric id must be rejected.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "mas-shape fixture"

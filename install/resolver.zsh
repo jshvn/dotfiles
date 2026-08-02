@@ -1,12 +1,11 @@
 #!/bin/zsh
 
 # =============================================================================
-# install/resolver.zsh -- compile a v2 machine manifest into resolved.json
+# install/resolver.zsh -- compile a machine manifest into resolved.json
 #
 # Purpose:      Validate a machine manifest (manifests/machines/<name>.toml)
-#               against the feature registry (manifests/features.toml), the
-#               bundle set (manifests/bundles/), and the base tier
-#               (manifests/base.toml), then compile it into
+#               against the feature registry (manifests/features.toml) and the
+#               base tier (manifests/base.toml), then compile it into
 #               $XDG_STATE_HOME/dotfiles/resolved.json (or stdout).
 # Depends on:   yq (>= 4.52.1), jq (>= 1.7), zsh (>= 5); install/messages.zsh.
 # Side effects: writes $XDG_STATE_HOME/dotfiles/resolved.json (atomic via
@@ -20,12 +19,11 @@ set -euo pipefail
 : "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task manifest:*' or export it manually}"
 source "${DOTFILEDIR}/install/messages.zsh"
 
-# REGISTRY and SHARED_DIR are overridable via --registry and --shared-dir CLI
-# flags (testing only -- see main() arg parser). The runtime values are the
-# only ones referenced by validate_manifest / resolve_pipeline; the initial
-# assignment here is the production default.
+# REGISTRY and BASE_TOML are overridable via --registry and --base CLI flags
+# (testing only -- see main() arg parser). The runtime values are the only ones
+# referenced by validate_manifest / resolve_pipeline; the initial assignment
+# here is the production default.
 typeset REGISTRY="${DOTFILEDIR}/manifests/features.toml"
-typeset SHARED_DIR="${DOTFILEDIR}/manifests/bundles"
 
 # BASE_TOML is overridable via the --base CLI flag (testing only -- see main()
 # arg parser). Holds the unconditional package tier: every machine running these
@@ -43,7 +41,7 @@ typeset -r OUT="${STATE_DIR}/resolved.json"
 typeset -r MACHINE_NAME_RE='^[a-z0-9_][a-z0-9_-]*$'
 
 # Path-component regex for every TOML-sourced name concatenated into a
-# filesystem path (bundle names, identity value, claude addon names). Only
+# filesystem path (identity value, claude addon names). Only
 # the machine name was guarded before; a value like "../evil" would otherwise
 # resolve a path outside its intended directory.
 typeset -r PATH_NAME_RE='^[a-z0-9_][a-z0-9_-]*$'
@@ -64,7 +62,7 @@ typeset -r SENTINEL_SSH='# capability: one-password-ssh'
 typeset -r SENTINEL_SIGN='# capability: one-password-signing'
 
 # Whitelisted key paths (exact or dotted-prefix). Any scalar leaf path in a
-# machine manifest not covered here is an error -- v2 rejects unknown keys
+# machine manifest not covered here is an error -- unknown keys are rejected
 # (resolver + manifests version together; there is no cross-version skew for
 # warn-only forward-compat to serve).
 typeset -ra ALLOWED_KEYS=(
@@ -75,7 +73,6 @@ typeset -ra ALLOWED_KEYS=(
   "machine.identity"
   "features.enabled"
   "features.disabled"
-  "packages.bundles"
   "packages.formulae"
   "packages.casks"
   "packages.mas"
@@ -115,31 +112,6 @@ read_nonempty_lines() {
   set -A "$__name" "${__acc[@]}"
 }
 
-# bundle_files_for <machine_file> <arrayname>
-# Resolve the machine's packages.bundles list to shared-bundle TOML paths, in
-# declared order. Sets the named array. Returns non-zero (with an error) if a
-# bundle name is shape-invalid or missing -- callers must handle it.
-bundle_files_for() {
-  local machine_file="$1" __out="$2"
-  local -a __names=() __paths=()
-  read_nonempty_lines __names < <(yq -r '.packages.bundles[]?' "$machine_file" 2>/dev/null || true)
-  local bn shared_toml
-  for bn in "${__names[@]}"; do
-    [[ -z "$bn" ]] && continue
-    if ! [[ "$bn" =~ $PATH_NAME_RE ]]; then
-      error "invalid bundle name '${bn}' (must match ${PATH_NAME_RE}; path-traversal guard)"
-      return 1
-    fi
-    shared_toml="${SHARED_DIR}/${bn}.toml"
-    if [[ ! -f "$shared_toml" ]]; then
-      error "bundle '${bn}' has no file at ${shared_toml}"
-      return 1
-    fi
-    __paths+=("$shared_toml")
-  done
-  set -A "$__out" "${__paths[@]}"
-}
-
 # validate_manifest <machine_file>
 # Returns the error count via the global VALIDATE_ERRORS and exit status 0/1
 # -- NOT via stdout (stdout capture is brittle: a stray echo would corrupt it).
@@ -158,14 +130,17 @@ validate_manifest() {
   local grep_cmd="grep"
   command -v ggrep >/dev/null 2>&1 && grep_cmd="ggrep"
 
-  # schema_version must be present and equal 2.
+  # schema_version must be present and equal 3.
   local schema_value
   schema_value=$(yq -r '.schema_version // ""' "$machine_file" 2>/dev/null || echo "")
   if [[ -z "$schema_value" ]]; then
-    error "missing required field: schema_version (must equal 2)"
+    error "missing required field: schema_version (must equal 3)"
     errors=$(( errors + 1 ))
-  elif [[ "$schema_value" != "2" ]]; then
-    error "schema_version must equal 2; got: ${schema_value}"
+  elif [[ "$schema_value" == "2" ]]; then
+    error "schema_version 2 is no longer supported -- packages.bundles was removed; declare discretionary packages inline (see docs/MANIFEST.md) and set schema_version = 3"
+    errors=$(( errors + 1 ))
+  elif [[ "$schema_value" != "3" ]]; then
+    error "schema_version must equal 3; got: ${schema_value}"
     errors=$(( errors + 1 ))
   fi
 
@@ -333,37 +308,6 @@ validate_manifest() {
     fi
   fi
 
-  # packages.bundles (optional, removed in schema 3): when present it must be an
-  # array and every name must resolve to a bundle file. The non-empty and
-  # must-include-dotfiles rules are gone -- a manifest may omit the key entirely.
-  local bundles_present bundles_tag
-  bundles_present=$(yq '.packages | has("bundles")' "$machine_file" 2>/dev/null || echo false)
-  if [[ "$bundles_present" == "true" ]]; then
-    bundles_tag=$(yq '.packages.bundles | tag' "$machine_file" 2>/dev/null || echo "")
-    if [[ "$bundles_tag" != "!!seq" ]]; then
-      error "packages.bundles must be an array; got tag: ${bundles_tag}"
-      errors=$(( errors + 1 ))
-    else
-      local -a bundle_names=()
-      read_nonempty_lines bundle_names < <(yq -r '.packages.bundles[]' "$machine_file" 2>/dev/null || true)
-      local bn shared_toml available
-      for bn in "${bundle_names[@]}"; do
-        [[ -z "$bn" ]] && continue
-        if ! [[ "$bn" =~ $PATH_NAME_RE ]]; then
-          error "invalid bundle name '${bn}' (must match ${PATH_NAME_RE}; path-traversal guard)"
-          errors=$(( errors + 1 ))
-          continue
-        fi
-        shared_toml="${SHARED_DIR}/${bn}.toml"
-        if [[ ! -f "$shared_toml" ]]; then
-          available=$(print -l "${SHARED_DIR}"/*.toml(N:t:r) 2>/dev/null | tr '\n' '|' | sed 's/|$//')
-          error "packages.bundles entry '${bn}' has no file at ${shared_toml} (available: ${available:-<none>})"
-          errors=$(( errors + 1 ))
-        fi
-      done
-    fi
-  fi
-
   # packages.* buckets: bare-string arrays except mas ({ id, name } objects).
   local bad_shape
   bad_shape=$(jq -rn --argjson p "$(yq -o=json '.packages // {}' "$machine_file" 2>/dev/null || echo '{}')" '
@@ -458,29 +402,24 @@ validate_manifest() {
   return 0
 }
 
-# union_bucket <machine_file> <key> <finalize_jq> <feature_json> <bundle_file...>
-# Concatenate the .packages.<key> arrays from the base tier, then each bundle
-# (declared order), then the enabled-feature packages, then the machine, and
-# apply the finalize jq expression. Bare-string buckets use `add | unique`;
-# casks wrap to { name } objects; mas dedupes by .id (last wins, so the machine
-# overrides base, a bundle, or a feature).
+# union_bucket <machine_file> <key> <finalize_jq> <feature_json>
+# Concatenate the .packages.<key> arrays from the base tier, then the
+# enabled-feature packages, then the machine, and apply the finalize jq
+# expression. Bare-string buckets use `add | unique`; casks wrap to { name }
+# objects; mas dedupes by .id (last wins, so the machine overrides base or a
+# feature).
 union_bucket() {
   local machine_file="$1" key="$2" finalize="$3" feature_json="$4"
-  shift 4
   {
     yq -o=json ".packages.${key} // []" "$BASE_TOML"
-    local f
-    for f in "$@"; do
-      yq -o=json ".packages.${key} // []" "$f"
-    done
     printf '%s\n' "${feature_json:-[]}"
     yq -o=json ".packages.${key} // []" "$machine_file"
   } | jq -s "$finalize"
 }
 
 # resolve_pipeline <machine_file>
-# Validate-free compile: read the v2 manifest + registry + bundles and emit the
-# v1 resolved.json contract (minus schema_version, which nothing consumes) to
+# Validate-free compile: read the manifest + registry + base tier and emit the
+# resolved.json contract (minus schema_version, which nothing consumes) to
 # stdout. Callers validate first (main() does); resolve_pipeline trusts input.
 resolve_pipeline() {
   local machine_file="$1"
@@ -514,21 +453,15 @@ resolve_pipeline() {
       '[$en[] as $f | ($reg[$f].packages[$key] // [])] | add // []'
   }
 
-  # bundles list (declared order) + their file paths.
-  local bundles_json
-  bundles_json=$(yq -o=json '.packages.bundles // []' "$machine_file")
-  local -a bundle_files=()
-  bundle_files_for "$machine_file" bundle_files || return 1
-
-  # Per-bucket union across bundles + machine.
+  # Per-bucket union across base tier, enabled features, and the machine.
   local union_formulae union_casks union_mas union_vscode union_cargo union_uv union_npm
-  union_formulae=$(union_bucket "$machine_file" formulae 'add | unique' "$(feature_bucket formulae)" "${bundle_files[@]}")
-  union_casks=$(union_bucket    "$machine_file" casks    'add | unique | map({ name: . })' "$(feature_bucket casks)" "${bundle_files[@]}")
-  union_mas=$(union_bucket      "$machine_file" mas      'add | group_by(.id) | map(.[-1])' "$(feature_bucket mas)" "${bundle_files[@]}")
-  union_vscode=$(union_bucket   "$machine_file" vscode   'add | unique' "$(feature_bucket vscode)" "${bundle_files[@]}")
-  union_cargo=$(union_bucket    "$machine_file" cargo    'add | unique' "$(feature_bucket cargo)" "${bundle_files[@]}")
-  union_uv=$(union_bucket       "$machine_file" uv       'add | unique' "$(feature_bucket uv)" "${bundle_files[@]}")
-  union_npm=$(union_bucket      "$machine_file" npm      'add | unique' "$(feature_bucket npm)" "${bundle_files[@]}")
+  union_formulae=$(union_bucket "$machine_file" formulae 'add | unique' "$(feature_bucket formulae)")
+  union_casks=$(union_bucket    "$machine_file" casks    'add | unique | map({ name: . })' "$(feature_bucket casks)")
+  union_mas=$(union_bucket      "$machine_file" mas      'add | group_by(.id) | map(.[-1])' "$(feature_bucket mas)")
+  union_vscode=$(union_bucket   "$machine_file" vscode   'add | unique' "$(feature_bucket vscode)")
+  union_cargo=$(union_bucket    "$machine_file" cargo    'add | unique' "$(feature_bucket cargo)")
+  union_uv=$(union_bucket       "$machine_file" uv       'add | unique' "$(feature_bucket uv)")
+  union_npm=$(union_bucket      "$machine_file" npm      'add | unique' "$(feature_bucket npm)")
 
   # Security: every package name reaches the generated Brewfile verbatim (Ruby
   # DSL, executed by `brew bundle`). A name containing a quote/backtick/#/
@@ -558,13 +491,11 @@ resolve_pipeline() {
   addons_json=$(yq -o=json '.claude.addons // []' "$machine_file")
 
   # Assemble the resolved.json contract. schema_version is intentionally
-  # omitted -- nothing consumes it. packages.brew.{formulae,casks,mas} hold
-  # the full brew package set (bundle union + machine inline); packages.brew
-  # .bundles is the selection trace.
+  # omitted -- nothing consumes it. packages.brew.{formulae,casks,mas} hold the
+  # full brew package set (base tier + enabled-feature packages + machine).
   jq -n \
     --arg desc "$desc" --arg os "$os" --arg arch "$arch" --arg ident "$ident" \
     --argjson features "$features_map" \
-    --argjson bundles "$bundles_json" \
     --argjson formulae "$union_formulae" --argjson casks "$union_casks" --argjson mas "$union_mas" \
     --argjson vscode "$union_vscode" --argjson cargo "$union_cargo" \
     --argjson uv "$union_uv" --argjson npm "$union_npm" \
@@ -576,7 +507,6 @@ resolve_pipeline() {
       identity: { git: $ident, ssh: $ident },
       packages: {
         brew: {
-          bundles: $bundles,
           formulae: $formulae,
           casks: $casks,
           mas: $mas
@@ -644,10 +574,6 @@ main() {
         # Testing only: override path to features.toml.
         if (( $# < 2 )); then error "--registry requires an argument"; return 1; fi
         REGISTRY="$2"; shift 2 ;;
-      --shared-dir)
-        # Testing only: override path to manifests/bundles/ directory.
-        if (( $# < 2 )); then error "--shared-dir requires an argument"; return 1; fi
-        SHARED_DIR="$2"; shift 2 ;;
       --base)
         # Testing only: override path to base.toml.
         if (( $# < 2 )); then error "--base requires an argument"; return 1; fi
@@ -661,7 +587,6 @@ Usage:
 
 Test-only flags (do not use in production):
   --registry <path>       override features.toml path
-  --shared-dir <path>     override manifests/bundles/ directory
   --base <path>           override manifests/base.toml path
 
 Environment:

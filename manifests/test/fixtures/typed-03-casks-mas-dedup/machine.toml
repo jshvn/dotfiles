@@ -4,7 +4,7 @@
 # "Xcode-machine", not the flag's "Xcode-bundle"). mas is exempt from the
 # redundancy rule precisely so this override stays legal.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "typed-03-casks-mas-dedup fixture"

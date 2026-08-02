@@ -1,7 +1,7 @@
 # negative fixture -- machine.os = "windows" is outside the {darwin, linux}
 # enum (linux is valid in v2, so the old "linux" trigger no longer rejects).
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "bad-os negative fixture"

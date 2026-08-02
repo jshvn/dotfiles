@@ -2,7 +2,7 @@
 # else. Proves the resolver pipeline runs end-to-end with --registry and --base
 # overrides and backfills arch via uname -m.
 
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "typed-01-baseline fixture"
