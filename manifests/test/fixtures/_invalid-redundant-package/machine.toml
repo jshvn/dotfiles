@@ -14,9 +14,6 @@ enabled = []
 disabled = []
 
 [packages]
-bundles = [
-  "dotfiles",
-]
 formulae = [
   "git",
 ]

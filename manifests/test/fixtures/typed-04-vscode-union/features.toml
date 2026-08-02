@@ -1,1 +1,21 @@
-# Empty feature registry for package-only fixtures (no flags to account).
+# Registry for typed-04: two enabled flags whose vscode buckets overlap on
+# acme.shared-dup, locking in cross-flag union + dedupe. This mirrors the
+# production registry, where one-password-ssh and one-password-signing both
+# declare the 1password cask.
+
+[ext-flag-a]
+description = "test flag supplying vscode extensions"
+
+[ext-flag-a.packages]
+vscode = [
+  "acme.from-flag-a",
+  "acme.shared-dup",
+]
+
+[ext-flag-b]
+description = "second test flag overlapping ext-flag-a"
+
+[ext-flag-b.packages]
+vscode = [
+  "acme.shared-dup",
+]

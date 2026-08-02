@@ -17,9 +17,6 @@ enabled = [
 disabled = []
 
 [packages]
-bundles = [
-  "dotfiles",
-]
 formulae = [
   "fzf",
 ]

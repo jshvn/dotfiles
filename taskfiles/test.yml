@@ -93,7 +93,6 @@ tasks:
         }
         trap cleanup_neg EXIT
 
-        test_shared_dir="{{.ROOT_DIR}}/manifests/test/shared"
         test_base="{{.ROOT_DIR}}/manifests/test/shared/base.toml"
         real_registry="{{.ROOT_DIR}}/manifests/features.toml"
 
@@ -146,11 +145,11 @@ tasks:
 
         # Typed-bucket positive fixtures (typed-*/): invoke the REAL resolver
         # via --stdout and diff against expected.json. Each fixture has:
-        #   machine.toml  -- a full v2 manifest
+        #   machine.toml  -- a full manifest
         #   expected.json -- golden resolved output
         #   features.toml -- optional registry override (else the real registry)
-        # Bundles named in machine.toml resolve under manifests/test/shared/
-        # (via --shared-dir). Exercises the whole pipeline: bundle fold +
+        # The base tier resolves to manifests/test/shared/base.toml via --base.
+        # Exercises the whole pipeline: base fold + enabled-feature packages +
         # per-bucket union/dedup + emit.
         typed_count=0
         for fix in "${fix_dir}"/typed-*; do
@@ -170,7 +169,6 @@ tasks:
             zsh "{{.ROOT_DIR}}/install/resolver.zsh" \
             --machine "$sandboxed_name" --stdout \
             --registry "$reg" \
-            --shared-dir "$test_shared_dir" \
             --base "$test_base" 2>/dev/null) || {
             cross "fixture: ${fix_name} -- resolver invocation failed"
             rm -f "$tmp_mach"

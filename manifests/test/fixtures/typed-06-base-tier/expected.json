@@ -13,9 +13,7 @@
   },
   "packages": {
     "brew": {
-      "bundles": [
-        "dotfiles"
-      ],
+      "bundles": [],
       "formulae": [
         "curl",
         "git",

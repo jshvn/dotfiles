@@ -1,6 +1,6 @@
-# typed-01-baseline -- multi-bundle formulae fold (dotfiles + util), no inline
-# extras. Proves the resolver pipeline runs end-to-end with --registry and
-# --shared-dir overrides and backfills arch via uname -m.
+# typed-01-baseline -- the base tier folds in with no packages declared anywhere
+# else. Proves the resolver pipeline runs end-to-end with --registry and --base
+# overrides and backfills arch via uname -m.
 
 schema_version = 2
 
@@ -14,7 +14,3 @@ enabled = []
 disabled = []
 
 [packages]
-bundles = [
-  "dotfiles",
-  "util",
-]

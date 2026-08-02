@@ -13,9 +13,6 @@ enabled = []
 disabled = []
 
 [packages]
-bundles = [
-  "dotfiles",
-]
 
 [bogus_section]
 mystery_key = "value"

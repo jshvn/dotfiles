@@ -6,17 +6,16 @@
     "os": "darwin",
     "arch": "FROM_UNAME"
   },
-  "features": {},
+  "features": {
+    "extras-flag": true
+  },
   "identity": {
     "git": "none",
     "ssh": "none"
   },
   "packages": {
     "brew": {
-      "bundles": [
-        "dotfiles",
-        "extras"
-      ],
+      "bundles": [],
       "formulae": [
         "curl",
         "git"

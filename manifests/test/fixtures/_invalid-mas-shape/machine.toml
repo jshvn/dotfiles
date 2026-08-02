@@ -12,9 +12,6 @@ enabled = []
 disabled = []
 
 [packages]
-bundles = [
-  "dotfiles",
-]
 mas = [
   { name = "NoId" },
 ]

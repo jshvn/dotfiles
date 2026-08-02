@@ -1,1 +1,10 @@
-# Empty feature registry for package-only fixtures (no flags to account).
+# Registry for typed-03: an enabled flag supplies a cask and a mas entry whose
+# id overlaps the machine's, locking in the feature-vs-machine union and the
+# machine-wins mas dedup.
+
+[extras-flag]
+description = "test flag supplying a cask and a mas entry"
+
+[extras-flag.packages]
+casks = ["iterm2"]
+mas = [{ id = 497799835, name = "Xcode-bundle" }]

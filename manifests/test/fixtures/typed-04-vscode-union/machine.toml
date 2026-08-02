@@ -1,7 +1,7 @@
-# typed-04-vscode-union -- packages.vscode unions across the "extbundle"
-# bundle (acme.from-bundle, acme.shared-dup) and the machine
-# (acme.from-machine, acme.shared-dup), deduped by value. cargo/uv/npm stay
-# empty, proving the resolver always materializes every bucket.
+# typed-04-vscode-union -- packages.vscode unions across two enabled flags
+# (acme.from-flag-a, acme.shared-dup twice) and the machine
+# (acme.from-machine), deduped by value. cargo/uv/npm stay empty, proving the
+# resolver always materializes every bucket.
 
 schema_version = 2
 
@@ -11,15 +11,13 @@ os = "darwin"
 identity = "none"
 
 [features]
-enabled = []
+enabled = [
+  "ext-flag-a",
+  "ext-flag-b",
+]
 disabled = []
 
 [packages]
-bundles = [
-  "dotfiles",
-  "extbundle",
-]
 vscode = [
   "acme.from-machine",
-  "acme.shared-dup",
 ]

@@ -16,9 +16,7 @@
   },
   "packages": {
     "brew": {
-      "bundles": [
-        "dotfiles"
-      ],
+      "bundles": [],
       "formulae": [
         "curl",
         "feat-formula",

@@ -333,32 +333,20 @@ validate_manifest() {
     fi
   fi
 
-  # packages.bundles: non-empty !!seq containing "dotfiles"; each name valid +
-  # present as a bundle file; bundle platforms (when declared) include os.
-  local bundles_present bundles_tag bundles_length contains_dotfiles
+  # packages.bundles (optional, removed in schema 3): when present it must be an
+  # array and every name must resolve to a bundle file. The non-empty and
+  # must-include-dotfiles rules are gone -- a manifest may omit the key entirely.
+  local bundles_present bundles_tag
   bundles_present=$(yq '.packages | has("bundles")' "$machine_file" 2>/dev/null || echo false)
-  if [[ "$bundles_present" != "true" ]]; then
-    error "missing required field: packages.bundles"
-    errors=$(( errors + 1 ))
-  else
+  if [[ "$bundles_present" == "true" ]]; then
     bundles_tag=$(yq '.packages.bundles | tag' "$machine_file" 2>/dev/null || echo "")
     if [[ "$bundles_tag" != "!!seq" ]]; then
       error "packages.bundles must be an array; got tag: ${bundles_tag}"
       errors=$(( errors + 1 ))
     else
-      bundles_length=$(yq '.packages.bundles | length' "$machine_file" 2>/dev/null || echo 0)
-      if (( bundles_length < 1 )); then
-        error "packages.bundles must contain at least one bundle"
-        errors=$(( errors + 1 ))
-      fi
-      contains_dotfiles=$(yq '.packages.bundles | contains(["dotfiles"])' "$machine_file" 2>/dev/null || echo false)
-      if [[ "$contains_dotfiles" != "true" ]]; then
-        error 'packages.bundles must include "dotfiles"'
-        errors=$(( errors + 1 ))
-      fi
       local -a bundle_names=()
       read_nonempty_lines bundle_names < <(yq -r '.packages.bundles[]' "$machine_file" 2>/dev/null || true)
-      local bn shared_toml available bundle_platforms
+      local bn shared_toml available
       for bn in "${bundle_names[@]}"; do
         [[ -z "$bn" ]] && continue
         if ! [[ "$bn" =~ $PATH_NAME_RE ]]; then
@@ -371,16 +359,6 @@ validate_manifest() {
           available=$(print -l "${SHARED_DIR}"/*.toml(N:t:r) 2>/dev/null | tr '\n' '|' | sed 's/|$//')
           error "packages.bundles entry '${bn}' has no file at ${shared_toml} (available: ${available:-<none>})"
           errors=$(( errors + 1 ))
-          continue
-        fi
-        bundle_platforms=$(yq -o=json '.platforms // "any"' "$shared_toml" 2>/dev/null || echo '"any"')
-        if [[ "$bundle_platforms" != '"any"' ]]; then
-          local ok
-          ok=$(printf '%s' "$bundle_platforms" | jq -r --arg os "$os_value" 'index($os) != null')
-          if [[ "$ok" != "true" ]]; then
-            error "bundle '${bn}' is not available on os=${os_value} (platforms: ${bundle_platforms})"
-            errors=$(( errors + 1 ))
-          fi
         fi
       done
     fi

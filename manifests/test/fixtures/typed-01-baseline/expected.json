@@ -13,15 +13,10 @@
   },
   "packages": {
     "brew": {
-      "bundles": [
-        "dotfiles",
-        "util"
-      ],
+      "bundles": [],
       "formulae": [
         "curl",
-        "git",
-        "jq",
-        "yq"
+        "git"
       ],
       "casks": [],
       "mas": []

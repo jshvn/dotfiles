@@ -6,17 +6,17 @@
     "os": "darwin",
     "arch": "FROM_UNAME"
   },
-  "features": {},
+  "features": {
+    "ext-flag-a": true,
+    "ext-flag-b": true
+  },
   "identity": {
     "git": "none",
     "ssh": "none"
   },
   "packages": {
     "brew": {
-      "bundles": [
-        "dotfiles",
-        "extbundle"
-      ],
+      "bundles": [],
       "formulae": [
         "curl",
         "git"
@@ -26,7 +26,7 @@
     },
     "vscode": {
       "extensions": [
-        "acme.from-bundle",
+        "acme.from-flag-a",
         "acme.from-machine",
         "acme.shared-dup"
       ]

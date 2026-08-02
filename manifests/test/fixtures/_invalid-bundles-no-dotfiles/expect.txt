@@ -1,2 +1,0 @@
-must include
-bundles missing dotfiles in stderr

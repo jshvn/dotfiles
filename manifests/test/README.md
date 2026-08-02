@@ -16,8 +16,11 @@ A fixture that exercises feature-registry validation ships its own minimal
 `features.toml` (passed via `--registry`); package-only fixtures ship an empty
 registry so they need not enumerate the production flags.
 
-`shared/` holds the shared bundle TOMLs (`dotfiles.toml`, `util.toml`,
-`extbundle.toml`, `extras.toml`) that the fixtures reference via `--shared-dir`.
+`shared/base.toml` is the fixture-scope base tier, passed to every fixture via
+`--base`. It stands in for `manifests/base.toml` so a fixture's expected output
+does not move when the production base tier changes. A fixture that needs
+feature-declared packages puts a `[<flag>.packages]` table in its own
+`features.toml`.
 
 Run from the repo root:
 

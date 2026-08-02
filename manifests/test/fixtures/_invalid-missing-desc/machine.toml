@@ -11,6 +11,3 @@ enabled = []
 disabled = []
 
 [packages]
-bundles = [
-  "dotfiles",
-]
