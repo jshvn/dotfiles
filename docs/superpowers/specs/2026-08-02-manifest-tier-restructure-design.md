@@ -2,8 +2,8 @@
 
 **Date:** 2026-08-02
 **Status:** approved, pending implementation plan
-**Supersedes:** Task 8 / Phase 4 of
-`docs/superpowers/plans/2026-07-23-nixos-architecture-improvements.md`
+**Supersedes:** Task 8 / Phase 4 of the 2026-07-23 NixOS architecture
+improvements plan (executed and deleted; see git history)
 
 ## Problem
 
@@ -268,8 +268,8 @@ that one proves the migration.
 
 ## Relationship to the existing NixOS plan
 
-This replaces **Task 8 / Phase 4** of
-`2026-07-23-nixos-architecture-improvements.md`. That task added
+This replaced **Task 8 / Phase 4** of the 2026-07-23 NixOS architecture
+improvements plan. That task added
 `[<flag>.packages]`, resolver folding, and registry-shape validation -- a
 strict subset of this design. Running both would implement the same resolver
 changes twice toward conflicting end states. Task 8 is deleted from that

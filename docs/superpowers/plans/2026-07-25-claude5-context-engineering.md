@@ -1,5 +1,21 @@
 # Claude 5 Context Engineering Migration Plan
 
+> **STALE -- REBASE BEFORE EXECUTING (noted 2026-08-02).** Written against the
+> repo as of 2026-07-25. Since then the build-then-activate change landed and
+> invalidated four assumptions this plan makes throughout:
+>
+> - **LINT-09 no longer exists.** Every "LINT-09 keeps settings.json honest" /
+>   "LINT-09 clean" verification step must become `task claude:audit`.
+> - **`claude/settings.json` is no longer tracked.** It is composed into
+>   `$XDG_STATE_HOME/dotfiles/build/settings.json` and installed onto
+>   `~/.config/claude/settings.json`. Steps that read or diff the repo file
+>   need repointing.
+> - **Addon fragments moved** to `$XDG_STATE_HOME/dotfiles/settings.d/`.
+> - **Test paths moved** to `<domain>/tests/`.
+>
+> Also unresolved from the original review: the vendor-vs-addon decision gates
+> execution. Re-verify every `Modify:` path against the tree before editing.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Restructure this repo's Claude Code surface around the Claude 5 context engineering

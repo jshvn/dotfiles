@@ -68,11 +68,23 @@ skips the re-apply.
   keys (per-host plists under `~/Library/Preferences/ByHost/`), append to
   the `<CONCERN>_DEFAULTS_CURRENTHOST` array instead and let the apply /
   verify loop call `defaults -currentHost write|read`.
-- **A note on expected LINT-05 portability warnings.** The `defaults
-  read/write` and `dscl` calls in this directory will trip the LINT-05
-  portability check (`../taskfiles/lint.yml`). LINT-05 is warn-only
-  (`exit 0`); these warnings are expected and intentional for the
-  macOS-only code paths in this directory.
+## Expected LINT-05 portability warnings
+
+LINT-05 flags platform-specific commands as a forward signal for a future
+Linux port. It is warn-only (`exit 0`), there is deliberately no
+`lint-allow` escape, and on a macOS-only repo accepting these warnings is
+the documented default. `task lint` reports no failures; the warnings below
+are the full expected set and double as the inventory of what a Linux port
+would have to guard.
+
+| Location | Command | Remediation if Linux enters scope |
+|----------|---------|-----------------------------------|
+| `defaults/appearance.zsh` | `osascript` | Gate `os/defaults/*` at the taskfile layer (darwin only) rather than per line. |
+| `defaults/_apply_verify.zsh` | `defaults write` / `defaults read` | Same -- the apply/verify engine is inherently `defaults`-based; gate the caller. |
+| `defaults/spotlight.zsh` | `defaults write` / `PlistBuddy` | Same -- macOS symbolic-hotkeys plist. |
+| `shell-registration.zsh` | `dscl` | macOS directory services; the Linux equivalent is `chsh` / `getent`. Platform-gate the script. |
+| `../shell/aliases/finder.zsh` | `defaults write` | Wrap the alias definitions in a darwin guard. |
+| `../shell/functions/pubkey.zsh` | `pbcopy` | Dispatch on `$OSTYPE`: `pbcopy` (darwin) vs `xclip -selection clipboard` / `wl-copy`. |
 
 ## References
 

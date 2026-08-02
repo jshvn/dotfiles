@@ -3,9 +3,9 @@
 **Date:** 2026-08-02
 **Status:** approved, pending implementation plan
 **Baseline:** v2.5.0 (`f7bdee5`)
-**Supersedes:** `docs/superpowers/plans/2026-07-23-nixos-architecture-improvements.md`
-(Phases 1 to 3; its Phase 4 was already superseded by the manifest tier
-restructure, delivered in v2.5.0)
+**Supersedes:** the 2026-07-23 NixOS architecture improvements plan (Phases 1
+to 3; its Phase 4 was already superseded by the manifest tier restructure,
+delivered in v2.5.0). That plan was executed and deleted -- see git history.
 
 ## Problem
 

@@ -123,7 +123,7 @@ correct drift in both directions, preview changes before applying.
 
 ## The borrow list
 
-### 1. `task diff` -- dry-run preview (do first)
+### 1. `task diff` -- dry-run preview (DELIVERED 2026-08-02)
 
 **Nix:** `nixos-rebuild dry-activate` shows what activation would change;
 `nvd diff` renders added/removed/upgraded packages between generations.
@@ -132,28 +132,21 @@ chezmoi independently converged on the identical UX (`chezmoi diff` then
 is the load-bearing UX idea, and it is fully separable from Nix's storage
 model.
 
-**Translation:** invert the existing audit machinery into a preview.
-`task diff` = "what would `task install` do right now", composed from what
-each domain already knows how to compute:
+**As built:** the realize stage materializes
+`$XDG_STATE_HOME/dotfiles/build/{Brewfile,settings.json,links.map}`, and
+`task diff` compares each against the live system -- packages via
+`brew bundle check` plus `brew outdated` intersected with the declared set,
+links via `readlink -f` against the map, claude via a `jq -S` diff of built
+vs live. Per-domain `packages:diff` / `links:diff` / `claude:diff` each
+refresh only their own artifact.
 
-- `brew bundle check`/`brew bundle cleanup` dry output: install and removal
-  lists against the composed Brewfile.
-- Links that would be created or retargeted (the `readlink -f` checks that
-  already exist in `links.yml` `status:` blocks, run in report mode).
-- `claude:settings-compose` diff of composed output vs live `settings.json`
-  (LINT-09 already computes this).
-- Addon install/remove deltas.
-- After a manifest edit: fresh `resolver.zsh --stdout` output diffed against
-  the cached `resolved.json` (`jq -S` both sides; sorted-key output already
-  exists for fixtures).
+The lesson worth keeping: diff did not need to be built as a feature. It
+fell out of separating compose from activation. See
+`superpowers/specs/2026-08-02-build-then-activate-design.md`.
 
-This transforms the operator experience from "run install and watch" to
-"review a plan, then converge". Combined with generation snapshots (below),
-`task diff -- <generation>` gives nvd-style "what changed on this machine
-since <date>".
-
-Effort: medium (mostly recomposition of existing audit logic). Payoff:
-highest on this list.
+Not carried over from the original sketch: addon install/remove deltas, and
+`resolver.zsh --stdout` diffed against the cached `resolved.json`. Both are
+still reasonable additions -- `manifest:audit` covers the second case today.
 
 ### 2. Declared-state enforcement -- `task packages:prune` (do)
 
@@ -258,9 +251,9 @@ resolver.zsh", no inline OS branching in shared files):
 - GUI packages (casks generally) simply become darwin-only; on Linux the
   install pipeline has fewer steps.
 
-**A decision the approved Linux spec has not made yet:** the spec
-(`docs/superpowers/specs/2026-07-14-linux-server-support-design.md`) targets
-Homebrew-on-Linux on x86_64 and explicitly lists arm64 Linux as out of scope.
+**A decision Linux support has not made yet:** the approved-but-since-deleted
+Linux design targeted Homebrew-on-Linux on x86_64 and explicitly listed arm64
+Linux as out of scope.
 Ubuntu VMs on Apple Silicon hosts are aarch64, where Homebrew-on-Linux is
 unsupported (no bottles; source builds). If the VM fleet is
 Apple-Silicon-hosted, the brew-everywhere plan degrades badly there, and
@@ -285,8 +278,8 @@ steps by OS in the resolver/taskfiles:
 - Portable layer (should run unmodified on Ubuntu): `shell/`, `configs/`,
   `identity/` (minus 1Password specifics), `claude/`, functions/aliases.
   The LINT-05 portability warnings become load-bearing here --
-  `docs/LINT-FIXES.md` already inventories every macOS-only call with its
-  Linux remediation.
+  `os/README.md` inventories every macOS-only call with its Linux
+  remediation.
 - System layer (darwin-gated): `os/defaults/`, brew cask/mas/vscode
   sections, 1Password integration, hostname via `scutil` (Linux:
   `hostnamectl`, per the spec).
@@ -405,42 +398,42 @@ or a mismatch with this repo's constraints.
   for itself -- but disposable VMs rebuilt by `task install` are the cheaper
   answer at this scale.
 
-## Relationship to the approved Linux spec
+## Linux support
 
-`docs/superpowers/specs/2026-07-14-linux-server-support-design.md` (approved
-for planning) already covers the mechanical seams: os enum relaxation and
-cross-field rules, server identity overlays + keygen, HOMEBREW_PREFIX linux
-branch, Brewfile cask/mas/vscode filtering, bootstrap `uname -s` dispatch,
-hostnamectl/getent, LINT-05 guards, the `GREP` template var, and the
-ubuntu-latest CI job. This document does not replace it. It adds, on top:
+Linux is out of scope repo-wide until a real Linux machine exists (see
+CLAUDE.md). An earlier design document worked the mechanical seams -- os enum
+relaxation and cross-field rules, server identity overlays + keygen, a
+HOMEBREW_PREFIX linux branch, Brewfile cask/mas/vscode filtering, bootstrap
+`uname -s` dispatch, hostnamectl/getent, LINT-05 guards, and an
+ubuntu-latest CI job -- and was retired unexecuted. Rewrite it when the
+machine arrives rather than resurrecting it; these are the decisions that
+should survive into whatever replaces it:
 
-1. **The arm64 question (blocking, decide first).** The spec assumes
-   x86_64 + linuxbrew; Apple-Silicon-hosted Ubuntu VMs are aarch64 where
-   linuxbrew has no bottles. Verify the fleet's arch; if aarch64, promote
-   the provider-indirection layer (item 5) from "nice design" to the
-   foundation, with apt as the Linux provider.
-2. **Provider indirection in the resolver** (item 5) rather than only
-   filtering brew sections by OS (spec section 4) -- filtering handles
-   "casks don't exist on Linux"; indirection also handles "fd is fd-find",
-   which filtering cannot.
-3. **`task diff` and generation snapshots** land before the Linux work if
-   possible -- previewing changes matters twice as much when two OS families
-   share one pipeline.
-4. **The rebuild drill** (item 7) uses the VMs as the ongoing proof that a
-   manifest fully reconstructs a machine.
-5. Two stale references in the spec to fix when implementing: it cites the
-   abandoned `manifests/defaults.toml` concept (section 8), and its scope
-   line "headless servers" should widen to "headless servers and VMs".
+1. **The arm64 question, blocking.** The old design assumed x86_64 +
+   linuxbrew. Apple-Silicon-hosted Ubuntu VMs are aarch64, where linuxbrew
+   has no bottles and everything builds from source. Check `uname -m` on the
+   actual fleet first; if aarch64, apt behind the provider-indirection layer
+   (item 5) becomes the primary path and linuxbrew scopes to x86_64 only.
+2. **Provider indirection beats section filtering.** Filtering brew sections
+   by OS handles "casks do not exist on Linux"; it cannot handle "fd is
+   fd-find". Item 5 handles both.
+3. **The rebuild drill (item 7) is the proof.** Disposable VMs rebuilt by
+   `task install` are the ongoing evidence that a manifest fully
+   reconstructs a machine.
 
-## Phased roadmap
+## Roadmap
 
-| Phase | Items | Depends on |
-|---|---|---|
-| 1. Feedback loop (macOS-only, immediate) | generation snapshots (3); `task diff` (1); content-hash status where mtime lies (8) | nothing |
-| 2. Enforcement | `packages:prune` flag + task (2); prune preview folded into `task diff` | Phase 1 |
-| 3. Linux foundation | arm64 decision; provider indirection in resolver (5); portable/system domain classification + OS gating (6); then the Linux spec sections 1-11 | spec + arm64 answer |
-| 4. Proof | ubuntu-latest CI job (spec s.10); clean-VM rebuild drill against a real manifest (7) | Phase 3 |
-| 5. Scale (only when needed) | roles/mkDefault layering (9); resolver warnings tier (10) | a 3rd+ machine class making duplication hurt |
+| Phase | Items | Depends on | Status |
+|---|---|---|---|
+| 1. Feedback loop | `task diff` (1) | nothing | done 2026-08-02 |
+| 2. Enforcement | `packages:prune` flag + task (2); prune preview folded into `task diff` | Phase 1 | next |
+| 3. Linux foundation | arm64 decision; provider indirection (5); portable/system domain classification + OS gating (6) | a real Linux machine | blocked |
+| 4. Proof | ubuntu-latest CI job; clean-VM rebuild drill (7) | Phase 3 | blocked |
+| 5. Scale (only when needed) | roles/mkDefault layering (9); resolver warnings tier (10) | a 3rd+ machine class making duplication hurt | not needed |
+
+Generation snapshots (3) are rejected, not deferred -- see that item.
+Content-hash `status:` checks (8) stay opportunistic: adopt one when an mtime
+gate demonstrably lies, not as a sweep.
 
 Each phase leaves the repo converged and shippable; nothing in a later phase
 is load-bearing for an earlier one.
