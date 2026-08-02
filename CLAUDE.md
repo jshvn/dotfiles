@@ -14,7 +14,7 @@ hidden branching. macOS only in v1 (Apple Silicon and Intel).
 |---------|----------|
 | Feature-flag registry | `manifests/features.toml` |
 | Per-machine declaration | `manifests/machines/<name>.toml` |
-| Shared package bundles | `manifests/bundles/<purpose>.toml` |
+| Unconditional package tier | `manifests/base.toml` |
 | Compiled output (machine-local) | `$XDG_STATE_HOME/dotfiles/resolved.json` |
 | Active machine name (machine-local) | `$XDG_STATE_HOME/dotfiles/machine` |
 
@@ -72,13 +72,12 @@ rules to the `validate_manifest` block in `resolver.zsh`.
 - One function per `shell/functions/<name>.zsh`
 - One taskfile per concern (`taskfiles/<concern>.yml`)
 - One machine manifest per machine (`manifests/machines/<name>.toml`)
-- One shared bundle per purpose (`manifests/bundles/<purpose>.toml`)
 - One macOS defaults concern per file (`os/defaults/<concern>.zsh`)
 
 ### Flat directories
 
 No subdirectories inside `shell/aliases/` — all alias files live at the top of that directory.
-No `manifests/bundles/brew/` subdirectory; bundle TOMLs are flat under `manifests/bundles/`. No
+No
 `os/darwin/` nesting. The project targets macOS only, so the platform dimension collapses to a
 flat layout.
 
@@ -216,8 +215,8 @@ schema and worked examples.
 | An alias | `shell/aliases/<topic>.zsh` | kebab-case topic; one topic per file; flat (no subdir) |
 | A function | `shell/functions/<name>.zsh` | filename equals function name; lowercase |
 | A new machine | `manifests/machines/<name>.toml` + `task setup -- <name>` | kebab-case |
-| A brew package | `manifests/bundles/<purpose>.toml [packages]` (or the machine's own `[packages]` for one-offs) | by purpose, not by machine |
-| A VSCode extension (or cargo/uv/npm tool) | `[packages] vscode` (resp. `cargo`, `uv`, `npm`) in `manifests/bundles/dev.toml` or a machine manifest | `publisher.name` id; emitted into the Brewfile via `brew bundle` |
+| A brew package | The machine's own `[packages]` (an app you want), a flag's `[<flag>.packages]` (a feature's own tooling), or `manifests/base.toml` (needed by every machine) | by tier, not by machine |
+| A VSCode extension (or cargo/uv/npm tool) | `[packages] vscode` (resp. `cargo`, `uv`, `npm`) in `[vscode.packages]` in `manifests/features.toml`, or a machine manifest | `publisher.name` id; emitted into the Brewfile via `brew bundle` |
 | A macOS defaults concern | `os/defaults/<concern>.zsh` + a flag in `manifests/features.toml` (with `platforms = ["darwin"]`) | one concern per file |
 | A feature flag | `manifests/features.toml` registry block, then account for it (`enabled`/`disabled`) in every machine + a consuming task | kebab-case key |
 | A tool config | `configs/<tool>/` + symlink entry in `taskfiles/links.yml` | use the tool's expected config filename |
@@ -225,8 +224,9 @@ schema and worked examples.
 | A third-party Claude addon | `manifests/claude-addons/<name>.toml` (+ optional `<name>.fragment.json`) + list in machine manifest's `[claude].addons` | kebab-case |
 
 A machine's own `[packages]` entries are one-off extras for that machine. Anything shared across
-machines belongs in a bundle under `manifests/bundles/` — the inline `[packages]` table and a
-bundle file use the identical shape, so promoting a one-off to shared is a copy into a bundle.
+A machine's `[packages]` records deliberate choices only. Packages the config itself needs are
+guaranteed elsewhere: `manifests/base.toml` for the unconditional tier, `[<flag>.packages]` for a
+feature's own tooling. Listing a package base or an enabled flag already provides is a hard error.
 
 ## Conventions Not Captured Above
 
@@ -256,10 +256,9 @@ bundle file use the identical shape, so promoting a one-off to shared is a copy 
   in `install/resolver.zsh`.
 - Don't create subdirectories under `shell/aliases/` — the v2 layout is flat. No `common/`,
   no `darwin/`, no profile subdirs. All alias files live directly in `shell/aliases/`.
-- Don't add a profile-suffixed bundle (e.g., `manifests/bundles/personal.toml`).
-  Bundles are named by purpose (`dotfiles.toml`, `cli.toml`, `dotfiles-gui.toml`,
-  `dev.toml`, `productivity.toml`, `apps.toml`), not by machine. Per-machine variation
-  goes in `manifests/machines/<name>.toml [packages]`.
+- Don't list a package in a machine manifest that `manifests/base.toml` or an
+  enabled flag already provides — the resolver rejects it. Machine manifests
+  record deliberate choices only.
 - Don't bypass `_:safe-link` when creating symlinks.
 - Don't use `$VAR` (shell variable) where `{{.VAR}}` (task template variable) is expected —
   especially inside `status:` blocks.

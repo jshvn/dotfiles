@@ -9,9 +9,9 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
 
 - `resolver.zsh` -- Validates the active machine's
   `manifests/machines/<name>.toml` against the `manifests/features.toml`
-  registry and the `manifests/bundles/` set, then compiles it into
-  `$XDG_STATE_HOME/dotfiles/resolved.json` (bundle union + feature-map
-  materialization). Atomic write via `mktemp + mv`. Every downstream task
+  registry and the `manifests/base.toml` base tier, then compiles it into
+  `$XDG_STATE_HOME/dotfiles/resolved.json` (three-tier package union +
+  feature-map materialization). Atomic write via `mktemp + mv`. Every downstream task
   reads `resolved.json` through go-task `fromJson`; no taskfile parses TOML
   directly.
 - `messages.zsh` -- Colored-output library exposing `info`, `success`,
@@ -22,7 +22,7 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   contract` block at the top of the file).
 - `compose-brewfile.zsh` -- Reads `resolved.json`'s typed buckets
   (`packages.brew.{formulae,casks,mas}`, already folded
-  in by `resolver.zsh` from `manifests/bundles/<bundle>.toml`) and writes
+  in by `resolver.zsh` from the base tier and enabled feature flags) and writes
   a composed `$XDG_CACHE_HOME/dotfiles/Brewfile` (atomic mktemp+mv).
   Invoked by `taskfiles/packages.yml :: packages:compose` and indirectly
   by `packages:install`.
@@ -66,11 +66,11 @@ Brewfile composer, and the Tier-3 hook smoke-test runner.
   output, add it to `messages.zsh` -- the existing self-bootstrap contract
   applies to new functions automatically. Otherwise create a new file
   under `install/` following the same conventions.
-- **A new Brew package.** Add to a purpose bundle at
-  `manifests/bundles/<purpose>.toml` (named by role, not by profile -- a
-  bundle's `[packages]` table accepts `formulae` / `casks` / `mas` arrays
-  with the same shape as a machine's inline entries) or to the machine
-  manifest's own `[packages]` table for one-offs.
+- **A new Brew package.** Pick the tier. An application you want on a machine
+  goes in that machine's own `[packages]` table. Tooling a feature needs goes
+  in `[<flag>.packages]` in `manifests/features.toml`, so enabling the flag
+  guarantees it. Something every machine needs to run these dotfiles goes in
+  `manifests/base.toml`. All three use the identical bucket shape.
 
 ## References
 

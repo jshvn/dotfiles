@@ -224,10 +224,12 @@ individual plugin hooks. Instead [`ecc.toml`](../manifests/claude-addons/ecc.tom
   baseline:commands --with baseline:hooks` to copy a trimmed payload into
   `~/.claude/` (upstream hardcodes that target),
 - symlinks the payload into `$XDG_CONFIG_HOME/claude/` where Claude Code
-  reads it: one flat link per skill (user-scope skill discovery does not
-  traverse a nested `skills/ecc/` dir) plus a single `agents/ecc` dir link
-  (agent discovery does recurse). The links land in the repo working tree
-  via the `claude/` symlink and are appended to `.git/info/exclude`,
+  reads it: one flat link per ECC-owned skill dir (names derived from
+  `~/.claude/ecc/install-state.json`, since `~/.claude/skills/` also holds
+  non-ECC runtime dirs) plus a single `agents/ecc` dir link (agent
+  discovery does recurse). Bridge links whose target no longer exists are
+  pruned on each install. The links land in the repo working tree via the
+  `claude/` symlink and are appended to `.git/info/exclude`,
 - registers ONLY the three session-persistence hooks via the paired
   [`ecc.fragment.json`](../manifests/claude-addons/ecc.fragment.json) --
   per-hook cherry-picking the plugin path cannot do.

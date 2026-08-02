@@ -37,7 +37,7 @@ tasks:
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
         msg: |
-          resolved.json missing or empty; cannot resolve packages.brew.bundles
+          resolved.json missing or empty; cannot resolve packages.brew
             run: task setup -- <machine-name>
       - sh: command -v brew >/dev/null 2>&1
         msg: "brew not on PATH -- run bootstrap.zsh first"
@@ -64,11 +64,11 @@ tasks:
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'
         msg: |
-          resolved.json missing or empty; cannot compose packages.brew.bundles
+          resolved.json missing or empty; cannot compose packages.brew
             run: task setup -- <machine-name>
     # Brewfile exists AND is at least as fresh as resolved.json -- same
     # freshness-check rationale as packages:install. resolved.json itself
-    # depends on features.toml + machines/*.toml + bundles/*.toml via the
+    # depends on features.toml + base.toml + machines/*.toml via the
     # :manifest:resolve status block, so upstream manifest changes propagate.
     status:
       - test -f "{{.COMPOSED_BREWFILE}}"
@@ -251,7 +251,7 @@ tasks:
 
         # MAS layer. No brew-info equivalent for App Store apps. Skip
         # gracefully if mas is not on PATH (mas is declared in
-        # manifests/bundles/dotfiles.toml so should always be installed
+        # manifests/base.toml so should always be installed
         # on a fully-converged machine).
         if ! command -v mas >/dev/null 2>&1; then
           warn "MAS layer skipped: mas not on PATH"
@@ -354,7 +354,7 @@ tasks:
         fi
 
         # Installed sets for the non-brew managers. Each is gated on its CLI
-        # being present (a server without the dev bundle has no `code`); a
+        # being present (a server without the vscode flag has no `code`); a
         # missing CLI yields an empty installed-set so the section skips
         # cleanly. The skip is announced only when something was declared, so
         # a machine that uses none of these stays quiet.
@@ -429,7 +429,7 @@ tasks:
           success "no drift detected"
           exit 0
         fi
-        info "to fix: declare in manifests/bundles/*.toml (or the machine manifest) if wanted, or uninstall if not"
+        info "to fix: declare in the machine manifest (or manifests/base.toml / a feature flag) if wanted, or uninstall if not"
         if [[ "$strict" -eq 1 ]]; then
           cross "${total_drift} drift item(s) detected (--strict)"
           exit 1

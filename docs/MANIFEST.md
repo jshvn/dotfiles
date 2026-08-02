@@ -4,9 +4,11 @@
 
 A machine's install state is described by one self-contained TOML file,
 `manifests/machines/<name>.toml`. The valid feature-flag vocabulary lives in a
-registry, `manifests/features.toml`. Package bundles live under
-`manifests/bundles/`. The resolver (`install/resolver.zsh`) validates a machine
-against the registry and the bundle set, then compiles it into
+registry, `manifests/features.toml`. Packages arrive in three tiers: the
+unconditional base tier (`manifests/base.toml`), a feature's own packages
+(`[<flag>.packages]` in the registry), and the machine's discretionary
+`[packages]`. The resolver (`install/resolver.zsh`) validates a machine
+against the registry and the base tier, then compiles it into
 `$XDG_STATE_HOME/dotfiles/resolved.json`. Every go-task task reads that JSON via
 `fromJson` -- no task reads TOML directly.
 
@@ -18,7 +20,7 @@ everything it wants on its own terms.
 ### Machine manifest shape
 
 ```toml
-schema_version = 2
+schema_version = 3
 
 [machine]
 description = "Josh's personal MacBook -- Apple Silicon, primary dev machine"
@@ -42,11 +44,7 @@ disabled = [
 
 [packages]
 # One table for every package manager. Bare strings everywhere except mas.
-bundles = [                 # bundle names -> manifests/bundles/<name>.toml
-  "dotfiles",
-  "cli",
-]
-formulae = ["node"]         # one-off brew formulae for this machine
+formulae = ["node"]         # brew formulae wanted on this machine
 casks = ["discord"]         # bare cask names
 mas = [                     # Mac App Store: { id = <number>, name = "..." }
   { id = 441258766, name = "Magnet" },
@@ -76,9 +74,32 @@ platforms = ["darwin"]      # optional; when present the flag applies only on th
 A machine that names a flag absent from this registry is rejected. A flag with
 no `platforms` applies on every os.
 
-### Bundle shape (`manifests/bundles/<name>.toml`)
+### Feature-declared packages
 
-Bundles use the same `[packages]` table as machines (minus `bundles`):
+A registry flag may declare the packages its concern needs:
+
+```toml
+[ghostty]
+description = "gate shell/aliases/ghostty.zsh and the ghostty config link"
+
+[ghostty.packages]
+casks = ["ghostty"]
+```
+
+Buckets mirror the base and machine `[packages]` shape (`formulae`, `casks`,
+`mas`, `vscode`, `cargo`, `uv`, `npm`). When a machine enables the flag, the
+resolver unions these into the resolved set; a disabled flag contributes
+nothing. Machines list applications you want; a feature's own tooling belongs
+on the flag, so enabling the feature guarantees its tools.
+
+Two flags may declare the same package -- `one-password-ssh` and
+`one-password-signing` both declare the `1password` cask, and the union dedupes.
+
+### Base tier (`manifests/base.toml`)
+
+The base tier uses the same `[packages]` table as a machine. Every machine
+receives it and no machine declares it -- listing one of its packages in a
+machine manifest is a hard error:
 
 ```toml
 [packages]
@@ -100,19 +121,18 @@ validator rejects the manifest if any is missing or empty.
 
 | Field | Type | Allowed values | Notes |
 |-------|------|---------------|-------|
-| `schema_version` | integer | `2` | Must equal `2` |
+| `schema_version` | integer | `3` | Must equal `3` |
 | `machine.description` | string | any | Free-text purpose statement |
 | `machine.os` | string | `"darwin"` \| `"linux"` | v1 targets darwin; linux is accepted by the schema |
 | `machine.identity` | string | basename of a file under both `identity/git/identities/` and `identity/ssh/identities/` | Drives git + SSH identity selection |
 | `features.enabled` / `features.disabled` | arrays of strings | registry flag names | Must partition the applicable registry flags (see Feature accounting) |
-| `packages.bundles` | array of strings | non-empty; must include `"dotfiles"` | Each name N must have `manifests/bundles/N.toml` |
 
 ### Optional fields
 
 | Field | Type | Notes |
 |-------|------|-------|
 | `machine.arch` | string | `"arm64"` or `"x86_64"`; resolver backfills via `uname -m` when absent |
-| `packages.formulae` / `casks` / `vscode` / `cargo` / `uv` / `npm` | arrays of strings | Per-machine one-off packages; unioned with the included bundles |
+| `packages.formulae` / `casks` / `vscode` / `cargo` / `uv` / `npm` | arrays of strings | Discretionary packages for this machine; unioned with the base tier and every enabled feature's packages |
 | `packages.mas` | array of `{ id, name }` objects | `id` must be an integer; `name` doubles as the `.app` verify name |
 | `claude.addons` | array of strings | Each name must have `manifests/claude-addons/<name>.toml` |
 
@@ -161,27 +181,33 @@ capability-declaring identity without the matching feature is rejected at
 
 ## Package resolution
 
-The resolver unions each `[packages]` bucket across the included bundles (in
-declared order) and the machine's inline entries, then dedupes:
+The resolver unions each `[packages]` bucket across three sources in order --
+the base tier, then every enabled feature's packages, then the machine's
+inline entries -- and dedupes:
 
 - `formulae`, `casks`, `vscode`, `cargo`, `uv`, `npm`: bare-string values,
   deduplicated (sorted); a name declared in several sources collapses to one.
-- `mas`: deduplicated by `id`; the machine's entry wins over a bundle's on a
-  collision.
+- `mas`: deduplicated by `id`; the machine's entry wins on a collision, which
+  is why `mas` is exempt from the redundancy rule below.
 
 Casks are authored as bare strings and emitted as `{ name }` objects in the
 compiled output (the composer reads `.name`).
 
-The `dotfiles` bundle is mandatory (every machine includes it) -- it carries the
-core toolchain, so no machine has to re-list it.
+### The redundancy rule
+
+A machine must not list a package that the base tier or an **enabled** feature
+already provides; the resolver rejects it. This keeps the machine manifest a
+record of deliberate choices: a package appears there if and only if it was a
+free choice. Listing a package that a **disabled** flag would have provided is
+legitimate and stays legal -- that is how atium keeps the 1Password application
+while running its own ssh-agent.
 
 ## Compiled output (`resolved.json`)
 
 The resolver emits a stable JSON contract consumed by every taskfile. Package
 paths in the compiled artifact are `packages.brew.{formulae,casks,mas}` and
 `packages.{vscode,cargo,uv,npm}`, each holding the resolved union of every
-selected bundle plus the machine's inline entries; `packages.brew.bundles` is
-the selection trace. `features` is materialized as a boolean map over the full
+tier. `features` is materialized as a boolean map over the full
 registry (enabled -> true, everything else -> false). `schema_version` is not
 part of the compiled output.
 

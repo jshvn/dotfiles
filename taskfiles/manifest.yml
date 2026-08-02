@@ -6,7 +6,7 @@ version: '3'
 # Purpose:      Exposes the manifest engine (install/resolver.zsh) to humans
 #               and downstream taskfiles -- setup, resolve, show, validate.
 # Depends on:   install/resolver.zsh; install/messages.zsh; yq >= 4.52.1;
-#               jq >= 1.7; manifests/{features.toml,machines/*.toml,bundles/*.toml}.
+#               jq >= 1.7; manifests/{features.toml,base.toml,machines/*.toml}.
 # Side effects: writes $XDG_STATE_HOME/dotfiles/{machine,resolved.json}.
 # =============================================================================
 
@@ -75,14 +75,14 @@ tasks:
         DOTFILEDIR="{{.ROOT_DIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" \
           zsh "{{.ROOT_DIR}}/install/resolver.zsh"
     # Idempotency via BSD-find mtime check. resolved.json must be at least
-    # as fresh as features.toml AND any machine TOML AND any shared-bundle
-    # TOML -- a change to manifests/bundles/<bundle>.toml must trigger
+    # as fresh as features.toml AND any machine TOML AND base.toml -- a change
+    # to the base tier must trigger
     # regeneration the same way a features/machine change does, since the
-    # resolver folds shared-bundle buckets into the resolved typed extras.
+    # resolver folds the base tier into the resolved typed extras.
     status:
       - test -f "{{.RESOLVED_JSON_PATH}}"
       - |
-        out=$(find "{{.ROOT_DIR}}/manifests" \( -name 'features.toml' -o -path '*/machines/*.toml' -o -path '*/bundles/*.toml' \) -newer "{{.RESOLVED_JSON_PATH}}" -print -quit 2>/dev/null)
+        out=$(find "{{.ROOT_DIR}}/manifests" \( -name 'features.toml' -o -name 'base.toml' -o -path '*/machines/*.toml' \) -newer "{{.RESOLVED_JSON_PATH}}" -print -quit 2>/dev/null)
         [ -z "$out" ]
 
   show:

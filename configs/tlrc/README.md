@@ -22,7 +22,7 @@ Wired via the `_:safe-link` entry in `taskfiles/links.yml` `configs:` sub-task.
 ## Feature gate
 
 Always on -- no feature flag. Every machine that installs `tlrc` (declared in
-`manifests/bundles/dotfiles.toml`) gets this config symlinked automatically.
+`manifests/base.toml`) gets this config symlinked automatically.
 
 ## References
 

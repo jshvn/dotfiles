@@ -12,11 +12,11 @@
 #   - bootstrap.zsh tool acquisition (go-task, yq) on a machine with brew
 #   - resolver end-to-end on a real manifest: schema validation, total
 #     feature accounting (a new registry flag unaccounted in ci.toml fails
-#     here), bundle merge, resolved.json compile
+#     here), package tier merge, resolved.json compile
 #   - every symlink in links.yml via _:safe-link, incl. the sudo /etc/zshenv
 #     ZDOTDIR write and identity overlay links (identity "none")
 #   - Brewfile composition + real `brew bundle` install of every formula in
-#     the dotfiles + cli bundles, then packages:verify binary probes
+#     the base tier + declared packages, then packages:verify binary probes
 #   - antidote plugin clone + first sourcing of the linked .zshrc
 #   - feature gates render to clean no-ops (claude, addons, all macos-*)
 #   - hostname state capture path (fresh runner, no scutil --set)
@@ -36,7 +36,7 @@
 #   - the chsh code path in macos:install-shell (pre-satisfied below --
 #     bare chsh needs a tty the runner lacks) and scutil hostname:set
 #   - GUI casks, mas apps, vscode extensions (no such entries in ci.toml
-#     bundles; needs App Store login / .app probes)
+#     packages; needs App Store login / .app probes)
 #   - bootstrap's interactive brew consent gate (runners ship brew)
 #   - the 200ms shell cold-start budget (shell:startup-time is not part
 #     of task test) and multi-machine state (JMBP/JAIR hostname split)

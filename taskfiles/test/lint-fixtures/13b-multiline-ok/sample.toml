@@ -4,7 +4,7 @@
 os = "darwin"
 
 [packages]
-bundles = ["dotfiles"]
+formulae = ["git"]
 formulae = []
 casks = [
   "firefox",
