@@ -223,6 +223,34 @@ tasks:
         check "settings.json activated"
 
   # lint-allow: cmds-without-status
+  diff:
+    desc: "Preview settings.json changes: built artifact vs live file"
+    # deps the single artifact this domain reads (see packages:diff).
+    deps: [settings-compose]
+    status: [false]
+    # Same comparison as claude:audit; the difference is the exit contract --
+    # diff always exits 0 and prints the patch, audit exits non-zero on drift.
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{if not (index .MANIFEST.features "claude-marketplace")}}
+        info "claude: feature disabled -- skipped"
+        exit 0
+        {{end}}
+        built='{{.SETTINGS_BUILD}}'
+        live='{{.SETTINGS_PATH}}'
+        if [[ ! -f "$live" ]]; then
+          info "claude: settings.json would be created"
+          exit 0
+        fi
+        if diff -q <(jq -S . "$built") <(jq -S . "$live") >/dev/null 2>&1; then
+          check "claude: settings.json current"
+        else
+          info "claude: settings.json would change (< live | > built):"
+          diff <(jq -S . "$live") <(jq -S . "$built") || true
+        fi
+
+  # lint-allow: cmds-without-status
   audit:
     desc: "Check the live settings.json for drift vs the composed artifact"
     # deps on the realize stage rather than composing inline: settings-compose

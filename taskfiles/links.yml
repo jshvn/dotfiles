@@ -58,6 +58,35 @@ vars:
     {{.XDG_CONFIG_HOME}}/conda/condarc
     {{.XDG_CONFIG_HOME}}/eza/theme.yaml
 
+  # LINKS_RESOLVE_SOURCE -- shell function mapping an expected TARGET path to
+  # its repo SOURCE. Mirrors the literal pairings used by install-zsh /
+  # install-claude / install-configs when materializing the links. Single copy
+  # shared by links:validate and links:emit-map, so the validator and the map
+  # emitter cannot drift apart; editing a mapping requires editing this case
+  # statement AND the corresponding install cmds: entry.
+  LINKS_RESOLVE_SOURCE: |
+    resolve_source() {
+      local target="$1"
+      local zdotdir="{{.ZDOTDIR}}"
+      local xdg="{{.XDG_CONFIG_HOME}}"
+      local dotfiledir="{{.ROOT_DIR}}"
+      case "$target" in
+        "$zdotdir/.zshenv")            printf '%s\n' "$dotfiledir/shell/.zshenv" ;;
+        "$zdotdir/.zprofile")          printf '%s\n' "$dotfiledir/shell/.zprofile" ;;
+        "$zdotdir/.zshrc")             printf '%s\n' "$dotfiledir/shell/.zshrc" ;;
+        "$zdotdir/.zlogin")            printf '%s\n' "$dotfiledir/shell/.zlogin" ;;
+        "$zdotdir/.zlogout")           printf '%s\n' "$dotfiledir/shell/.zlogout" ;;
+        # All claude links share the relpath on both sides (see CLAUDE_LINKS);
+        # strip the $xdg/claude/ prefix to recover it (covers files + hooks/*).
+        "$xdg/claude/"*)               printf '%s\n' "$dotfiledir/claude/${target#$xdg/claude/}" ;;
+        "$xdg/ghostty/config")         printf '%s\n' "$dotfiledir/configs/ghostty/config" ;;
+        "$xdg/tlrc/"*)                 printf '%s\n' "$dotfiledir/configs/tlrc/${target##*/tlrc/}" ;;
+        "$xdg/conda/"*)                printf '%s\n' "$dotfiledir/configs/conda/${target##*/conda/}" ;;
+        "$xdg/eza/"*)                  printf '%s\n' "$dotfiledir/configs/eza/${target##*/eza/}" ;;
+        *)                             printf '%s\n' "" ;;
+      esac
+    }
+
 tasks:
 
   # lint-allow: cmds-without-status
@@ -200,33 +229,8 @@ tasks:
       # lines and are skipped via `[[ -z "$target" ]] && continue`.
       - |
         {{.DOTFILES_MESSAGES}}
+        {{.LINKS_RESOLVE_SOURCE}}
         failures=0
-
-        # Resolve the expected SOURCE for a given TARGET. Mirrors the literal
-        # pairings used by install-zsh / install-claude / install-configs
-        # when materializing the links -- editing one mapping requires editing
-        # this case statement AND the corresponding cmds: entry.
-        resolve_source() {
-          local target="$1"
-          local zdotdir="{{.ZDOTDIR}}"
-          local xdg="{{.XDG_CONFIG_HOME}}"
-          local dotfiledir="{{.ROOT_DIR}}"
-          case "$target" in
-            "$zdotdir/.zshenv")            printf '%s\n' "$dotfiledir/shell/.zshenv" ;;
-            "$zdotdir/.zprofile")          printf '%s\n' "$dotfiledir/shell/.zprofile" ;;
-            "$zdotdir/.zshrc")             printf '%s\n' "$dotfiledir/shell/.zshrc" ;;
-            "$zdotdir/.zlogin")            printf '%s\n' "$dotfiledir/shell/.zlogin" ;;
-            "$zdotdir/.zlogout")           printf '%s\n' "$dotfiledir/shell/.zlogout" ;;
-            # All claude links share the relpath on both sides (see CLAUDE_LINKS);
-            # strip the $xdg/claude/ prefix to recover it (covers files + hooks/*).
-            "$xdg/claude/"*)               printf '%s\n' "$dotfiledir/claude/${target#$xdg/claude/}" ;;
-            "$xdg/ghostty/config")         printf '%s\n' "$dotfiledir/configs/ghostty/config" ;;
-            "$xdg/tlrc/"*)                 printf '%s\n' "$dotfiledir/configs/tlrc/${target##*/tlrc/}" ;;
-            "$xdg/conda/"*)                printf '%s\n' "$dotfiledir/configs/conda/${target##*/conda/}" ;;
-            "$xdg/eza/"*)                  printf '%s\n' "$dotfiledir/configs/eza/${target##*/eza/}" ;;
-            *)                             printf '%s\n' "" ;;
-          esac
-        }
 
         while IFS= read -r target; do
           [[ -z "$target" ]] && continue
@@ -260,6 +264,68 @@ tasks:
         done <<< "{{.EXPECTED_TARGETS}}"
 
         exit "$failures"
+
+  # lint-allow: cmds-without-status
+  diff:
+    desc: "Preview symlink changes: links install would create or retarget"
+    # deps the single artifact this domain reads (see packages:diff).
+    deps: [emit-map]
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        map='{{.STATE_DIR}}/build/links.map'
+        changes=0
+        while IFS=$'\t' read -r target source; do
+          [[ -z "$target" ]] && continue
+          if [[ ! -L "$target" ]]; then
+            info "create:   $target -> $source"
+            changes=$(( changes + 1 ))
+          else
+            actual=$(readlink -f "$target" 2>/dev/null || true)
+            if [[ "$actual" != "$source" ]]; then
+              info "retarget: $target -> $source (currently ${actual:-broken})"
+              changes=$(( changes + 1 ))
+            fi
+          fi
+        done < "$map"
+        if [[ "$changes" -eq 0 ]]; then
+          check "links: no changes"
+        else
+          info "links: ${changes} change(s) pending -- run 'task install'"
+        fi
+
+  # lint-allow: cmds-without-status
+  emit-map:
+    desc: "Write the expected-symlink map to the build dir (target TAB source)"
+    internal: true
+    # ponytail: links:install still derives its targets from EXPECTED_TARGETS
+    # and its own cmds: entries rather than reading links.map, so the map
+    # serves links:diff only (packages and claude do consume their built
+    # artifacts). Upgrade path: drive links:install from links.map, which
+    # collapses the resolve_source case statement and the install cmds: list
+    # into one source.
+    deps: [":manifest:resolve"]
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{.LINKS_RESOLVE_SOURCE}}
+        mkdir -p '{{.STATE_DIR}}/build'
+        tmp=$(mktemp)
+        trap 'rm -f "$tmp"' EXIT
+        while IFS= read -r target; do
+          [[ -z "$target" ]] && continue
+          src="$(resolve_source "$target")"
+          if [[ -z "$src" ]]; then
+            cross "links:emit-map: no known source for $target"
+            exit 1
+          fi
+          printf '%s\t%s\n' "$target" "$src" >> "$tmp"
+        done <<< "{{.EXPECTED_TARGETS}}"
+        mv "$tmp" '{{.STATE_DIR}}/build/links.map'
+        trap - EXIT
+        check "build/links.map written ($(wc -l < '{{.STATE_DIR}}/build/links.map' | tr -d ' ') links)"
 
   # lint-allow: cmds-without-status
   audit:

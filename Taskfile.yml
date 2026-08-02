@@ -133,11 +133,13 @@ tasks:
         info "  test        Run all smoke tests"
         info "  lint        Run all lint checks"
         info "  audit       Detect drift across all domains"
+        info "  diff        Preview what task install would change"
         echo
         header "Diagnostics (read-only, domain-first)"
         info "  task show                            List inspectable domains"
         info "  task <domain>:show                   manifest | features | claude | claude-addons | hostname"
         info "  task <domain>:audit                  manifest | packages | links | claude | claude-addons"
+        info "  task <domain>:diff                   packages | links | claude"
         echo
         header "State mutations"
         info "  task setup -- <name>                 Set active machine manifest (\$XDG_STATE_HOME/dotfiles/machine)"
@@ -243,6 +245,23 @@ tasks:
         info "  task claude:show           Installed marketplaces + plugins"
         info "  task claude-addons:show    Known / enabled / installed Claude addons"
         info "  task hostname:show         Hostname state file + live system hostnames"
+
+  # lint-allow: cmds-without-status
+  diff:
+    desc: "Preview what task install would change (read-only)"
+    status: [false]
+    deps: [manifest:resolve]
+    # Bare-verb aggregate over the three domains with a build artifact. Each
+    # <domain>:diff deps its own realize step, so the artifacts are refreshed
+    # exactly once and a standalone `task links:diff` is never stale.
+    # ignore_error: true preserves run-all-aggregate semantics.
+    cmds:
+      - task: packages:diff
+        ignore_error: true
+      - task: links:diff
+        ignore_error: true
+      - task: claude:diff
+        ignore_error: true
 
   # lint-allow: cmds-without-status
   install:

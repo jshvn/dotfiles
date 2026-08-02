@@ -36,7 +36,7 @@ stage in this list.
 - `compose-brewfile.zsh` -- Reads `resolved.json`'s typed buckets
   (`packages.brew.{formulae,casks,mas}`, already folded
   in by `resolver.zsh` from the base tier and enabled feature flags) and writes
-  a composed `$XDG_CACHE_HOME/dotfiles/Brewfile` (atomic mktemp+mv).
+  a composed `$XDG_STATE_HOME/dotfiles/build/Brewfile` (atomic mktemp+mv).
   Invoked by `taskfiles/packages.yml :: packages:compose` and indirectly
   by `packages:install`.
 

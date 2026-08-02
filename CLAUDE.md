@@ -23,7 +23,7 @@ Schema reference: `docs/MANIFEST.md`
 ## Common Tasks (operator surface)
 
 Bare `task` prints the curated two-tier banner. The canonical operator
-surface is six top-level lifecycle commands:
+surface is seven top-level lifecycle commands:
 
 | Command          | Purpose                                                      |
 |------------------|--------------------------------------------------------------|
@@ -33,6 +33,7 @@ surface is six top-level lifecycle commands:
 | `task test`      | Run all smoke tests                                          |
 | `task lint`      | Run all lint checks                                          |
 | `task audit`     | Detect drift across all domains (read-only aggregate)        |
+| `task diff`      | Preview what `task install` would change (read-only)         |
 
 Diagnostics follow a domain-first grammar: `<domain>:<verb>` (pick a domain,
 pick a verb). Bare verbs aggregate across all domains.
@@ -41,6 +42,10 @@ pick a verb). Bare verbs aggregate across all domains.
   `claude-addons:show`, `hostname:show`); bare `task show` lists inspectable domains.
 - `task <domain>:audit` -- detect drift (`manifest:audit`, `packages:audit`,
   `links:audit`, `claude:audit`, `claude-addons:audit`); bare `task audit` runs them all.
+- `task <domain>:diff` -- preview pending changes (`packages:diff`, `links:diff`,
+  `claude:diff`); bare `task diff` runs them all. Each compares the domain's
+  build artifact in `$XDG_STATE_HOME/dotfiles/build/` against the live system,
+  so `diff` never mutates anything outside the state tree.
 
 `task --list` shows the full curated graph (every public task; internals
 hidden). Per-component install / validate tasks are intentionally

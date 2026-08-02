@@ -205,8 +205,18 @@ two-pass convergence that happens today.
 
 ## Change 3 -- task diff
 
-`task build` (internal) materializes three artifacts; `task diff` compares
+Three artifacts are materialized into the build dir; `task diff` compares
 each against the live system.
+
+> **As built (2026-08-02):** an internal `build` aggregate task was designed
+> to materialize all three at once. It was dropped during implementation:
+> with `task diff` deping it *and* each `<domain>:diff` deping its own
+> realize step, every artifact composed twice, and removing the per-domain
+> deps instead would let a standalone `task links:diff` read a stale map.
+> Each `<domain>:diff` now deps exactly the one realize step it reads
+> (`packages:compose`, `links:emit-map`, `claude:settings-compose`), which
+> refreshes each artifact exactly once and leaves the aggregate with no
+> consumer. The build dir is unchanged; only the aggregate task is gone.
 
 | Domain | Build artifact | Compared against |
 |---|---|---|

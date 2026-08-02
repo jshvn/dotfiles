@@ -4,12 +4,12 @@ version: '3'
 # taskfiles/packages.yml -- manifest-driven brew + cask + mas package layer
 #
 # Purpose:      Reads packages.brew.* from resolved.json, composes the
-#               per-machine Brewfile to $XDG_CACHE_HOME/dotfiles/Brewfile,
+#               per-machine Brewfile to $XDG_STATE_HOME/dotfiles/build/Brewfile,
 #               refreshes brew metadata, runs `brew bundle install --upgrade`,
 #               and verifies post-install state.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh;
 #               install/compose-brewfile.zsh; :manifest:resolve (deps).
-# Side effects: writes $XDG_CACHE_HOME/dotfiles/Brewfile; runs `brew update`
+# Side effects: writes $XDG_STATE_HOME/dotfiles/build/Brewfile; runs `brew update`
 #               then `brew bundle install --upgrade` against it (may upgrade
 #               already-installed packages to newer upstream versions).
 # =============================================================================
@@ -18,7 +18,7 @@ includes:
   _: ./helpers.yml
 
 vars:
-  COMPOSED_BREWFILE: '{{.XDG_CACHE_HOME}}/dotfiles/Brewfile'
+  COMPOSED_BREWFILE: '{{.STATE_DIR}}/build/Brewfile'
 
 tasks:
 
@@ -57,8 +57,50 @@ tasks:
         brew bundle install --upgrade --file="{{.COMPOSED_BREWFILE}}"
         success "brew bundle install --upgrade complete"
 
+  # lint-allow: cmds-without-status
+  diff:
+    desc: "Preview package changes: what brew bundle install would add or upgrade"
+    # deps the single artifact this domain reads, not the whole build: a
+    # per-domain diff must not recompose the other domains' artifacts.
+    deps: [compose]
+    preconditions:
+      - sh: command -v brew >/dev/null 2>&1
+        msg: "brew not on PATH -- run bootstrap.zsh first"
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        brewfile='{{.COMPOSED_BREWFILE}}'
+        changes=0
+        # Missing entries: `brew bundle check --verbose` prints one line per
+        # absent dependency ("... needs to be installed.").
+        missing=$(brew bundle check --no-upgrade --verbose --file="$brewfile" 2>/dev/null \
+          | ggrep -iE 'needs to be installed' || true)
+        if [[ -n "$missing" ]]; then
+          info "packages to install:"
+          printf '%s\n' "$missing" | sed 's/^/  /'
+          changes=$(( changes + $(printf '%s\n' "$missing" | wc -l) ))
+        fi
+        # Declared entries with newer upstream versions. brew outdated covers
+        # formulae and casks in one call; intersect with the declared set so
+        # undeclared strays never appear in the preview.
+        declared=$( { ggrep -E "^[[:space:]]*(brew|cask)[[:space:]]+'" "$brewfile" || true; } \
+          | ggrep -oE "'[^']+'" | tr -d "'" | sort -u)
+        outdated=$(brew outdated --quiet 2>/dev/null | sort -u || true)
+        upgrades=$(comm -12 <(printf '%s\n' "$declared") <(printf '%s\n' "$outdated") || true)
+        if [[ -n "$upgrades" ]]; then
+          info "packages to upgrade:"
+          printf '%s\n' "$upgrades" | sed 's/^/  /'
+          changes=$(( changes + $(printf '%s\n' "$upgrades" | wc -l) ))
+        fi
+        if [[ "$changes" -eq 0 ]]; then
+          check "packages: no changes"
+        else
+          info "packages: ${changes} change(s) pending -- run 'task install'"
+        fi
+
   compose:
-    desc: "Compose per-machine Brewfile from manifest -> $XDG_CACHE_HOME/dotfiles/Brewfile"
+    desc: "Compose per-machine Brewfile from manifest -> the build dir"
     internal: true
     deps: [":manifest:resolve"]
     preconditions:
@@ -76,7 +118,7 @@ tasks:
         out=$(find "{{.RESOLVED_JSON_PATH}}" -newer "{{.COMPOSED_BREWFILE}}" -print -quit 2>/dev/null)
         [ -z "$out" ]
     cmds:
-      - DOTFILEDIR="{{.ROOT_DIR}}" XDG_CACHE_HOME="{{.XDG_CACHE_HOME}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" zsh "{{.ROOT_DIR}}/install/compose-brewfile.zsh"
+      - DOTFILEDIR="{{.ROOT_DIR}}" XDG_STATE_HOME="{{.XDG_STATE_HOME}}" zsh "{{.ROOT_DIR}}/install/compose-brewfile.zsh"
 
   # lint-allow: cmds-without-status
   verify:

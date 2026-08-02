@@ -4,15 +4,15 @@
 # install/compose-brewfile.zsh -- compose per-machine Brewfile from manifest
 #
 # Purpose:      Read $XDG_STATE_HOME/dotfiles/resolved.json and emit a
-#               composed per-machine Brewfile to $XDG_CACHE_HOME/dotfiles/
-#               Brewfile (atomic mktemp + mv).
+#               composed per-machine Brewfile to
+#               $XDG_STATE_HOME/dotfiles/build/Brewfile (atomic mktemp + mv).
 # Depends on:   jq (>= 1.7), zsh (>= 5); install/messages.zsh.
-# Side effects: writes $XDG_CACHE_HOME/dotfiles/Brewfile.
+# Side effects: writes $XDG_STATE_HOME/dotfiles/build/Brewfile.
 # =============================================================================
 
 set -euo pipefail
 
-# Output structure (composed Brewfile written to $XDG_CACHE_HOME/dotfiles/Brewfile):
+# Output structure (composed Brewfile written to the build dir):
 #   Line 1    -- AUTO-GENERATED header banner (ISO-8601 UTC timestamp)
 #   Lines 2-5 -- Machine: / Bundles: / Extras: counts / DO NOT EDIT notice
 #   Body      -- typed extras emitted as Ruby DSL lines, in fixed order:
@@ -49,8 +49,8 @@ source "${DOTFILEDIR}/install/messages.zsh"
 typeset -r STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
 typeset -r RESOLVED_JSON="${STATE_DIR}/resolved.json"
 typeset -r MACHINE_FILE="${STATE_DIR}/machine"
-typeset -r CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
-typeset -r COMPOSED_OUT="${CACHE_DIR}/Brewfile"
+typeset -r BUILD_DIR="${STATE_DIR}/build"
+typeset -r COMPOSED_OUT="${BUILD_DIR}/Brewfile"
 
 # Literal single-quote (U+0027) injected as a jq --arg parameter so jq
 # filter strings can stay inside zsh single-quote wrapping with no brittle
@@ -159,7 +159,7 @@ main() {
   # Signal trap mirrors resolver.zsh: clean up the tmp file on EXIT/INT/TERM,
   # then clear the trap once the rename completes so the (now-renamed)
   # destination is not subsequently rm'd.
-  mkdir -p "$CACHE_DIR"
+  mkdir -p "$BUILD_DIR"
   local tmp
   tmp=$(mktemp "${COMPOSED_OUT}.XXXXXX")
   trap 'rm -f "$tmp"' EXIT INT TERM

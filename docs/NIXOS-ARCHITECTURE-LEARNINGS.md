@@ -78,63 +78,47 @@ before applying any of it."
 
 ## Learnings mapped to this repo
 
-The clunky areas share two root causes: **impure composition** and
-**inconsistent conventions**.
+Two borrowed principles shape the repo: **staged composition** and
+**one convention per concern**.
 
-### A. Adopt build-then-activate (the big one)
+### A. Build-then-activate
 
-Today composition is interleaved with activation: `task install`
-composes the Brewfile, composes `settings.json`, and applies changes in
-one pass. That is why `task diff` (NIXOS-IDEAS item 1) reads as "medium
-effort recomposition of audit logic" -- there is no materialized desired
-state to diff against.
+Composition is separated from activation. The realize stage emits a
+**build directory** -- `$XDG_STATE_HOME/dotfiles/build/` holding the
+composed Brewfile, the composed `settings.json`, and `links.map` (one
+`target<TAB>source` line per expected symlink). Activation then applies it.
 
-The Nix-shaped restructure: the resolve/compose stage emits a complete
-**build directory** -- `$XDG_STATE_HOME/dotfiles/build/` containing
-`resolved.json`, the composed Brewfile, the composed `settings.json`,
-and a link map (source -> target list). Then:
+Because the desired state is materialized as files, `task diff` is a file
+comparison rather than a recomputation: each `<domain>:diff` compares the
+domain's artifact against the live system. That is the Nix property --
+diff is a corollary of staging, not a feature built on top of it.
 
-- `task diff` = compare build dir vs live system (trivial, uniform).
-- `task install` = sync build dir -> system (activation only).
-- Generation snapshot (NIXOS-IDEAS item 3) = keep the build dir,
-  stamped with the git SHA.
+(Generations, NIXOS-IDEAS item 3, evaluated and rejected 2026-07-24:
+Homebrew's rolling-release model means binaries never roll back regardless,
+and the residual value -- a version record for bisecting "it worked last
+week" -- addresses a problem that has not occurred in years of operation.
+Config rollback is already git checkout + `task install`. The build dir
+earns its keep on `task diff` alone.)
 
-One architectural move makes three roadmap items fall out as
-corollaries, exactly as they do in Nix.
+### B. The repo tree holds source only
 
-(Generations evaluated and rejected 2026-07-24: Homebrew's rolling-release
-model means binaries never roll back regardless, and the residual value --
-a version-record for bisecting "it worked last week" -- addresses a
-problem that has not occurred in years of operation. Config rollback is
-already git checkout + `task install`. The build dir is worth having for
-`task diff` alone.)
+Nix's hardest rule is that build products never live in the source tree.
+Here that means two things:
 
-### B. Claude settings -- the clunk is an impurity, twice over
+1. Machine-generated addon fragments live at
+   `$XDG_STATE_HOME/dotfiles/settings.d/99-addon-<name>.json`, not in
+   `claude/settings.d/`. The repo's fragment dir is fully repo-owned, so
+   `git status` no longer differs per machine.
+2. The composed `settings.json` is built into
+   `$XDG_STATE_HOME/dotfiles/build/` and installed onto
+   `~/.config/claude/settings.json` as a real file. Nothing the Claude CLI
+   writes can reach tracked source.
 
-Two genuine "reads from its own output" problems:
-
-1. `settings_preserved_keys` in `install/compose-settings.zsh` extracts
-   CLI-managed keys from the generated artifact it is about to
-   overwrite. The output is an input. This is why LINT-09 exists, why
-   audit needs a `-S` normalization path, and why the whole thing feels
-   delicate. Nix's rule: mutable state never lives inside a generated
-   artifact -- but the Claude CLI forces it here (it writes
-   `enabledPlugins` et al. into the live `settings.json`; that cannot be
-   prevented). The honest fix makes the impurity explicit and
-   one-directional: a capture step snapshots CLI-owned keys into
-   `$XDG_STATE_HOME/dotfiles/claude-cli-state.json`, after which compose
-   is a pure function of `settings.d fragments + state file`. Only the
-   capture step ever reads the live file.
-2. Worse: `claude/settings.d/99-addon-<name>.json` is a
-   machine-generated file written into the repo source tree during addon
-   install. Build products in the source tree is the thing Nix most
-   fundamentally forbids -- git status differs per machine, and the
-   fragment dir is neither fully repo-owned nor fully generated. Addon
-   fragments belong in the state/build dir; compose reads
-   `repo fragments + state fragments`.
-
-With both fixes, the repo dir is pure source, the state dir is pure
-machine-state, and the output is a pure function of the two.
+One impurity remains and is deliberate: compose reads `enabledPlugins`,
+`extraKnownMarketplaces`, `model`, and `tui` back out of the live file,
+because the CLI writes them there and cannot be redirected. Bounded to four
+keys, one direction, and pointed away from the repo -- which is the honest
+shape, not something to engineer around.
 
 ### C. Feature-to-package mapping -- resolved
 
@@ -156,23 +140,17 @@ On the O(machines x flags) feature accounting: NixOS solves it with defaults
 (`mkDefault`); NIXOS-IDEAS item 9 correctly defers that. At 4 machines, total
 explicitness is the right trade.
 
-### D. install/ sprawl -- name the pipeline stages
+### D. install/ scripts name their pipeline stage
 
-Twelve scripts, but really five roles: **lib** (`messages.zsh`,
-`compose-settings.zsh` -- sourced, not executed), **evaluate**
-(`resolver.zsh`), **compose** (`compose-brewfile.zsh`), **audit/operate**
-(`links-audit-scan.zsh`, `claude-addons.zsh`, `repo-sync.zsh`,
-`lint-rules.zsh`), and **tests** (`test-*.zsh` -- a third of the
-directory). The clunk is that the pipeline taxonomy is implicit in
-filename prefixes.
+Every script under `install/` belongs to exactly one stage -- **lib**
+(sourced, not executed), **evaluate**, **realize**, **operate**, or
+**tests** -- and `install/README.md` lists them that way, so a new script
+has to declare where it fits rather than implying it through a filename
+prefix.
 
-Two cheap moves: relocate `test-*.zsh` under a tests directory (the
-directory halves), and watch `resolver.zsh` (672 lines, nearing the
-800-line cap). The module system's internal split is the natural
-fracture line when it bursts: *declare/validate* vs *merge/emit*. The
-remaining files do not need subdirectories; they need the stage taxonomy
-written down in `install/README.md` so the next script knows which stage
-it belongs to.
+The one file to watch is `resolver.zsh` (668 lines against the 800-line
+cap). The module system's internal split is the natural fracture line when
+it bursts: *declare/validate* vs *merge/emit*.
 
 ### E. Testing -- colocation plus one uniform convention
 
@@ -196,15 +174,20 @@ from strangers; this repo has four machines and one author. Take the
 **purity rule** (never read your own output; no generated files in the
 source tree), not the machinery.
 
-## Priority order
+## Status
 
-1. **Purity fixes for Claude settings** (B) -- smallest, kills the most
-   daily annoyance, prerequisite hygiene for the build dir.
-2. **Build-dir restructure** (A) -- makes NIXOS-IDEAS item 1 (`task diff`)
-   a corollary of one refactor. (Item 3, generations, rejected -- see the
-   note in section A.)
-3. **Test-dir convention rename** (E) -- an afternoon.
-4. **Feature -> package mapping in the registry** (C) -- done
-   (2026-08-02); see
-   docs/superpowers/specs/2026-08-02-manifest-tier-restructure-design.md.
-5. **install/ taxonomy** (D) -- mostly falls out of item 3.
+All five borrows are delivered.
+
+| Item | Delivered by |
+|---|---|
+| A -- build dir + `task diff` | 2026-08-02, build-then-activate |
+| B -- Claude settings purity | 2026-08-02, build-then-activate |
+| C -- feature-to-package mapping | 2026-08-02, manifest tier restructure |
+| D -- install/ stage taxonomy | 2026-08-02, build-then-activate |
+| E -- test-dir convention | 2026-08-02, build-then-activate |
+
+Design records:
+`docs/superpowers/specs/2026-08-02-build-then-activate-design.md` and
+`docs/superpowers/specs/2026-08-02-manifest-tier-restructure-design.md`.
+
+Generations (NIXOS-IDEAS item 3) stay rejected -- see the note in section A.
