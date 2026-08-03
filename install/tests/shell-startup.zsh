@@ -74,15 +74,24 @@ for marker in prompt_subst git_prompt_info git_prompt_status extract \
 done
 
 # --- 4. Deferred compinit ran (use-omz flushes it from precmd) --------------
-# `zsh -lic exit` never draws a prompt, so precmd never fires. Piping stdin
-# to an interactive login shell DOES fire precmd before each read; after the
-# first prompt, compdef must be a real function (the use-omz queue wrapper
-# has been replaced) and _git must be registered as a completer.
-compinit_markers=$(print -r -- '
+# `zsh -lic exit` never draws a prompt, so precmd never fires; the hooks are
+# fired by hand to simulate that first prompt. After they run, compdef must be
+# a real function (the use-omz queue wrapper has been replaced) and _git must
+# be registered as a completer.
+#
+# Do NOT drive a real prompt by piping a command list into `zsh -li`. An
+# interactive shell that inherits a controlling terminal takes its commands
+# from /dev/tty, not stdin: the piped list never executes, both assertions
+# below fail, and ZLE paints a prompt over the running test output. That path
+# only appears to work when the suite runs with no terminal attached (CI).
+#
+# Each hook is error-suppressed -- precmd hooks assume the prompt context this
+# shell does not have, and a hook that trips must not mask the real assertions.
+compinit_markers=$(zsh -lic '
+    for f in $precmd_functions; do $f >/dev/null 2>&1 || true; done
     (( $+functions[compdef] )) && [[ "$(whence -v compdef)" != *"use-omz"* ]] && echo compdef_real
     [[ -n "${_comps[git]:-}" ]] && echo git_completion
-    exit
-' | zsh -li 2>/dev/null) || true
+' 2>/dev/null) || true
 
 if [[ "$compinit_markers" == *compdef_real* ]]; then
     check "compinit: deferred compinit ran at first prompt"

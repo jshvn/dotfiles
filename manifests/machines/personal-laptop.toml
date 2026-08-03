@@ -45,7 +45,7 @@ disabled = [
 [packages]
 # container: Apple's container runtime; requires macOS 15+, so machines on
 # older releases must not list it.
-# node: the ecc Claude addon's hooks invoke the `node` binary directly.
+# node: the ecc Claude addon's installer runtime (install.sh delegates to Node).
 formulae = [
   "bat",
   "bottom",

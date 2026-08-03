@@ -191,7 +191,10 @@ tasks:
 
         mv "$tmp" "$built"
         trap - EXIT
-        fragment_count=$( { ls "$settings_d"/*.json 2>/dev/null; ls "$state_d"/*.json 2>/dev/null; } | wc -l | tr -d ' ')
+        # find, not a glob: the state dir is legitimately empty on a machine
+        # whose addons ship no settings fragment, and a no-match glob is a
+        # non-zero exit that errexit+pipefail would turn into a task failure.
+        fragment_count=$( { find "$settings_d" -maxdepth 1 -name '*.json' 2>/dev/null; find "$state_d" -maxdepth 1 -name '*.json' 2>/dev/null; } | wc -l | tr -d ' ')
         check "build/settings.json composed from ${fragment_count} fragment(s)"
 
   # lint-allow: cmds-without-status

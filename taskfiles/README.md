@@ -19,7 +19,7 @@ every symlink goes through `_:safe-link` in `helpers.yml`.
   `lint:shell-headers`, `lint:portability`, `lint:banner-parity`,
   `lint:brew-prefix`, `lint:kebab-access`, `lint:file-headers`,
   `lint:array-style`, `lint:test-fixtures`. Enforces the LINT-NN rules
-  (see the catalogue in `../CLAUDE.md`).
+  (catalogue below).
 - **Links.** `links.yml` -- shell symlinks via `_:safe-link` plus
   the zdotdir step (antidote is the plugin manager; plugin set in
   `shell/.zsh_plugins.txt`). `shell.yml` exposes `task shell:startup-time`
@@ -60,6 +60,31 @@ every symlink goes through `_:safe-link` in `helpers.yml`.
 - `helpers.yml` -- symlink helpers and command-availability checks.
 - `../docs/MANIFEST.md` -- manifest schema; many tasks consume
   `resolved.json` via `fromJson`.
-- `../CLAUDE.md` -- v2 conventions (status-block templating, no bare
-  `ln -s`, `set -euo pipefail` on every executable `.zsh`, the lint
-  catalogue).
+- `../CLAUDE.md` -- v2 gotchas (status-block templating, no bare
+  `ln -s`, `set -euo pipefail` on every executable `.zsh`).
+
+## Lint catalogue
+
+In-code `# LINT-NN:` citations reference this catalogue. The rule body lives in
+`taskfiles/lint.yml`; this table is the operator-facing summary.
+
+| ID | Scope | What it checks |
+|----|-------|----------------|
+| LINT-02 | Taskfiles | `status:` uses `{{.X}}` template vars, not `$X` shell vars |
+| LINT-03a | Taskfiles | Tasks with `cmds:` have `status:` (or exempt via `internal: true` / all-task-delegates) |
+| LINT-03b | Repo-wide | No bare `ln -s` outside `taskfiles/helpers.yml` |
+| LINT-04 | Executable .zsh | `set -euo pipefail` in first 30 lines |
+| LINT-05 | shell/ + os/ (.zsh only) | Portability-sensitive commands surface as warnings (non-blocking) |
+| LINT-07 | All .zsh | `zsh -n` parse-check (Tier-0 syntax) |
+| LINT-08 | Root Taskfile.yml | `default:` banner lists every public top-level task |
+| LINT-10 | .zsh + .yml repo-wide | No hardcoded `/opt/homebrew` or `/usr/local`; dispatch sites carry `# lint-allow: hardcoded-prefix` |
+| LINT-11 | Taskfiles | Kebab-case feature keys use the `index` form, never template dot-access |
+| LINT-12 | All .zsh | File-header banner (Purpose / Depends on / Side effects between `# ===` rules) |
+| LINT-13 | `manifests/**/*.toml` | Multi-element arrays span one element per line (empty/single-element inline arrays exempt) |
+
+LINT-01, LINT-06, and LINT-09 are intentionally absent; retired numbers are
+never reused, so existing `# LINT-NN:` citations in code stay unambiguous.
+LINT-01 ("every install task has a status: block") was generalized into
+LINT-03a. LINT-09 checked a generated `settings.json` tracked in the repo;
+the repo tree holds source only, and build-vs-live drift is runtime, covered
+by `task claude:audit` under both `task audit` and `task validate`.

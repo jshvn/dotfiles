@@ -4,7 +4,7 @@ Canonical reference for the third-party Claude Code addon system + the
 settings.json build-artifact composition pipeline. Audience: operators
 and AI agents working in this repo. For directory-local quick-reference see
 [`manifests/claude-addons/README.md`](../manifests/claude-addons/README.md).
-For project rules see [`CLAUDE.md`](../CLAUDE.md).
+For project gotchas and conventions see [`CLAUDE.md`](../CLAUDE.md).
 
 ## Why this exists
 
@@ -220,7 +220,7 @@ No paired fragment needed -- the plugin doesn't write hook entries into
 `settings.json`. Compose preserves `enabledPlugins` and `extraKnownMarketplaces`
 from the live file automatically.
 
-### Installer-script addon with cherry-picked hooks (the ECC pattern)
+### Installer-script addon with post-copy prunes (the ECC pattern)
 
 ECC deliberately does NOT use the plugin path: the full ecc@ecc plugin injects
 ~228 skills, ~60 agents, ~93 commands, and ~29 always-on hooks into every
@@ -230,25 +230,27 @@ individual plugin hooks. Instead [`ecc.toml`](../manifests/claude-addons/ecc.tom
 - keeps the ecc *marketplace* registered (the clone is where `install.sh`
   lives; `claude plugin marketplace update ecc` is the upgrade fetch),
 - runs `install.sh --target claude --profile minimal --without
-  baseline:commands --with baseline:hooks` to copy a trimmed payload into
-  `~/.claude/` (upstream hardcodes that target),
-- symlinks the payload into `$XDG_CONFIG_HOME/claude/` where Claude Code
-  reads it: one flat link per ECC-owned skill dir (names derived from
-  `~/.claude/ecc/install-state.json`, since `~/.claude/skills/` also holds
-  non-ECC runtime dirs) plus a single `agents/ecc` dir link (agent
-  discovery does recurse). Bridge links whose target no longer exists are
-  pruned on each install. The links land in the repo working tree via the
-  `claude/` symlink and are appended to `.git/info/exclude`,
-- registers ONLY the three session-persistence hooks via the paired
-  [`ecc.fragment.json`](../manifests/claude-addons/ecc.fragment.json) --
-  per-hook cherry-picking the plugin path cannot do.
+  baseline:commands --without baseline:rules` to copy a trimmed payload into
+  `~/.claude/` (upstream hardcodes that target), then prunes it in-array to
+  the curated agent and skill keep-lists,
+- symlinks the kept payload into `$XDG_CONFIG_HOME/claude/` where Claude
+  Code reads it: one flat link per keep-list skill plus a single `agents/ecc`
+  dir link (agent discovery does recurse). Every linked skill's description
+  loads into every session, so the link set is the context budget, and it is
+  an explicit list rather than whatever the payload happens to contain. Each
+  run unlinks the ECC-targeted links then relinks the keep-list, so dropping
+  a name converges the machine down. The links land in the repo working tree
+  via the `claude/` symlink and are appended to `.git/info/exclude`,
+- registers no hooks and ships no settings fragment -- session continuity is
+  native auto-memory, and the post-copy prunes keep the payload to the
+  curated keep-lists.
 
 **Array-replace caveat:** compose deep-merges with jq `*`, which merges maps
 but REPLACES arrays. A fragment that defines `hooks.<Event>` replaces that
-event's whole array from earlier fragments. `ecc.fragment.json` defines
-`hooks.SessionStart`, so it restates the repo's post-compact entry from
-`10-hooks.json`; editing the SessionStart wiring in `10-hooks.json` requires
-mirroring the change there. Events a fragment doesn't mention are unaffected.
+event's whole array from earlier fragments, so it must restate any entries
+from `10-hooks.json` it wants to keep (a fragment defining
+`hooks.SessionStart` restates the repo's post-compact entry). Events a
+fragment doesn't mention are unaffected.
 
 ### Adding an npx-style addon with self-healing hooks
 
@@ -352,8 +354,9 @@ The machine TOML lists an addon name with no matching
 
 ## Cross-references
 
-- [`CLAUDE.md`](../CLAUDE.md) -- project rules; "Rules" section names this
-  doc as the canonical reference for settings composition and addons.
+- [`CLAUDE.md`](../CLAUDE.md) -- project instructions; the Gotchas section
+  covers settings composition and addons at a glance, with this doc as the
+  deep reference.
 - [`manifests/claude-addons/README.md`](../manifests/claude-addons/README.md)
    -- directory-local schema quick-reference.
 - [`claude/README.md`](../claude/README.md) -- `claude/` directory orientation

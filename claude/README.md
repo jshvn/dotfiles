@@ -6,8 +6,8 @@ is symlinked into `~/.config/claude/` by `task links:all`.
 **Canonical references:**
 - [`../docs/CLAUDE-ADDONS.md`](../docs/CLAUDE-ADDONS.md) -- full operator
   reference for third-party addons + settings.d composition.
-- [`../CLAUDE.md`](../CLAUDE.md) -- project rules (see "The repo tree holds
-  source only" + "Third-party Claude addons are declarative").
+- [`../CLAUDE.md`](../CLAUDE.md) -- project instructions (see the Gotchas
+  bullets on the source-only repo tree and declarative addons).
 
 ## Ownership Map
 

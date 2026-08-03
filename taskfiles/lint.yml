@@ -6,7 +6,7 @@ version: '3'
 # Purpose:      Enforce the LINT-NN structural correctness rules that prevent
 #               recurring bug classes (01, 06, and 09 intentionally absent;
 #               the numbers are retired, not reused). See
-#               CLAUDE.md §Lint rule catalogue for the rule definitions.
+#               taskfiles/README.md §Lint catalogue for the rule summaries.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh; yq + ggrep.
 # Side effects: read-only -- emits check/cross output via messages.zsh.
 # =============================================================================

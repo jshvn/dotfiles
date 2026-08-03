@@ -47,5 +47,6 @@ the full graph.
 
 ## 🧑🏻 Contributing
 
-See [CLAUDE.md](CLAUDE.md) for conventions, rules, where-to-add tables, and
-the lint catalogue.
+See [CLAUDE.md](CLAUDE.md) for the gotchas and conventions; each top-level
+directory's README says what belongs there; the lint catalogue lives in
+[taskfiles/README.md](taskfiles/README.md).
