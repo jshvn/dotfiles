@@ -17,8 +17,8 @@ every symlink goes through `_:safe-link` in `helpers.yml`.
   `manifest:audit`. Reads TOMLs; writes `resolved.json`.
 - **Lint.** `lint.yml` -- `lint:syntax`, `lint:taskfile`,
   `lint:shell-headers`, `lint:portability`, `lint:banner-parity`,
-  `lint:settings-drift`, `lint:brew-prefix`, `lint:kebab-access`,
-  `lint:file-headers`, `lint:test-fixtures`. Enforces LINT-02..LINT-12
+  `lint:brew-prefix`, `lint:kebab-access`, `lint:file-headers`,
+  `lint:array-style`, `lint:test-fixtures`. Enforces the LINT-NN rules
   (see the catalogue in `../CLAUDE.md`).
 - **Links.** `links.yml` -- shell symlinks via `_:safe-link` plus
   the zdotdir step (antidote is the plugin manager; plugin set in
@@ -62,4 +62,4 @@ every symlink goes through `_:safe-link` in `helpers.yml`.
   `resolved.json` via `fromJson`.
 - `../CLAUDE.md` -- v2 conventions (status-block templating, no bare
   `ln -s`, `set -euo pipefail` on every executable `.zsh`, the lint
-  catalogue LINT-02..LINT-12).
+  catalogue).
