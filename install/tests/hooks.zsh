@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 # =============================================================================
-# install/tests/hooks.zsh -- smoke tests for the four named Claude hooks
+# install/tests/hooks.zsh -- smoke tests for the repo-owned Claude hooks
 #
 # Purpose:      Two-plus scenarios per hook (pass + block/warn) for
 #               secret-scan, no-emojis, no-ai-comments, agent-transparency,

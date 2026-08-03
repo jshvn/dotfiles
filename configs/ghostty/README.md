@@ -23,5 +23,5 @@ without Ghostty installed list it in `[features] disabled` instead.
 
 ## References
 
-- `taskfiles/links.yml` -- `configs:` sub-task registers the symlink (Plan 06)
+- `taskfiles/links.yml` -- `configs:` sub-task registers the symlink
 - `manifests/features.toml` -- registers the `ghostty` flag

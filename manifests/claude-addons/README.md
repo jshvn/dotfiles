@@ -14,7 +14,7 @@ quick-reference.
 | File | Purpose |
 |------|---------|
 | `<name>.toml` | Required. The addon's footprint manifest (schema below). |
-| `<name>.fragment.json` | Optional. Settings.json fragment template; copied to `claude/settings.d/99-addon-<name>.json` on enable. |
+| `<name>.fragment.json` | Optional. Settings.json fragment template; copied to `$XDG_STATE_HOME/dotfiles/settings.d/99-addon-<name>.json` on enable. |
 | `README.md` | This file. |
 
 Kebab-case filenames; `<name>` matches `[meta].name` inside the TOML.
@@ -56,7 +56,7 @@ stripping unnecessary; addon-injected keys live in the paired
 ## Two reference cases
 
 - [`ecc.toml`](ecc.toml) -- installer-script addon with post-copy prunes.
-  NOT the ecc@ecc plugin (untrimmable ~228-skill context tax): the ecc
+  NOT the ecc@ecc plugin (untrimmable whole-payload context tax): the ecc
   marketplace stays registered as the upgrade fetch, `install.sh` copies the
   minimal profile into `~/.claude/`, in-array prunes trim it to the curated
   keep-lists, and flat per-skill symlinks + an `agents/ecc` dir link expose

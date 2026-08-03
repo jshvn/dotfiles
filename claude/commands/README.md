@@ -1,7 +1,9 @@
 # Custom Commands
 
-Using `everything-claude-code` commands as the default set.
+Repo-owned slash commands, symlinked as a directory into
+`~/.config/claude/commands/`. Empty today.
 
-Custom commands placed here take preference over everything-claude-code
-when both cover the same use case. Build commands here for workflows
-specific to this dotfiles setup or personal projects.
+The everything-claude-code addon installs with `--without baseline:commands`,
+so no third-party commands land here -- skills cover the same workflows at a
+lower context cost. Build commands here for workflows specific to this
+dotfiles setup or personal projects.

@@ -20,10 +20,10 @@ Wired via the `_:safe-link` entry in `taskfiles/links.yml` `configs:` sub-task.
 ## Feature gate
 
 Always on -- no feature flag. `miniconda` is declared as a cask in
-`manifests/machines/<name>.toml [packages].casks` for machines that use it
-(currently `atium`); the condarc is lightweight enough to be always-on (it
-simply redirects data paths and disables telemetry).
+`manifests/machines/<name>.toml [packages].casks` on the machines that use it;
+the condarc is lightweight enough to be always-on (it simply redirects data
+paths and disables telemetry).
 
 ## References
 
-- `taskfiles/links.yml` -- `configs:` sub-task registers the symlink (Plan 06)
+- `taskfiles/links.yml` -- `configs:` sub-task registers the symlink

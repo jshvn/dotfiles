@@ -151,7 +151,7 @@ base tier / feature registry / machine manifests.
 ## What real users value and regret (community evidence)
 
 Benefits people who run NixOS actually defend, ranked by how often they came
-up across ~18 sources:
+up across the sources listed at the end:
 
 1. **Wipe-and-rebuild reproducibility** -- new hardware to fully configured
    in 30-90 minutes, from git. The most defended benefit by a wide margin;
@@ -204,7 +204,7 @@ correct drift in both directions, preview changes before applying.
 
 ## What has already been borrowed
 
-Five structural borrows, all delivered. Each is here because it names a
+The structural borrows, all delivered. Each is here because it names a
 decision that should not be re-litigated, not to describe the code -- the
 code and its READMEs are authoritative for that.
 
@@ -215,10 +215,6 @@ code and its READMEs are authoritative for that.
 | C -- feature-to-package mapping | 2026-08-02 |
 | D -- `install/` scripts name their stage | 2026-08-02 |
 | E -- one test convention | 2026-08-02 |
-
-Design records:
-`superpowers/specs/2026-08-02-build-then-activate-design.md` and
-`superpowers/specs/2026-08-02-manifest-tier-restructure-design.md`.
 
 ### A. Build-then-activate
 
@@ -241,7 +237,7 @@ as a real file. Nothing the Claude CLI writes can reach tracked source, so
 
 One impurity remains and is deliberate: compose reads `enabledPlugins`,
 `extraKnownMarketplaces`, `model`, and `tui` back out of the live file,
-because the CLI writes them there and cannot be redirected. Bounded to four
+because the CLI writes them there and cannot be redirected. Bounded to those
 keys, one direction, and pointed away from the repo -- the honest shape, not
 something to engineer around.
 
@@ -269,7 +265,8 @@ realize, operate, or tests -- and `install/README.md` lists them that way, so
 a new script declares where it fits rather than implying it through a
 filename prefix.
 
-The one file to watch is `resolver.zsh` (668 lines against the 800-line cap).
+The one file to watch is `resolver.zsh` -- the largest in the repo and the
+closest to the 800-line cap.
 The module system's internal split is the natural fracture line when it
 bursts: *declare/validate* vs *merge/emit*.
 
@@ -498,8 +495,9 @@ host opts into.
 
 The repo deliberately chose self-contained manifests over inheritance
 (clarity over DRY), and with 4 machines that remains right. The observable
-cost is O(machines x flags) feature accounting -- `ci.toml` lists all 15
-flags as disabled -- and it grows linearly with both. When Ubuntu VMs
+cost is O(machines x flags) feature accounting -- `ci.toml` accounts for every
+registry flag, disabling all but one -- and it grows linearly with both.
+When Ubuntu VMs
 multiply the machine count, revisit as: a `role` (named group of flag
 selections) a manifest opts into, with machine-level entries winning,
 precedence resolved in `resolver.zsh` and baked into `resolved.json` so

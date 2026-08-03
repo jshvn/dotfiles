@@ -15,7 +15,7 @@ against the registry and the base tier, then compiles it into
 There is no shared defaults file and no inheritance: a machine manifest declares
 everything it wants on its own terms.
 
-## Schema (v2)
+## Schema (v3)
 
 ### Machine manifest shape
 
@@ -123,7 +123,7 @@ validator rejects the manifest if any is missing or empty.
 |-------|------|---------------|-------|
 | `schema_version` | integer | `3` | Must equal `3` |
 | `machine.description` | string | any | Free-text purpose statement |
-| `machine.os` | string | `"darwin"` \| `"linux"` | v1 targets darwin; linux is accepted by the schema |
+| `machine.os` | string | `"darwin"` \| `"linux"` | Every machine targets darwin; linux is accepted by the schema but unused |
 | `machine.identity` | string | basename of a file under both `identity/git/identities/` and `identity/ssh/identities/` | Drives git + SSH identity selection |
 | `features.enabled` / `features.disabled` | arrays of strings | registry flag names | Must partition the applicable registry flags (see Feature accounting) |
 

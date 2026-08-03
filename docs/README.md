@@ -11,7 +11,6 @@ directory holds what spans several.
 - `NIXOS-IDEAS.md` -- how NixOS is architected, what this repo borrowed from
   it, what to borrow next, and what to refuse
 
-`superpowers/specs/` holds dated design records for changes that reshaped the
-repo: they explain why the current shape was chosen and which alternatives
-were rejected. Implementation plans are deleted once executed -- git history
-is the record of how.
+Design records and implementation plans are not kept here. A decision worth
+preserving goes into `DECISIONS.md` (or the roadmap in `NIXOS-IDEAS.md`);
+everything else is git history.

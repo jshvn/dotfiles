@@ -1,7 +1,7 @@
 # claude/
 
 Claude Code configuration for this dotfiles repo. All content under `claude/`
-is symlinked into `~/.config/claude/` by `task links:all`.
+is symlinked into `~/.config/claude/` by `task links:install`.
 
 **Canonical references:**
 - [`../docs/CLAUDE-ADDONS.md`](../docs/CLAUDE-ADDONS.md) -- full operator
@@ -33,11 +33,11 @@ The `taskfiles/links.yml` `claude:` sub-task creates per-file symlinks for
 (`claude:activate` installs it as a real file, so the CLI's writes land in
 the live config rather than in tracked source).
 
-| Count | Type | From (repo) | To (live config) |
-|-------|------|-------------|------------------|
-| 1 | File | `claude/CLAUDE.md` | `~/.config/claude/CLAUDE.md` |
-| 9 | File | `claude/hooks/{post-compact,agent-transparency,secret-scan,block-destructive,no-ai-comments,no-emojis,notify,auto-approve-reads,lib}.zsh` | `~/.config/claude/hooks/*` |
-| 3 | Dir | `claude/{agents,commands,skills}` | `~/.config/claude/{agents,commands,skills}` |
+| Type | From (repo) | To (live config) |
+|------|-------------|------------------|
+| File | `claude/CLAUDE.md` | `~/.config/claude/CLAUDE.md` |
+| File | every `claude/hooks/*.zsh`, `lib.zsh` included | `~/.config/claude/hooks/*` |
+| Dir | `claude/{agents,commands,skills}` | `~/.config/claude/{agents,commands,skills}` |
 
 ## Task Entry Points
 
@@ -88,7 +88,7 @@ install.
 
 ## Hooks
 
-The eight repo-owned hooks plus `lib.zsh` live in `claude/hooks/`. Their
+The repo-owned hooks plus `lib.zsh` live in `claude/hooks/`. Their
 wiring is declared in `claude/settings.d/10-hooks.json` and merged into the
 composed artifact. Edit `10-hooks.json`, never the live `settings.json`.
 

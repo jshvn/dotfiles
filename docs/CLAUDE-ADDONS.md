@@ -20,8 +20,7 @@ Three writers historically fought over it:
 Removing a third-party addon under the old model meant: hunt down its
 scattered files in `hooks/`, `agents/`, `skills/`, `commands/`, kill them in
 the right order so the hook scripts couldn't re-fire mid-removal, then surgically
-strip its entries from `settings.json`. The pain class is documented in
-[`CLAUDE.md`](../CLAUDE.md)'s Context section.
+strip its entries from `settings.json`.
 
 The fix is two-part:
 
@@ -49,12 +48,14 @@ claude/
   settings.d/
     00-base.json          Repo-owned: permissions + scalars
     10-hooks.json         Repo-owned: hook wiring
-  settings.json           GENERATED build artifact (lockfile model)
 
 $XDG_STATE_HOME/dotfiles/
   settings.d/
     99-addon-<name>.json  Addon-owned: copy of <name>.fragment.json
                           (written by claude-addons:install)
+  build/
+    settings.json         GENERATED build artifact; activation installs it
+                          onto ~/.config/claude/settings.json
 
 install/
   claude-addons.zsh       Addon lifecycle: install/remove/list/validate
@@ -111,9 +112,9 @@ remove task deletes that file and recomposes.
 
 JSON conforming to Claude Code's `settings.json` schema. If present, copied
 to `$XDG_STATE_HOME/dotfiles/settings.d/99-addon-<name>.json` when the addon enables and
-included in compose's deep-merge. Deleted on remove. Marketplace-style
-addons that don't write `settings.json` keys directly (ECC) don't need a
-fragment; npx-style addons that inject hooks (GSD-redux) do.
+included in compose's deep-merge. Deleted on remove. An addon that does not
+write `settings.json` keys directly needs no fragment (neither addon shipped
+today has one); an npx-style installer that injects hook entries does.
 
 To derive a fragment template for a new addon:
 
@@ -179,11 +180,11 @@ under both `task audit` and `task validate`.
 
 `task claude:settings-compose` (internal task in `taskfiles/claude.yml`):
 
-1. **Preserve CLI-managed keys.** Read the live settings.json and
-   extract `enabledPlugins` + `extraKnownMarketplaces` (written by
-   `claude plugin install` / `claude plugin marketplace add`) plus `model`
-   when present (written by the `/model` command); the compose pipeline
-   never owns them.
+1. **Preserve CLI-managed keys.** Read the live settings.json and extract
+   exactly these: `enabledPlugins` + `extraKnownMarketplaces` (written by
+   `claude plugin install` / `claude plugin marketplace add`), plus `model`
+   and `tui` when present (written by the `/model` command and the
+   fullscreen/inline toggle); the compose pipeline never owns them.
 2. **Deep-merge fragments.** Read every `claude/settings.d/*.json` in numeric
    sort order, then every `$XDG_STATE_HOME/dotfiles/settings.d/*.json` the
    same way. `jq -s 'reduce .[] as $f ({}; . * $f)'` deep-merges them (same
@@ -223,9 +224,10 @@ from the live file automatically.
 ### Installer-script addon with post-copy prunes (the ECC pattern)
 
 ECC deliberately does NOT use the plugin path: the full ecc@ecc plugin injects
-~228 skills, ~60 agents, ~93 commands, and ~29 always-on hooks into every
-session, and the plugin mechanism offers no way to trim skills or disable
-individual plugin hooks. Instead [`ecc.toml`](../manifests/claude-addons/ecc.toml):
+its entire payload -- hundreds of skills, dozens of agents and commands, and
+always-on hooks -- into every session, and the plugin mechanism offers no way
+to trim skills or disable individual plugin hooks. Instead
+[`ecc.toml`](../manifests/claude-addons/ecc.toml):
 
 - keeps the ecc *marketplace* registered (the clone is where `install.sh`
   lives; `claude plugin marketplace update ecc` is the upgrade fetch),

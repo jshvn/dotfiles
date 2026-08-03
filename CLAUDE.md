@@ -25,7 +25,7 @@ The pipeline runs three stages: evaluate (resolver -> `resolved.json`), realize 
 - Locked decisions, scope boundaries, performance/security constraints: `docs/DECISIONS.md`.
   Revisit only with new evidence.
 - Every top-level concept directory has a README saying what belongs there and how to name it.
-- Operator surface: seven lifecycle commands (`install`, `setup`, `validate`, `test`, `lint`,
+- Operator surface: the lifecycle commands (`install`, `setup`, `validate`, `test`, `lint`,
   `audit`, `diff`) plus `<domain>:<verb>` diagnostics (`show`, `audit`, `diff`). Bare `task`
   prints the banner; `task --list` the full graph. Per-component install/validate tasks are
   internal pipeline steps, not operator commands.
@@ -49,7 +49,7 @@ What the file system will not tell you:
   `$XDG_STATE_HOME/dotfiles/build/settings.json`, then installed onto
   `$XDG_CONFIG_HOME/claude/settings.json` as a real file. Edit fragments and re-run
   `task install`; never hand-edit the live file, and never register a hook there directly.
-  Compose reads back exactly four CLI-managed keys: `enabledPlugins`,
+  Compose reads back exactly these CLI-managed keys and no others: `enabledPlugins`,
   `extraKnownMarketplaces`, `model`, `tui`. `task claude:audit` reports drift.
 - A machine's `[features]` must account for every registry flag applicable to its `os` in
   either `enabled` or `disabled`; an unaccounted flag is a hard `task setup` error. A flag

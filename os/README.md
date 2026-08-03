@@ -8,9 +8,9 @@ flat layout (no platform subdirectories) reflects that single-platform scope.
 
 ## Purpose
 
-Eight `defaults/<concern>.zsh` sourced libraries declare a single tuple-array
-source of truth per concern (`(domain, key, expected_value, write_type)`
-rows). Each library exposes `apply_<concern>` and `verify_<concern>`, which
+Each `defaults/<concern>.zsh` sourced library declares a single tuple-array
+source of truth for its concern (`(domain, key, expected_value, write_type)`
+rows) and exposes `apply_<concern>` and `verify_<concern>`, which
 delegate to the shared `_apply_defaults` / `_verify_defaults` loop in
 `defaults/_apply_verify.zsh` (apply runs `defaults write`; verify reads back,
 printing `check`/`cross` via `../install/messages.zsh` and returning non-zero

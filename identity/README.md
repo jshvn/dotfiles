@@ -1,6 +1,6 @@
 # identity
 
-Phase 4 owns git + SSH identity. Manifest-driven: each machine's `[machine]`
+Git + SSH identity. Manifest-driven: each machine's `[machine]`
 table declares a single `identity` scalar -- the basename of a file that must
 exist under both `identity/git/identities/` and `identity/ssh/identities/`
 (filesystem-driven enum — drop a file in each, the resolver picks it up).
@@ -36,7 +36,7 @@ identity is selected by a single symlink swap.
   `~/.config/1Password/ssh/agent.toml` by `taskfiles/identity.yml` when
   the `one-password-ssh` feature is enabled.
 - `ssh/keys/<name>.pub` -- public keys only. Private keys NEVER enter the
-  repo (IDNT-06); the `keys/.gitignore` allowlist (`*` + `!*.pub` +
+  repo; the `keys/.gitignore` allowlist (`*` + `!*.pub` +
   `!.gitignore`) is the enforcement.
 - `ssh/cloudflared.zsh` -- ProxyCommand wrapper invoked by the personal
   identity's `ProxyCommand` directive for `*.jgrid.net` and `*.plex.me` hosts.
@@ -69,6 +69,6 @@ implied by an identity value. Cover it with a negative fixture.
 
 ## References
 
-- `../docs/MANIFEST.md` -- manifest schema and merge semantics (Phase 1)
+- `../docs/MANIFEST.md` -- manifest schema and merge semantics
 - `../CLAUDE.md` -- project conventions (status-block templating, `_:safe-link`,
   no AI attribution, no emojis)

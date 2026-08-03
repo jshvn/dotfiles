@@ -43,9 +43,9 @@ tasks:
             "zsh -lic exit" >/dev/null 2>&1
         result=$(jq -r '.results[0].mean' "$json_out")
         ms=$(echo "$result * 1000" | bc | awk '{printf "%d\n", $0}')
-        info "cold shell start: ${ms}ms (target: <= {{.COLD_START_BUDGET}}ms)"
+        info "cold shell start: ${ms}ms (budget: <= {{.COLD_START_BUDGET}}ms)"
         if (( ms > {{.COLD_START_BUDGET}} )); then
-            error "shell start exceeds {{.COLD_START_BUDGET}}ms target"
+            error "shell start exceeds the {{.COLD_START_BUDGET}}ms budget"
             exit 1
         fi
         check "shell start within budget"

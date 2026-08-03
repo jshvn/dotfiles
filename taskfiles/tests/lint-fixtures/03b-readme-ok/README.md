@@ -3,7 +3,7 @@ taskfiles/tests/lint-fixtures/03b-readme-ok/README.md
 
 Negative fixture for LINT-03b: markdown prose may mention `ln -s`
 inside backticks (documenting the rule) without tripping it. The
-production scan is scoped to *.yml (and excludes test/), so this
+production scan is scoped to *.yml (and excludes lint-fixtures/), so this
 file -- and the project's real taskfiles/README.md -- must never
 flag.
 

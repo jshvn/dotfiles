@@ -1,9 +1,9 @@
 # taskfiles
 
 Modular taskfile concerns wired into `../Taskfile.yml` via go-task
-`includes:`. One taskfile per concern: manifest, lint, links, shell,
-identity, packages, macos, claude, claude-addons, hostname, repo, test,
-helpers. Every install-style task is idempotent (`status:` block) and
+`includes:`. One taskfile per concern, named for it; the `includes:` block in
+`../Taskfile.yml` is the authoritative list. Every install-style task is
+idempotent (`status:` block) and
 every symlink goes through `_:safe-link` in `helpers.yml`.
 
 ## Key files
@@ -15,18 +15,18 @@ every symlink goes through `_:safe-link` in `helpers.yml`.
 - **Manifest.** `manifest.yml` -- `task setup -- <machine>`,
   `manifest:resolve`, `manifest:show`, `manifest:validate`,
   `manifest:audit`. Reads TOMLs; writes `resolved.json`.
-- **Lint.** `lint.yml` -- `lint:syntax`, `lint:taskfile`,
-  `lint:shell-headers`, `lint:portability`, `lint:banner-parity`,
-  `lint:brew-prefix`, `lint:kebab-access`, `lint:file-headers`,
-  `lint:array-style`, `lint:test-fixtures`. Enforces the LINT-NN rules
-  (catalogue below).
+- **Lint.** `lint.yml` -- one `lint:<check>` task per LINT-NN rule, plus
+  `lint:test-fixtures` (the rules checking themselves against fixtures) and
+  the `lint:default` aggregate. Catalogue below.
 - **Links.** `links.yml` -- shell symlinks via `_:safe-link` plus
   the zdotdir step (antidote is the plugin manager; plugin set in
   `shell/.zsh_plugins.txt`). `shell.yml` exposes `task shell:startup-time`
   (cold-start gate); `shell:validate` is internal-only (invoked by root
   `task validate`).
-- **Smoke-test fixtures.** `test/` -- lint-fixture taskfiles consumed by
-  `task lint:test-fixtures`.
+- **Smoke-test fixtures.** `tests/lint-fixtures/` -- fixture taskfiles
+  consumed by `task lint:test-fixtures`. The production lint scans exclude
+  this directory by name (`lint-fixtures`), since the fixtures deliberately
+  violate the rules they exercise.
 
 ## Adding a pattern
 
@@ -54,9 +54,9 @@ every symlink goes through `_:safe-link` in `helpers.yml`.
 
 ## References
 
-- `../Taskfile.yml` -- root taskfile, includes block, install/update
-  unification (`task install` is the canonical entry; `task update` is
-  retired).
+- `../Taskfile.yml` -- root taskfile, includes block, and the operator
+  surface. `task install` is the canonical entry: installing and updating
+  run the same pipeline.
 - `helpers.yml` -- symlink helpers and command-availability checks.
 - `../docs/MANIFEST.md` -- manifest schema; many tasks consume
   `resolved.json` via `fromJson`.

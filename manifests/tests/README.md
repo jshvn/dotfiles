@@ -1,10 +1,10 @@
-# manifests/test
+# manifests/tests
 
 Test fixtures for the resolver (`install/resolver.zsh`).
 
 Fixture families under `fixtures/`:
 
-- `typed-NN-*/` -- positive fixtures. Each contains a v2 `machine.toml`, an
+- `typed-NN-*/` -- positive fixtures. Each contains a v3 `machine.toml`, an
   `expected.json`, and optionally a `features.toml` registry override; the
   driver runs the resolver and diffs its output against `expected.json`.
 - `_invalid-*/` -- negative fixtures. Each holds a `machine.toml` (plus an

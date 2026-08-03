@@ -58,8 +58,10 @@ stage in this list.
 
 ### tests (`install/tests/`)
 
-- `hooks.zsh` -- Smoke-test runner for the four named Claude hooks
-  (`secret-scan`, `no-emojis`, `no-ai-comments`, `agent-transparency`).
+- `hooks.zsh` -- Smoke-test runner for the repo-owned Claude hooks that pass
+  or block on their input (`secret-scan`, `no-emojis`, `no-ai-comments`,
+  `agent-transparency`, `block-destructive`). `notify` and `post-compact`
+  are not covered.
   Invoked by `taskfiles/test.yml :: test:hooks`; exit code is the count of
   scenario failures (0 == all pass).
 - `links-audit.zsh` -- Smoke test for `links-audit-scan.zsh` against a
@@ -69,6 +71,9 @@ stage in this list.
 - `shell-startup.zsh` -- Smoke test for the zsh startup files (`.zshenv`,
   `.zprofile`, `.zshrc`, `.zlogin`, `.zlogout`). Invoked by
   `test:shell-startup`.
+- `settings-compose.zsh` -- Smoke test for the two-directory fragment merge
+  and preserved-key layering in `compose-settings.zsh`. Invoked by
+  `test:settings-compose`.
 
 ## Adding a pattern
 
@@ -95,15 +100,14 @@ stage in this list.
 
 - `../docs/MANIFEST.md` -- manifest schema and package-union semantics
   consumed by `resolver.zsh`.
-- `../docs/SECURITY.md` -- bootstrap trust chain (Phase 2 BTSP-05 /
-  DOCS-07).
+- `../docs/SECURITY.md` -- bootstrap trust chain.
 - `../taskfiles/manifest.yml` -- the `manifest:resolve`,
   `manifest:validate`, and `manifest:show` tasks that invoke
   `resolver.zsh`.
 - `../taskfiles/packages.yml` -- the `packages:compose`,
   `packages:install`, and `packages:verify` tasks that invoke
   `compose-brewfile.zsh`.
-- `../taskfiles/test.yml` -- the `test:hooks` task that invokes
-  `tests/hooks.zsh`.
+- `../taskfiles/test.yml` -- the `test:*` tasks that invoke everything under
+  `tests/`.
 - `../CLAUDE.md` -- v2 conventions (file-header comment blocks,
   `set -euo pipefail` on every executable `.zsh`, no AI attribution).

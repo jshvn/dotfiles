@@ -38,10 +38,10 @@
 #   - GUI casks, mas apps, vscode extensions (no such entries in ci.toml
 #     packages; needs App Store login / .app probes)
 #   - bootstrap's interactive brew consent gate (runners ship brew)
-#   - the 200ms shell cold-start budget (shell:startup-time is not part
+#   - the shell cold-start budget (shell:startup-time is not part
 #     of task test) and multi-machine state (JMBP/JAIR hostname split)
-#   - linux: nothing here runs on linux; an ubuntu-latest job is planned
-#     with the linux server support spec (docs/superpowers/specs/)
+#   - linux: nothing here runs on linux; an ubuntu-latest job arrives with
+#     Linux support (docs/NIXOS-IDEAS.md, roadmap phases 3-4)
 
 name: ci
 

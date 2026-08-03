@@ -4,21 +4,23 @@
 # See manifests/claude-addons/README.md for the directory-local quick-reference.
 #
 # Hybrid install (not the marketplace plugin). The full ecc@ecc plugin injects
-# ~228 skills, ~60 agents, ~93 commands, and ~29 always-on hooks into every
-# session -- an untrimmable context tax on the plugin path. Instead:
+# its entire payload -- hundreds of skills, dozens of agents and commands, and
+# always-on hooks -- into every session, an untrimmable context tax on the
+# plugin path. Instead:
 #
 #   - The ecc *marketplace* stays registered: its clone at
 #     plugins/marketplaces/ecc is where install.sh lives, and
 #     `claude plugin marketplace update ecc` is the upgrade fetch.
 #   - install.sh copies the `minimal` profile into ~/.claude/ (hardcoded
 #     upstream target): workflow skills and agents.
-#     `--without baseline:commands` drops the 93 legacy slash-command shims
+#     `--without baseline:commands` drops the legacy slash-command shims
 #     (skills cover the same workflows); `--without baseline:rules` drops the
 #     always-on rules tree (generic guidance Claude 5 does not need).
-#   - Two symlinks expose skills/agents inside $XDG_CONFIG_HOME/claude/ where
-#     Claude Code actually reads them (CLAUDE_CONFIG_DIR, set in .zshenv).
+#   - Symlinks expose skills/agents inside $XDG_CONFIG_HOME/claude/ where
+#     Claude Code actually reads them (CLAUDE_CONFIG_DIR, set in .zshenv):
+#     one flat link per keep-list skill plus a single agents/ecc dir link.
 #     They land in the repo working tree via the claude/ symlink and are
-#     listed in .git/info/exclude (machine-local, like the gsd-* entries).
+#     listed in .git/info/exclude (machine-local).
 #   - No settings fragment: the addon registers zero hooks. Session
 #     continuity is native auto-memory; no node spawns on start/stop/compact.
 #
@@ -29,7 +31,7 @@ schema_version = 1
 
 [meta]
 name        = "ecc"
-description = "Everything Claude Code -- trimmed minimal profile (skills/agents/rules + session hooks only)"
+description = "Everything Claude Code -- minimal profile pruned to the skill and agent keep-lists; registers no hooks"
 upstream    = "https://github.com/affaan-m/everything-claude-code"
 
 [install]
