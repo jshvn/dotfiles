@@ -1,20 +1,28 @@
 # Claude 5 Context Engineering Migration Plan
 
-> **STALE -- REBASE BEFORE EXECUTING (noted 2026-08-02).** Written against the
-> repo as of 2026-07-25. Since then the build-then-activate change landed and
-> invalidated four assumptions this plan makes throughout:
+> **Rebased 2026-08-02** against the repo as it stands after the manifest tier
+> restructure (v2.5.0) and build-then-activate. Every `Modify:` path, quoted
+> anchor, and verification command in this plan was re-checked against the
+> live tree on that date. What changed since the 2026-07-25 draft:
 >
-> - **LINT-09 no longer exists.** Every "LINT-09 keeps settings.json honest" /
->   "LINT-09 clean" verification step must become `task claude:audit`.
-> - **`claude/settings.json` is no longer tracked.** It is composed into
->   `$XDG_STATE_HOME/dotfiles/build/settings.json` and installed onto
->   `~/.config/claude/settings.json`. Steps that read or diff the repo file
->   need repointing.
-> - **Addon fragments moved** to `$XDG_STATE_HOME/dotfiles/settings.d/`.
-> - **Test paths moved** to `<domain>/tests/`.
+> - **Task 3 was rewritten.** `manifests/claude-addons/ecc.toml` was itself
+>   rewritten on 2026-07-28 for the upstream flat-skills layout: skills now
+>   land at `~/.claude/skills/<name>`, not `~/.claude/skills/ecc/<name>`, and
+>   the bridge derives ECC-owned names from `install-state.json` instead of
+>   globbing a namespace dir. The old draft's find-and-link anchor no longer
+>   exists.
+> - **LINT-09 is gone.** Build-vs-live settings drift is `task claude:audit`.
+> - **`claude/settings.json` is no longer tracked.** Fragments compose into
+>   `$XDG_STATE_HOME/dotfiles/build/settings.json`, which activation installs
+>   onto `~/.config/claude/settings.json` as a real file. Addon fragments live
+>   at `$XDG_STATE_HOME/dotfiles/settings.d/`.
+> - **`docs/LINT-FIXES.md` is gone**, folded into `os/README.md`; Task 7 no
+>   longer edits it.
+> - **`task diff` exists** and belongs in the operator surface Task 7 documents
+>   and the verification skill Task 6 writes.
 >
-> Also unresolved from the original review: the vendor-vs-addon decision gates
-> execution. Re-verify every `Modify:` path against the tree before editing.
+> **Still gated:** the vendor-vs-addon decision after Task 9. Tasks 1-4 assume
+> the addon stays. Pick a path before executing.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -26,7 +34,8 @@ disclosure, and retire manual memory machinery in favor of native auto-memory.
 **Architecture:** All changes flow through surfaces this repo already owns: the ECC addon TOML
 (`manifests/claude-addons/ecc.toml`), settings fragments (`claude/settings.d/`), the two
 CLAUDE.md files, and repo-owned skills (`claude/skills/`). No new mechanisms; `task install`
-remains the single convergence pipeline and LINT-09 keeps `settings.json` honest.
+remains the single convergence pipeline and `task claude:audit` keeps the live settings.json
+honest against the composed artifact.
 
 **Tech Stack:** go-task, zsh, TOML addon manifests, Claude Code skills/agents/hooks.
 
@@ -34,7 +43,7 @@ remains the single convergence pipeline and LINT-09 keeps `settings.json` honest
 
 - No emojis anywhere, markdown included. No AI attribution in commits or files.
 - Commit format `<type>(<scope>): <summary>`, imperative, under 75 chars.
-- `claude/settings.json` is generated; only `claude/settings.d/*.json` fragments are edited, then `task install` recomposes.
+- The live `settings.json` is generated: only `claude/settings.d/*.json` fragments are edited, then `task install` recomposes into `$XDG_STATE_HOME/dotfiles/build/settings.json` and activates it. Neither the build artifact nor the live file is tracked.
 - `manifests/claude-addons/ecc.toml` command arrays: one command string per line (LINT-13 applies to multi-element arrays).
 - Machine-local working-tree links stay in `.git/info/exclude`, never `.gitignore`.
 - Comments describe the current system only -- no migration history, no references to what was removed. When a task deletes a file, flag, or section, grep the tree for its name and update every referencing doc in the same commit.
@@ -66,17 +75,22 @@ full text of `~/.claude/rules/ecc/` README + common/ appears in this repo's live
 context (Claude Code reads `~/.claude/rules/` natively, independent of CLAUDE_CONFIG_DIR).
 Re-confirm with `/context` or the `context-dump` skill before executing Task 1.
 
+Re-checked 2026-08-02: nothing has been trimmed yet -- `~/.claude/rules/ecc` still exists,
+`~/.claude/agents` still holds 67 files, `~/.claude/AGENTS.md` is still present, and the
+skill-link count has drifted up to 44 as upstream added payload. Project `CLAUDE.md` has
+grown to 20,206 B (~5,050 tokens), so the baseline total is now slightly worse than measured.
+
 | Always-loaded source | On disk | Est. tokens | After plan |
 |---|---|---|---|
 | `~/.claude/rules/ecc/` (README + common/, auto-loaded every session) | 23,041 B | ~5,800 | 0 |
-| Project `CLAUDE.md` | 19,287 B | ~4,800 | ~1,300 |
+| Project `CLAUDE.md` | 20,206 B | ~5,050 | ~1,300 |
 | Global `claude/CLAUDE.md` | 3,459 B | ~900 | ~850 |
 | ECC agent roster (67 descriptions in every session) | 432 KB bodies | ~2,500 | ~500 (11 agents) |
-| ECC skill-list entries (43 linked skills) | -- | ~1,500 | ~300 (8 skills) |
+| ECC skill-list entries (44 linked skills) | -- | ~1,550 | ~300 (8 skills) |
 | ECC prior-session summary injection (SessionStart hook) | <=4,000 B | ~1,000 | 0 |
 | Superpowers SessionStart injection (skill text plus the hook's wrapper) | 3,063 B | ~1,000 | ~1,000 (kept, see Decisions) |
 | Superpowers skill-list entries (~14 skills) | -- | ~400 | ~400 (kept) |
-| **Total user-config overhead** | | **~17,900** | **~4,350 (about 75% reclaimed)** |
+| **Total user-config overhead** | | **~18,200** | **~4,350 (about 76% reclaimed)** |
 
 Beyond tokens, the ECC rules actively conflict with the global CLAUDE.md -- the exact
 "conflicting guidance forces deliberation" failure the article opens with:
@@ -164,7 +178,7 @@ to:
 
 - [ ] **Step 4: Update the addon doc's installer bullet in the same commit**
 
-In `docs/CLAUDE-ADDONS.md` (the ECC worked example):
+In `docs/CLAUDE-ADDONS.md` (the ECC worked example, around line 232):
 
 ```
 - runs `install.sh --target claude --profile minimal --without
@@ -209,9 +223,10 @@ git commit -m "refactor(claude): stop loading ecc always-on rules"
 - Produces: `~/.claude/agents/` holds exactly these 11 files after any `task install`: `architect.md`, `build-error-resolver.md`, `code-explorer.md`, `code-reviewer.md`, `code-simplifier.md`, `doc-updater.md`, `planner.md`, `python-reviewer.md`, `refactor-cleaner.md`, `security-reviewer.md`, `typescript-reviewer.md`.
 
 Every agent description loads into every session's roster whether or not the agent is ever
-spawned. The dropped 56 (flutter, django, harmonyos, pytorch, marketing, seo, healthcare,
-gan-*, network-*, opensource-*, ...) do not match this machine's stacks (zsh/go-task dotfiles;
-Python, TypeScript, shell per global CLAUDE.md). The keep-list preserves the global CLAUDE.md
+spawned. Confirmed 2026-08-02: `~/.claude/agents/*.md` is still 67 files. The dropped 56
+(flutter, django, harmonyos, pytorch, marketing, seo, healthcare, gan-*, network-*,
+opensource-*, ...) do not match this machine's stacks (zsh/go-task dotfiles; Python,
+TypeScript, shell per global CLAUDE.md). The keep-list preserves the global CLAUDE.md
 delegation rule (language-specific reviewers for Python/TypeScript) plus the core
 plan/review/explore/build set. Restoring an agent later = add its filename to the keep-list
 below and re-run `task install` (upgrade re-copies all 67, then prunes).
@@ -240,14 +255,23 @@ git commit -m "refactor(claude): prune ecc agent roster to dotfiles-relevant set
 
 ---
 
-### Task 3: Curate ECC skill links from 43 to 8
+### Task 3: Curate ECC skill links from 44 to 8
 
 **Files:**
-- Modify: `manifests/claude-addons/ecc.toml` (`[install].commands`, `[upgrade].commands`, the "Skills MUST be linked flat" comment paragraph)
+- Modify: `manifests/claude-addons/ecc.toml` (`[install].commands`, `[upgrade].commands`, the bridge comment paragraph)
 
 **Interfaces:**
 - Consumes: nothing from other tasks.
-- Produces: exactly these 8 ECC skills linked into `$XDG_CONFIG_HOME/claude/skills/`: `agent-sort`, `architecture-decision-records`, `code-tour`, `codebase-onboarding`, `config-gc`, `context-budget`, `council`, `skill-scout`. The full payload stays at `~/.claude/skills/ecc/` (relink = add a name to the list, `task install`).
+- Produces: exactly these 8 ECC skills linked into `$XDG_CONFIG_HOME/claude/skills/`: `agent-sort`, `architecture-decision-records`, `code-tour`, `codebase-onboarding`, `config-gc`, `context-budget`, `council`, `skill-scout`. The full payload stays on disk at `~/.claude/skills/<name>` (relink = add a name to the keep-list, `task install`).
+
+**Layout note (this is what changed since the 2026-07-25 draft).** Upstream `install.sh` writes
+skills flat into `~/.claude/skills/<name>` -- there is no `ecc/` namespace dir. That directory
+also holds non-ECC runtime dirs, which is why the current bridge derives ECC-owned names from
+`~/.claude/ecc/install-state.json` rather than linking everything it finds. The keep-list
+replaces that derivation outright: an explicit list needs no ownership inference. Repo-owned
+skills (`claude/skills/context-dump`, `claude/skills/goalsmith`, and Task 6's
+`verifying-dotfiles-changes`) are real directories, so the symlink-only unlink pass cannot
+touch them.
 
 Kept: config/meta hygiene tools with no native or superpowers equivalent. Dropped links (still
 on disk, one line to restore): `tdd-workflow` and `git-workflow` (superpowers and global
@@ -257,53 +281,73 @@ compaction), `verification-loop`/`delivery-gate`/`eval-harness`/`santa-method` (
 verification-before-completion covers the need), plus the non-daily rest
 (windows-desktop-e2e, repo-scan, production-audit, plankton-code-quality, ...).
 
-- [ ] **Step 1: Replace the link-all loop in `[install].commands`**
+- [ ] **Step 1: Replace the two bridge lines in `[install].commands`**
 
-Replace this line:
-
-```toml
-  "find \"$HOME/.claude/skills/ecc\" -mindepth 1 -maxdepth 1 -type d | while read -r d; do ln -sfn \"$d\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$(basename \"$d\")\"; done",
-```
-
-with these two lines (unlink pass first so machines converge down from 43; the case pattern
-matches only ECC-payload targets, so repo-owned real dirs -- `context-dump`, `goalsmith`,
-and Task 6's `verifying-dotfiles-changes` -- are untouched):
+Replace these two consecutive lines (the dangling-link prune and the jq-derived link-all):
 
 ```toml
-  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/ecc/\"*) rm -f \"$l\";; esac; done",
-  "for s in agent-sort architecture-decision-records code-tour codebase-onboarding config-gc context-budget council skill-scout; do ln -sfn \"$HOME/.claude/skills/ecc/$s\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$s\"; done",
+  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) [ -e \"$l\" ] || rm -f \"$l\";; esac; done",
+  "jq -r --arg p \"$HOME/.claude/skills/\" '.operations[].destinationPath | select(startswith($p)) | ltrimstr($p) | split(\"/\")[0]' \"$HOME/.claude/ecc/install-state.json\" | sort -u | while read -r n; do ln -sfn \"$HOME/.claude/skills/$n\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$n\"; done",
 ```
+
+with these two:
+
+```toml
+  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) rm -f \"$l\";; esac; done",
+  "for s in agent-sort architecture-decision-records code-tour codebase-onboarding config-gc context-budget council skill-scout; do if [ -d \"$HOME/.claude/skills/$s\" ]; then ln -sfn \"$HOME/.claude/skills/$s\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$s\"; else echo \"ecc: keep-list skill '$s' absent from payload -- skipped\" >&2; fi; done",
+```
+
+Three deliberate differences from the lines they replace:
+
+- The prune pass drops its `[ -e "$l" ] ||` guard and unlinks **every** link into
+  `~/.claude/skills/`, not just dangling ones. That is what converges a machine down from 44
+  to 8; the relink immediately after restores the keep-list. It subsumes the old
+  dangling-link self-heal.
+- The link loop is `[ -d ]`-guarded. `ln -sfn` to a missing target would silently create a
+  dangling link; the guard turns an upstream rename into a visible stderr line instead.
+- `jq` and `install-state.json` drop out of the bridge entirely. They stay in `[remove]`,
+  which still needs to enumerate ECC-owned payload dirs for deletion.
 
 - [ ] **Step 2: Same replacement in `[upgrade].commands`**
 
-The `[upgrade]` array contains the identical link-all loop line; replace it with the same two
-lines. The existing git-exclude append loops in both arrays stay unchanged -- they iterate
-whatever links exist, which is now the curated set. Exclude lines for dropped links go stale
-in `.git/info/exclude` -- inert by definition, the same convention the `[remove]` section
-already documents.
+The `[upgrade]` array carries the identical pair; replace it with the same two lines. The
+git-exclude append loop after them stays unchanged -- it iterates whatever links exist, which
+is now the curated set. Exclude lines for the 36 dropped links go stale in
+`.git/info/exclude` -- inert by definition, the same convention `[remove]` already documents.
 
-- [ ] **Step 3: Update the comment paragraph**
+- [ ] **Step 3: Update the bridge comment paragraph**
 
 In the `[install]` comment block, change:
 
 ```
-# re-link semantics. LINT-03b scopes to taskfiles/*.yml and does not apply
-# here. Skills MUST be linked flat (one link per skill dir): user-scope skill
+# here. install.sh writes skills flat into ~/.claude/skills/, a directory
+# that also holds non-ECC runtime dirs, so the bridge derives the ECC-owned
+# skill names from install-state.json (destinationPath records) rather than
+# linking everything in the directory. Bridge links whose target no longer
+# exists are pruned before relinking, so an upstream payload reshuffle
+# self-heals on the next install.
 ```
 
 to:
 
 ```
-# re-link semantics. LINT-03b scopes to taskfiles/*.yml and does not apply
-# here. Skills are linked flat from a curated keep-list (one link per kept
-# skill; the rest of the payload stays unlinked on disk): user-scope skill
+# here. install.sh writes skills flat into ~/.claude/skills/. The bridge
+# links an explicit keep-list, not the whole payload: every linked skill's
+# description loads into every session, so the link set is the context
+# budget. Each run unlinks all links targeting ~/.claude/skills/ then
+# relinks the keep-list, which converges a machine down when a name is
+# dropped; a keep-list name missing from the payload logs to stderr instead
+# of leaving a dangling link.
 ```
 
 - [ ] **Step 4: Converge and verify**
 
 Run: `task install`
-Then: `find "${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/" -maxdepth 1 -type l -exec readlink {} ';' | grep -c "^$HOME/.claude/skills/ecc/"`
+Then: `find "${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/" -maxdepth 1 -type l -exec readlink {} ';' | grep -c "^$HOME/.claude/skills/"`
 Expected: `8`
+Then: `test -d claude/skills/context-dump && test -d claude/skills/goalsmith && echo REPO-SKILLS-INTACT`
+Expected: `REPO-SKILLS-INTACT` (the unlink pass is symlink-only).
+Then re-run `task install` and repeat the count: still `8` (idempotent).
 
 - [ ] **Step 5: Commit**
 
@@ -318,14 +362,13 @@ git commit -m "refactor(claude): curate ecc skill links to daily set"
 
 **Files:**
 - Delete: `manifests/claude-addons/ecc.fragment.json`
-- Delete: `claude/settings.d/99-addon-ecc.json`
 - Modify: `manifests/claude-addons/ecc.toml` (installer flags, hook-runtime prune, `[footprint]`, header comment)
 - Modify: `docs/CLAUDE-ADDONS.md`, `manifests/claude-addons/README.md` (fragment references)
 - Modify: `manifests/machines/personal-laptop.toml` (node formula comment)
 
 **Interfaces:**
 - Consumes: Task 1's installer-flag and comment edits (this task's quoted old text builds on them).
-- Produces: `claude/settings.json` (recomposed) with no `Stop`/`PreCompact` hooks, no `session-start-bootstrap.js` SessionStart entry, no `ECC_SESSION_START_MAX_CHARS` env. Repo-owned hooks from `10-hooks.json` are untouched. Nothing under `docs/` or `manifests/` references `ecc.fragment.json` anymore.
+- Produces: a recomposed `settings.json` with no `Stop`/`PreCompact` hooks, no `session-start-bootstrap.js` SessionStart entry, and no `ECC_SESSION_START_MAX_CHARS` env. Repo-owned hooks from `10-hooks.json` are untouched. Nothing under `docs/` or `manifests/` references `ecc.fragment.json` anymore.
 
 The article's shift 5: Claude now captures relevant memories automatically -- and the native
 memory directory is already active for this project (`MEMORY.md` index + per-fact files). The
@@ -333,13 +376,17 @@ ECC pipeline injects up to 4,000 chars of prior-session summary wrapped in its o
 "STALE-BY-DEFAULT -- MUST NOT re-execute" warning (context that mostly warns against itself)
 and spawns node on every session start, stop, and compaction.
 
-- [ ] **Step 1: Delete the fragment pair**
+- [ ] **Step 1: Delete the fragment template and its installed copy**
 
 ```bash
-rm manifests/claude-addons/ecc.fragment.json claude/settings.d/99-addon-ecc.json
+rm manifests/claude-addons/ecc.fragment.json
+rm -f "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/settings.d/99-addon-ecc.json"
 ```
 
-(The addon schema treats the settings fragment as optional; `[verify]` does not reference it.)
+The template is the repo-owned source; the second path is the machine-local copy
+`claude-addons:install` wrote. Deleting only the template would leave the state copy in place
+and compose would keep merging it. (The addon schema treats the settings fragment as optional;
+`[verify]` does not reference it.)
 
 - [ ] **Step 2: Drop the hook-scripts component from both installer invocations**
 
@@ -408,7 +455,9 @@ to:
 
 - [ ] **Step 5: Track the learned-instincts dir in the footprint and clean it up**
 
-In `[footprint].extra_paths`, after the `"$HOME/.claude/skills/ecc",` line add:
+`[footprint].extra_paths` does not list `$HOME/.claude/skills` wholesale (it holds non-ECC
+runtime dirs; `[remove]` deletes ECC-owned skill dirs per-name). One ECC-created path under it
+is safe to list outright. Insert after the `"$HOME/.claude/ecc",` line:
 
 ```toml
   "$HOME/.claude/skills/learned",
@@ -487,6 +536,9 @@ from `10-hooks.json` it wants to keep (a fragment defining
 fragment doesn't mention are unaffected.
 ```
 
+(Verify the exact wording of this block before editing -- `docs/CLAUDE-ADDONS.md` was revised
+2026-08-02 for the two-directory fragment merge, and the surrounding prose may have shifted.)
+
 In `manifests/claude-addons/README.md`, replace the ecc reference-case bullet:
 
 ```
@@ -529,22 +581,23 @@ to:
 - [ ] **Step 8: Recompose and verify**
 
 Run: `task install`
-Then: `jq -r '.hooks | keys | sort | join(",")' claude/settings.json`
+Then: `jq -r '.hooks | keys | sort | join(",")' "${XDG_CONFIG_HOME:-$HOME/.config}/claude/settings.json"`
 Expected: `Notification,PostToolUse,PreToolUse,SessionStart` (SessionStart retains only the repo post-compact hook)
-Then: `jq '.env' claude/settings.json`
+Then: `jq '.env' "${XDG_CONFIG_HOME:-$HOME/.config}/claude/settings.json"`
 Expected: `null`
+Then: `ls "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/settings.d/"`
+Expected: empty (no addon fragment remains).
 Then: `grep -rn 'ecc\.fragment' docs/ manifests/ README.md`
 Expected: no matches.
 Then: `test ! -d "$HOME/.claude/scripts/hooks" && test ! -d "$HOME/.claude/scripts/lib" && test ! -d "$HOME/.claude/hooks" && echo HOOKLESS`
 Expected: `HOOKLESS`
-Then: `task lint`
-Expected: zero failure crosses in the output, LINT-09 included (the lint aggregate always
-exits 0 by design).
+Then: `task claude:audit && task lint`
+Expected: no drift, and lint shows zero failure crosses (the aggregate always exits 0 by design).
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add -A manifests/ claude/settings.d/ claude/settings.json docs/CLAUDE-ADDONS.md
+git add -A manifests/ docs/CLAUDE-ADDONS.md
 git commit -m "refactor(claude): drop ecc session hooks in favor of native auto-memory"
 ```
 
@@ -592,9 +645,13 @@ new evidence. Referenced from CLAUDE.md.
 [paste the "Tooling Versions" table from CLAUDE.md, unchanged]
 ```
 
+The Key Decisions table gained a build-then-activate row on 2026-08-02; copy whatever is
+there rather than the version this plan was drafted against.
+
 - [ ] **Step 2: Index it**
 
-Add to the file list in `docs/README.md`, matching the surrounding entry format:
+`docs/README.md` was rewritten 2026-08-02 into a short annotated list. Add, keeping the
+surrounding entry format and placing it after the `MACHINES.md` line:
 
 ```markdown
 - `DECISIONS.md` -- locked decisions, scope boundaries, performance/security constraints
@@ -644,17 +701,17 @@ Run the narrowest check that can fail, then the relevant aggregate.
 
 | You changed | Run | Proves |
 |---|---|---|
-| Any taskfile | `task lint` | LINT-02..13 pass, banner drift caught |
+| Any taskfile | `task lint` | LINT rules pass, banner drift caught |
 | Machine/base/feature TOML | `task setup -- "$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/machine")" && task manifest:audit` | resolver validates, resolved.json fresh |
-| Package declarations | `task install && task packages:audit` | Brewfile converges, no drift |
-| Symlink entries (links.yml) | `task install && task links:audit` | links exist, point into the repo |
+| Package declarations | `task diff` then `task install && task packages:audit` | preview is what you expected, Brewfile converges, no drift |
+| Symlink entries (links.yml) | `task diff` then `task install && task links:audit` | preview lists the intended links, they exist and point into the repo |
 | Shell files (.zsh) | `task lint && task test && exec zsh` | parse-check, smoke tests, live shell loads |
-| claude/settings.d fragments | `task install && task claude:audit` | settings.json recomposed, LINT-09 clean |
+| claude/settings.d fragments | `task diff` then `task install && task claude:audit` | preview shows the intended key changes, live settings.json matches the composed artifact |
 | Claude addon TOMLs | `task install && task claude-addons:audit` | addon verify probes pass |
 | os/defaults | `task install`, then log out/in for domains that need it | defaults applied |
 
-Aggregates: `task validate` (installation state), `task test` (all smoke tests),
-`task audit` (all-domain drift, read-only).
+Aggregates: `task diff` (preview, read-only), `task validate` (installation state),
+`task test` (all smoke tests), `task audit` (all-domain drift, read-only).
 
 ## The five-tier model
 
@@ -667,6 +724,11 @@ Aggregates: `task validate` (installation state), `task test` (all smoke tests),
 
 Each tier catches a different drift class; "looks installed but isn't" and
 "symlink-soup-after-refactor" are the two this repo has been burned by.
+
+`task diff` sits before tier 3: it compares the materialized build artifacts in
+`$XDG_STATE_HOME/dotfiles/build/` against the live system, so it answers "what would install
+change" without changing anything. Reach for it whenever an install is about to do more than
+you expect.
 
 ## The one-check rule
 
@@ -694,7 +756,7 @@ git commit -m "feat(claude): add verification skill for change-type checks"
 **Files:**
 - Modify: `CLAUDE.md` (full replacement below)
 - Modify: `taskfiles/README.md` (receives the lint catalogue table)
-- Modify: `README.md`, `taskfiles/lint.yml`, `docs/LINT-FIXES.md`, `docs/CLAUDE-ADDONS.md`, `claude/README.md` (references to moved or renamed sections)
+- Modify: `README.md`, `taskfiles/lint.yml`, `docs/CLAUDE-ADDONS.md`, `claude/README.md` (references to moved or renamed sections)
 
 **Interfaces:**
 - Consumes: `docs/DECISIONS.md` (Task 5), skill name `verifying-dotfiles-changes` (Task 6).
@@ -709,6 +771,11 @@ bodies already live in `taskfiles/lint.yml`); schema detail -> `docs/MANIFEST.md
 `docs/CLAUDE-ADDONS.md`. The XDG defaults table is dropped without relocation: the values
 live in `shell/.zshenv`, and the draft keeps a one-line XDG gotcha.
 
+The draft below is current as of 2026-08-02 (seven lifecycle commands including `diff`;
+build-then-activate settings chain; LINT-01/06/09 retired). Diff it against the live CLAUDE.md
+before pasting -- anything added there since must be triaged into the draft, a doc, or the
+skill rather than silently dropped.
+
 - [ ] **Step 1: Replace CLAUDE.md wholesale with:**
 
 ```markdown
@@ -721,12 +788,16 @@ self-contained TOML at `manifests/machines/<name>.toml`, validated against the f
 registry `manifests/features.toml`, and compiled by `install/resolver.zsh` into a JSON cache
 that every go-task task reads. No profile suffixes, no hostname inference, no hidden branching.
 
+The pipeline runs three stages: evaluate (resolver -> `resolved.json`), realize (compose ->
+`$XDG_STATE_HOME/dotfiles/build/`), activate (`task install` -> the live system).
+
 | Concept | Location |
 |---------|----------|
 | Feature-flag registry | `manifests/features.toml` |
 | Per-machine declaration | `manifests/machines/<name>.toml` |
 | Unconditional package tier | `manifests/base.toml` |
 | Compiled output (machine-local) | `$XDG_STATE_HOME/dotfiles/resolved.json` |
+| Materialized desired state (machine-local) | `$XDG_STATE_HOME/dotfiles/build/` |
 | Active machine name (machine-local) | `$XDG_STATE_HOME/dotfiles/machine` |
 
 ## Finding Things
@@ -735,10 +806,10 @@ that every go-task task reads. No profile suffixes, no hostname inference, no hi
 - Locked decisions, scope boundaries, performance/security constraints: `docs/DECISIONS.md`.
   Revisit only with new evidence.
 - Every top-level concept directory has a README saying what belongs there and how to name it.
-- Operator surface: six lifecycle commands (`install`, `setup`, `validate`, `test`, `lint`,
-  `audit`) plus `<domain>:<verb>` diagnostics (`show`, `audit`). Bare `task` prints the
-  banner; `task --list` the full graph. Per-component install/validate tasks are internal
-  pipeline steps, not operator commands.
+- Operator surface: seven lifecycle commands (`install`, `setup`, `validate`, `test`, `lint`,
+  `audit`, `diff`) plus `<domain>:<verb>` diagnostics (`show`, `audit`, `diff`). Bare `task`
+  prints the banner; `task --list` the full graph. Per-component install/validate tasks are
+  internal pipeline steps, not operator commands.
 - Verifying a change: use the `verifying-dotfiles-changes` skill (change type to exact
   commands, five-tier model, one-check rule).
 
@@ -753,10 +824,13 @@ What the file system will not tell you:
 - `status:` blocks evaluate before shell context exists: `{{.X}}` template vars only, never
   `$X` (empty there; the task re-runs forever). Every install task has a `status:` block
   returning 0 when converged.
-- `claude/settings.json` is generated: edit `claude/settings.d/*.json` fragments, re-run
-  `task install`. The composer preserves the CLI-managed keys `enabledPlugins`,
-  `extraKnownMarketplaces`, `model`, `tui`. LINT-09 fails on drift; never hand-edit, and
-  never register a hook there directly.
+- The repo tree holds source only -- no generated file is tracked. `settings.json` is composed
+  from `claude/settings.d/*.json` plus `$XDG_STATE_HOME/dotfiles/settings.d/*.json` into
+  `$XDG_STATE_HOME/dotfiles/build/settings.json`, then installed onto
+  `$XDG_CONFIG_HOME/claude/settings.json` as a real file. Edit fragments and re-run
+  `task install`; never hand-edit the live file, and never register a hook there directly.
+  Compose reads back exactly four CLI-managed keys: `enabledPlugins`,
+  `extraKnownMarketplaces`, `model`, `tui`. `task claude:audit` reports drift.
 - A machine's `[features]` must account for every registry flag applicable to its `os` in
   either `enabled` or `disabled`; an unaccounted flag is a hard `task setup` error.
   Cross-field rules (e.g. identity overlays carrying `# capability:` sentinels require the
@@ -775,17 +849,19 @@ What the file system will not tell you:
   stderr via `install/messages.zsh`. XDG paths come from `shell/.zshenv` and `{{.XDG_*}}`.
 - Zsh startup order: `.zshenv` -> `.zprofile` (brew shellenv, 1Password socket) -> `.zshrc`
   (antidote plugins, theme, functions, aliases) -> `.zlogin` (MOTD) -> `.zlogout`.
-- Lint rules LINT-02..13: catalogue table in `taskfiles/README.md`, rule bodies in
-  `taskfiles/lint.yml`; `# LINT-NN:` comments cite them. LINT-01 and LINT-06 are
-  intentionally retired numbers -- do not reuse.
+- Lint rules: catalogue table in `taskfiles/README.md`, rule bodies in `taskfiles/lint.yml`;
+  `# LINT-NN:` comments cite them. LINT-01, LINT-06, and LINT-09 are retired numbers -- never
+  reuse them.
 - Third-party Claude addons are declarative: `manifests/claude-addons/<name>.toml` plus the
-  machine's `[claude].addons` list; they install inside `task install`.
+  machine's `[claude].addons` list; they install inside `task install`. Machine-generated
+  addon fragments live in the state tree, never the repo.
 - One concept per file, flat directories: one alias topic / function / taskfile / machine
-  manifest / defaults concern per file; no subdirectories under `shell/aliases/` or
-  `manifests/base.toml`.
-- Packages every machine needs belong in `manifests/base.toml` (never named by
-  machine); a machine's own `[packages]` table is one-off extras with the identical shape,
-  so promotion is a copy.
+  manifest / defaults concern per file; no subdirectories under `shell/aliases/`.
+- Packages arrive in three tiers: `manifests/base.toml` (unconditional, no machine names it),
+  `[<flag>.packages]` in the registry (a concern owns its tooling), and a machine's
+  `[packages]` (free choices only). Listing something base or an enabled flag already provides
+  is a hard resolver error.
+- Tests live at `<domain>/tests/`; `task test` is the single aggregator.
 - No AI attribution and no emojis anywhere, markdown included (hooks enforce both). No
   private keys in the repo; `identity/ssh/keys/` holds public keys only.
 ```
@@ -793,10 +869,10 @@ What the file system will not tell you:
 - [ ] **Step 2: Relocate the lint catalogue and retarget every reference to the moved sections**
 
 Append to `taskfiles/README.md` a `## Lint catalogue` section containing, verbatim from
-today's CLAUDE.md, the LINT-02..13 table plus the retired-numbers paragraph (everything
-under the current "### Lint rule catalogue (LINT-02..12)" heading, intro sentence included).
+today's CLAUDE.md, the lint table plus the retired-numbers paragraph (everything under the
+current "### Lint rule catalogue" heading, intro sentence included).
 
-Then four reference fixes. In `README.md`:
+Then four reference fixes. In `README.md` (line ~50):
 
 ```
 See [CLAUDE.md](CLAUDE.md) for conventions, rules, where-to-add tables, and
@@ -814,37 +890,40 @@ directory's README says what belongs there; the lint catalogue lives in
 In the `taskfiles/lint.yml` header banner:
 
 ```
-#               recurring bug classes (01 and 06 intentionally absent). See
+#               recurring bug classes (01, 06, and 09 intentionally absent;
+#               the numbers are retired, not reused). See
 #               CLAUDE.md §Lint rule catalogue for the rule definitions.
 ```
 
 to:
 
 ```
-#               recurring bug classes (01 and 06 intentionally absent). See
+#               recurring bug classes (01, 06, and 09 intentionally absent;
+#               the numbers are retired, not reused). See
 #               taskfiles/README.md §Lint catalogue for the rule summaries.
 ```
 
-In `taskfiles/README.md` (the Key files lint bullet):
+In `taskfiles/README.md` (the Key files lint bullet, line ~21 -- note the phrase begins
+mid-line, right after `` `lint:test-fixtures`. ``):
 
 ```
-  Enforces LINT-02..LINT-12
+Enforces the LINT-NN rules
   (see the catalogue in `../CLAUDE.md`).
 ```
 
 to:
 
 ```
-  Enforces LINT-02..LINT-12
+Enforces the LINT-NN rules
   (catalogue below).
 ```
 
-and its References bullet:
+and its References bullet (line ~63):
 
 ```
 - `../CLAUDE.md` -- v2 conventions (status-block templating, no bare
   `ln -s`, `set -euo pipefail` on every executable `.zsh`, the lint
-  catalogue LINT-02..LINT-12).
+  catalogue).
 ```
 
 to:
@@ -854,22 +933,8 @@ to:
   `ln -s`, `set -euo pipefail` on every executable `.zsh`).
 ```
 
-In `docs/LINT-FIXES.md`:
-
-```
-The LINT-02..12 rule
-catalogue lives in `../CLAUDE.md`; the rule bodies live in `taskfiles/lint.yml`.
-```
-
-to:
-
-```
-The LINT-02..12 rule
-catalogue lives in `../taskfiles/README.md`; the rule bodies live in `taskfiles/lint.yml`.
-```
-
-In `docs/CLAUDE-ADDONS.md` (Cross-references section; the "Rules" heading no longer exists
-after this task):
+In `docs/CLAUDE-ADDONS.md` (Cross-references section, line ~355; the "Rules" heading no longer
+exists after this task):
 
 ```
 - [`CLAUDE.md`](../CLAUDE.md) -- project rules; "Rules" section names this
@@ -884,7 +949,7 @@ to:
   deep reference.
 ```
 
-And the same file's intro line:
+And the same file's intro line (line ~7):
 
 ```
 For project rules see [`CLAUDE.md`](../CLAUDE.md).
@@ -896,19 +961,23 @@ to:
 For project gotchas and conventions see [`CLAUDE.md`](../CLAUDE.md).
 ```
 
-In `claude/README.md` (Canonical references; the quoted subheadings become Gotchas bullets):
+In `claude/README.md` (Canonical references; the quoted subheading becomes a Gotchas bullet):
 
 ```
-- [`../CLAUDE.md`](../CLAUDE.md) -- project rules (see "settings.json is a
-  generated build artifact" + "Third-party Claude addons are declarative").
+- [`../CLAUDE.md`](../CLAUDE.md) -- project rules (see "The repo tree holds
+  source only" + "Third-party Claude addons are declarative").
 ```
 
 to:
 
 ```
 - [`../CLAUDE.md`](../CLAUDE.md) -- project instructions (see the Gotchas
-  bullets on generated `settings.json` and declarative addons).
+  bullets on the source-only repo tree and declarative addons).
 ```
+
+`os/README.md` also cites `../CLAUDE.md` for "project conventions (flat directories, one
+concept per file, status-block templating rules)" -- all three survive the rewrite as Gotchas
+bullets, so that reference needs no edit. Confirm rather than assume.
 
 - [ ] **Step 3: Verify size and link integrity**
 
@@ -916,7 +985,7 @@ Run: `wc -c CLAUDE.md`
 Expected: under 8000.
 Run: `test -f docs/DECISIONS.md && test -f docs/MANIFEST.md && test -f docs/CLAUDE-ADDONS.md && test -f claude/skills/verifying-dotfiles-changes/SKILL.md && echo LINKS-OK`
 Expected: `LINKS-OK`
-Run: `grep -n 'Lint rule catalogue' README.md taskfiles/lint.yml docs/LINT-FIXES.md`
+Run: `grep -rn 'Lint rule catalogue' README.md taskfiles/ docs/ CLAUDE.md`
 Expected: no matches (the phrase survives only in this plan and git history).
 Run: `task lint`
 Expected: zero failure crosses in the output (the aggregate always exits 0 by design).
@@ -924,7 +993,7 @@ Expected: zero failure crosses in the output (the aggregate always exits 0 by de
 - [ ] **Step 4: Commit**
 
 ```bash
-git add CLAUDE.md README.md taskfiles/lint.yml taskfiles/README.md docs/LINT-FIXES.md docs/CLAUDE-ADDONS.md claude/README.md
+git add CLAUDE.md README.md taskfiles/lint.yml taskfiles/README.md docs/CLAUDE-ADDONS.md claude/README.md
 git commit -m "docs(claude): rewrite CLAUDE.md gotchas-first with progressive disclosure"
 ```
 
@@ -987,21 +1056,24 @@ git commit -m "docs(claude): dedupe global instructions"
 
 - [ ] **Step 1: Full converge on this machine**
 
-Run: `task install`
+Run: `task diff` first (it should preview only the changes these tasks intend), then
+`task install`.
 Expected: converges with no unexpected work. The addon path re-runs its `[upgrade]` commands
 on every invocation by design (always-pull-latest); every other domain must be a fast no-op
 on the second run (idempotency contract).
 
 - [ ] **Step 2: Full check suite**
 
-Run: `task lint && task test && task audit`
-Expected: lint shows zero failure crosses (its aggregate always exits 0 by design); test and
-audit exit clean, `claude:audit` and `claude-addons:audit` included.
+Run: `task lint && task test && task validate && task audit`
+Expected: lint shows zero failure crosses (its aggregate always exits 0 by design); test,
+validate, and audit exit clean, `claude:audit` and `claude-addons:audit` included.
+Then: `git status --short`
+Expected: empty. The repo tree holds source only, so a converged install leaves it clean.
 
 - [ ] **Step 3: Measure in a fresh session**
 
 In a new interactive Claude Code session in this repo, run `/context` and record the totals
-next to the baseline table in this plan (expected: user-config overhead drops from ~17.9k to
+next to the baseline table in this plan (expected: user-config overhead drops from ~18.2k to
 ~4,350 tokens; also spot-check that the Things MCP tools still appear as deferred schemas
 behind ToolSearch). Then run `/doctor` -- the article introduces it as the rightsizing assistant
 for skills and CLAUDE.md -- and treat its findings as follow-up items, not auto-applied
@@ -1017,7 +1089,8 @@ machine listing `ecc` (atium and work-laptop declare no `[claude]` table; ci dec
 
 - [ ] **Step 5: Reference -- final ecc.toml command arrays**
 
-After Tasks 1-4, the arrays read exactly (consistency check, not an edit):
+After Tasks 1-4, the arrays read exactly (consistency check, not an edit). The trailing
+git-exclude and agents-link lines are carried over from the current file unchanged:
 
 ```toml
 [install]
@@ -1026,11 +1099,11 @@ commands = [
   "bash \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/plugins/marketplaces/ecc/install.sh\" --target claude --profile minimal --without baseline:commands --without baseline:rules",
   "rm -f \"$HOME/.claude/AGENTS.md\"",
   "find \"$HOME/.claude/agents\" -maxdepth 1 -name '*.md' ! -name 'architect.md' ! -name 'build-error-resolver.md' ! -name 'code-explorer.md' ! -name 'code-reviewer.md' ! -name 'code-simplifier.md' ! -name 'doc-updater.md' ! -name 'planner.md' ! -name 'python-reviewer.md' ! -name 'refactor-cleaner.md' ! -name 'security-reviewer.md' ! -name 'typescript-reviewer.md' -delete",
-  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/ecc/\"*) rm -f \"$l\";; esac; done",
-  "for s in agent-sort architecture-decision-records code-tour codebase-onboarding config-gc context-budget council skill-scout; do ln -sfn \"$HOME/.claude/skills/ecc/$s\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$s\"; done",
+  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) rm -f \"$l\";; esac; done",
+  "for s in agent-sort architecture-decision-records code-tour codebase-onboarding config-gc context-budget council skill-scout; do if [ -d \"$HOME/.claude/skills/$s\" ]; then ln -sfn \"$HOME/.claude/skills/$s\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$s\"; else echo \"ecc: keep-list skill '$s' absent from payload -- skipped\" >&2; fi; done",
   "ln -sfn \"$HOME/.claude/agents\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/agents/ecc\"",
   "grep -qxF 'claude/agents/ecc' \"$DOTFILEDIR/.git/info/exclude\" || echo 'claude/agents/ecc' >> \"$DOTFILEDIR/.git/info/exclude\"",
-  "find \"$DOTFILEDIR/claude/skills\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/ecc/\"*) grep -qxF \"claude/skills/$(basename \"$l\")\" \"$DOTFILEDIR/.git/info/exclude\" || echo \"claude/skills/$(basename \"$l\")\" >> \"$DOTFILEDIR/.git/info/exclude\";; esac; done",
+  "find \"$DOTFILEDIR/claude/skills\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) grep -qxF \"claude/skills/$(basename \"$l\")\" \"$DOTFILEDIR/.git/info/exclude\" || echo \"claude/skills/$(basename \"$l\")\" >> \"$DOTFILEDIR/.git/info/exclude\";; esac; done",
 ]
 
 [upgrade]
@@ -1039,9 +1112,9 @@ commands = [
   "bash \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/plugins/marketplaces/ecc/install.sh\" --target claude --profile minimal --without baseline:commands --without baseline:rules",
   "rm -f \"$HOME/.claude/AGENTS.md\"",
   "find \"$HOME/.claude/agents\" -maxdepth 1 -name '*.md' ! -name 'architect.md' ! -name 'build-error-resolver.md' ! -name 'code-explorer.md' ! -name 'code-reviewer.md' ! -name 'code-simplifier.md' ! -name 'doc-updater.md' ! -name 'planner.md' ! -name 'python-reviewer.md' ! -name 'refactor-cleaner.md' ! -name 'security-reviewer.md' ! -name 'typescript-reviewer.md' -delete",
-  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/ecc/\"*) rm -f \"$l\";; esac; done",
-  "for s in agent-sort architecture-decision-records code-tour codebase-onboarding config-gc context-budget council skill-scout; do ln -sfn \"$HOME/.claude/skills/ecc/$s\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$s\"; done",
-  "find \"$DOTFILEDIR/claude/skills\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/ecc/\"*) grep -qxF \"claude/skills/$(basename \"$l\")\" \"$DOTFILEDIR/.git/info/exclude\" || echo \"claude/skills/$(basename \"$l\")\" >> \"$DOTFILEDIR/.git/info/exclude\";; esac; done",
+  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) rm -f \"$l\";; esac; done",
+  "for s in agent-sort architecture-decision-records code-tour codebase-onboarding config-gc context-budget council skill-scout; do if [ -d \"$HOME/.claude/skills/$s\" ]; then ln -sfn \"$HOME/.claude/skills/$s\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$s\"; else echo \"ecc: keep-list skill '$s' absent from payload -- skipped\" >&2; fi; done",
+  "find \"$DOTFILEDIR/claude/skills\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) grep -qxF \"claude/skills/$(basename \"$l\")\" \"$DOTFILEDIR/.git/info/exclude\" || echo \"claude/skills/$(basename \"$l\")\" >> \"$DOTFILEDIR/.git/info/exclude\";; esac; done",
 ]
 ```
 
@@ -1056,19 +1129,26 @@ instead, measured on this machine: the kept surface is ~120 KB (11 agents ~66 KB
 passes -- always-pull-latest by design). The prune choreography Tasks 1-4 build exists only
 to fight that re-copy.
 
+The 2026-07-28 upstream reshuffle is evidence for this side of the argument: a layout change
+in the payload (namespaced skills to flat skills) forced a rewrite of the bridge commands,
+and it forced a second rewrite of this plan's Task 3 before it could be executed. Vendored
+markdown does not move under you.
+
 Vendoring path, replacing Tasks 1-4 wholesale:
 
 1. Copy the 11 agent files into `claude/agents/` and the 8 skill dirs into `claude/skills/`
    as repo-owned committed files -- the pattern `context-dump`, `goalsmith`, and Task 6's
    `verifying-dotfiles-changes` already use.
 2. `task claude-addons:remove -- ecc` (runs `[remove].commands`, walks the footprint,
-   deletes the settings fragment copy, recomposes settings.json).
+   deletes the machine-local settings fragment from `$XDG_STATE_HOME/dotfiles/settings.d/`,
+   recomposes and reactivates settings.json).
 3. Delete `manifests/claude-addons/ecc.toml` and `ecc.fragment.json`; drop `"ecc"` from
    `personal-laptop.toml` `[claude].addons`; drop the `node` formula and its comment (the
    installer was its only consumer); purge the ECC reference case from
    `docs/CLAUDE-ADDONS.md` and `manifests/claude-addons/README.md`; remove the stale ECC
    link lines from `.git/info/exclude`.
-4. Re-run `task setup -- personal-laptop && task install && task lint && task audit`.
+4. Re-run `task setup -- personal-laptop && task install && task lint && task audit`, then
+   confirm `git status --short` is empty apart from the intended additions.
 
 Trade-off: upstream skill/agent updates arrive only by manual re-copy (for mature markdown
 files that rarely matters); in exchange the marketplace clone, npm/node bootstrap, prune
@@ -1086,7 +1166,7 @@ a red-flags table) is the one remaining absolutist block, and it is philosophica
 paradigm ("if there is even a 1% chance... you MUST"). Recommendation: **keep it for now**.
 
 - The workflow skills (brainstorming, writing-plans, executing-plans, worktrees,
-  verification-before-completion) are actively used here -- `docs/superpowers/plans/` exists
+  verification-before-completion) are actively used here -- `docs/superpowers/` exists
   because of them -- and they are opinion-encoding, which the article endorses.
 - Upstream is already converging on the new paradigm: `using-superpowers/SKILL.md` shrank
   from 5,899 bytes (6.0.3) to 3,063 bytes (6.1.1/6.2.0) in the plugin cache.
@@ -1117,7 +1197,7 @@ without the shouting, drop the plugin and vendor.
 
 ## Expected Outcome
 
-Per-session user-config overhead drops from ~17.9k to ~4,350 tokens (about 75%), every removed
+Per-session user-config overhead drops from ~18.2k to ~4,350 tokens (about 76%), every removed
 piece of information remains one hop away (docs, skill, or upstream payload on disk), and the
 conflicting-guidance pairs (commit format, TDD mandate, abstraction policy, stale model
 lineup) are eliminated rather than adjudicated per-session.
