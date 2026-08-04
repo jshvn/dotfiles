@@ -27,6 +27,8 @@
 #   - full lint catalogue (task lint) and orphan-link audit (links:audit)
 #   - status-block idempotency: converged second `task install` must exit 0
 #     with every state-converging task short-circuiting
+#   - runner-preinstalled tap trust (aws/tap) so Homebrew tap-trust warnings
+#     do not bury real pipeline output
 #
 # DOES NOT COVER (only exercised on real machines):
 #   - macOS defaults apply/verify paths (all macos-* flags disabled in
@@ -62,6 +64,18 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
+
+      # The runner image preinstalls aws/tap for its aws-sam-cli. Homebrew
+      # ignores items from untrusted taps and warns on every invocation, which
+      # buries real output. Nothing here installs from aws/tap; the grant is
+      # scoped to this ephemeral runner and exists solely to quiet the warning.
+      # Guarded on presence so a future image that drops the tap is not a
+      # failure.
+      - name: Trust runner-preinstalled taps
+        run: |
+          if brew tap | grep -qxF 'aws/tap'; then
+            brew trust --tap aws/tap
+          fi
 
       # bootstrap.zsh acquires go-task + yq. Its interactive consent gate
       # only fires when brew is absent; runners ship brew, so the script is

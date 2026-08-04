@@ -5,13 +5,13 @@ version: '3'
 #
 # Purpose:      Reads packages.brew.* from resolved.json, composes the
 #               per-machine Brewfile to $XDG_STATE_HOME/dotfiles/build/Brewfile,
-#               refreshes brew metadata, runs `brew bundle install --upgrade`,
-#               and verifies post-install state.
+#               refreshes brew metadata, runs `brew bundle install --upgrade
+#               --jobs auto`, and verifies post-install state.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh;
 #               install/compose-brewfile.zsh; :manifest:resolve (deps).
 # Side effects: writes $XDG_STATE_HOME/dotfiles/build/Brewfile; runs `brew update`
-#               then `brew bundle install --upgrade` against it (may upgrade
-#               already-installed packages to newer upstream versions).
+#               then `brew bundle install --upgrade --jobs auto` against it (may
+#               upgrade already-installed packages to newer upstream versions).
 # =============================================================================
 
 includes:
@@ -53,8 +53,8 @@ tasks:
         brew update
       - |
         {{.DOTFILES_MESSAGES}}
-        info "running brew bundle install --upgrade --file={{.COMPOSED_BREWFILE}}"
-        brew bundle install --upgrade --file="{{.COMPOSED_BREWFILE}}"
+        info "running brew bundle install --upgrade --jobs auto --file={{.COMPOSED_BREWFILE}}"
+        brew bundle install --upgrade --jobs auto --file="{{.COMPOSED_BREWFILE}}"
         success "brew bundle install --upgrade complete"
 
   # lint-allow: cmds-without-status
@@ -84,8 +84,9 @@ tasks:
         # Declared entries with newer upstream versions. brew outdated covers
         # formulae and casks in one call; intersect with the declared set so
         # undeclared strays never appear in the preview.
-        declared=$( { ggrep -E "^[[:space:]]*(brew|cask)[[:space:]]+'" "$brewfile" || true; } \
-          | ggrep -oE "'[^']+'" | tr -d "'" | sort -u)
+        declared=$( { brew bundle list --formulae --file="$brewfile" 2>/dev/null; \
+                      brew bundle list --casks    --file="$brewfile" 2>/dev/null; } \
+          | sort -u || true)
         outdated=$(brew outdated --quiet 2>/dev/null | sort -u || true)
         upgrades=$(comm -12 <(printf '%s\n' "$declared") <(printf '%s\n' "$outdated") || true)
         if [[ -n "$upgrades" ]]; then
@@ -347,42 +348,40 @@ tasks:
         {{.DOTFILES_MESSAGES}}
 
         # Parse --strict from CLI_ARGS. Caller form: task packages:audit -- --strict
+        # `case` rather than a `[[ ]] &&` chain: an unmatched `&&` list is a
+        # non-zero statement, and under errexit that aborts the task before it
+        # reaches the drift scan. `case` returns 0 when nothing matches.
         strict=0
         for arg in {{.CLI_ARGS}}; do
-          [[ "$arg" == "--strict" ]] && strict=1
+          case "$arg" in
+            --strict) strict=1 ;;
+          esac
         done
 
         # Declared sets (extracted from the composed Brewfile).
-        # `|| true` on each pipeline: a section with zero entries makes the
-        # first ggrep exit 1 (no match), which under errexit+pipefail (set at
-        # the root Taskfile) aborts the entire audit silently. Machines with
-        # `mas = []` / `casks = []` are legitimate (e.g., atium headless), so
-        # an empty section must yield an empty declared-set, not a hard fail.
-        declared_formulae=$(ggrep -E "^[[:space:]]*brew[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
-          | ggrep -oE "^[[:space:]]*brew[[:space:]]+'[^']+'" \
-          | ggrep -oE "'[^']+'" | tr -d "'" \
-          | sort -u || true)
+        bf='{{.COMPOSED_BREWFILE}}'
 
-        declared_casks=$(ggrep -E "^[[:space:]]*cask[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
-          | ggrep -oE "^[[:space:]]*cask[[:space:]]+'[^']+'" \
-          | ggrep -oE "'[^']+'" | tr -d "'" \
-          | sort -u || true)
+        # `brew bundle list --<type>` evaluates the Brewfile DSL in Ruby, so
+        # the declared set is authoritative rather than a regex over generated
+        # text. Sorted because the comm compares below require sorted input.
+        # `|| true` on each: a type with zero entries exits non-zero, which
+        # under errexit+pipefail (set at the root Taskfile) would abort the
+        # entire audit silently. Machines with `mas = []` / `casks = []` are
+        # legitimate (e.g., atium headless), so an empty section must yield an
+        # empty declared-set, not a hard fail.
+        declared_formulae=$(brew bundle list --formulae --file="$bf" 2>/dev/null | sort -u || true)
+        declared_casks=$(brew bundle list --casks     --file="$bf" 2>/dev/null | sort -u || true)
+        declared_vscode=$(brew bundle list --vscode   --file="$bf" 2>/dev/null | sort -u || true)
+        declared_cargo=$(brew bundle list --cargo     --file="$bf" 2>/dev/null | sort -u || true)
+        declared_uv=$(brew bundle list --uv           --file="$bf" 2>/dev/null | sort -u || true)
+        declared_npm=$(brew bundle list --npm         --file="$bf" 2>/dev/null | sort -u || true)
 
-        declared_mas=$(ggrep -E "^[[:space:]]*mas[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
+        # mas is compared by App Store id (that is what `mas list` reports),
+        # and `brew bundle list --mas` prints names, so this one stays a grep.
+        declared_mas=$(ggrep -E "^[[:space:]]*mas[[:space:]]+'" "$bf" \
           | ggrep -oE "id:[[:space:]]*[0-9]+" \
           | awk '{print $2}' \
           | sort -u || true)
-
-        # Non-brew manager declared sets (vscode/cargo/uv). Same prefix-grep
-        # pattern as brew/cask: the entry id is the single-quoted argument.
-        declared_vscode=$(ggrep -E "^[[:space:]]*vscode[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
-          | ggrep -oE "'[^']+'" | tr -d "'" | sort -u || true)
-        declared_cargo=$(ggrep -E "^[[:space:]]*cargo[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
-          | ggrep -oE "'[^']+'" | tr -d "'" | sort -u || true)
-        declared_uv=$(ggrep -E "^[[:space:]]*uv[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
-          | ggrep -oE "'[^']+'" | tr -d "'" | sort -u || true)
-        declared_npm=$(ggrep -E "^[[:space:]]*npm[[:space:]]+'" "{{.COMPOSED_BREWFILE}}" \
-          | ggrep -oE "'[^']+'" | tr -d "'" | sort -u || true)
 
         # `brew leaves` = top-level formulae only (catches manual installs,
         # not transitive deps).
@@ -467,6 +466,34 @@ tasks:
         report_drift uv      "$installed_uv"       "$declared_uv"
         report_drift npm     "$installed_npm"      "$declared_npm"
 
+        # Taps and trust grants. Neither is an installed package, so neither is
+        # visible to the report_drift comparisons above. A tap is a
+        # code-execution boundary: an undeclared one, or a trust grant for one,
+        # is drift in the same sense an undeclared cask is.
+        tmp_declared=$(mktemp "${TMPDIR:-/tmp}/dotfiles-declared-taps.XXXXXX")
+        tmp_installed=$(mktemp "${TMPDIR:-/tmp}/dotfiles-installed-taps.XXXXXX")
+        tmp_trust=$(mktemp "${TMPDIR:-/tmp}/dotfiles-trust.XXXXXX")
+        # EXIT only: the mvdan/sh interpreter go-task runs does not accept
+        # INT/TERM signal names in trap.
+        trap 'rm -f "$tmp_declared" "$tmp_installed" "$tmp_trust"' EXIT
+
+        brew bundle list --taps --file="$bf" 2>/dev/null | sort -u > "$tmp_declared" || true
+        brew tap 2>/dev/null | sort -u > "$tmp_installed" || true
+        # `brew trust --json v1` is the stable, normalized view of the trust
+        # store -- always all four keys. The on-disk trust.json is a private
+        # format (only non-empty keys, differently named) and is never parsed.
+        brew trust --json v1 2>/dev/null > "$tmp_trust" || true
+
+        while IFS= read -r finding; do
+          [[ -z "$finding" ]] && continue
+          warn "drift: ${finding}"
+          total_drift=$(( total_drift + 1 ))
+        done < <(zsh "{{.ROOT_DIR}}/install/packages-trust-scan.zsh" \
+          "$tmp_declared" "$tmp_installed" "$tmp_trust")
+
+        rm -f "$tmp_declared" "$tmp_installed" "$tmp_trust"
+        trap - EXIT
+
         if [[ "$total_drift" -eq 0 ]]; then
           success "no drift detected"
           exit 0
@@ -477,6 +504,69 @@ tasks:
           exit 1
         fi
         warn "${total_drift} drift item(s) detected (non-blocking; --strict to fail)"
+        exit 0
+
+  # lint-allow: cmds-without-status
+  vulns:
+    desc: "Check declared packages against OSV.dev. Non-blocking; --strict exits non-zero."
+    deps: [":manifest:resolve", ":packages:compose"]
+    preconditions:
+      - sh: test -f '{{.COMPOSED_BREWFILE}}'
+        msg: |
+          composed Brewfile missing: {{.COMPOSED_BREWFILE}}
+            run: task packages:compose first
+      - sh: command -v brew >/dev/null 2>&1
+        msg: "brew not on PATH -- run bootstrap.zsh first"
+      - sh: command -v jq >/dev/null 2>&1
+        msg: "jq not on PATH -- required to count findings from brew vulns --json"
+    # always-rerun: a vulnerability scan is a fresh measurement each invocation.
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+
+        # Caller forms: task packages:vulns -- --strict --severity=low
+        # `case` rather than a `[[ ]] &&` chain: an unmatched `&&` list is a
+        # non-zero statement, and under errexit that aborts the task before it
+        # reaches the scan. `case` returns 0 when nothing matches.
+        strict=0
+        severity=high
+        for arg in {{.CLI_ARGS}}; do
+          case "$arg" in
+            --strict) strict=1 ;;
+            --severity=*) severity="${arg#--severity=}" ;;
+          esac
+        done
+
+        info "brew vulns --brewfile (severity >= ${severity})"
+
+        # --json is the machine-readable form: a JSON array, empty when clean.
+        # brew vulns exits 1 whenever findings exist, so every invocation needs
+        # `|| true` under the root Taskfile's errexit; the array length, not the
+        # exit code, is what distinguishes "clean" from "brew itself broke".
+        findings=$(brew vulns --brewfile="{{.COMPOSED_BREWFILE}}" --severity="$severity" --json 2>/dev/null || true)
+        if ! echo "$findings" | jq -e 'type == "array"' >/dev/null 2>&1; then
+          error "brew vulns returned no parseable JSON -- cannot assess vulnerabilities"
+          exit 1
+        fi
+
+        count=$(echo "$findings" | jq -r 'length')
+        if [[ "$count" -eq 0 ]]; then
+          success "no known vulnerabilities at severity >= ${severity}"
+          exit 0
+        fi
+
+        # Human-readable rerun: the JSON carries the detail, but the plain
+        # form is what an operator wants to read.
+        { brew vulns --brewfile="{{.COMPOSED_BREWFILE}}" --severity="$severity" 2>&1 || true; } \
+          | sed 's/^/    /'
+
+        info "to fix: task install (upgrades to a patched version if one is published)"
+        if [[ "$strict" -eq 1 ]]; then
+          cross "${count} vulnerability finding(s) at severity >= ${severity} (--strict)"
+          exit 1
+        fi
+        warn "${count} vulnerability finding(s) at severity >= ${severity} (non-blocking; --strict to fail)"
         exit 0
 
   # lint-allow: cmds-without-status

@@ -132,13 +132,14 @@ tasks:
         info "  validate    Validate full installation state"
         info "  test        Run all smoke tests"
         info "  lint        Run all lint checks"
-        info "  audit       Detect drift across all domains"
+        info "  audit       Detect drift and known vulnerabilities across all domains"
         info "  diff        Preview what task install would change"
         echo
         header "Diagnostics (read-only, domain-first)"
         info "  task show                            List inspectable domains"
         info "  task <domain>:show                   manifest | features | claude | claude-addons | hostname"
         info "  task <domain>:audit                  manifest | packages | links | claude | claude-addons"
+        info "  task packages:vulns                  OSV.dev scan of declared packages"
         info "  task <domain>:diff                   packages | links | claude"
         echo
         header "State mutations"
@@ -162,12 +163,15 @@ tasks:
 
   # lint-allow: cmds-without-status
   test:
-    desc: "Run all smoke tests (manifest + hook + repo-sync + links-audit + shell-startup + settings-compose + lint fixtures)"
+    desc: "Run all smoke tests (manifest + hook + repo-sync + links-audit + packages-declared + packages-trust + brewfile-compose + shell-startup + settings-compose + lint fixtures)"
     cmds:
       - task: test:manifest
       - task: test:hooks
       - task: test:repo-sync
       - task: test:links-audit
+      - task: test:packages-declared
+      - task: test:packages-trust
+      - task: test:brewfile-compose
       - task: test:shell-startup
       - task: test:settings-compose
       - task: lint:test-fixtures
@@ -211,7 +215,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   audit:
-    desc: "Detect drift across all domains (read-only; run-all-aggregate)"
+    desc: "Detect drift and known vulnerabilities across all domains (read-only; run-all-aggregate)"
     status: [false]
     deps: [manifest:resolve]
     # Bare-verb aggregate: runs every domain's drift check. The per-domain
@@ -223,6 +227,8 @@ tasks:
       - task: manifest:audit
         ignore_error: true
       - task: packages:audit
+        ignore_error: true
+      - task: packages:vulns
         ignore_error: true
       - task: links:audit
         ignore_error: true

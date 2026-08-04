@@ -16,7 +16,9 @@ set -euo pipefail
 #   Line 1    -- AUTO-GENERATED header banner (ISO-8601 UTC timestamp)
 #   Lines 2-5 -- Machine: / Bundles: / Extras: counts / DO NOT EDIT notice
 #   Body      -- typed extras emitted as Ruby DSL lines, in fixed order:
-#                  formulae -> casks -> mas -> vscode -> cargo -> uv -> npm
+#                  taps -> formulae -> casks -> mas -> vscode -> cargo -> uv -> npm
+#                taps lead so a third-party tap is registered before the
+#                qualified entry that needs it.
 #
 # The resolver folds the base tier (manifests/base.toml) and every enabled
 # feature's [<flag>.packages] buckets into resolved.json's
@@ -24,8 +26,9 @@ set -euo pipefail
 # single flat package set.
 #
 # Extras line shapes (canonical; literal single-quotes around the name):
-#   brew '<name>'                              (formula -- bare string)
-#   cask '<name>'                              (cask -- { name } object in JSON)
+#   tap '<user>/<tap>'                         (third-party tap, from a qualified name)
+#   brew '<name>'[, trusted: true]             (formula; trusted when qualified)
+#   cask '<name>'[, trusted: true]             (cask; trusted when qualified)
 #   mas  '<name>', id: <id>                    (Mac App Store entry)
 #   vscode '<id>'                              (VSCode extension; needs `code`)
 #   cargo  '<name>'                            (Rust crate -- cargo install)
@@ -114,11 +117,33 @@ compose() {
     # defense in depth, since the resolver's PACKAGE_NAME_RE already rejects
     # such names, but a Brewfile is executed Ruby and must never emit an
     # unescaped quote. gsub($q; "\\"+$q) replaces `'` with `\'`.
+    # A fully-qualified name (<user>/<tap>/<name>) names a third-party tap.
+    # Homebrew refuses to load such an entry unless the tap is trusted, and the
+    # refusal is a hard error rather than a prompt, so the composer declares
+    # both the tap and the grant. The qualified name in a reviewed, tracked
+    # manifest is the consent; nothing needs to be confirmed on the machine.
+    echo "# === taps ==="
+    { echo "$formulae_json" | jq -r '.[]'
+      echo "$casks_json"    | jq -r '.[].name'
+    } | ggrep -E '^[^/]+/[^/]+/[^/]+$' \
+      | sed -E 's#^([^/]+/[^/]+)/.*#\1#' \
+      | sort -u \
+      | while IFS= read -r tap_name; do
+          printf "tap '%s'\n" "$tap_name"
+        done
+
     echo "# === formulae ==="
-    echo "$formulae_json" | jq -r --arg q "$SQ" 'def esc: gsub($q; "\\"+$q); .[] | "brew " + $q + (. | esc) + $q'
+    echo "$formulae_json" | jq -r --arg q "$SQ" '
+      def esc: gsub($q; "\\"+$q);
+      def qualified: test("^[^/]+/[^/]+/[^/]+$");
+      .[] | "brew " + $q + (. | esc) + $q + (if qualified then ", trusted: true" else "" end)'
 
     echo "# === casks ==="
-    echo "$casks_json" | jq -r --arg q "$SQ" 'def esc: gsub($q; "\\"+$q); .[] | "cask " + $q + (.name | esc) + $q'
+    echo "$casks_json" | jq -r --arg q "$SQ" '
+      def esc: gsub($q; "\\"+$q);
+      .[] | .name
+      | "cask " + $q + (. | esc) + $q
+        + (if test("^[^/]+/[^/]+/[^/]+$") then ", trusted: true" else "" end)'
 
     echo "# === mas ==="
     echo "$mas_json" | jq -r --arg q "$SQ" 'def esc: gsub($q; "\\"+$q); .[] | "mas " + $q + (.name | esc) + $q + ", id: " + (.id | tostring)'

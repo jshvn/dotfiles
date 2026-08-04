@@ -55,6 +55,45 @@ tasks:
       - false
 
   # lint-allow: cmds-without-status
+  packages-declared:
+    desc: "Run declared-set extraction smoke tests via install/tests/packages-declared.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running declared-set smoke tests"
+        export DOTFILEDIR="{{.ROOT_DIR}}"
+        zsh "${DOTFILEDIR}/install/tests/packages-declared.zsh"
+    status:
+      - false
+
+  # lint-allow: cmds-without-status
+  packages-trust:
+    desc: "Run tap/trust drift smoke tests via install/tests/packages-trust.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running tap/trust drift smoke tests"
+        export DOTFILEDIR="{{.ROOT_DIR}}"
+        zsh "${DOTFILEDIR}/install/tests/packages-trust.zsh"
+    status:
+      - false
+
+  # lint-allow: cmds-without-status
+  brewfile-compose:
+    desc: "Run Brewfile composition smoke tests via install/tests/brewfile-compose.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running Brewfile composition smoke tests"
+        export DOTFILEDIR="{{.ROOT_DIR}}"
+        zsh "${DOTFILEDIR}/install/tests/brewfile-compose.zsh"
+    status:
+      - false
+
+  # lint-allow: cmds-without-status
   shell-startup:
     desc: "Run shell startup smoke tests via install/tests/shell-startup.zsh"
     internal: true
