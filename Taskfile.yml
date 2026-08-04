@@ -162,12 +162,13 @@ tasks:
 
   # lint-allow: cmds-without-status
   test:
-    desc: "Run all smoke tests (manifest + hook + repo-sync + links-audit + shell-startup + settings-compose + lint fixtures)"
+    desc: "Run all smoke tests (manifest + hook + repo-sync + links-audit + packages-declared + shell-startup + settings-compose + lint fixtures)"
     cmds:
       - task: test:manifest
       - task: test:hooks
       - task: test:repo-sync
       - task: test:links-audit
+      - task: test:packages-declared
       - task: test:shell-startup
       - task: test:settings-compose
       - task: lint:test-fixtures
