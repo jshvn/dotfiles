@@ -136,6 +136,18 @@ validator rejects the manifest if any is missing or empty.
 | `packages.mas` | array of `{ id, name }` objects | `id` must be an integer; `name` doubles as the `.app` verify name |
 | `claude.addons` | array of strings | Each name must have `manifests/claude-addons/<name>.toml` |
 
+### Tap-qualified packages
+
+A `formulae` or `casks` entry written as `<user>/<tap>/<name>` names a
+third-party tap. The composer emits a matching `tap` line and marks the entry
+`trusted: true`, because Homebrew refuses to load an entry from an untrusted
+tap and raises rather than prompting. Declaring the qualified name in the
+manifest is the trust decision -- there is nothing to confirm on the machine.
+
+Bare names resolve against the official taps and carry no trust option.
+`task packages:audit` reports any tap the machine is subscribed to that no
+manifest declares, and any trust grant belonging to such a tap.
+
 ## Feature accounting
 
 `features.enabled` and `features.disabled` must, together, list exactly the

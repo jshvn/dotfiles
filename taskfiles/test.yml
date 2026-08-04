@@ -81,6 +81,19 @@ tasks:
       - false
 
   # lint-allow: cmds-without-status
+  brewfile-compose:
+    desc: "Run Brewfile composition smoke tests via install/tests/brewfile-compose.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running Brewfile composition smoke tests"
+        export DOTFILEDIR="{{.ROOT_DIR}}"
+        zsh "${DOTFILEDIR}/install/tests/brewfile-compose.zsh"
+    status:
+      - false
+
+  # lint-allow: cmds-without-status
   shell-startup:
     desc: "Run shell startup smoke tests via install/tests/shell-startup.zsh"
     internal: true
