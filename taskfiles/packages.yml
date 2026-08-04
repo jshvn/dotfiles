@@ -5,13 +5,13 @@ version: '3'
 #
 # Purpose:      Reads packages.brew.* from resolved.json, composes the
 #               per-machine Brewfile to $XDG_STATE_HOME/dotfiles/build/Brewfile,
-#               refreshes brew metadata, runs `brew bundle install --upgrade`,
-#               and verifies post-install state.
+#               refreshes brew metadata, runs `brew bundle install --upgrade
+#               --jobs auto`, and verifies post-install state.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh;
 #               install/compose-brewfile.zsh; :manifest:resolve (deps).
 # Side effects: writes $XDG_STATE_HOME/dotfiles/build/Brewfile; runs `brew update`
-#               then `brew bundle install --upgrade` against it (may upgrade
-#               already-installed packages to newer upstream versions).
+#               then `brew bundle install --upgrade --jobs auto` against it (may
+#               upgrade already-installed packages to newer upstream versions).
 # =============================================================================
 
 includes:
@@ -53,8 +53,8 @@ tasks:
         brew update
       - |
         {{.DOTFILES_MESSAGES}}
-        info "running brew bundle install --upgrade --file={{.COMPOSED_BREWFILE}}"
-        brew bundle install --upgrade --file="{{.COMPOSED_BREWFILE}}"
+        info "running brew bundle install --upgrade --jobs auto --file={{.COMPOSED_BREWFILE}}"
+        brew bundle install --upgrade --jobs auto --file="{{.COMPOSED_BREWFILE}}"
         success "brew bundle install --upgrade complete"
 
   # lint-allow: cmds-without-status
