@@ -466,6 +466,34 @@ tasks:
         report_drift uv      "$installed_uv"       "$declared_uv"
         report_drift npm     "$installed_npm"      "$declared_npm"
 
+        # Taps and trust grants. Neither is an installed package, so neither is
+        # visible to the report_drift comparisons above. A tap is a
+        # code-execution boundary: an undeclared one, or a trust grant for one,
+        # is drift in the same sense an undeclared cask is.
+        tmp_declared=$(mktemp "${TMPDIR:-/tmp}/dotfiles-declared-taps.XXXXXX")
+        tmp_installed=$(mktemp "${TMPDIR:-/tmp}/dotfiles-installed-taps.XXXXXX")
+        tmp_trust=$(mktemp "${TMPDIR:-/tmp}/dotfiles-trust.XXXXXX")
+        # EXIT only: the mvdan/sh interpreter go-task runs does not accept
+        # INT/TERM signal names in trap.
+        trap 'rm -f "$tmp_declared" "$tmp_installed" "$tmp_trust"' EXIT
+
+        brew bundle list --taps --file="$bf" 2>/dev/null | sort -u > "$tmp_declared" || true
+        brew tap 2>/dev/null | sort -u > "$tmp_installed" || true
+        # `brew trust --json v1` is the stable, normalized view of the trust
+        # store -- always all four keys. The on-disk trust.json is a private
+        # format (only non-empty keys, differently named) and is never parsed.
+        brew trust --json v1 2>/dev/null > "$tmp_trust" || true
+
+        while IFS= read -r finding; do
+          [[ -z "$finding" ]] && continue
+          warn "drift: ${finding}"
+          total_drift=$(( total_drift + 1 ))
+        done < <(zsh "{{.ROOT_DIR}}/install/packages-trust-scan.zsh" \
+          "$tmp_declared" "$tmp_installed" "$tmp_trust")
+
+        rm -f "$tmp_declared" "$tmp_installed" "$tmp_trust"
+        trap - EXIT
+
         if [[ "$total_drift" -eq 0 ]]; then
           success "no drift detected"
           exit 0
