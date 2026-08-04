@@ -23,8 +23,22 @@ function geoip() {    # geoip() prints geolocation data for an IP or host. ex: $
         return 2
     fi
 
-    curl -sL --request GET --url "https://ip.guide/${target}" \
+    # Capture before rendering: on an error status curl returns an empty body,
+    # which jq passes through silently -- a blank line and exit 0 reads as
+    # "no data" when it means "lookup failed". ip.guide answers 404 both for a
+    # host with no A/AAAA record and for one it has no data on, so the message
+    # names the likely cause without claiming to know which.
+    # `curl_status`, not `status` -- the latter is a read-only zsh builtin
+    # parameter (an alias for $?) and assigning to it aborts the function.
+    local response curl_status=0
+    response=$(curl -sL --fail --max-time 5 --request GET --url "https://ip.guide/${target}" \
         --header 'accept: application/json' \
-        --header 'content-type: application/json' \
-        | jq '.' | highlight --syntax=json
+        --header 'content-type: application/json') || curl_status=$?
+
+    if (( curl_status != 0 )); then
+        echo "ERROR: ip.guide lookup failed for '${target}' (curl exit ${curl_status}) -- unknown to ip.guide, or the host does not resolve" >&2
+        return 1
+    fi
+
+    echo "$response" | jq '.' | highlight --syntax=json
 }
