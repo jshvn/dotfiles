@@ -348,9 +348,14 @@ tasks:
         {{.DOTFILES_MESSAGES}}
 
         # Parse --strict from CLI_ARGS. Caller form: task packages:audit -- --strict
+        # `case` rather than a `[[ ]] &&` chain: an unmatched `&&` list is a
+        # non-zero statement, and under errexit that aborts the task before it
+        # reaches the drift scan. `case` returns 0 when nothing matches.
         strict=0
         for arg in {{.CLI_ARGS}}; do
-          [[ "$arg" == "--strict" ]] && strict=1
+          case "$arg" in
+            --strict) strict=1 ;;
+          esac
         done
 
         # Declared sets (extracted from the composed Brewfile).
