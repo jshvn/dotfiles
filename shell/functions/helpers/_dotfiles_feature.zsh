@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # =============================================================================
-# shell/functions/_dotfiles_feature.zsh -- lazy manifest feature query
+# shell/functions/helpers/_dotfiles_feature.zsh -- lazy manifest feature query
 #
 # Purpose:      Read $XDG_STATE_HOME/dotfiles/resolved.json once per shell
 #               and cache every feature flag in $_DOTFILES_FEATURES.

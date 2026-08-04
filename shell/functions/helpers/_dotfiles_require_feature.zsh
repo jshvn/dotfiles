@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # =============================================================================
-# shell/functions/_dotfiles_require_feature.zsh -- feature-gate guard helper
+# shell/functions/helpers/_dotfiles_require_feature.zsh -- feature-gate guard helper
 #
 # Purpose:      Collapse the two-line `[[ "$(_dotfiles_feature X)" == "true"
 #               ]] || { echo ... >&2; return 1; }` guard previously

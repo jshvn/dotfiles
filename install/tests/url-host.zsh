@@ -7,7 +7,8 @@
 #               handles scheme, userinfo, path/query/fragment, ports, IPv6
 #               literals and already-bare hosts.
 # Depends on:   DOTFILEDIR env var (exported by taskfiles/test.yml);
-#               install/messages.zsh; shell/functions/_dotfiles_url_host.zsh.
+#               install/messages.zsh;
+#               shell/functions/helpers/_dotfiles_url_host.zsh.
 # Side effects: none; no network access.
 # =============================================================================
 
@@ -17,7 +18,7 @@ set -euo pipefail
 
 # shellcheck source=install/messages.zsh
 source "${DOTFILEDIR}/install/messages.zsh"
-source "${DOTFILEDIR}/shell/functions/_dotfiles_url_host.zsh"
+source "${DOTFILEDIR}/shell/functions/helpers/_dotfiles_url_host.zsh"
 
 failed=0
 

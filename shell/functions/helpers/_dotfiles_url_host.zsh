@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # =============================================================================
-# shell/functions/_dotfiles_url_host.zsh -- URL/host string to bare hostname
+# shell/functions/helpers/_dotfiles_url_host.zsh -- URL/host string to bare hostname
 #
 # Purpose:      Reduce a URL-ish argument to the host component -- strip
 #               scheme, userinfo, path, query, fragment and port -- so

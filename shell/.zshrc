@@ -10,7 +10,8 @@
 # Depends on:   .zshenv (XDG vars + DOTFILES_MACHINE); .zprofile (brew
 #               shellenv); antidote at $HOMEBREW_PREFIX/opt/antidote/;
 #               shell/.zsh_plugins.txt; shell/theme.zsh;
-#               shell/functions/*.zsh; shell/aliases/*.zsh.
+#               shell/functions/helpers/*.zsh; shell/functions/*.zsh;
+#               shell/aliases/*.zsh.
 # Side effects: exports ANTIDOTE_HOME, HISTFILE, HIST_STAMPS, HISTSIZE,
 #               SAVEHIST; creates HISTFILE parent dir; enables SHARE_HISTORY
 #               setopt; clones plugin repos + writes static init file under
@@ -123,7 +124,10 @@ setopt SHARE_HISTORY
 # _dotfiles_feature, which is defined by the functions glob.
 source "${DOTFILEDIR}/shell/theme.zsh"
 
-for file in "${DOTFILEDIR}/shell/functions/"*.zsh(.N); do
+# helpers/ holds the private `_dotfiles_*` primitives the user-facing
+# functions build on; sourced first so nothing depends on glob ordering.
+for file in "${DOTFILEDIR}/shell/functions/helpers/"*.zsh(.N) \
+            "${DOTFILEDIR}/shell/functions/"*.zsh(.N); do
     source "$file"
 done
 

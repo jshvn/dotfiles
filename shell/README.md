@@ -20,8 +20,11 @@ platform subdirectories) reflects that single-platform scope.
 - `aliases/<topic>.zsh` -- flat layout, one topic per file. Gating
   happens inside the file: wrapper functions for 1-3 aliases;
   source-time `return 0` for bulk-alias loops.
-- `functions/<name>.zsh` -- flat layout, one function per file; the
-  filename equals the function name. `_dotfiles_feature` is the lazy
+- `functions/<name>.zsh` -- one function per file; the filename equals the
+  function name. These are the functions you call at a prompt.
+- `functions/helpers/_dotfiles_<name>.zsh` -- same one-per-file rule, for the
+  private primitives the above build on: never called at a prompt, and sourced
+  first so nothing depends on glob ordering. `_dotfiles_feature` is the lazy
   manifest reader callers use to test feature flags.
 
 ## Adding a pattern
@@ -34,7 +37,9 @@ platform subdirectories) reflects that single-platform scope.
 - **A function.** Create `functions/<name>.zsh`; the filename equals the
   function name. Add a docstring as an inline comment on the
   function-definition line (the `aliaslist` / `functionlist` discovery
-  convention).
+  convention). If it is a primitive other functions call rather than
+  something to run at a prompt, it goes in `functions/helpers/` instead and
+  its name starts with `_dotfiles_`.
 - **A feature flag.** Register the kebab-case key as a `[<key>]` block in
   `../manifests/features.toml` (with a `description`). Then account for it in
   every machine's `[features]`: add it to `enabled` on machines that want it,

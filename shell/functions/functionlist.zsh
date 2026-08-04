@@ -3,8 +3,10 @@
 # =============================================================================
 # shell/functions/functionlist.zsh -- enumerate dotfiles functions
 #
-# Purpose:      List every function defined under shell/functions/ (excluding
-#               itself); pretty-print with highlight under a Dotfiles header.
+# Purpose:      List every function defined at the top of shell/functions/
+#               (excluding itself); pretty-print with highlight under a
+#               Dotfiles header. The private primitives in helpers/ are out
+#               of scope -- nothing calls them from a prompt.
 # Depends on:   $DOTFILEDIR, highlight, tput, grep, awk.
 # Side effects: stdout only.
 # =============================================================================

@@ -21,6 +21,10 @@
 #   - "libpsl" provides the `psl` CLI used by shell/functions/whois.zsh to
 #     reduce a host to its registrable domain (eTLD+1) via the Public Suffix
 #     List; without it whois() falls back to querying the host unreduced.
+#   - "rdap" and "whois" are the two registration-lookup clients whois() calls,
+#     in that order: RDAP is where gTLD data lives now, WHOIS covers the TLDs
+#     publishing no RDAP service. "whois" is keg-only, so whois() names it
+#     through $HOMEBREW_PREFIX/opt/ rather than relying on PATH.
 #   - "mas" is the Mac App Store CLI that installs every [packages] mas entry.
 
 [packages]
@@ -42,6 +46,7 @@ formulae = [
   "ncdu",
   "onefetch",
   "openssh",
+  "rdap",
   "tlrc",
   "trippy",
   "whois",

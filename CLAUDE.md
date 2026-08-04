@@ -79,7 +79,9 @@ What the file system will not tell you:
   addon fragments live in the state tree, never the repo.
 - One concept per file, flat directories: one alias topic / function / taskfile / machine
   manifest / defaults concern per file; no subdirectories under `shell/aliases/` and no
-  `os/darwin/` nesting.
+  `os/darwin/` nesting. The one nesting that exists is `shell/functions/helpers/`, holding
+  the private `_dotfiles_*` primitives so the flat directory above it lists only what you
+  would run at a prompt; `.zshrc` sources helpers first.
 - Packages arrive in three tiers: `manifests/base.toml` (unconditional, no machine names it),
   `[<flag>.packages]` in the registry (a concern owns its tooling), and a machine's
   `[packages]` (free choices only). Listing something base or an enabled flag already provides
