@@ -474,6 +474,69 @@ tasks:
         exit 0
 
   # lint-allow: cmds-without-status
+  vulns:
+    desc: "Check declared packages against OSV.dev. Non-blocking; --strict exits non-zero."
+    deps: [":manifest:resolve", ":packages:compose"]
+    preconditions:
+      - sh: test -f '{{.COMPOSED_BREWFILE}}'
+        msg: |
+          composed Brewfile missing: {{.COMPOSED_BREWFILE}}
+            run: task packages:compose first
+      - sh: command -v brew >/dev/null 2>&1
+        msg: "brew not on PATH -- run bootstrap.zsh first"
+      - sh: command -v jq >/dev/null 2>&1
+        msg: "jq not on PATH -- required to count findings from brew vulns --json"
+    # always-rerun: a vulnerability scan is a fresh measurement each invocation.
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+
+        # Caller forms: task packages:vulns -- --strict --severity=low
+        # `case` rather than a `[[ ]] &&` chain: an unmatched `&&` list is a
+        # non-zero statement, and under errexit that aborts the task before it
+        # reaches the scan. `case` returns 0 when nothing matches.
+        strict=0
+        severity=high
+        for arg in {{.CLI_ARGS}}; do
+          case "$arg" in
+            --strict) strict=1 ;;
+            --severity=*) severity="${arg#--severity=}" ;;
+          esac
+        done
+
+        info "brew vulns --brewfile (severity >= ${severity})"
+
+        # --json is the machine-readable form: a JSON array, empty when clean.
+        # brew vulns exits 1 whenever findings exist, so every invocation needs
+        # `|| true` under the root Taskfile's errexit; the array length, not the
+        # exit code, is what distinguishes "clean" from "brew itself broke".
+        findings=$(brew vulns --brewfile="{{.COMPOSED_BREWFILE}}" --severity="$severity" --json 2>/dev/null || true)
+        if ! echo "$findings" | jq -e 'type == "array"' >/dev/null 2>&1; then
+          error "brew vulns returned no parseable JSON -- cannot assess vulnerabilities"
+          exit 1
+        fi
+
+        count=$(echo "$findings" | jq -r 'length')
+        if [[ "$count" -eq 0 ]]; then
+          success "no known vulnerabilities at severity >= ${severity}"
+          exit 0
+        fi
+
+        # Human-readable rerun: the JSON carries the detail, but the plain
+        # form is what an operator wants to read.
+        { brew vulns --brewfile="{{.COMPOSED_BREWFILE}}" --severity="$severity" 2>&1 || true; } \
+          | sed 's/^/    /'
+
+        info "to fix: task install (upgrades to a patched version if one is published)"
+        if [[ "$strict" -eq 1 ]]; then
+          cross "${count} vulnerability finding(s) at severity >= ${severity} (--strict)"
+          exit 1
+        fi
+        warn "${count} vulnerability finding(s) at severity >= ${severity} (non-blocking; --strict to fail)"
+        exit 0
+
+  # lint-allow: cmds-without-status
   validate:
     desc: "Validate packages layer (wraps packages:verify)"
     internal: true
