@@ -4,8 +4,9 @@
 # shell/functions/getcertnames.zsh -- inspect a domain's TLS certificate
 #
 # Purpose:      Open a TLS connection to <domain>:443, print the certificate
-#               Common Name and Subject Alternative Names.
-# Depends on:   openssl, grep, sed.
+#               Common Name and Subject Alternative Names. Accepts a URL as
+#               readily as a bare domain.
+# Depends on:   openssl, grep, sed, _dotfiles_url_host.
 # Side effects: outbound TLS handshake to the requested host; stdout only.
 # =============================================================================
 
@@ -14,13 +15,17 @@ function getcertnames() {    # getcertnames() prints a domain's TLS cert Common 
 		echo "ERROR: No domain specified." >&2
 		return 1;
 	fi
+	# Reduce a URL to its host; a bare domain passes through untouched. The
+	# connection is always made on 443, so a port in the input is discarded.
+	local domain="$(_dotfiles_url_host "${1}")"
+
 	# Permissive host/IP guard (matches geoip/vnc) before passing to openssl.
-	if [[ ! "${1}" =~ ^[A-Za-z0-9.:_-]+$ ]]; then
-		echo "ERROR: invalid domain: ${1}" >&2
+	# Applied to the parsed domain, not $1, so URL input is still accepted.
+	if [[ ! "$domain" =~ ^[A-Za-z0-9.:_-]+$ ]]; then
+		echo "ERROR: invalid domain: ${domain}" >&2
 		return 2
 	fi
 
-	local domain="${1}";
 	echo "Testing ${domain}…";
 	echo ""; # newline
 

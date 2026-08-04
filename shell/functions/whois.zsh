@@ -6,7 +6,7 @@
 # Purpose:      Strip scheme / path / port / subdomains down to a registrable
 #               domain (or pass an IP straight through), then run whois via
 #               grc with a 5s gtimeout.
-# Depends on:   whois, grc, gtimeout, psl (libpsl).
+# Depends on:   whois, grc, gtimeout, psl (libpsl), _dotfiles_url_host.
 # Side effects: outbound WHOIS query; stdout only.
 # =============================================================================
 
@@ -16,20 +16,11 @@ function whois() {    # whois() runs whois on a domain, IP, or URL (5s timeout).
         return 1;
     fi
 
-    local input="$1"
-    local target
     local timeout_seconds=5
 
-    # Strip protocol (http://, https://, etc.)
-    target="${input#*://}"
-
-    # Strip path, query string, and fragment
-    target="${target%%/*}"
-    target="${target%%\?*}"
-    target="${target%%#*}"
-
-    # Strip port if present
-    target="${target%%:*}"
+    # Reduce a URL to its host (scheme / userinfo / path / query / fragment /
+    # port removed); a bare domain or IP passes through untouched.
+    local target="$(_dotfiles_url_host "$1")"
 
     # Reduce subdomains to the registrable domain -- the eTLD+1, e.g.
     # www.bbc.co.uk -> bbc.co.uk -- so the query hits the registry record.

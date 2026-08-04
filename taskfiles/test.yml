@@ -94,6 +94,19 @@ tasks:
       - false
 
   # lint-allow: cmds-without-status
+  url-host:
+    desc: "Run URL-to-host parsing smoke tests via install/tests/url-host.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running url-host smoke tests"
+        export DOTFILEDIR="{{.ROOT_DIR}}"
+        zsh "${DOTFILEDIR}/install/tests/url-host.zsh"
+    status:
+      - false
+
+  # lint-allow: cmds-without-status
   shell-startup:
     desc: "Run shell startup smoke tests via install/tests/shell-startup.zsh"
     internal: true
