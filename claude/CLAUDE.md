@@ -1,6 +1,6 @@
 # Global Instructions
 
-Project-level `.claude/CLAUDE.md` overrides these defaults.
+Project-level `.claude/CLAUDE.md` or root-level `CLAUDE.md` overrides these defaults.
 
 ## Guiding Principles
 
@@ -17,6 +17,7 @@ Before writing any code, stop at the first rung that holds:
 
 Rules:
 
+- Follow Zinsser's four principles of quality writing: simplicity, brevity, clarity, humanity.
 - No abstractions that weren't explicitly requested.
 - No new dependency if it can be avoided.
 - No boilerplate nobody asked for.
@@ -62,4 +63,4 @@ source code or commit messages. No emojis outside markdown.
 ## Agent Delegation
 
 - Always state which subagent type you are delegating to (and why) before invoking the Agent tool.
-- Always use the language-specific reviewer agent if exists when reviewing code (e.g. python-reviewer for Python, rust-reviewer for Rust, etc.).
+- Always use the language-specific reviewer agent if one exists when reviewing code (e.g. python-reviewer for Python, rust-reviewer for Rust, etc.).
