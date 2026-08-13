@@ -83,6 +83,27 @@ else
   failures=$(( failures + 1 ))
 fi
 
+# Scenario 6: a missing live file yields the empty defaults.
+out=$(settings_preserved_keys "${work}/no-such-settings.json")
+if [[ "$(echo "$out" | jq -c '.')" == '{"enabledPlugins":{},"extraKnownMarketplaces":{}}' ]]; then
+  check "missing live file yields empty defaults"
+else
+  cross "missing live file handling wrong: $out"
+  failures=$(( failures + 1 ))
+fi
+
+# Scenario 7: an empty live file also yields the defaults -- jq on empty
+# input emits nothing, and an empty preserved string would blow up the
+# --argjson in settings_compose_fragments downstream.
+: > "${work}/empty-settings.json"
+out=$(settings_preserved_keys "${work}/empty-settings.json")
+if [[ "$(echo "$out" | jq -c '.')" == '{"enabledPlugins":{},"extraKnownMarketplaces":{}}' ]]; then
+  check "empty live file yields empty defaults"
+else
+  cross "empty live file handling wrong: $out"
+  failures=$(( failures + 1 ))
+fi
+
 if (( failures == 0 )); then
   success "settings-compose: all scenarios passed"
 else

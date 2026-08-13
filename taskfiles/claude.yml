@@ -161,7 +161,10 @@ tasks:
         # there and nothing can redirect it.
         # settings_preserved_keys / settings_compose_fragments live in
         # install/compose-settings.zsh, shared with claude:audit.
-        preserved=$(settings_preserved_keys "$live")
+        if ! preserved=$(settings_preserved_keys "$live"); then
+          cross "claude:settings-compose: cannot read CLI-managed keys from ${live}"
+          exit 1
+        fi
 
         # Phase 2: glob-guard. compgen returns non-zero when no matches; without
         # this check a literal "$settings_d/*.json" would reach jq and fail.
@@ -194,7 +197,11 @@ tasks:
         # find, not a glob: the state dir is legitimately empty on a machine
         # whose addons ship no settings fragment, and a no-match glob is a
         # non-zero exit that errexit+pipefail would turn into a task failure.
-        fragment_count=$( { find "$settings_d" -maxdepth 1 -name '*.json' 2>/dev/null; find "$state_d" -maxdepth 1 -name '*.json' 2>/dev/null; } | wc -l | tr -d ' ')
+        # The dir may also not exist at all (no addon ever ran), so its find
+        # runs behind a -d guard -- an unguarded find on a missing dir exits
+        # non-zero as the last command of the group, and pipefail would fail
+        # the whole count pipeline.
+        fragment_count=$( { find "$settings_d" -maxdepth 1 -name '*.json' 2>/dev/null; if [ -d "$state_d" ]; then find "$state_d" -maxdepth 1 -name '*.json' 2>/dev/null; fi; } | wc -l | tr -d ' ')
         check "build/settings.json composed from ${fragment_count} fragment(s)"
 
   # lint-allow: cmds-without-status
