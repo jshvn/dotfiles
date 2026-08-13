@@ -33,6 +33,7 @@ disabled = [
   "claude-marketplace",
   "repo-auto-update",
   "ghostty",
+  "herdr",
   "vscode",
   "jgrid-net",
   "server-include",

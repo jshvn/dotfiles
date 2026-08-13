@@ -30,6 +30,7 @@ disabled = [
   "one-password-signing",
   "claude-marketplace",
   "repo-dev-toolchain",
+  "herdr",
   "vscode",
   "jgrid-net",
   "server-include",

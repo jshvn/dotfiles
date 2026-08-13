@@ -27,6 +27,7 @@ enabled = [
   "repo-auto-update",
   "repo-dev-toolchain",
   "ghostty",
+  "herdr",
   "vscode",
   "jgrid-net",
   "macos-dock",

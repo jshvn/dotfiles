@@ -66,6 +66,12 @@ description = "gate shell/aliases/ghostty.zsh and the ghostty config link"
 [ghostty.packages]
 casks = ["ghostty"]
 
+[herdr]
+description = "gate the herdr config link (terminal workspace manager for agents)"
+
+[herdr.packages]
+formulae = ["herdr"]
+
 [vscode]
 description = "install Visual Studio Code and its extension set"
 

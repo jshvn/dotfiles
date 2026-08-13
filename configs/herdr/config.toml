@@ -1,0 +1,25 @@
+# Herdr terminal workspace manager. Theme reference:
+# https://herdr.dev/docs/config-reference/
+
+[theme]
+name = "catppuccin"
+
+# DuoTone Dark Sky (simurai), mapped from highlight's duotone-dark-sky.theme.
+# Status colors (red/green/yellow/blue/teal) inherit catppuccin pastels --
+# duotone has no semantic palette and they must stay distinguishable.
+[theme.custom]
+panel_bg = "#2c2734"
+surface_dim = "#211d27"
+surface0 = "#3a3445"
+surface1 = "#494056"
+text = "#cab2fa"
+subtext0 = "#ae91e8"
+overlay1 = "#715f95"
+overlay0 = "#544d60"
+accent = "#fec38f"
+mauve = "#ae91e8"
+peach = "#fec38f"
+
+[ui]
+agent_panel_sort = "spaces"
+show_agent_labels_on_pane_borders = true
