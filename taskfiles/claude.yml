@@ -95,6 +95,9 @@ tasks:
           rc=1
         fi
         exit "$rc"
+      # Unconditional dispatch: the gate above only ends its own cmds entry
+      # (each entry is an independent template/shell). audit carries its own
+      # feature gate and self-skips when claude-marketplace is off.
       - task: audit
 
   ensure-cli:
@@ -271,6 +274,10 @@ tasks:
     cmds:
       - |
         {{.DOTFILES_MESSAGES}}
+        {{if not (index .MANIFEST.features "claude-marketplace")}}
+        info "claude: feature disabled -- skipped"
+        exit 0
+        {{end}}
         set -euo pipefail
         built='{{.SETTINGS_BUILD}}'
         live='{{.SETTINGS_PATH}}'
