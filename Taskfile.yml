@@ -184,33 +184,22 @@ tasks:
     # Each per-component validate is `internal: true` -- it cannot be invoked
     # from a shell command line (`task shell:validate` exits 0 with
     # `task: Task "shell:validate" is internal` and silently no-ops). The
-    # aggregator therefore dispatches each validate via go-task's `task:`
-    # keyword, which bypasses the CLI-level internal gate. `ignore_error: true`
-    # on every dispatch preserves run-all-aggregate semantics: every component
-    # runs regardless of prior failures.
+    # aggregator therefore dispatches via go-task's `task:` keyword, which
+    # bypasses the CLI-level internal gate. `ignore_error: true` applies per
+    # `for:` iteration, preserving run-all-aggregate semantics: every component
+    # runs regardless of prior failures. The list holds full task names (not
+    # `<domain>` + a fixed verb) because claude-addons has no validate; its
+    # audit is the state probe.
     #
     # Per-component pass/fail status is emitted INLINE by each validate via
     # `check`/`cross`/`warn` from messages.zsh; there is no cross-component
     # summary footer because go-task does not surface `task:` dispatch exit
     # codes back to the surrounding shell context.
     cmds:
-      - task: manifest:validate
-        ignore_error: true
-      - task: identity:validate
-        ignore_error: true
-      - task: links:validate
-        ignore_error: true
-      - task: macos:validate
-        ignore_error: true
-      - task: hostname:validate
-        ignore_error: true
-      - task: packages:validate
-        ignore_error: true
-      - task: claude:validate
-        ignore_error: true
-      - task: claude-addons:audit
-        ignore_error: true
-      - task: shell:validate
+      - for: [manifest:validate, identity:validate, links:validate,
+              macos:validate, hostname:validate, packages:validate,
+              claude:validate, claude-addons:audit, shell:validate]
+        task: '{{.ITEM}}'
         ignore_error: true
 
   # lint-allow: cmds-without-status
@@ -220,21 +209,15 @@ tasks:
     deps: [manifest:resolve]
     # Bare-verb aggregate: runs every domain's drift check. The per-domain
     # form (`task packages:audit`, `task links:audit`, ...) runs just one.
-    # Mirrors validate:'s dispatch -- each `<domain>:audit` is dispatched via
-    # go-task's `task:` keyword with `ignore_error: true`, so every domain
-    # runs regardless of prior drift and reports inline via messages.zsh.
+    # Mirrors validate:'s dispatch -- full task names dispatched via go-task's
+    # `task:` keyword, `ignore_error: true` per `for:` iteration, so every
+    # domain runs regardless of prior drift and reports inline via
+    # messages.zsh. Full names because packages contributes two probes
+    # (audit + vulns).
     cmds:
-      - task: manifest:audit
-        ignore_error: true
-      - task: packages:audit
-        ignore_error: true
-      - task: packages:vulns
-        ignore_error: true
-      - task: links:audit
-        ignore_error: true
-      - task: claude:audit
-        ignore_error: true
-      - task: claude-addons:audit
+      - for: [manifest:audit, packages:audit, packages:vulns, links:audit,
+              claude:audit, claude-addons:audit]
+        task: '{{.ITEM}}'
         ignore_error: true
 
   # lint-allow: cmds-without-status
@@ -260,13 +243,11 @@ tasks:
     # Bare-verb aggregate over the three domains with a build artifact. Each
     # <domain>:diff deps its own realize step, so the artifacts are refreshed
     # exactly once and a standalone `task links:diff` is never stale.
-    # ignore_error: true preserves run-all-aggregate semantics.
+    # ignore_error: true per `for:` iteration preserves run-all-aggregate
+    # semantics.
     cmds:
-      - task: packages:diff
-        ignore_error: true
-      - task: links:diff
-        ignore_error: true
-      - task: claude:diff
+      - for: [packages:diff, links:diff, claude:diff]
+        task: '{{.ITEM}}'
         ignore_error: true
 
   # lint-allow: cmds-without-status
