@@ -9,6 +9,7 @@
 # Usage: set each repo's origin to the matching alias hostname:
 #   git remote set-url origin git@github.com-jgrid:jshvn/jgrid.net.git
 #   git remote set-url origin git@github.com-dotfiles:jshvn/dotfiles.git
+#   git remote set-url origin git@github.com-health:jshvn/health.git
 #
 # Bare `github.com` is intentionally not configured. Any clone using the unaliased host
 # fails loudly, forcing the operator to pick the right alias and matching deploy key.
@@ -26,5 +27,12 @@ Host github.com-dotfiles
     Hostname github.com
     User git
     IdentityFile ~/.ssh/id_ed25519_atium_dotfiles
+    IdentitiesOnly yes
+    AddKeysToAgent yes
+
+Host github.com-health
+    Hostname github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_atium_health
     IdentitiesOnly yes
     AddKeysToAgent yes

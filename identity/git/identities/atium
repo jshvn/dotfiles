@@ -25,3 +25,6 @@
 
 [url "git@github.com-dotfiles:jshvn/dotfiles"]
     insteadOf = git@github.com:jshvn/dotfiles
+
+[url "git@github.com-health:jshvn/health"]
+    insteadOf = git@github.com:jshvn/health
