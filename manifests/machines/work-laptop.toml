@@ -76,7 +76,7 @@ casks = [
   "slack",
   "spotify",
   "standard-notes",
-  "sublime-text",
+  "zed",
   "zoom",
 ]
 
