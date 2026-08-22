@@ -119,6 +119,19 @@ tasks:
     status:
       - false
 
+  # lint-allow: cmds-without-status
+  report:
+    desc: "Run install-report smoke test via install/tests/report.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running report smoke test"
+        export DOTFILEDIR="{{.ROOT_DIR}}"
+        zsh "${DOTFILEDIR}/install/tests/report.zsh"
+    status:
+      - false
+
   manifest:
     desc: "Run deep-merge fixtures (positive + negative)"
     internal: true

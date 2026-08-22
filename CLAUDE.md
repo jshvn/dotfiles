@@ -26,7 +26,7 @@ The pipeline runs three stages: evaluate (resolver -> `resolved.json`), realize 
   Revisit only with new evidence.
 - Every top-level concept directory has a README saying what belongs there and how to name it.
 - Operator surface: the lifecycle commands (`install`, `setup`, `validate`, `test`, `lint`,
-  `audit`, `diff`) plus `<domain>:<verb>` diagnostics (`show`, `audit`, `diff`) and
+  `audit`, `diff`, `report`) plus `<domain>:<verb>` diagnostics (`show`, `audit`, `diff`) and
   `packages:vulns` (OSV.dev scan of the declared set). Bare `task`
   prints the banner; `task --list` the full graph. Per-component install/validate tasks are
   internal pipeline steps, not operator commands.

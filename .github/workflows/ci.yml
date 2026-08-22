@@ -27,6 +27,7 @@
 #   - full lint catalogue (task lint) and orphan-link audit (links:audit)
 #   - status-block idempotency: converged second `task install` must exit 0
 #     with every state-converging task short-circuiting
+#   - task report renders against a real converged state (job summary)
 #   - runner-preinstalled tap trust (aws/tap) so Homebrew tap-trust warnings
 #     do not bury real pipeline output
 #
@@ -127,3 +128,15 @@ jobs:
       # re-runs brew update + brew bundle by design (install IS update).
       - name: task install (converged re-run)
         run: task install
+
+      # The job summary is the durable record of a run: what the converged
+      # install contained (packages per manager, links, hooks, addons) plus
+      # the validate tally, so a past run can be read without opening logs.
+      - name: Write job summary
+        if: always()
+        run: |
+          {
+            task report
+            echo
+            echo "## Validate: $(grep -cF "$(printf '✓')" validate.log || true) passed, $(grep -cF "$(printf '✗')" validate.log || true) failed"
+          } >> "$GITHUB_STEP_SUMMARY"

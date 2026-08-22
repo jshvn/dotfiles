@@ -134,6 +134,7 @@ tasks:
         info "  lint        Run all lint checks"
         info "  audit       Detect drift and known vulnerabilities across all domains"
         info "  diff        Preview what task install would change"
+        info "  report      Markdown overview of the converged install (counts per domain)"
         echo
         header "Diagnostics (read-only, domain-first)"
         info "  task show                            List inspectable domains"
@@ -163,7 +164,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   test:
-    desc: "Run all smoke tests (manifest + hook + repo-sync + links-audit + packages-declared + packages-trust + brewfile-compose + shell-startup + settings-compose + lint fixtures)"
+    desc: "Run all smoke tests (manifest + hook + repo-sync + links-audit + packages-declared + packages-trust + brewfile-compose + shell-startup + settings-compose + report + lint fixtures)"
     cmds:
       - task: test:manifest
       - task: test:hooks
@@ -174,7 +175,16 @@ tasks:
       - task: test:brewfile-compose
       - task: test:shell-startup
       - task: test:settings-compose
+      - task: test:report
       - task: lint:test-fixtures
+
+  # lint-allow: cmds-without-status
+  report:
+    desc: "Print a markdown overview of the converged install (read-only)"
+    status: [false]
+    deps: [manifest:resolve]
+    cmds:
+      - DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/install/report.zsh'
 
   # lint-allow: cmds-without-status
   validate:

@@ -36,6 +36,7 @@ The top-level commands are:
 | `task lint`      | Run all lint checks                                    |
 | `task audit`     | Detect drift across all domains (read-only)            |
 | `task diff`      | Preview what `task install` would change (read-only)   |
+| `task report`    | Markdown overview of the converged install (read-only) |
 
 Run `task` (no arguments) to see the curated task surface; `task --list` for
 the full graph.
