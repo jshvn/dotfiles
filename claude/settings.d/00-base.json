@@ -1,6 +1,11 @@
 {
   "agentPushNotifEnabled": true,
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "effortLevel": "max",
+  "includeCoAuthoredBy": false,
   "permissions": {
     "defaultMode": "auto",
     "allow": [
