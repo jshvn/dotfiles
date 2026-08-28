@@ -168,7 +168,10 @@ cmd_remove() {
   fi
 
   # Phase 1: addon-defined remove commands (disarm self-healing hooks etc).
-  if yq -e '.remove.commands' "$toml" >/dev/null 2>&1; then
+  # -o=json for the same reason as the [upgrade] probe above: without an
+  # output format yq tries to re-encode the matched array as TOML, errors,
+  # and the block reads as "no remove commands defined".
+  if yq -e -o=json '.remove.commands' "$toml" >/dev/null 2>&1; then
     info "claude-addons: ${name}: running [remove].commands"
     local cmd
     while IFS= read -r cmd; do
