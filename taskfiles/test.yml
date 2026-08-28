@@ -120,6 +120,19 @@ tasks:
       - false
 
   # lint-allow: cmds-without-status
+  claude-addons-manifest:
+    desc: "Run addon TOML contract tests via install/tests/claude-addons-manifest.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running claude-addons manifest tests"
+        export DOTFILEDIR="{{.ROOT_DIR}}"
+        zsh "${DOTFILEDIR}/install/tests/claude-addons-manifest.zsh"
+    status:
+      - false
+
+  # lint-allow: cmds-without-status
   report:
     desc: "Run install-report smoke test via install/tests/report.zsh"
     internal: true
