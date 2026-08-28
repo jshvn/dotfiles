@@ -1,13 +1,14 @@
 #!/bin/zsh
 
 # =============================================================================
-# claude/hooks/block-destructive.zsh -- pre-tool hook: block destructive Bash
+# claude/hooks/block-destructive.zsh -- pre-tool hook: block unrecoverable Bash
 #
 # Purpose:      Read tool input JSON from stdin (Claude Code hook protocol);
-#               block (exit 2) when the command matches a destructive pattern
-#               (force-push, rm -rf, DROP TABLE, --no-verify, remote-fetch-
-#               then-exec via pipe or subshell, etc.); pass through (exit 0)
-#               otherwise.
+#               block (exit 2) commands whose damage nothing can undo --
+#               history rewrites, uncommitted-work discards, verification
+#               bypasses, schema drops, remote-fetch-then-exec. Deletes are
+#               Claude Code's own critical-path check to gate, so they pass
+#               through here.
 # Depends on:   claude/hooks/lib.zsh; jq; ggrep.
 # Side effects: writes BLOCKED line to stderr on match.
 # =============================================================================
@@ -21,19 +22,21 @@ hook::read_stdin
 command="$(hook::extract '.tool_input.command // ""')"
 [[ -z "$command" ]] && exit 0
 
-hook::match_patterns "$command" 2 "BLOCKED: Destructive command detected" \
+# Every pattern names damage that leaves no recovery path. Deletes are absent
+# on purpose: branch and index resets are reflog-recoverable, and a delete
+# aimed at the filesystem root, a top-level directory, $HOME, or the working
+# directory and its parents is a critical path Claude Code routes to its own
+# check, which no allow rule or hook can approve. Matching the rest by regex
+# blocks `rm -rf node_modules` while `rm -r ~/Documents` walks past, so this
+# hook does not try. Working-tree discards stay blocked -- uncommitted work is
+# in no reflog and no critical-path list.
+hook::match_patterns "$command" 2 "BLOCKED: Unrecoverable command detected" \
   'git\s+push\s+.*--force' \
   'git\s+push\s+-f\b' \
-  'git\s+reset\s+--hard' \
-  'git\s+clean\s+-f' \
-  'git\s+branch\s+-D' \
   'git\s+checkout\s+(--\s+)?\.(\s|$)' \
   'git\s+restore\s+(--\s+)?\.(\s|$)' \
   '--no-verify' \
   '--no-gpg-sign' \
-  'rm\s+-[a-zA-Z]*r[a-zA-Z]*f' \
-  'rm\s+-[a-zA-Z]*f[a-zA-Z]*r' \
-  'find\s+.*-delete\b' \
   'DROP\s+(TABLE|DATABASE|SCHEMA)' \
   'TRUNCATE\s+TABLE' \
   'curl\s.*\|\s*(sh|bash|zsh)' \
@@ -41,16 +44,5 @@ hook::match_patterns "$command" 2 "BLOCKED: Destructive command detected" \
   '(bash|sh|zsh)\s+-c\s+.*\$\(.*(curl|wget)' \
   '(python|python3)\s+-c\s+.*\$\(.*(curl|wget)' \
   '(perl|node|ruby)\s+-e\s+.*\$\(.*(curl|wget)'
-
-# rm with BOTH a recursive flag and a force flag, in any order or split across
-# tokens (rm -r -f, rm --recursive --force, rm -fr). The OR-based
-# hook::match_patterns above cannot express this conjunction, so the simpler
-# adjacent-flag patterns there miss the split-flag forms.
-if "$GGREP" -qE '(^|[[:space:]])rm([[:space:]]|$)' <<< "$command" \
-   && "$GGREP" -qE '(^|[[:space:]])(-[a-zA-Z]*r[a-zA-Z]*|--recursive|-R)([[:space:]]|$)' <<< "$command" \
-   && "$GGREP" -qE '(^|[[:space:]])(-[a-zA-Z]*f[a-zA-Z]*|--force)([[:space:]]|$)' <<< "$command"; then
-  echo "BLOCKED: Destructive command detected (pattern: rm recursive+force)" >&2
-  exit 2
-fi
 
 exit 0

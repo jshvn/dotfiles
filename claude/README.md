@@ -97,7 +97,7 @@ composed artifact. Edit `10-hooks.json`, never the live `settings.json`.
 | `post-compact.zsh` | SessionStart (compact) | Re-injects git context after compaction |
 | `agent-transparency.zsh` | PreToolUse (Agent) | Logs subagent dispatch decisions |
 | `secret-scan.zsh` | PreToolUse (Write/Edit/Bash) | Blocks writes/commands containing secrets |
-| `block-destructive.zsh` | PreToolUse (Bash) | Blocks destructive shell commands |
+| `block-destructive.zsh` | PreToolUse (Bash) | Blocks shell commands no other layer can undo |
 | `no-ai-comments.zsh` | PostToolUse (Write/Edit/Bash) | Warns on AI attribution |
 | `no-emojis.zsh` | PostToolUse (Write/Edit) | Warns on emojis in code files |
 | `notify.zsh` | Notification | macOS desktop notification |
