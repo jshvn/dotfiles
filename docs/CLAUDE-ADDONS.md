@@ -221,7 +221,7 @@ No paired fragment needed -- the plugin doesn't write hook entries into
 `settings.json`. Compose preserves `enabledPlugins` and `extraKnownMarketplaces`
 from the live file automatically.
 
-### Installer-script addon with post-copy prunes (the ECC pattern)
+### Installer-script addon with a selective payload (the ECC pattern)
 
 ECC deliberately does NOT use the plugin path: the full ecc@ecc plugin injects
 its entire payload -- hundreds of skills, dozens of agents and commands, and
@@ -231,21 +231,30 @@ to trim skills or disable individual plugin hooks. Instead
 
 - keeps the ecc *marketplace* registered (the clone is where `install.sh`
   lives; `claude plugin marketplace update ecc` is the upgrade fetch),
-- runs `install.sh --target claude --profile minimal --without
-  baseline:commands --without baseline:rules` to copy a trimmed payload into
-  `~/.claude/` (upstream hardcodes that target), then prunes it in-array to
-  the curated agent and skill keep-lists,
-- symlinks the kept payload into `$XDG_CONFIG_HOME/claude/` where Claude
-  Code reads it: one flat link per keep-list skill plus a single `agents/ecc`
-  dir link (agent discovery does recurse). Every linked skill's description
-  loads into every session, so the link set is the context budget, and it is
-  an explicit list rather than whatever the payload happens to contain. Each
-  run unlinks the ECC-targeted links then relinks the keep-list, so dropping
-  a name converges the machine down. The links land in the repo working tree
-  via the `claude/` symlink and are appended to `.git/info/exclude`,
+- runs `install.sh` twice to copy only what the machine uses into `~/.claude/`
+  (upstream hardcodes that target and ignores `CLAUDE_CONFIG_DIR`):
+  `--modules agents-core` for the agent definitions, and `--skills <ids>` for
+  the keep-list skills by name. The two runs merge into one install-state
+  ledger rather than clobbering each other, and nothing unasked-for lands, so
+  nothing has to be deleted afterwards,
+- symlinks the payload into `$XDG_CONFIG_HOME/claude/` where Claude Code
+  reads it: one flat link per keep-list skill, plus one link per keep-list
+  agent inside an `agents/ecc/` directory (agent discovery does recurse).
+  Every linked skill and agent description loads into every session, so the
+  two link sets are the context budget. `--skills` bounds the skill payload
+  at install time; `agents-core` is all-or-nothing -- every `agent:<name>`
+  component resolves to it -- so the agent link set is what bounds context
+  there. Each run unlinks what points at the payload then relinks the
+  keep-lists, so dropping a name converges the machine down. The links land
+  in the repo working tree via the `claude/` symlink and are appended to
+  `.git/info/exclude`,
+- verifies with `ecc doctor`, which exits non-zero on any missing or drifted
+  file the ledger owns, and removes with `ecc uninstall`, which deletes
+  exactly what the ledger records (`[footprint].extra_paths` carries the
+  belt-and-braces list plus `~/.claude/settings.json`, the one file the
+  ledger does not record),
 - registers no hooks and ships no settings fragment -- session continuity is
-  native auto-memory, and the post-copy prunes keep the payload to the
-  curated keep-lists.
+  native auto-memory.
 
 **Array-replace caveat:** compose deep-merges with jq `*`, which merges maps
 but REPLACES arrays. A fragment that defines `hooks.<Event>` replaces that

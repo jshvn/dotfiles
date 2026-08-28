@@ -1,4 +1,4 @@
-# manifests/claude-addons/ecc.toml -- Everything Claude Code, trimmed install
+# manifests/claude-addons/ecc.toml -- Everything Claude Code, selective install
 #
 # See docs/CLAUDE-ADDONS.md for the schema reference + lifecycle.
 # See manifests/claude-addons/README.md for the directory-local quick-reference.
@@ -11,16 +11,18 @@
 #   - The ecc *marketplace* stays registered: its clone at
 #     plugins/marketplaces/ecc is where install.sh lives, and
 #     `claude plugin marketplace update ecc` is the upgrade fetch.
-#   - install.sh copies the `minimal` profile into ~/.claude/ (hardcoded
-#     upstream target): workflow skills and agents.
-#     `--without baseline:commands` drops the legacy slash-command shims
-#     (skills cover the same workflows); `--without baseline:rules` drops the
-#     always-on rules tree (generic guidance Claude 5 does not need).
-#   - Symlinks expose skills/agents inside $XDG_CONFIG_HOME/claude/ where
+#   - install.sh copies two selections into ~/.claude/ -- the agents-core
+#     module and the keep-list skills named by --skills. Nothing else is
+#     asked for, so nothing has to be deleted afterwards. The target is
+#     hardcoded upstream: install.sh ignores CLAUDE_CONFIG_DIR and always
+#     writes under $HOME/.claude.
+#   - Symlinks expose the keep-lists inside $XDG_CONFIG_HOME/claude/ where
 #     Claude Code actually reads them (CLAUDE_CONFIG_DIR, set in .zshenv):
-#     one flat link per keep-list skill plus a single agents/ecc dir link.
-#     They land in the repo working tree via the claude/ symlink and are
-#     listed in .git/info/exclude (machine-local).
+#     one flat link per skill, plus one link per agent inside an agents/ecc/
+#     directory (agent discovery recurses). Every linked skill and agent
+#     description loads into every session, so the two link sets are the
+#     context budget. They land in the repo working tree via the claude/
+#     symlink and are listed in .git/info/exclude (machine-local).
 #   - No settings fragment: the addon registers zero hooks. Session
 #     continuity is native auto-memory; no node spawns on start/stop/compact.
 #
@@ -31,101 +33,108 @@ schema_version = 1
 
 [meta]
 name        = "ecc"
-description = "Everything Claude Code -- minimal profile pruned to the skill and agent keep-lists; registers no hooks"
+description = "Everything Claude Code -- agents-core plus the keep-list skills, linked into the config dir; registers no hooks"
 upstream    = "https://github.com/affaan-m/everything-claude-code"
 
 [install]
+# install/claude-addons.zsh evals these one line at a time, in zsh: a command
+# is a single line, and zsh array syntax (${(j:,:)arr}, word-splitting `for`)
+# is what keeps each keep-list stated exactly once.
+#
 # ln -sfn (not _:safe-link) is deliberate: helpers.yml tasks are internal and
 # not CLI-invocable from addon commands; -sfn carries the same idempotent
 # re-link semantics. LINT-03b scopes to taskfiles/*.yml and does not apply
-# here. install.sh writes skills flat into ~/.claude/skills/. The bridge
-# links an explicit keep-list, not the whole payload: every linked skill's
-# description loads into every session, so the link set is the context
-# budget. Each run unlinks all links targeting ~/.claude/skills/ then
-# relinks the keep-list, which converges a machine down when a name is
-# dropped; a keep-list name missing from the payload logs to stderr instead
-# of leaving a dangling link. The links land in the repo working tree
-# via the links.yml claude/ symlinks, so each one is appended to
-# .git/info/exclude (machine-local, like the gsd-* entries). No mkdir:
-# $XDG_CONFIG_HOME/claude/{skills,agents} are links.yml-owned symlinks that
-# exist before this runs in the `task install` pipeline; if they are missing,
-# failing loudly beats creating a real dir that would preempt
-# links:install-claude.
+# here.
+#
+# agents-core is all-or-nothing -- every agent:<name> install component
+# resolves to it -- so the payload's full agents/ directory lands and the
+# link keep-list, not the install, is what bounds context. --skills has no
+# such limit: it installs exactly the named skill directories and exits 1 on
+# an unknown id, which is why only the agent loop carries a missing-name
+# guard.
+#
+# Each run unlinks what points at the payload then relinks the keep-lists, so
+# dropping a name converges a machine down. The links land in the repo
+# working tree, so each one is appended to .git/info/exclude (machine-local,
+# like the gsd-* entries). No mkdir for $XDG_CONFIG_HOME/claude/{skills,
+# agents}: they are links.yml-owned symlinks that exist before this runs in
+# the `task install` pipeline; if they are missing, failing loudly beats
+# creating a real dir that would preempt links:install-claude.
 commands = [
-  "claude plugin marketplace add https://github.com/affaan-m/everything-claude-code.git",
-  "bash \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/plugins/marketplaces/ecc/install.sh\" --target claude --profile minimal --without baseline:commands --without baseline:rules",
-  "rm -f \"$HOME/.claude/AGENTS.md\"",
-  "find \"$HOME/.claude/agents\" -maxdepth 1 -name '*.md' ! -name 'architect.md' ! -name 'build-error-resolver.md' ! -name 'code-explorer.md' ! -name 'code-reviewer.md' ! -name 'code-simplifier.md' ! -name 'doc-updater.md' ! -name 'planner.md' ! -name 'python-reviewer.md' ! -name 'refactor-cleaner.md' ! -name 'security-reviewer.md' ! -name 'typescript-reviewer.md' -delete",
-  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) rm -f \"$l\";; esac; done",
-  "for s in agent-sort architecture-decision-records code-tour codebase-onboarding config-gc context-budget council skill-scout; do if [ -d \"$HOME/.claude/skills/$s\" ]; then ln -sfn \"$HOME/.claude/skills/$s\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$s\"; else echo \"ecc: keep-list skill '$s' absent from payload -- skipped\" >&2; fi; done",
-  "ln -sfn \"$HOME/.claude/agents\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/agents/ecc\"",
-  "grep -qxF 'claude/agents/ecc' \"$DOTFILEDIR/.git/info/exclude\" || echo 'claude/agents/ecc' >> \"$DOTFILEDIR/.git/info/exclude\"",
-  "find \"$DOTFILEDIR/claude/skills\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) grep -qxF \"claude/skills/$(basename \"$l\")\" \"$DOTFILEDIR/.git/info/exclude\" || echo \"claude/skills/$(basename \"$l\")\" >> \"$DOTFILEDIR/.git/info/exclude\";; esac; done",
+  'claude plugin marketplace add https://github.com/affaan-m/everything-claude-code.git',
+  'bash "${XDG_CONFIG_HOME:-$HOME/.config}/claude/plugins/marketplaces/ecc/install.sh" --target claude --modules agents-core',
+  'ECC_SKILLS=(agent-sort architecture-decision-records code-tour codebase-onboarding config-gc context-budget council skill-scout); M="${XDG_CONFIG_HOME:-$HOME/.config}/claude"; bash "$M/plugins/marketplaces/ecc/install.sh" --target claude --skills "${(j:,:)ECC_SKILLS}" && { find "$M/skills/" -maxdepth 1 -type l | while read -r l; do case "$(readlink "$l")" in "$HOME/.claude/skills/"*) rm -f "$l";; esac; done; for s in $ECC_SKILLS; do ln -sfn "$HOME/.claude/skills/$s" "$M/skills/$s"; grep -qxF "claude/skills/$s" "$DOTFILEDIR/.git/info/exclude" || echo "claude/skills/$s" >> "$DOTFILEDIR/.git/info/exclude"; done; }',
+  'ECC_AGENTS=(architect build-error-resolver code-explorer code-reviewer code-simplifier doc-updater planner python-reviewer refactor-cleaner security-reviewer typescript-reviewer); D="${XDG_CONFIG_HOME:-$HOME/.config}/claude/agents/ecc"; if [ -L "$D" ]; then rm -f "$D"; fi; mkdir -p "$D" && { find "$D" -maxdepth 1 -type l | while read -r l; do rm -f "$l"; done; for a in $ECC_AGENTS; do if [ -f "$HOME/.claude/agents/$a.md" ]; then ln -sfn "$HOME/.claude/agents/$a.md" "$D/$a.md"; else echo "ecc: keep-list agent $a absent from payload -- skipped" >&2; fi; done; grep -qxF "claude/agents/ecc" "$DOTFILEDIR/.git/info/exclude" || echo "claude/agents/ecc" >> "$DOTFILEDIR/.git/info/exclude"; }',
 ]
 self_healing = false
 
 [upgrade]
 # Run instead of [install].commands when [verify] already passes -- preserves
-# the always-pull-latest behavior of `task install`. Re-runs the link + git-
-# exclude loops because an upstream update can add new skill directories.
+# the always-pull-latest behavior of `task install`. Identical to [install]
+# past the first line, because an upstream update can add or rename payload
+# directories: the selections are re-applied and the links re-derived.
 commands = [
-  "claude plugin marketplace update ecc",
-  "bash \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/plugins/marketplaces/ecc/install.sh\" --target claude --profile minimal --without baseline:commands --without baseline:rules",
-  "rm -f \"$HOME/.claude/AGENTS.md\"",
-  "find \"$HOME/.claude/agents\" -maxdepth 1 -name '*.md' ! -name 'architect.md' ! -name 'build-error-resolver.md' ! -name 'code-explorer.md' ! -name 'code-reviewer.md' ! -name 'code-simplifier.md' ! -name 'doc-updater.md' ! -name 'planner.md' ! -name 'python-reviewer.md' ! -name 'refactor-cleaner.md' ! -name 'security-reviewer.md' ! -name 'typescript-reviewer.md' -delete",
-  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) rm -f \"$l\";; esac; done",
-  "for s in agent-sort architecture-decision-records code-tour codebase-onboarding config-gc context-budget council skill-scout; do if [ -d \"$HOME/.claude/skills/$s\" ]; then ln -sfn \"$HOME/.claude/skills/$s\" \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/$s\"; else echo \"ecc: keep-list skill '$s' absent from payload -- skipped\" >&2; fi; done",
-  "find \"$DOTFILEDIR/claude/skills\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) grep -qxF \"claude/skills/$(basename \"$l\")\" \"$DOTFILEDIR/.git/info/exclude\" || echo \"claude/skills/$(basename \"$l\")\" >> \"$DOTFILEDIR/.git/info/exclude\";; esac; done",
+  'claude plugin marketplace update ecc',
+  'bash "${XDG_CONFIG_HOME:-$HOME/.config}/claude/plugins/marketplaces/ecc/install.sh" --target claude --modules agents-core',
+  'ECC_SKILLS=(agent-sort architecture-decision-records code-tour codebase-onboarding config-gc context-budget council skill-scout); M="${XDG_CONFIG_HOME:-$HOME/.config}/claude"; bash "$M/plugins/marketplaces/ecc/install.sh" --target claude --skills "${(j:,:)ECC_SKILLS}" && { find "$M/skills/" -maxdepth 1 -type l | while read -r l; do case "$(readlink "$l")" in "$HOME/.claude/skills/"*) rm -f "$l";; esac; done; for s in $ECC_SKILLS; do ln -sfn "$HOME/.claude/skills/$s" "$M/skills/$s"; grep -qxF "claude/skills/$s" "$DOTFILEDIR/.git/info/exclude" || echo "claude/skills/$s" >> "$DOTFILEDIR/.git/info/exclude"; done; }',
+  'ECC_AGENTS=(architect build-error-resolver code-explorer code-reviewer code-simplifier doc-updater planner python-reviewer refactor-cleaner security-reviewer typescript-reviewer); D="${XDG_CONFIG_HOME:-$HOME/.config}/claude/agents/ecc"; if [ -L "$D" ]; then rm -f "$D"; fi; mkdir -p "$D" && { find "$D" -maxdepth 1 -type l | while read -r l; do rm -f "$l"; done; for a in $ECC_AGENTS; do if [ -f "$HOME/.claude/agents/$a.md" ]; then ln -sfn "$HOME/.claude/agents/$a.md" "$D/$a.md"; else echo "ecc: keep-list agent $a absent from payload -- skipped" >&2; fi; done; grep -qxF "claude/agents/ecc" "$DOTFILEDIR/.git/info/exclude" || echo "claude/agents/ecc" >> "$DOTFILEDIR/.git/info/exclude"; }',
 ]
 
 [verify]
-# Installed iff the minimal-profile payload exists, the agents dir link
-# resolves, and at least one flat skill link targets the ECC payload.
-# (find -exec readlink | grep, not -lname: macOS/BSD find has no -lname.
-# Trailing slash on the skills path: it is itself a links.yml symlink and
-# BSD find does not follow a symlink operand without it.)
-command = "test -f \"$HOME/.claude/ecc/install-state.json\" && test -d \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/agents/ecc\" && find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l -exec readlink {} ';' | grep -q \"^$HOME/.claude/skills/\""
+# `ecc doctor` exits non-zero when any file the install-state ledger owns is
+# missing or drifted -- the payload half of "is this installed?". The two
+# find probes cover the bridge half: at least one agent link, and at least
+# one skill link pointing into the payload. (find -exec readlink | grep, not
+# -lname: macOS/BSD find has no -lname. Trailing slash on the skills path: it
+# is itself a links.yml symlink and BSD find does not follow a symlink
+# operand without it.)
+command = 'node "${XDG_CONFIG_HOME:-$HOME/.config}/claude/plugins/marketplaces/ecc/scripts/ecc.js" doctor --target claude >/dev/null 2>&1 && find "${XDG_CONFIG_HOME:-$HOME/.config}/claude/agents/ecc" -maxdepth 1 -type l 2>/dev/null | grep -q . && find "${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/" -maxdepth 1 -type l -exec readlink {} ";" | grep -q "^$HOME/.claude/skills/"'
 
 [footprint]
-# Only the agents dir link can be expressed as a glob; the flat skill links
-# are identified by their target (they point into ~/.claude/skills/) and
-# removed by the [remove] command below -- a name glob like skills/* would
-# also match repo-owned skills.
+# Only the agents/ecc link directory can be expressed as a glob; the flat
+# skill links are identified by their target (they point into
+# ~/.claude/skills/) and removed by the [remove] command below -- a name glob
+# like skills/* would also match repo-owned skills.
 file_globs  = ["agents/ecc"]
-# Everything install.sh writes under ~/.claude/. ~/.claude/skills is NOT
-# listed wholesale: it holds non-ECC runtime dirs, so the ECC-owned skill
-# dirs are deleted per-name by the [remove] state-derived loop below.
+# The payload under ~/.claude/ belongs to the install-state ledger and is
+# removed by `ecc uninstall` in [remove]; these are the belt-and-braces
+# paths, and two of them the ledger cannot cover:
+#
+#   - ~/.claude/settings.json, which install.sh writes
+#     ({"includeCoAuthoredBy": false}) without recording. It is inert here
+#     because CLAUDE_CONFIG_DIR points Claude Code at ~/.config/claude.
+#   - ~/.claude/skills wholesale. The installer refuses to touch a flat skill
+#     directory the ledger does not record, calling it user-owned, so a
+#     directory that outlives its ledger entry can never be reinstalled or
+#     uninstalled -- it just gets skipped on every run. Removing the tree is
+#     what breaks that deadlock. Nothing but ECC writes there: this repo's
+#     own skills live in ~/.config/claude/skills, and the addon installs no
+#     hooks that could accumulate runtime state.
+#
 # Runtime data ECC accumulated (session-data/, metrics/, *.log) is
-# deliberately NOT listed -- session history is user data and survives
-# addon removal.
+# deliberately NOT listed -- session history is user data and survives addon
+# removal.
 extra_paths = [
   "$HOME/.claude/agents",
-  "$HOME/.claude/rules/ecc",
-  "$HOME/.claude/scripts",
-  "$HOME/.claude/hooks",
-  "$HOME/.claude/mcp-configs",
-  "$HOME/.claude/ecc",
-  "$HOME/.claude/skills/learned",
   "$HOME/.claude/.agents",
   "$HOME/.claude/AGENTS.md",
-  "$HOME/.claude/PLUGIN_SCHEMA_NOTES.md",
-  "$HOME/.claude/README.md",
-  "$HOME/.claude/marketplace.json",
-  "$HOME/.claude/plugin.json",
+  "$HOME/.claude/ecc",
+  "$HOME/.claude/settings.json",
+  "$HOME/.claude/skills",
 ]
 
 [remove]
-# Marketplace is dedicated to ECC (single-plugin marketplace) -- remove it.
-# The find loop deletes exactly the flat skill links that target the ECC
-# payload (repo-owned skills are real dirs, untouched). The jq loop then
-# deletes the ECC-owned skill dirs named in install-state.json, leaving
-# non-ECC dirs in ~/.claude/skills untouched; it runs before extra_paths
-# cleanup deletes the state file. Remaining file cleanup is handled by
-# file_globs + extra_paths after these commands. Stale .git/info/exclude
-# lines are left behind -- inert by definition (they only ever matched the
-# links being deleted here).
+# Marketplace is dedicated to ECC (single-plugin marketplace) -- remove it,
+# but only after `ecc uninstall` has run: the uninstaller lives in the clone
+# the marketplace owns. It deletes exactly what the install-state ledger
+# records, which is the whole payload including the skill directories, so no
+# hand-rolled path list can drift away from it. The find loop first drops the
+# flat skill links that target the payload (repo-owned skills are real dirs,
+# untouched); agents/ecc goes with file_globs. Stale .git/info/exclude lines
+# are left behind -- inert by definition (they only ever matched the links
+# being deleted here).
 commands = [
-  "find \"${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/\" -maxdepth 1 -type l | while read -r l; do case \"$(readlink \"$l\")\" in \"$HOME/.claude/skills/\"*) rm -f \"$l\";; esac; done",
-  "[ ! -f \"$HOME/.claude/ecc/install-state.json\" ] || jq -r --arg p \"$HOME/.claude/skills/\" '.operations[].destinationPath | select(startswith($p)) | ltrimstr($p) | split(\"/\")[0]' \"$HOME/.claude/ecc/install-state.json\" | sort -u | while read -r n; do rm -rf \"$HOME/.claude/skills/$n\"; done",
-  "claude plugin marketplace remove ecc",
+  'find "${XDG_CONFIG_HOME:-$HOME/.config}/claude/skills/" -maxdepth 1 -type l | while read -r l; do case "$(readlink "$l")" in "$HOME/.claude/skills/"*) rm -f "$l";; esac; done',
+  '[ ! -f "$HOME/.claude/ecc/install-state.json" ] || node "${XDG_CONFIG_HOME:-$HOME/.config}/claude/plugins/marketplaces/ecc/scripts/ecc.js" uninstall --target claude',
+  'claude plugin marketplace remove ecc',
 ]
