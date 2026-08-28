@@ -143,5 +143,6 @@
       "Read(**/.ssh/*_ecdsa)",
       "Read(**/.ssh/*_key)"
     ]
-  }
+  },
+  "remoteControlAtStartup": false
 }
