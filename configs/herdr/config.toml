@@ -24,3 +24,7 @@ peach = "#fec38f"
 [ui]
 agent_panel_sort = "spaces"
 show_agent_labels_on_pane_borders = true
+status_indicators = "symbols"
+
+[ui.toast]
+delivery = "system"
