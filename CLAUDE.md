@@ -30,7 +30,7 @@ The pipeline runs three stages: evaluate (resolver -> `resolved.json`), realize 
   `packages:vulns` (OSV.dev scan of the declared set). Bare `task`
   prints the banner; `task --list` the full graph. Per-component install/validate tasks are
   internal pipeline steps, not operator commands.
-- Verifying a change: use the `verifying-dotfiles-changes` skill (change type to exact
+- Verifying a change: use the `jshvn-verifying-dotfiles-changes` skill (change type to exact
   commands, five-tier model, one-check rule).
 
 ## Gotchas

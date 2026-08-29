@@ -1,5 +1,5 @@
 ---
-name: goalsmith
+name: jshvn-goalsmith
 description: "Interview the user to forge a complete, transcript-verifiable goal for Claude Code's built-in /goal command, then emit a ready-to-run /goal line plus a session brief. Use when the user wants to define, prepare, frame, or scope a goal for autonomous /goal execution, or asks for help making a goal that can run on its own to an end state."
 ---
 

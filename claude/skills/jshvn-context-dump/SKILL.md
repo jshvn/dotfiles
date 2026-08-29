@@ -1,5 +1,5 @@
 ---
-name: context-dump
+name: jshvn-context-dump
 description: "Print a structured dump of everything currently loaded in Claude's context — system identity, instructions, tools, skills, session state, and data already read this conversation. Use when the user asks to see what's in context, what's loaded, or wants a context inventory."
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: verifying-dotfiles-changes
+name: jshvn-verifying-dotfiles-changes
 description: Use after changing anything in this dotfiles repo - maps each change type to the task commands that prove convergence; five-tier testing model; one-check rule.
 ---
 
