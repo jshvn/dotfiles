@@ -36,6 +36,7 @@ vars:
     hooks/no-emojis.zsh
     hooks/notify.zsh
     hooks/auto-approve-reads.zsh
+    hooks/git-identity.zsh
     hooks/lib.zsh
 
   # EXPECTED_TARGETS -- single source of truth for every symlink target owned
