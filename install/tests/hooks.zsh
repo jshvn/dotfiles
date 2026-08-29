@@ -281,6 +281,11 @@ EOF
   expect_ident inline-env      2 'GIT_AUTHOR_EMAIL=wrong@example.com git commit -m x' "$claimed"
   expect_ident rebase-in-scope 2 'git rebase main' "$claimed" GIT_COMMITTER_EMAIL=wrong@example.com
 
+  # A commit message that merely mentions the config key is not an override.
+  # The inline probe used to scan the whole command, so this blocked a valid
+  # commit and named a fragment of the message as the offending address.
+  expect_ident inline-message-ok 0 'git commit -m fix-user.email=parsing-bug' "$claimed"
+
   rm -rf "$sandbox"
 }
 

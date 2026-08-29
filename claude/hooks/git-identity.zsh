@@ -113,9 +113,19 @@ for role in AUTHOR COMMITTER; do
 done
 
 # The command may carry its own override that `git var` cannot see from here,
-# as an inline -c or a leading assignment.
-inline="$(print -r -- "$command" \
-  | sed -nE 's/.*(GIT_AUTHOR_EMAIL|GIT_COMMITTER_EMAIL|user\.email)[[:space:]]*=[[:space:]]*["'\'']?([^"'\''[:space:];]+).*/\2/p' \
+# as an inline -c or a leading assignment. Both are matched only in the
+# position where they actually take effect: scanning the whole command for the
+# same text also fires on a commit message that merely mentions the config
+# key, which blocks a legitimate commit and names a fragment of that message
+# as the offending address. Prefixing a separator lets one pattern cover "at
+# the start" and "after ; && || |" without an alternation on ^, which BSD sed
+# does not honour mid-pattern.
+#
+# ponytail: a regex, not a shell parser -- an override quoted inside a message
+# after a `;` still reads as command position. It fails closed, so the cost is
+# a spurious block, never a missed one. Parsing properly needs a real lexer.
+inline="$(print -r -- "; $command" \
+  | sed -nE 's/.*([;&|][[:space:]]*(GIT_AUTHOR_EMAIL|GIT_COMMITTER_EMAIL)|[[:space:]]-c[[:space:]]*user\.email)[[:space:]]*=[[:space:]]*["'\'']?([^"'\''[:space:];]+).*/\3/p' \
   | head -1)"
 
 if [[ -n "$inline" && "$inline" != "$expected" ]]; then
