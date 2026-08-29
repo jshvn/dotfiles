@@ -67,6 +67,15 @@
           }
         ],
         "matcher": "Bash"
+      },
+      {
+        "hooks": [
+          {
+            "command": "zsh \"$XDG_CONFIG_HOME/claude/hooks/git-identity.zsh\"",
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
       }
     ],
     "SessionStart": [

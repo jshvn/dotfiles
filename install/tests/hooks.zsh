@@ -5,11 +5,14 @@
 #
 # Purpose:      Two-plus scenarios per hook (pass + block/warn) for
 #               secret-scan, no-emojis, no-ai-comments, agent-transparency,
-#               block-destructive. Does NOT cover notify or post-compact.
+#               block-destructive, git-identity. Does NOT cover notify or
+#               post-compact.
 # Depends on:   DOTFILEDIR env var (exported by taskfiles/test.yml);
-#               install/messages.zsh; claude/hooks/<name>.zsh.
-# Side effects: read-only -- pipes synthetic JSON payloads to each hook on
-#               stdin; emits check/cross output.
+#               install/messages.zsh; claude/hooks/<name>.zsh; git.
+# Side effects: pipes synthetic JSON payloads to each hook on stdin; emits
+#               check/cross output. test_git_identity creates and removes one
+#               throwaway repo under $TMPDIR -- it needs a real git repo that
+#               no identity claims, and every path under $HOME/git has one.
 # =============================================================================
 
 set -euo pipefail
@@ -195,6 +198,64 @@ test_block_destructive() {
   expect_exit single-file      'rm /tmp/single-file.txt'            0
 }
 
+test_git_identity() {
+  local input exit_code repo outside expected
+
+  # DOTFILEDIR lives under ~/git/personal/, so the personal identity claims it.
+  repo="$DOTFILEDIR"
+  expected=$(git config -f "${DOTFILEDIR}/identity/git/identities/personal" user.email 2>/dev/null || echo "")
+  if [[ -z "$expected" ]]; then
+    cross "git-identity: personal identity has no user.email -- cannot test"
+    failed=$((failed + 1))
+    return
+  fi
+
+  # A real repo that no includeIf claims. The hook must stay silent here: if
+  # this case ever starts blocking, every commit outside ~/git stops working.
+  outside=$(mktemp -d)
+  git -C "$outside" init -q
+
+  # Helper: run hook with a command and cwd, return its exit code in $exit_code.
+  # Trailing args become environment assignments for the hook process.
+  run_ident() {
+    local cmd="$1" cwd="$2"
+    shift 2
+    input="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"${cmd}\"},\"cwd\":\"${cwd}\"}"
+    exit_code=0
+    echo "$input" | env "$@" zsh "${HOOK_DIR}/git-identity.zsh" >/dev/null 2>&1 || exit_code=$?
+  }
+
+  # Assert: NAME EXPECTED_EXIT COMMAND CWD [ENV=VAL...]
+  expect_ident() {
+    local name="$1" want="$2"
+    shift 2
+    run_ident "$@"
+    if [[ "$exit_code" -eq "$want" ]]; then
+      check "git-identity.$name"
+    else
+      cross "git-identity.$name: expected exit $want, got ${exit_code}"
+      failed=$((failed + 1))
+    fi
+  }
+
+  # Allowed.
+  expect_ident matching-identity 0 'git commit -m x' "$repo"
+  expect_ident not-a-commit      0 'git status'      "$repo"
+  expect_ident no-identity-here  0 'git commit -m x' "$outside"
+
+  # Blocked: the email that would actually land is not the one the identity
+  # assigns. GIT_AUTHOR_EMAIL outranking config is the failure that put two
+  # commits in jshvn/terraform under the wrong address; `git config user.email`
+  # reads clean throughout, which is why the hook probes `git var` instead.
+  expect_ident env-author      2 'git commit -m x' "$repo" GIT_AUTHOR_EMAIL=wrong@example.com
+  expect_ident env-committer   2 'git commit -m x' "$repo" GIT_COMMITTER_EMAIL=wrong@example.com
+  expect_ident inline-config   2 'git -c user.email=wrong@example.com commit -m x' "$repo"
+  expect_ident inline-env      2 'GIT_AUTHOR_EMAIL=wrong@example.com git commit -m x' "$repo"
+  expect_ident rebase-in-scope 2 'git rebase main' "$repo" GIT_COMMITTER_EMAIL=wrong@example.com
+
+  rm -rf "$outside"
+}
+
 # Each tallies failures into $failed; runner does NOT abort on first failure
 # (gives complete feedback across all hooks).
 test_secret_scan
@@ -202,5 +263,6 @@ test_no_emojis
 test_no_ai_comments
 test_agent_transparency
 test_block_destructive
+test_git_identity
 
 exit "$failed"
