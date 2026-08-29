@@ -42,15 +42,14 @@ One more check the staging discipline makes available: after a converged `task i
 `git status --short` must be empty. The repo tree holds source only, so anything showing up
 there is either a real edit or a generated file that escaped into the tree.
 
-## The one-check rule
+## The one-check rule here
 
-Non-trivial logic ships with one runnable check that fails if the logic breaks -- an
-assert-based self-check or a smoke test wired into `task test`. No frameworks, no fixtures.
-A change without its check is unfinished.
+The rule itself is `jshvn-one-check-rule`. In this repo the check is an assert-based
+self-check or a smoke test wired into `task test`.
 
 Interactive convenience functions (`shell/functions/*.zsh`, `shell/aliases/*.zsh`) are
 exempt, even when they contain parsing or formatting logic: `task lint` parse-checks them,
 and running the function once in a live shell is their verification. Do not write smoke
-tests for them or wire them into `task test`. The one-check rule targets pipeline logic --
+tests for them or wire them into `task test`. The rule targets pipeline logic --
 resolver, compose, hooks, audits -- where a silent break corrupts machine state rather
 than one prompt's output.
