@@ -47,6 +47,8 @@ disabled = [
 # container: Apple's container runtime; requires macOS 15+, so machines on
 # older releases must not list it.
 # node: the ecc Claude addon's installer runtime (install.sh delegates to Node).
+# hashicorp/tap/terraform: terraform is not in homebrew-core (BSL licence), so
+# it comes tap-qualified from HashiCorp's own tap.
 formulae = [
   "bat",
   "bottom",
@@ -56,6 +58,7 @@ formulae = [
   "fd",
   "gh",
   "git-crypt",
+  "hashicorp/tap/terraform",
   "htop",
   "hugo",
   "node",
