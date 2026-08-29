@@ -73,9 +73,13 @@ tasks:
         brewfile='{{.COMPOSED_BREWFILE}}'
         changes=0
         # Missing entries: `brew bundle check --verbose` prints one line per
-        # absent dependency ("... needs to be installed.").
-        missing=$(brew bundle check --no-upgrade --verbose --file="$brewfile" 2>/dev/null \
-          | ggrep -iE 'needs to be installed' || true)
+        # absent dependency -- "Formula X needs to be installed.", "Cask X
+        # needs to be installed.", "Tap X needs to be tapped." -- on stderr,
+        # not stdout, so the stream is merged rather than discarded. The grep
+        # is the filter: brew's unrelated stderr chatter (dependency-graph
+        # warnings, update hints) carries neither phrase.
+        missing=$(brew bundle check --no-upgrade --verbose --file="$brewfile" 2>&1 \
+          | ggrep -iE 'needs to be (installed|tapped)' || true)
         if [[ -n "$missing" ]]; then
           info "packages to install:"
           printf '%s\n' "$missing" | sed 's/^/  /'
