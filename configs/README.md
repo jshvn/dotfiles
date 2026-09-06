@@ -14,6 +14,7 @@ so `_:safe-link` calls are straightforward.
 | tlrc | `tlrc/config.toml` | `~/.config/tlrc/config.toml` | always on |
 | conda | `conda/condarc` | `~/.condarc` | always on |
 | eza | `eza/theme.yaml` | `~/.config/eza/theme.yaml` | always on |
+| dust | `dust/config.toml` | `~/.config/dust/config.toml` | always on |
 | motd | `motd/motd_tron.txt`, `motd/motd_sysinfo.jsonc` | no symlink -- read at runtime | always on (runtime-read) |
 
 ## How to add a tool config

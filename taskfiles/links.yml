@@ -59,6 +59,7 @@ vars:
     {{.XDG_CONFIG_HOME}}/tlrc/config.toml
     {{.XDG_CONFIG_HOME}}/conda/condarc
     {{.XDG_CONFIG_HOME}}/eza/theme.yaml
+    {{.XDG_CONFIG_HOME}}/dust/config.toml
 
   # LINKS_RESOLVE_SOURCE -- shell function mapping an expected TARGET path to
   # its repo SOURCE. Mirrors the literal pairings used by install-zsh /
@@ -86,6 +87,7 @@ vars:
         "$xdg/tlrc/"*)                 printf '%s\n' "$dotfiledir/configs/tlrc/${target##*/tlrc/}" ;;
         "$xdg/conda/"*)                printf '%s\n' "$dotfiledir/configs/conda/${target##*/conda/}" ;;
         "$xdg/eza/"*)                  printf '%s\n' "$dotfiledir/configs/eza/${target##*/eza/}" ;;
+        "$xdg/dust/"*)                 printf '%s\n' "$dotfiledir/configs/dust/${target##*/dust/}" ;;
         *)                             printf '%s\n' "" ;;
       esac
     }
@@ -179,7 +181,7 @@ tasks:
         done <<< "{{.CLAUDE_LINKS}}"
 
   install-configs:
-    desc: "Link tool config files (ghostty, herdr, tlrc, conda, eza)"
+    desc: "Link tool config files (ghostty, herdr, tlrc, conda, eza, dust)"
     internal: true
     deps: [":manifest:resolve"]
     # ghostty and herdr are feature-gated; the others are always-on. motd is
@@ -193,6 +195,8 @@ tasks:
         vars: { SOURCE: "{{.ROOT_DIR}}/configs/conda/condarc", TARGET: "{{.XDG_CONFIG_HOME}}/conda/condarc" }
       - task: _:safe-link
         vars: { SOURCE: "{{.ROOT_DIR}}/configs/eza/theme.yaml", TARGET: "{{.XDG_CONFIG_HOME}}/eza/theme.yaml" }
+      - task: _:safe-link
+        vars: { SOURCE: "{{.ROOT_DIR}}/configs/dust/config.toml", TARGET: "{{.XDG_CONFIG_HOME}}/dust/config.toml" }
     status:
       # ghostty MUST appear in this status block. Without it, on a ghostty=true
       # machine where the ghostty link is broken but the always-on configs are
@@ -203,6 +207,7 @@ tasks:
       - test -L "{{.XDG_CONFIG_HOME}}/tlrc/config.toml"     && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/tlrc/config.toml")"     == "{{.ROOT_DIR}}/configs/tlrc/config.toml"     ]]
       - test -L "{{.XDG_CONFIG_HOME}}/conda/condarc"        && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/conda/condarc")"        == "{{.ROOT_DIR}}/configs/conda/condarc"        ]]
       - test -L "{{.XDG_CONFIG_HOME}}/eza/theme.yaml"       && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/eza/theme.yaml")"       == "{{.ROOT_DIR}}/configs/eza/theme.yaml"       ]]
+      - test -L "{{.XDG_CONFIG_HOME}}/dust/config.toml"     && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/dust/config.toml")"     == "{{.ROOT_DIR}}/configs/dust/config.toml"     ]]
 
   configs:ghostty:
     desc: "Link ghostty config (gated on ghostty feature)"

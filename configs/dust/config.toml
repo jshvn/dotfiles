@@ -1,0 +1,9 @@
+# configs/dust/config.toml -- display defaults for dust (du replacement).
+#
+# Keys are dust's long flag names in kebab-case. This file carries display
+# preferences only: dust's config schema has no ignore-directory key, so the
+# File Provider excludes (~/Library/CloudStorage, iCloud Drive) live on the
+# `dust` alias in shell/aliases/dust.zsh instead.
+
+# Keep .git trees folded so repo scans show the working tree, not objects.
+collapse = [".git"]
