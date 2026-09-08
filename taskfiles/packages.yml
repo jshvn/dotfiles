@@ -544,17 +544,19 @@ tasks:
 
         info "brew vulns --brewfile (severity >= ${severity})"
 
-        # --json is the machine-readable form: a JSON array, empty when clean.
-        # brew vulns exits 1 whenever findings exist, so every invocation needs
-        # `|| true` under the root Taskfile's errexit; the array length, not the
-        # exit code, is what distinguishes "clean" from "brew itself broke".
+        # --json is the machine-readable form: an object whose `findings` key is
+        # an array, empty when clean (`skipped_formulae` lists what had no
+        # queryable source). brew vulns exits 1 whenever findings exist, so
+        # every invocation needs `|| true` under the root Taskfile's errexit;
+        # the array length, not the exit code, is what distinguishes "clean"
+        # from "brew itself broke".
         findings=$(brew vulns --brewfile="{{.COMPOSED_BREWFILE}}" --severity="$severity" --json 2>/dev/null || true)
-        if ! echo "$findings" | jq -e 'type == "array"' >/dev/null 2>&1; then
+        if ! echo "$findings" | jq -e '.findings | type == "array"' >/dev/null 2>&1; then
           error "brew vulns returned no parseable JSON -- cannot assess vulnerabilities"
           exit 1
         fi
 
-        count=$(echo "$findings" | jq -r 'length')
+        count=$(echo "$findings" | jq -r '.findings | length')
         if [[ "$count" -eq 0 ]]; then
           success "no known vulnerabilities at severity >= ${severity}"
           exit 0
