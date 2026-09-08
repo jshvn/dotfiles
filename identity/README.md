@@ -14,7 +14,8 @@ identity is selected by a single symlink swap.
 ## Key files
 
 - `git/config` -- main git config; symlinked to `~/.config/git/config`. Carries
-  the workstation `[includeIf "gitdir/i:~/git/personal/"]` and
+  the workstation `[includeIf "gitdir/i:~/git/personal/"]`,
+  `[includeIf "gitdir/i:~/git/katoptra/"]` (same personal overlay), and
   `[includeIf "gitdir/i:~/git/work/"]` blocks plus the universal
   `[include] path = server-include.config` hook (absent on workstations
   is a silent no-op).

@@ -1,8 +1,10 @@
 # identity/git/identities/personal -- personal git identity overlay.
 #
-# Loaded via [includeIf "gitdir/i:~/git/personal/"] in identity/git/config.
+# Loaded via the [includeIf "gitdir/i:~/git/personal/"] and
+# [includeIf "gitdir/i:~/git/katoptra/"] blocks in identity/git/config.
 # Overrides: [user] email, signingkey; [github] user; [gpg] format + program; [commit] gpgsign.
-# Side effects: enables 1Password SSH signing for all repos under ~/git/personal/.
+# Side effects: enables 1Password SSH signing for all repos under ~/git/personal/
+# and ~/git/katoptra/.
 # capability: one-password-signing (a machine using this identity must enable features.one-password-signing)
 
 [user]

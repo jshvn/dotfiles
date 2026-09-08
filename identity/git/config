@@ -10,6 +10,8 @@
 #
 # Adding a new workstation identity: add a matching [includeIf
 # "gitdir/i:~/git/<name>/"] block below (mirrors the personal/work pattern).
+# One overlay may back several directories (personal covers ~/git/personal/
+# and the katoptra organization at ~/git/katoptra/).
 #
 # Schema reference: docs/MANIFEST.md "Adding a new identity".
 # Callers: taskfiles/identity.yml via _:safe-link to ~/.config/git/config
@@ -18,6 +20,9 @@
     name = Josh Vaughen
 
 [includeIf "gitdir/i:~/git/personal/"]
+    path = identities/personal
+
+[includeIf "gitdir/i:~/git/katoptra/"]
     path = identities/personal
 
 [includeIf "gitdir/i:~/git/work/"]
