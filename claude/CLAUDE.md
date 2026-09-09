@@ -67,6 +67,7 @@ end state to audit an existing repo against.
 | Container runtime | Apple `container` when its daemon is up, else Docker; one image, arm64 and amd64 | `jshvn-containerized-toolchain` |
 | Passing secrets to a container | By name, resolved at run time from 1Password; never a value on a command line | `jshvn-containerized-toolchain` |
 | Orchestrating commands | go-task, never make; bare `task` prints a menu grouped by effect | `jshvn-taskfile-conventions` |
+| Writing a GitHub Actions `uses:` | Resolve every version with `gh api repos/<owner>/<repo>/releases/latest --jq .tag_name`; never write a tag from memory | -- |
 
 A repo that violates these is not automatically wrong -- say so and ask, rather than
 converting it unasked.
