@@ -18,7 +18,6 @@ Host *.jgrid.net
     IdentitiesOnly yes
     User josh
     ProxyCommand ~/.ssh/identities/cloudflared.zsh access ssh --hostname %h
-    RemoteCommand if [[ "$(uname)" = "Darwin" ]]; then cd ~/Git/personal/jgrid.net/; else cd ~/git/jgrid.net/; fi && exec $SHELL -l
     RequestTTY yes
 
 Host *.plex.me
