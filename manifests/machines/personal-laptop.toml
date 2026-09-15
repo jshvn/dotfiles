@@ -41,6 +41,7 @@ enabled = [
 ]
 disabled = [
   "server-include",
+  "cloudflared-tunnel",
 ]
 
 [packages]

@@ -39,6 +39,7 @@ disabled = [
   "jgrid-net",
   "macos-spotlight",
   "server-include",
+  "cloudflared-tunnel",
 ]
 
 [packages]

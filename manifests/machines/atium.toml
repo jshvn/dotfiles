@@ -24,6 +24,7 @@ enabled = [
   "repo-auto-update",
   "macos-security",
   "ghostty",
+  "cloudflared-tunnel",
 ]
 disabled = [
   "one-password-ssh",
@@ -47,8 +48,8 @@ disabled = [
 # 1password is listed here rather than arriving via one-password-ssh/-signing:
 # identity/ssh/identities/atium uses the local system ssh-agent, not 1Password,
 # so those flags stay off while the application itself is still wanted.
-# container is intentionally absent -- it requires macOS 15+ and this machine
-# runs Sonoma 14.
+# No container runtime: everything this server runs is a host process or a
+# LaunchAgent (cloudflared-tunnel). The machine is on macOS 26.
 formulae = [
   "bat",
   "bottom",
@@ -70,5 +71,4 @@ casks = [
   "cloudflare-warp",
   "dropbox",
   "miniconda",
-  "orbstack",
 ]
