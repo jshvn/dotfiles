@@ -42,6 +42,16 @@ manifest already answers it in one file.
   off because a headless server cannot answer a TouchID prompt. Its own
   git/ssh identity keeps this machine's commits and authorized-key set
   attributable separately from personal and work.
+- Remote access: a blue/green pair of cloudflared connectors run as
+  LaunchAgents (`cloudflared-tunnel` feature, `os/tunnel.zsh`), replicas of
+  one remotely managed tunnel whose ingress lives in `jshvn/terraform`. The
+  only local input is the tunnel token at `~/.config/cloudflared/tunnel.token`
+  (mode 600), written by hand at install from 1Password; the item's notes and
+  `jshvn/terraform` `docs/tunnels.md` say which item. `task install` refuses to
+  converge the pair until that file exists. After `brew upgrade cloudflared`,
+  `task tunnel:roll` restarts one colour at a time; `task tunnel:show` prints
+  each replica's state. The pair is the only way onto the box besides WARP.
+- No container runtime. Dropbox, WARP and the tunnel pair are host processes.
 
 ## ci
 

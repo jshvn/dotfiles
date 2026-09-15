@@ -18,6 +18,7 @@ new evidence. Referenced from CLAUDE.md.
 | Five-tier testing: static lint, validate, reconcile, smoke, system | Each tier catches different drift; without verify+reconcile we'd ship "looks installed but isn't" or "symlink-soup-after-refactor". |
 | Curated top-level surface (`install / setup / validate / test / lint / audit / diff`) + domain-first `<domain>:<verb>` diagnostics | Audited every exposed task; one grammar (pick a domain, pick a verb); bare verbs aggregate; lint enforces banner drift via LINT-08. |
 | Separate realize from activate; the repo tree holds source only | Compute the whole desired state into `$XDG_STATE_HOME/dotfiles/build/` before touching the system, so `task diff` is a file comparison rather than a recomputation, and no generated file is tracked (a `/model` toggle can no longer dirty the working tree). |
+| atium is managed here, not in `jshvn/jgrid.net` | Its runtime is macOS-native (Dropbox, WARP, launchd); that repo is the NixOS fleet and pulls nightly onto boxes with no personal data. The tunnel token is the one secret and it never enters this public repo. |
 
 ## Out of Scope
 
