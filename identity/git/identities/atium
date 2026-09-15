@@ -20,9 +20,6 @@
 [github]
     user = jshvn
 
-[url "git@github.com-jgrid:jshvn/jgrid.net"]
-    insteadOf = git@github.com:jshvn/jgrid.net
-
 [url "git@github.com-dotfiles:jshvn/dotfiles"]
     insteadOf = git@github.com:jshvn/dotfiles
 

@@ -7,7 +7,6 @@
 #   on atium at first install and are never committed to this repo.
 #
 # Usage: set each repo's origin to the matching alias hostname:
-#   git remote set-url origin git@github.com-jgrid:jshvn/jgrid.net.git
 #   git remote set-url origin git@github.com-dotfiles:jshvn/dotfiles.git
 #   git remote set-url origin git@github.com-health:jshvn/health.git
 #
@@ -15,13 +14,6 @@
 # fails loudly, forcing the operator to pick the right alias and matching deploy key.
 # Adding a new repo: register the deploy key on the repo, drop the private key at
 # ~/.ssh/id_ed25519_atium_<slug>, and add a new Host github.com-<slug> block below.
-
-Host github.com-jgrid
-    Hostname github.com
-    User git
-    IdentityFile ~/.ssh/id_ed25519_atium_jgrid
-    IdentitiesOnly yes
-    AddKeysToAgent yes
 
 Host github.com-dotfiles
     Hostname github.com

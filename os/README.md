@@ -44,6 +44,9 @@ skips the re-apply.
   `status:` uses the `{{.BREW_ZSH}}` template var, not `$BREW_ZSH`)
 - `hostname.zsh` -- `apply_hostname` / `verify_hostname` plus state-file
   helpers, consumed by `../taskfiles/hostname.yml`
+- `tunnel.zsh` -- blue/green cloudflared LaunchAgent library
+  (`apply_tunnels` / `verify_tunnel` / `roll_tunnels` / `show_tunnels`),
+  consumed by `../taskfiles/tunnel.yml`
 
 ## Adding a pattern
 
