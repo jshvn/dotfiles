@@ -12,6 +12,9 @@ are not symlinked.
   randomly at render time by `motd.zsh`.
 - `motd_sysinfo.jsonc` -- fastfetch configuration (JSONC format, with
   inline comments) that controls which system-info modules are displayed.
+- `motd_jgrid.png` -- the jgrid logo (`logo/jgrid-mark-on-dark-512.png` in
+  `jshvn/jgrid.net`), drawn in place of the ASCII art in terminals with an
+  image protocol (kitty, Ghostty, iTerm2, WezTerm) outside tmux.
 
 ## Symlink destination
 
