@@ -5,7 +5,7 @@
 #               surface (default banner, setup, test, validate). Wires every
 #               included taskfile module under one namespace.
 # Depends on:   taskfiles/{audit,claude,claude-addons,hostname,identity,links,
-#               lint,macos,manifest,packages,repo,shell,show,test}.yml;
+#               lint,macos,manifest,packages,repo,shell,show,test,tunnel}.yml;
 #               install/messages.zsh (sourced via {{.TASKFILE_DIR}} so the
 #               banner renders the same regardless of include parse order).
 # Side effects: deferred to subtasks; this file declares no direct mutations.
@@ -110,6 +110,9 @@ includes:
   # NOT a manifest feature -- two machines sharing one manifest (JMBP +
   # JAIR consuming personal-laptop.toml) need distinct hostnames.
   hostname: ./taskfiles/hostname.yml
+  # tunnel:* is the third macOS system-state layer: a feature-gated pair of
+  # LaunchAgents (cloudflared-tunnel) that keeps a server reachable.
+  tunnel: ./taskfiles/tunnel.yml
 
 tasks:
 
@@ -138,7 +141,7 @@ tasks:
         echo
         header "Diagnostics (read-only, domain-first)"
         info "  task show                            List inspectable domains"
-        info "  task <domain>:show                   manifest | features | claude | claude-addons | hostname"
+        info "  task <domain>:show                   manifest | features | claude | claude-addons | hostname | tunnel"
         info "  task <domain>:audit                  manifest | packages | links | claude | claude-addons"
         info "  task packages:vulns                  OSV.dev scan of declared packages"
         info "  task <domain>:diff                   packages | links | claude"
@@ -146,6 +149,7 @@ tasks:
         header "State mutations"
         info "  task setup -- <name>                 Set active machine manifest (\$XDG_STATE_HOME/dotfiles/machine)"
         info "  task hostname:set -- <name>          Set live macOS hostname (requires sudo; self-heals on task install)"
+        info "  task tunnel:roll                     Restart the cloudflared pair one colour at a time (cloudflared-tunnel machines)"
         info "  task claude-addons:remove -- <name>  Remove a Claude addon"
         echo
         echo "Run 'task --list' for the full task graph."
@@ -164,7 +168,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   test:
-    desc: "Run all smoke tests (manifest + hook + repo-sync + links-audit + packages-declared + packages-trust + brewfile-compose + shell-startup + settings-compose + claude-addons-manifest + report + lint fixtures)"
+    desc: "Run all smoke tests (manifest + hook + repo-sync + links-audit + packages-declared + packages-trust + brewfile-compose + shell-startup + settings-compose + claude-addons-manifest + report + tunnel + lint fixtures)"
     cmds:
       - task: test:manifest
       - task: test:hooks
@@ -177,6 +181,7 @@ tasks:
       - task: test:settings-compose
       - task: test:claude-addons-manifest
       - task: test:report
+      - task: test:tunnel
       - task: lint:test-fixtures
 
   # lint-allow: cmds-without-status
@@ -208,7 +213,7 @@ tasks:
     # codes back to the surrounding shell context.
     cmds:
       - for: [manifest:validate, identity:validate, links:validate,
-              macos:validate, hostname:validate, packages:validate,
+              macos:validate, hostname:validate, tunnel:validate, packages:validate,
               claude:validate, claude-addons:audit, shell:validate]
         task: '{{.ITEM}}'
         ignore_error: true
@@ -285,6 +290,9 @@ tasks:
       # when state file matches live LocalHostName. Sudo prompts only on
       # a fresh setup or after manual `sudo scutil` drift.
       - task: hostname:apply
+      # tunnel:install runs after packages:install (cloudflared must exist)
+      # and is a no-op unless features.cloudflared-tunnel is on.
+      - task: tunnel:install
       # packages:verify is the LAST FATAL task-call in the install pipeline.
       # A missing bin or missing /Applications/<App>.app fails the entire
       # `task install` with exit 1 -- no `success "install complete"` line

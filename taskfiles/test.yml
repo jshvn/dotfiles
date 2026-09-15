@@ -4,8 +4,9 @@ version: '3'
 # taskfiles/test.yml -- smoke-test surface
 #
 # Purpose:      Hook smoke tests (install/tests/hooks.zsh) plus manifest
-#               deep-merge fixtures and shell-startup smoke tests. Composed
-#               by the root `task test` aggregator.
+#               deep-merge fixtures, shell-startup and cloudflared pair
+#               (install/tests/tunnel.zsh) smoke tests. Composed by the root
+#               `task test` aggregator.
 # Depends on:   install/tests/hooks.zsh; install/resolver.zsh;
 #               install/tests/shell-startup.zsh; install/messages.zsh;
 #               manifests/tests/fixtures/.
@@ -306,3 +307,16 @@ tasks:
           error "fixtures: ${total} total, ${passed} passed, ${failures} failed"
         fi
         exit "$failures"
+
+  # lint-allow: cmds-without-status
+  tunnel:
+    desc: "Run cloudflared pair smoke tests via install/tests/tunnel.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running tunnel smoke tests"
+        export DOTFILEDIR="{{.ROOT_DIR}}"
+        zsh "${DOTFILEDIR}/install/tests/tunnel.zsh"
+    status:
+      - false

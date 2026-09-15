@@ -1,0 +1,83 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/tunnel.yml -- blue/green cloudflared connector pair (LaunchAgents)
+#
+# Purpose:      Reads features.cloudflared-tunnel from resolved.json and
+#               converges two LaunchAgents running replicas of one remotely
+#               managed Cloudflare tunnel (os/tunnel.zsh). tunnel:roll restarts
+#               them one colour at a time, /ready-gated; tunnel:validate and
+#               tunnel:show are read-only.
+# Depends on:   taskfiles/helpers.yml; install/messages.zsh; os/tunnel.zsh;
+#               :manifest:resolve (deps); cloudflared (manifests/base.toml);
+#               the token file ~/.config/cloudflared/tunnel.token (operator).
+# Side effects: install writes ~/Library/LaunchAgents/com.jshvn.cloudflared-*.plist
+#               and bootstraps them in the gui launchd domain; roll kills and
+#               restarts each replica in turn.
+# =============================================================================
+
+includes:
+  _: ./helpers.yml
+
+vars:
+  TUNNEL_ENV: 'DOTFILEDIR={{.ROOT_DIR}} HOMEBREW_PREFIX={{.HOMEBREW_PREFIX}} XDG_CONFIG_HOME={{.XDG_CONFIG_HOME}}'
+
+tasks:
+
+  install:
+    desc: "Converge the cloudflared blue/green LaunchAgents (gated on cloudflared-tunnel)"
+    internal: true
+    platforms: [darwin]
+    deps: [":manifest:resolve"]
+    status:
+      - |
+        {{if not (index .MANIFEST.features "cloudflared-tunnel")}}exit 0{{end}}
+        {{.TUNNEL_ENV}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/tunnel.zsh"; verify_tunnel blue && verify_tunnel green'
+    cmds:
+      - |
+        {{if not (index .MANIFEST.features "cloudflared-tunnel")}}exit 0{{end}}
+        {{.TUNNEL_ENV}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/tunnel.zsh"; apply_tunnels'
+
+  # lint-allow: cmds-without-status
+  roll:
+    desc: "Restart the cloudflared pair one colour at a time, /ready-gated (after a cloudflared upgrade)"
+    platforms: [darwin]
+    deps: [":manifest:resolve"]
+    status:
+      - false
+    cmds:
+      - |
+        {{if not (index .MANIFEST.features "cloudflared-tunnel")}}echo "cloudflared-tunnel is off for this machine"; exit 1{{end}}
+        {{.TUNNEL_ENV}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/tunnel.zsh"; roll_tunnels'
+
+  # lint-allow: cmds-without-status
+  validate:
+    desc: "Validate both cloudflared replicas are installed, loaded and ready"
+    internal: true
+    platforms: [darwin]
+    deps: [":manifest:resolve"]
+    status:
+      - false
+    cmds:
+      - |
+        {{if not (index .MANIFEST.features "cloudflared-tunnel")}}exit 0{{end}}
+        {{.TUNNEL_ENV}} zsh -c '
+          set -euo pipefail
+          source "${DOTFILEDIR}/os/tunnel.zsh"
+          failed=0
+          for c in blue green; do
+            if verify_tunnel "$c"; then check "tunnel.$c"; else cross "tunnel.$c"; failed=1; fi
+          done
+          exit "$failed"
+        '
+
+  # lint-allow: cmds-without-status
+  show:
+    desc: "Show the state of each cloudflared replica"
+    platforms: [darwin]
+    deps: [":manifest:resolve"]
+    status:
+      - false
+    cmds:
+      - |
+        {{.TUNNEL_ENV}} zsh -c 'set -euo pipefail; source "${DOTFILEDIR}/os/tunnel.zsh"; header "cloudflared replicas"; show_tunnels'
