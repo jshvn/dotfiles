@@ -66,6 +66,37 @@
     remotes = remote --verbose
     undo = reset --soft HEAD~1
 
+    # delete local branches whose PR GitHub merged; skips anything unverified
+    tidy = "!f() { \
+      command -v gh >/dev/null || { echo 'tidy: gh not installed'; return 1; }; \
+      git fetch --prune --quiet || echo 'tidy: fetch failed, using cached state'; \
+      git for-each-ref --format='%(refname:short) %(upstream:track) %(worktreepath)' refs/heads | { \
+        deleted=0; skipped=0; \
+        while read -r branch track worktree; do \
+          [ \"$track\" = '[gone]' ] || continue; \
+          if [ -n \"$worktree\" ]; then \
+            printf '  skipped  %-34s checked out at %s\\n' \"$branch\" \"$worktree\"; \
+            skipped=$((skipped+1)); continue; \
+          fi; \
+          pr=$(gh pr list --head \"$branch\" --state merged --json number,headRefOid \
+                 --jq '.[] | [.number, .headRefOid] | join(\" \")' 2>/dev/null | tail -1); \
+          if [ -z \"$pr\" ]; then \
+            printf '  skipped  %-34s no merged PR found\\n' \"$branch\"; \
+            skipped=$((skipped+1)); continue; \
+          fi; \
+          num=${pr%% *}; head=${pr##* }; \
+          if [ \"$head\" != \"$(git rev-parse \"$branch\")\" ]; then \
+            ahead=$(git rev-list --count \"$head..$branch\" 2>/dev/null) || ahead=0; \
+            printf '  skipped  %-34s %s ahead of merged PR #%s\\n' \"$branch\" \"$ahead\" \"$num\"; \
+            skipped=$((skipped+1)); continue; \
+          fi; \
+          git branch -D \"$branch\" >/dev/null && { \
+            printf '  deleted  %-34s PR #%s\\n' \"$branch\" \"$num\"; deleted=$((deleted+1)); }; \
+        done; \
+        echo \"$deleted deleted, $skipped skipped\"; \
+      }; \
+    }; f"
+
     # lookups
     whois = "!sh -c 'git log --regexp-ignore-case -1 --pretty=\"format:%an <%ae>\n\" --author=\"$1\"' -"
     whatis = show --no-patch --pretty='tformat:%h (%s, %ad)' --date=short
