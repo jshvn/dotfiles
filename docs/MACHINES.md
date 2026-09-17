@@ -50,7 +50,11 @@ manifest already answers it in one file.
   `jshvn/terraform` `docs/tunnels.md` say which item. `task install` refuses to
   converge the pair until that file exists. After `brew upgrade cloudflared`,
   `task tunnel:roll` restarts one colour at a time; `task tunnel:show` prints
-  each replica's state. The pair is the only way onto the box besides WARP.
+  each replica's state. The pair carries ssh (`atium-ssh.jgrid.net`) and Screen
+  Sharing (`atium-vnc.jgrid.net`; `vnc atium-vnc.jgrid.net` from a laptop). WARP Mesh
+  to `atium.jgrid.net` is best-effort: its edge mapping has gone stale after hours of
+  idle while the tunnel pair stayed up, and only `warp-cli disconnect && warp-cli
+  connect` on atium clears it.
 - No container runtime. Dropbox, WARP and the tunnel pair are host processes.
 
 ## ci
