@@ -4,7 +4,7 @@ version: '3'
 # taskfiles/macos.yml -- macOS OS-defaults + shell-registration layer
 #
 # Purpose:      Reads features.macos-{dock,finder,input,screenshots,security,
-#               appearance,display} from resolved.json; applies per-concern
+#               appearance,display,animations} from resolved.json; applies per-concern
 #               defaults via
 #               os/defaults/<concern>.zsh sourced helpers; runs
 #               os/shell-registration.zsh (always-on) to register Homebrew
@@ -62,6 +62,8 @@ tasks:
         vars: { CONCERN: appearance, FEATURE: macos-appearance }
       - task: apply-defaults:concern
         vars: { CONCERN: display, FEATURE: macos-display }
+      - task: apply-defaults:concern
+        vars: { CONCERN: animations, FEATURE: macos-animations }
       - task: apply-defaults:refresh-ui
 
   # Parameterized per-concern apply+verify. Called once per concern from
@@ -192,6 +194,10 @@ tasks:
           {{if index .MANIFEST.features "macos-display"}}
           source "${DOTFILEDIR}/os/defaults/display.zsh"
           verify_display || failed=1
+          {{end}}
+          {{if index .MANIFEST.features "macos-animations"}}
+          source "${DOTFILEDIR}/os/defaults/animations.zsh"
+          verify_animations || failed=1
           {{end}}
 
           exit "$failed"

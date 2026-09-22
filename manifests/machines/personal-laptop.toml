@@ -38,6 +38,7 @@ enabled = [
   "macos-security",
   "macos-appearance",
   "macos-display",
+  "macos-animations",
 ]
 disabled = [
   "server-include",

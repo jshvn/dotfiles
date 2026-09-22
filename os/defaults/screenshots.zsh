@@ -34,6 +34,7 @@ typeset -ga SCREENSHOTS_DEFAULTS=(
   "com.apple.screencapture"  "location"        "\$HOME/Pictures/Screenshots"  "string"
   "com.apple.screencapture"  "type"            "png"                          "string"
   "com.apple.screencapture"  "disable-shadow"  "true"                         "bool"
+  "com.apple.screencapture"  "show-thumbnail"  "false"                        "bool"
 )
 
 apply_screenshots() {

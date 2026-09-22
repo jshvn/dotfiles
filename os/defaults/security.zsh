@@ -4,18 +4,19 @@
 # os/defaults/security.zsh -- Security / privacy defaults
 #                             (gated on features.macos-security)
 #
-# Purpose:      Declare screensaver, hot-plug-image-capture, and guest-
-#               account posture; servers also enable this concern, so keys
-#               must stay server-safe (no GUI assumptions).
+# Purpose:      Declare screen-lock delay, hot-plug-image-capture, guest-
+#               account, and firewall posture; servers also enable this
+#               concern, so keys must stay server-safe (no GUI assumptions).
 # Depends on:   install/messages.zsh; os/defaults/_apply_verify.zsh;
 #               $DOTFILEDIR exported by caller.
-# Side effects: `defaults write` for global SECURITY_DEFAULTS + `defaults
-#               -currentHost write` for SECURITY_DEFAULTS_CURRENTHOST;
-#               conditionally `sudo sysadminctl -guestAccount off` and
-#               `sudo /usr/libexec/ApplicationFirewall/socketfilterfw
-#               --setglobalstate on` (both gated on unprivileged status
-#               checks so sudo never prompts on a converged machine).
-#               No killall.
+# Side effects: `defaults -currentHost write` for
+#               SECURITY_DEFAULTS_CURRENTHOST; conditionally
+#               `sysadminctl -screenLock immediate -password -` (prompts for
+#               the account password on the terminal), `sudo sysadminctl
+#               -guestAccount off`, and `sudo
+#               /usr/libexec/ApplicationFirewall/socketfilterfw
+#               --setglobalstate on` (all gated on unprivileged status checks
+#               so nothing prompts on a converged machine). No killall.
 # =============================================================================
 
 set -euo pipefail
@@ -28,12 +29,6 @@ source "${DOTFILEDIR}/install/messages.zsh"
 # signature as the global-scope family.
 source "${DOTFILEDIR}/os/defaults/_apply_verify.zsh"
 
-# Tuple stride 4: (domain, key, expected_value, write_type).
-typeset -ga SECURITY_DEFAULTS=(
-  "com.apple.screensaver"  "askForPassword"       "1"  "int"
-  "com.apple.screensaver"  "askForPasswordDelay"  "0"  "int"
-)
-
 # Per-host plists live under ~/Library/Preferences/ByHost/<domain>.<UUID>.plist;
 # reads/writes MUST go through `defaults -currentHost` or the value is
 # invisible to the apply/verify loops.
@@ -41,9 +36,34 @@ typeset -ga SECURITY_DEFAULTS_CURRENTHOST=(
   "com.apple.ImageCapture"  "disableHotPlug"  "true"  "bool"
 )
 
+# Screen lock: the "require password after sleep or screen saver" delay is
+# owned by sysadminctl, not by com.apple.screensaver keys (those stopped
+# driving the setting in macOS 13). `-screenLock status` is unprivileged and
+# logs one line to stderr, e.g. "screenLock delay is immediate" or
+# "screenLock delay is 300 seconds". Echoes immediate|delayed|unknown.
+_security_screenlock_state() {
+  local out
+  out=$(sysadminctl -screenLock status 2>&1 || true)
+  if printf '%s' "$out" | grep -qi 'immediate'; then
+    echo immediate
+  elif printf '%s' "$out" | grep -qi 'screenLock delay'; then
+    echo delayed
+  else
+    echo unknown
+  fi
+}
+
 apply_security() {
-  _apply_defaults SECURITY_DEFAULTS
   _apply_defaults SECURITY_DEFAULTS_CURRENTHOST "" -currentHost
+  # Screen lock: sysadminctl needs the account password (not sudo); `-password -`
+  # prompts on the terminal, mirroring how the sudo steps below prompt.
+  if [[ "$(_security_screenlock_state)" != immediate ]]; then
+    warn "Screen lock is not immediate. Setting it now (account password required)..."
+    if ! sysadminctl -screenLock immediate -password -; then
+      error "Failed to set screen lock; run manually: sysadminctl -screenLock immediate -password -"
+      return 1
+    fi
+  fi
   # Guest account: sysadminctl output varies across macOS versions; observed:
   #   "Guest account enabled." / "Guest account disabled."
   #   "Enabled = true" / "Enabled = false"
@@ -88,10 +108,17 @@ apply_security() {
 
 verify_security() {
   local failed=0
-  _verify_defaults SECURITY_DEFAULTS security || failed=1
   # _verify_defaults appends ` (currentHost)` to its check / cross messages
   # automatically when scope_flag is set.
   _verify_defaults SECURITY_DEFAULTS_CURRENTHOST security -currentHost || failed=1
+  local lock_state
+  lock_state=$(_security_screenlock_state)
+  if [[ "$lock_state" == immediate ]]; then
+    check "security.screen-lock = immediate"
+  else
+    cross "security.screen-lock: expected 'immediate', got '$lock_state', raw='$(sysadminctl -screenLock status 2>&1 || true)'"
+    failed=1
+  fi
   # Mirrors apply_security's two-step parser; raw output surfaced in the
   # cross message so field debugging is not misled by a missing substring.
   local guest_status guest_state=unknown

@@ -36,6 +36,9 @@ typeset -ga DOCK_DEFAULTS=(
   # Hot corners: disable bottom-right (1 = no action). modifier 0 = no key held.
   "com.apple.dock"  "wvous-br-corner"   "1"  "int"
   "com.apple.dock"  "wvous-br-modifier" "0"  "int"
+  # Dock reveal: no hover delay, 0.15 s slide (macOS default is 0.5 s).
+  "com.apple.dock"  "autohide-delay"          "0"     "float"
+  "com.apple.dock"  "autohide-time-modifier"  "0.15"  "float"
 )
 
 apply_dock() {

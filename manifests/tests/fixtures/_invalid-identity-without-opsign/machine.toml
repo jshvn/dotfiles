@@ -23,6 +23,7 @@ enabled = [
   "macos-security",
   "macos-appearance",
   "macos-display",
+  "macos-animations",
 ]
 disabled = [
   "one-password-signing",

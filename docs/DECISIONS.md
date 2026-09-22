@@ -19,6 +19,7 @@ new evidence. Referenced from CLAUDE.md.
 | Curated top-level surface (`install / setup / validate / test / lint / audit / diff`) + domain-first `<domain>:<verb>` diagnostics | Audited every exposed task; one grammar (pick a domain, pick a verb); bare verbs aggregate; lint enforces banner drift via LINT-08. |
 | Separate realize from activate; the repo tree holds source only | Compute the whole desired state into `$XDG_STATE_HOME/dotfiles/build/` before touching the system, so `task diff` is a file comparison rather than a recomputation, and no generated file is tracked (a `/model` toggle can no longer dirty the working tree). |
 | atium is managed here, not in `jshvn/jgrid.net` | Its runtime is macOS-native (Dropbox, WARP, launchd); that repo is the NixOS fleet and pulls nightly onto boxes with no personal data. The tunnel token is the one secret and it never enters this public repo. |
+| No Spaces / Mission Control speed tweak; `macos-animations` covers AppKit only | Measured on macOS 27.0 (2026-09-22): the Dock renders the ~1.2 s desktop slide itself and exposes no duration key. The legacy Dock keys (`expose-animation-duration`, `springboard-*-duration`, `workspaces-swoosh-animation-off`) exist in no macOS 27 binary, and `com.apple.WindowManager AnimationSpeed`, `ExposeSpringResponse`, `ExposeSpringDampingRatio` and `com.apple.dock mission-control-transition` all time identical to stock. Do not re-add them; revisit only if a later 27.x adds a key. |
 
 ## Out of Scope
 

@@ -152,3 +152,7 @@ platforms = ["darwin"]
 [macos-display]
 description = "gate os/defaults/display.zsh (built-in panel More Space HiDPI scaling)"
 platforms = ["darwin"]
+
+[macos-animations]
+description = "gate os/defaults/animations.zsh (short AppKit window / Quick Look animations)"
+platforms = ["darwin"]

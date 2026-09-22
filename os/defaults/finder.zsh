@@ -26,6 +26,7 @@ typeset -ga FINDER_DEFAULTS=(
   "NSGlobalDomain"    "AppleShowAllExtensions"          "true"  "bool"
   "com.apple.finder"  "FXEnableExtensionChangeWarning"  "false" "bool"
   "com.apple.finder"  "FXPreferredViewStyle"            "clmv"  "string"
+  "com.apple.finder"  "DisableAllAnimations"            "true"  "bool"
 )
 
 apply_finder() {

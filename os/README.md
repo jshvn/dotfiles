@@ -36,6 +36,8 @@ skips the re-apply.
 - `defaults/appearance.zsh` -- System appearance + icon/widget style (gated on `macos-appearance`)
 - `defaults/display.zsh` -- Built-in display "More Space" HiDPI scaling
   (gated on `macos-display`; drives the `defaults/display-mode.swift` helper)
+- `defaults/animations.zsh` -- Short AppKit window / Quick Look animations
+  (gated on `macos-animations`; the Spaces slide has no key, see `../docs/DECISIONS.md`)
 - `defaults/spotlight.zsh` -- Disable the Spotlight Cmd+Space binding to free
   it for Raycast (gated on `macos-spotlight`)
 - `defaults/_apply_verify.zsh` -- Shared `_apply_defaults` / `_verify_defaults`

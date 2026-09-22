@@ -42,6 +42,7 @@ disabled = [
   "macos-screenshots",
   "macos-appearance",
   "macos-display",
+  "macos-animations",
 ]
 
 [packages]

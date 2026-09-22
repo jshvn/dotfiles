@@ -46,6 +46,7 @@ disabled = [
   "macos-security",
   "macos-appearance",
   "macos-display",
+  "macos-animations",
 ]
 
 [packages]
