@@ -48,11 +48,6 @@
       "key": "Local IP"
     },
     {
-      "type": "publicip",
-      "key": "Public IP",
-      "timeout": 1000
-    },
-    {
       "type": "battery",
       "key": "Battery"
     }
