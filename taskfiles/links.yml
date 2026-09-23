@@ -1,11 +1,11 @@
 version: '3'
 
 # =============================================================================
-# taskfiles/links.yml -- symlink orchestration for shell + claude + tool configs
+# taskfiles/links.yml -- symlink orchestration for shell + tool configs
 #
 # Purpose:      All symlink creation owned by this taskfile (shell startup,
-#               claude config tree, tool configs); identity-layer symlinks
-#               live in taskfiles/identity.yml.
+#               tool configs); identity-layer symlinks live in
+#               taskfiles/identity.yml.
 # Depends on:   taskfiles/helpers.yml (_:safe-link, _:check-link).
 # Side effects: writes symlinks under $ZDOTDIR + $XDG_CONFIG_HOME; writes
 #               $ZDOTDIR export to /etc/zshenv (sudo, idempotent).
@@ -15,45 +15,18 @@ includes:
   _: ./helpers.yml
 
 vars:
-  # CLAUDE_LINKS -- relative paths under claude/ that each link 1:1 into
-  # $XDG_CONFIG_HOME/claude/ (identical relpath on both sides). Single source
-  # for install-claude (cmds + status) AND the claude block of EXPECTED_TARGETS
-  # below, so adding a claude file/hook is a one-line change here. `|-` strips
-  # the trailing newline so install-claude's `for:`-loop split yields no empty
-  # element. MUST precede EXPECTED_TARGETS (go-task evaluates vars top-to-bottom).
-  # settings.json is intentionally absent: it is a generated artifact
-  # installed as a real file by claude:activate, not a link into the repo.
-  CLAUDE_LINKS: |-
-    CLAUDE.md
-    agents
-    commands
-    skills
-    hooks/post-compact.zsh
-    hooks/agent-transparency.zsh
-    hooks/secret-scan.zsh
-    hooks/block-destructive.zsh
-    hooks/no-ai-comments.zsh
-    hooks/no-emojis.zsh
-    hooks/notify.zsh
-    hooks/auto-approve-reads.zsh
-    hooks/git-identity.zsh
-    hooks/lib.zsh
-
   # EXPECTED_TARGETS -- single source of truth for every symlink target owned
   # by this taskfile. Identity-layer symlinks are intentionally EXCLUDED --
   # they live in taskfiles/identity.yml's equivalent and are validated by
   # identity:validate. Feature-gated entries use the inline-ternary form
   # which renders an empty line when the feature is off; consumers skip
-  # empty lines via `[[ -z "$target" ]] && continue`. The claude block is
-  # derived from CLAUDE_LINKS (gated on claude-marketplace).
+  # empty lines via `[[ -z "$target" ]] && continue`.
   EXPECTED_TARGETS: |
     {{.ZDOTDIR}}/.zshenv
     {{.ZDOTDIR}}/.zprofile
     {{.ZDOTDIR}}/.zshrc
     {{.ZDOTDIR}}/.zlogin
     {{.ZDOTDIR}}/.zlogout
-    {{if index .MANIFEST.features "claude-marketplace"}}{{range (splitList "\n" .CLAUDE_LINKS)}}{{$.XDG_CONFIG_HOME}}/claude/{{.}}
-    {{end}}{{end}}
     {{if index .MANIFEST.features "ghostty"}}{{.XDG_CONFIG_HOME}}/ghostty/config{{end}}
     {{if index .MANIFEST.features "herdr"}}{{.XDG_CONFIG_HOME}}/herdr/config.toml{{end}}
     {{.XDG_CONFIG_HOME}}/tlrc/config.toml
@@ -63,7 +36,7 @@ vars:
 
   # LINKS_RESOLVE_SOURCE -- shell function mapping an expected TARGET path to
   # its repo SOURCE. Mirrors the literal pairings used by install-zsh /
-  # install-claude / install-configs when materializing the links. Single copy
+  # install-configs when materializing the links. Single copy
   # shared by links:validate and links:emit-map, so the validator and the map
   # emitter cannot drift apart; editing a mapping requires editing this case
   # statement AND the corresponding install cmds: entry.
@@ -79,9 +52,6 @@ vars:
         "$zdotdir/.zshrc")             printf '%s\n' "$dotfiledir/shell/.zshrc" ;;
         "$zdotdir/.zlogin")            printf '%s\n' "$dotfiledir/shell/.zlogin" ;;
         "$zdotdir/.zlogout")           printf '%s\n' "$dotfiledir/shell/.zlogout" ;;
-        # All claude links share the relpath on both sides (see CLAUDE_LINKS);
-        # strip the $xdg/claude/ prefix to recover it (covers files + hooks/*).
-        "$xdg/claude/"*)               printf '%s\n' "$dotfiledir/claude/${target#$xdg/claude/}" ;;
         "$xdg/ghostty/config")         printf '%s\n' "$dotfiledir/configs/ghostty/config" ;;
         "$xdg/herdr/config.toml")      printf '%s\n' "$dotfiledir/configs/herdr/config.toml" ;;
         "$xdg/tlrc/"*)                 printf '%s\n' "$dotfiledir/configs/tlrc/${target##*/tlrc/}" ;;
@@ -96,7 +66,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   install:
-    desc: "Create all symlinks (shell + identity + claude + configs)"
+    desc: "Create all symlinks (shell + identity + configs)"
     internal: true
     cmds:
       - task: install-zsh
@@ -104,7 +74,6 @@ tasks:
       # relative to the `links:` namespace and tries `links:identity:install`
       # (which does not exist).
       - task: :identity:install
-      - task: install-claude
       - task: install-configs
 
   install-zsh:
@@ -156,29 +125,6 @@ tasks:
         fi
     status:
       - grep -qF 'export ZDOTDIR="{{.ZDOTDIR}}"' /etc/zshenv 2>/dev/null
-
-  install-claude:
-    desc: "Link claude config tree (files, dirs, hooks)"
-    internal: true
-    deps: [":manifest:resolve"]
-    # Feature-gated on claude-marketplace. The status: block mirrors the gate
-    # so status checks (and therefore cmds) no-op when the flag is off. Both
-    # cmds and status are driven by CLAUDE_LINKS (one line per claude file/hook).
-    cmds:
-      - for: { var: CLAUDE_LINKS, split: "\n" }
-        task: _:safe-link
-        vars:
-          SOURCE: '{{.ROOT_DIR}}/claude/{{.ITEM}}'
-          TARGET: '{{.XDG_CONFIG_HOME}}/claude/{{.ITEM}}'
-    status:
-      - |
-        {{if not (index .MANIFEST.features "claude-marketplace")}}exit 0{{end}}
-        while IFS= read -r rel; do
-          [[ -z "$rel" ]] && continue
-          tgt="{{.XDG_CONFIG_HOME}}/claude/$rel"
-          src="{{.ROOT_DIR}}/claude/$rel"
-          test -L "$tgt" && [[ "$(readlink -f "$tgt")" == "$src" ]] || exit 1
-        done <<< "{{.CLAUDE_LINKS}}"
 
   install-configs:
     desc: "Link tool config files (ghostty, herdr, tlrc, conda, eza, dust)"
@@ -322,8 +268,8 @@ tasks:
     internal: true
     # ponytail: links:install still derives its targets from EXPECTED_TARGETS
     # and its own cmds: entries rather than reading links.map, so the map
-    # serves links:diff only (packages and claude do consume their built
-    # artifacts). Upgrade path: drive links:install from links.map, which
+    # serves links:diff only (packages does consume its built artifact).
+    # Upgrade path: drive links:install from links.map, which
     # collapses the resolve_source case statement and the install cmds: list
     # into one source.
     deps: [":manifest:resolve"]

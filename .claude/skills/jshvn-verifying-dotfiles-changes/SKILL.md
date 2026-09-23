@@ -14,8 +14,7 @@ Run the narrowest check that can fail, then the relevant aggregate.
 | Package declarations | `task diff` then `task install && task packages:audit` | preview is what you expected, Brewfile converges, no drift |
 | Symlink entries (links.yml) | `task diff` then `task install && task links:audit` | preview lists the intended links, they exist and point into the repo |
 | Shell files (.zsh) | `task lint && task test && exec zsh` | parse-check, smoke tests, live shell loads |
-| claude/settings.d fragments | `task diff` then `task install && task claude:audit` | preview shows the intended key changes, live settings.json matches the composed artifact |
-| Claude addon TOMLs | `task install && task claude-addons:audit` | addon verify probes pass |
+| `[ai]` table or the `ai` flag | `task setup -- "$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/machine")" && task install && task ai:validate` | resolver accepts the table, the checkout is at the pinned ref, the ai repo's own validate passes |
 | os/defaults | `task install`, then log out/in for domains that need it | defaults applied |
 
 Aggregates: `task diff` (preview, read-only), `task validate` (installation state),
@@ -51,5 +50,5 @@ Interactive convenience functions (`shell/functions/*.zsh`, `shell/aliases/*.zsh
 exempt, even when they contain parsing or formatting logic: `task lint` parse-checks them,
 and running the function once in a live shell is their verification. Do not write smoke
 tests for them or wire them into `task test`. The rule targets pipeline logic --
-resolver, compose, hooks, audits -- where a silent break corrupts machine state rather
+resolver, checkout, audits -- where a silent break corrupts machine state rather
 than one prompt's output.
