@@ -60,9 +60,11 @@ formulae = [
   "fd",
   "gh",
   "git-crypt",
+  "go",
   "hashicorp/tap/terraform",
   "htop",
   "hugo",
+  "node",
   "poppler",
   "uv",
   "wget",
@@ -98,6 +100,11 @@ casks = [
 mas = [
   { id = 441258766, name = "Magnet" },
   { id = 904280696, name = "Things3" },
+]
+
+vscode = [
+  "golang.go",
+  "josh.terminal-here-button",
 ]
 
 [ai]
