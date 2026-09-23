@@ -1,0 +1,4 @@
+# Registry for the ai negative fixtures: the ai flag alone.
+
+[ai]
+description = "fixture: clone jshvn/ai and run its task install"

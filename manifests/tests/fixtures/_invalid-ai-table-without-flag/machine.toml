@@ -1,0 +1,19 @@
+# negative fixture -- an [ai] table on a machine that disables the ai flag
+# is a stale choice, like a package the base tier already provides. Reject.
+
+schema_version = 3
+
+[machine]
+description = "ai-table-without-flag fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = []
+disabled = ["ai"]
+
+[packages]
+
+[ai]
+profile = "personal"
+ref = "main"

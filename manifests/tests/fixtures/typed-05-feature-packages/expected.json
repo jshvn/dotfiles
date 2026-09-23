@@ -1,47 +1,48 @@
 {
-  "meta": {
-    "description": "typed-05-feature-packages fixture"
-  },
-  "platform": {
-    "os": "darwin",
-    "arch": "FROM_UNAME"
+  "ai": {
+    "profile": "",
+    "ref": ""
   },
   "features": {
-    "flag-with-packages": true,
-    "flag-disabled-packages": false
+    "flag-disabled-packages": false,
+    "flag-with-packages": true
   },
   "identity": {
     "git": "none",
     "ssh": "none"
   },
+  "meta": {
+    "description": "typed-05-feature-packages fixture"
+  },
   "packages": {
     "brew": {
-      "formulae": [
-        "curl",
-        "feat-formula",
-        "git"
-      ],
       "casks": [
         {
           "name": "feat-cask"
         }
       ],
+      "formulae": [
+        "curl",
+        "feat-formula",
+        "git"
+      ],
       "mas": []
-    },
-    "vscode": {
-      "extensions": []
     },
     "cargo": {
       "crates": []
     },
+    "npm": {
+      "packages": []
+    },
     "uv": {
       "tools": []
     },
-    "npm": {
-      "packages": []
+    "vscode": {
+      "extensions": []
     }
   },
-  "claude": {
-    "addons": []
+  "platform": {
+    "arch": "FROM_UNAME",
+    "os": "darwin"
   }
 }

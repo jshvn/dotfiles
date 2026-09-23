@@ -1,40 +1,41 @@
 {
-  "meta": {
-    "description": "typed-06-base-tier fixture"
-  },
-  "platform": {
-    "os": "darwin",
-    "arch": "FROM_UNAME"
+  "ai": {
+    "profile": "",
+    "ref": ""
   },
   "features": {},
   "identity": {
     "git": "none",
     "ssh": "none"
   },
+  "meta": {
+    "description": "typed-06-base-tier fixture"
+  },
   "packages": {
     "brew": {
+      "casks": [],
       "formulae": [
         "curl",
         "git",
         "ripgrep"
       ],
-      "casks": [],
       "mas": []
-    },
-    "vscode": {
-      "extensions": []
     },
     "cargo": {
       "crates": []
     },
+    "npm": {
+      "packages": []
+    },
     "uv": {
       "tools": []
     },
-    "npm": {
-      "packages": []
+    "vscode": {
+      "extensions": []
     }
   },
-  "claude": {
-    "addons": []
+  "platform": {
+    "arch": "FROM_UNAME",
+    "os": "darwin"
   }
 }

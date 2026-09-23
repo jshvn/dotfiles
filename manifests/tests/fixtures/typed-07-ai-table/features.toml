@@ -1,0 +1,4 @@
+# Registry for typed-07: the ai flag alone, so the [ai] table is required.
+
+[ai]
+description = "fixture: clone jshvn/ai and run its task install"

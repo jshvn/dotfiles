@@ -1,10 +1,7 @@
 {
-  "meta": {
-    "description": "typed-02-formulae-dedup fixture"
-  },
-  "platform": {
-    "os": "darwin",
-    "arch": "FROM_UNAME"
+  "ai": {
+    "profile": "",
+    "ref": ""
   },
   "features": {
     "dup-flag": true
@@ -13,31 +10,35 @@
     "git": "none",
     "ssh": "none"
   },
+  "meta": {
+    "description": "typed-02-formulae-dedup fixture"
+  },
   "packages": {
     "brew": {
+      "casks": [],
       "formulae": [
         "curl",
         "fzf",
         "git",
         "ripgrep"
       ],
-      "casks": [],
       "mas": []
-    },
-    "vscode": {
-      "extensions": []
     },
     "cargo": {
       "crates": []
     },
+    "npm": {
+      "packages": []
+    },
     "uv": {
       "tools": []
     },
-    "npm": {
-      "packages": []
+    "vscode": {
+      "extensions": []
     }
   },
-  "claude": {
-    "addons": []
+  "platform": {
+    "arch": "FROM_UNAME",
+    "os": "darwin"
   }
 }

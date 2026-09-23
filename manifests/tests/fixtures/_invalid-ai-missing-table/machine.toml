@@ -1,0 +1,15 @@
+# negative fixture -- the ai flag is enabled but no [ai] table names a
+# profile and ref. Reject.
+
+schema_version = 3
+
+[machine]
+description = "ai-missing-table fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = ["ai"]
+disabled = []
+
+[packages]

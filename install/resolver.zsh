@@ -41,10 +41,14 @@ typeset -r OUT="${STATE_DIR}/resolved.json"
 typeset -r MACHINE_NAME_RE='^[a-z0-9_][a-z0-9_-]*$'
 
 # Path-component regex for every TOML-sourced name concatenated into a
-# filesystem path (identity value, claude addon names). Only
+# filesystem path (identity value, ai profile). Only
 # the machine name was guarded before; a value like "../evil" would otherwise
 # resolve a path outside its intended directory.
 typeset -r PATH_NAME_RE='^[a-z0-9_][a-z0-9_-]*$'
+
+# Git ref allow-list for ai.ref: branch, tag or sha. No leading `-` (would
+# read as a git option) and no whitespace; the checkout script quotes it.
+typeset -r GIT_REF_RE='^[A-Za-z0-9][A-Za-z0-9._/-]*$'
 
 # Package-name allow-list. Package names flow verbatim into the generated
 # Brewfile (Ruby DSL, executed by `brew bundle`); a name containing a quote,
@@ -80,7 +84,8 @@ typeset -ra ALLOWED_KEYS=(
   "packages.cargo"
   "packages.uv"
   "packages.npm"
-  "claude.addons"
+  "ai.profile"
+  "ai.ref"
 )
 
 list_available_machines() {
@@ -360,21 +365,32 @@ validate_manifest() {
     fi
   fi
 
-  # claude.addons: shape-guard + existence.
-  local addons_json addon
-  addons_json=$(yq -o=json '.claude.addons // []' "$machine_file" 2>/dev/null || echo '[]')
-  while IFS= read -r addon; do
-    [[ -z "$addon" ]] && continue
-    if ! [[ "$addon" =~ $PATH_NAME_RE ]]; then
-      error "invalid claude addon name '${addon}' (must match ${PATH_NAME_RE}; path-traversal guard)"
+  # [ai]: required when the ai flag is enabled (profile -> jshvn/ai
+  # profiles/<profile>.toml, ref -> the git ref dotfiles checks out) and
+  # rejected when it is not: the machine file records deliberate choices only,
+  # the same stance as the packages redundancy rule. $enabled_json is the
+  # machine's enabled array, computed above for the identity sentinels.
+  local ai_enabled ai_profile ai_ref
+  ai_enabled=$(printf '%s' "$enabled_json" | jq -r 'index("ai") != null')
+  ai_profile=$(yq -r '.ai.profile // ""' "$machine_file" 2>/dev/null || echo "")
+  ai_ref=$(yq -r '.ai.ref // ""' "$machine_file" 2>/dev/null || echo "")
+  if [[ "$ai_enabled" == "true" ]]; then
+    if [[ -z "$ai_profile" || -z "$ai_ref" ]]; then
+      error "feature ai is enabled -- [ai] must set both profile and ref"
       errors=$(( errors + 1 ))
-      continue
     fi
-    if [[ ! -f "${DOTFILEDIR}/manifests/claude-addons/${addon}.toml" ]]; then
-      error "claude.addons references unknown addon \"${addon}\" -- no manifests/claude-addons/${addon}.toml"
+    if [[ -n "$ai_profile" ]] && ! [[ "$ai_profile" =~ $PATH_NAME_RE ]]; then
+      error "invalid ai.profile '${ai_profile}' (must match ${PATH_NAME_RE}; path-traversal guard)"
       errors=$(( errors + 1 ))
     fi
-  done < <(echo "$addons_json" | jq -r '.[]')
+    if [[ -n "$ai_ref" ]] && ! [[ "$ai_ref" =~ $GIT_REF_RE ]]; then
+      error "invalid ai.ref '${ai_ref}' (must match ${GIT_REF_RE})"
+      errors=$(( errors + 1 ))
+    fi
+  elif [[ -n "$ai_profile" || -n "$ai_ref" ]]; then
+    error "[ai] is set but feature ai is not enabled -- enable the flag or remove the table"
+    errors=$(( errors + 1 ))
+  fi
 
   # Unknown keys are errors. Walk every scalar leaf path and reject any not
   # covered by the whitelist (exact match or dotted-prefix).
@@ -487,8 +503,10 @@ resolve_pipeline() {
     return 1
   fi
 
-  local addons_json
-  addons_json=$(yq -o=json '.claude.addons // []' "$machine_file")
+  # Always both keys, empty when the table is absent, so taskfiles can read
+  # .MANIFEST.ai.ref without a nil guard.
+  local ai_json
+  ai_json=$(yq -o=json '{"profile": (.ai.profile // ""), "ref": (.ai.ref // "")}' "$machine_file")
 
   # Assemble the resolved.json contract. schema_version is intentionally
   # omitted -- nothing consumes it. packages.brew.{formulae,casks,mas} hold the
@@ -499,7 +517,7 @@ resolve_pipeline() {
     --argjson formulae "$union_formulae" --argjson casks "$union_casks" --argjson mas "$union_mas" \
     --argjson vscode "$union_vscode" --argjson cargo "$union_cargo" \
     --argjson uv "$union_uv" --argjson npm "$union_npm" \
-    --argjson addons "$addons_json" '
+    --argjson ai "$ai_json" '
     {
       meta: { description: $desc },
       platform: { os: $os, arch: $arch },
@@ -516,7 +534,7 @@ resolve_pipeline() {
         uv: { tools: $uv },
         npm: { packages: $npm }
       },
-      claude: { addons: $addons }
+      ai: $ai
     }'
 }
 

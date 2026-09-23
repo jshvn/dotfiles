@@ -1,10 +1,7 @@
 {
-  "meta": {
-    "description": "typed-03-casks-mas-dedup fixture"
-  },
-  "platform": {
-    "os": "darwin",
-    "arch": "FROM_UNAME"
+  "ai": {
+    "profile": "",
+    "ref": ""
   },
   "features": {
     "extras-flag": true
@@ -13,12 +10,11 @@
     "git": "none",
     "ssh": "none"
   },
+  "meta": {
+    "description": "typed-03-casks-mas-dedup fixture"
+  },
   "packages": {
     "brew": {
-      "formulae": [
-        "curl",
-        "git"
-      ],
       "casks": [
         {
           "name": "iterm2"
@@ -27,6 +23,10 @@
           "name": "vscode"
         }
       ],
+      "formulae": [
+        "curl",
+        "git"
+      ],
       "mas": [
         {
           "id": 497799835,
@@ -34,20 +34,21 @@
         }
       ]
     },
-    "vscode": {
-      "extensions": []
-    },
     "cargo": {
       "crates": []
+    },
+    "npm": {
+      "packages": []
     },
     "uv": {
       "tools": []
     },
-    "npm": {
-      "packages": []
+    "vscode": {
+      "extensions": []
     }
   },
-  "claude": {
-    "addons": []
+  "platform": {
+    "arch": "FROM_UNAME",
+    "os": "darwin"
   }
 }
