@@ -51,7 +51,19 @@ tasks:
           cross "ai: no checkout at {{.AI_DIR}} -- run 'task install'"
           exit 1
         fi
-        check "ai: checkout at {{.AI_DIR}} ($(git -C '{{.AI_DIR}}' describe --tags --always), ref {{.MANIFEST.ai.ref}})"
+        # At the pinned ref: a branch ref must be the checked-out branch, a
+        # tag or commit must equal HEAD. Read-only; the checkout script is
+        # what moves HEAD.
+        ref='{{.MANIFEST.ai.ref}}'
+        head=$(git -C '{{.AI_DIR}}' rev-parse HEAD)
+        branch=$(git -C '{{.AI_DIR}}' symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+        want=$(git -C '{{.AI_DIR}}' rev-parse --verify --quiet "${ref}^{commit}" 2>/dev/null || true)
+        if [[ "$branch" == "$ref" || ( -n "$want" && "$head" == "$want" ) ]]; then
+          check "ai: checkout at {{.AI_DIR}} ($(git -C '{{.AI_DIR}}' describe --tags --always), ref ${ref})"
+        else
+          cross "ai: checkout at {{.AI_DIR}} is at ${branch:-detached $(git -C '{{.AI_DIR}}' rev-parse --short HEAD)}, not ref ${ref} -- run 'task install'"
+          exit 1
+        fi
         task -d '{{.AI_DIR}}' validate
 
   # lint-allow: cmds-without-status
