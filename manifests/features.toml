@@ -39,8 +39,12 @@ platforms = ["darwin"]
 [one-password-signing.packages]
 casks = ["1password"]
 
-[claude-marketplace]
-description = "install Claude config symlinks and marketplace plugins"
+[ai]
+description = "clone jshvn/ai at the pinned ref and run its task install"
+
+# The flag owns its tooling: the Claude Code app is what the ai repo configures.
+[ai.packages]
+casks = ["claude-code"]
 
 [repo-auto-update]
 description = "fast-forward the dotfiles repo from its remote before install"

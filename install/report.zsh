@@ -5,10 +5,11 @@
 #
 # Purpose:      Print one markdown summary of the installed system: machine
 #               identity, feature flags, declared-vs-installed package counts
-#               per manager, symlinks, Claude settings, and shell plumbing.
+#               per manager, symlinks, the jshvn/ai checkout, and shell plumbing.
 #               Consumed by `task report` at a prompt and by CI, which writes
 #               it to the job summary so a run can be read at a glance later.
-# Depends on:   jq; $XDG_STATE_HOME/dotfiles/{machine,resolved.json,build/}.
+# Depends on:   jq; $XDG_STATE_HOME/dotfiles/{machine,resolved.json,build/};
+#               AI_DIR env var (optional).
 #               Per-manager installed counts probe the manager CLI when it is
 #               on PATH (brew, mas, code, cargo, uv, npm) and print `-` when
 #               it is not, so the report never fails on a machine lacking one.
@@ -101,19 +102,16 @@ else
 fi
 print
 
-# ---- claude ----------------------------------------------------------------
-addons=$(jq -r '.claude.addons[]?' "$RESOLVED")
-# The addon script owns the installed-ness rule ([verify].path/command);
-# count its "yes yes" (enabled, installed) rows rather than re-deriving it.
-addon_installed=$(zsh "${DOTFILEDIR}/install/claude-addons.zsh" list 2>/dev/null \
-  | awk '$2=="yes" && $3=="yes"' | ggrep -c . || true)
-fragments=$(count "$(ls "${DOTFILEDIR}/claude/settings.d/"*.json "${STATE_DIR}/settings.d/"*.json 2>/dev/null || true)")
-hooks='-'
-[[ -s "${BUILD}/settings.json" ]] && hooks=$(jq '[.hooks // {} | .[] | .[] | .hooks[]?] | length' "${BUILD}/settings.json")
-print "## Claude"
+# ---- ai ---------------------------------------------------------------------
+ai_profile=$(jq -r '.ai.profile // ""' "$RESOLVED")
+ai_dir="${AI_DIR:-}"
+print "## AI"
 print
-print -- "- settings.json composed from ${fragments} fragment(s), ${hooks} hook command(s)"
-print -- "- addons: ${addon_installed}/$(count "$addons") declared addons installed"
+if [[ -n "$ai_profile" && -n "$ai_dir" && -d "${ai_dir}/.git" ]]; then
+  print -- "- jshvn/ai at \`${ai_dir}\`: $(git -C "$ai_dir" describe --tags --always 2>/dev/null), profile ${ai_profile}"
+else
+  print -- "- ai: feature disabled"
+fi
 print
 
 # ---- shell -----------------------------------------------------------------

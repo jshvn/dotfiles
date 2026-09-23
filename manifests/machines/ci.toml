@@ -30,7 +30,7 @@ enabled = [
 disabled = [
   "one-password-ssh",
   "one-password-signing",
-  "claude-marketplace",
+  "ai",
   "repo-auto-update",
   "ghostty",
   "herdr",
@@ -65,6 +65,3 @@ formulae = [
   "poppler",
   "wget",
 ]
-
-[claude]
-addons = []

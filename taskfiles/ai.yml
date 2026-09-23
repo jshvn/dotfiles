@@ -1,0 +1,78 @@
+version: '3'
+
+# =============================================================================
+# taskfiles/ai.yml -- the jshvn/ai seam
+#
+# Purpose:      Keep the jshvn/ai checkout at the machine's pinned ref and
+#               delegate to its own task surface (setup, install, validate,
+#               show). Dotfiles interprets nothing inside that repo.
+# Depends on:   install/ai-checkout.zsh; install/messages.zsh;
+#               :manifest:resolve (deps); root vars AI_DIR, AI_REMOTE;
+#               resolved.json ai.profile / ai.ref; go-task on PATH inside
+#               the checkout.
+# Side effects: git clone / fetch / checkout of $AI_DIR; whatever
+#               `task -d $AI_DIR install` does (links, plugins, settings.json
+#               under $XDG_CONFIG_HOME/claude). Gated on the ai feature.
+# =============================================================================
+
+tasks:
+
+  install:
+    desc: "Clone jshvn/ai at the pinned ref, then run its setup + install"
+    internal: true
+    deps: [":manifest:resolve"]
+    # Feature gate via status: (each cmds entry is an independent template).
+    status:
+      - '{{if index .MANIFEST.features "ai"}}false{{else}}true{{end}}'
+    cmds:
+      # profile and ref are resolver-validated (PATH_NAME_RE / GIT_REF_RE),
+      # so templating them into quoted shell text is safe.
+      - |
+        AI_DIR='{{.AI_DIR}}' AI_REMOTE='{{.AI_REMOTE}}' AI_REF='{{.MANIFEST.ai.ref}}' \
+          AI_SYNC='{{index .MANIFEST.features "repo-auto-update"}}' \
+          zsh '{{.ROOT_DIR}}/install/ai-checkout.zsh'
+      - task -d '{{.AI_DIR}}' setup -- '{{.MANIFEST.ai.profile}}'
+      - task -d '{{.AI_DIR}}' install
+
+  # lint-allow: cmds-without-status
+  validate:
+    desc: "Checkout present at the pinned ref, then the ai repo's own validate"
+    internal: true
+    deps: [":manifest:resolve"]
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{if not (index .MANIFEST.features "ai")}}
+        info "ai: feature disabled -- skipped"
+        exit 0
+        {{end}}
+        if [[ ! -d '{{.AI_DIR}}/.git' ]]; then
+          cross "ai: no checkout at {{.AI_DIR}} -- run 'task install'"
+          exit 1
+        fi
+        check "ai: checkout at {{.AI_DIR}} ($(git -C '{{.AI_DIR}}' describe --tags --always), ref {{.MANIFEST.ai.ref}})"
+        task -d '{{.AI_DIR}}' validate
+
+  # lint-allow: cmds-without-status
+  show:
+    desc: "Checkout path, pinned ref, HEAD, then the ai repo's own show"
+    deps: [":manifest:resolve"]
+    status: [false]
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        {{if not (index .MANIFEST.features "ai")}}
+        info "ai: feature disabled -- skipped"
+        exit 0
+        {{end}}
+        header "ai"
+        info "  path:    {{.AI_DIR}}"
+        info "  profile: {{.MANIFEST.ai.profile}}"
+        info "  ref:     {{.MANIFEST.ai.ref}}"
+        if [[ -d '{{.AI_DIR}}/.git' ]]; then
+          info "  HEAD:    $(git -C '{{.AI_DIR}}' describe --tags --always)"
+          task -d '{{.AI_DIR}}' show
+        else
+          warn "  not cloned yet -- run 'task install'"
+        fi

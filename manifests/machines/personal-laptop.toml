@@ -23,7 +23,7 @@ identity = "personal"
 enabled = [
   "one-password-ssh",
   "one-password-signing",
-  "claude-marketplace",
+  "ai",
   "repo-auto-update",
   "repo-dev-toolchain",
   "ghostty",
@@ -48,7 +48,6 @@ disabled = [
 [packages]
 # container: Apple's container runtime; requires macOS 15+, so machines on
 # older releases must not list it.
-# node: the ecc Claude addon's installer runtime (install.sh delegates to Node).
 # hashicorp/tap/terraform: terraform is not in homebrew-core (BSL licence), so
 # it comes tap-qualified from HashiCorp's own tap.
 formulae = [
@@ -64,7 +63,6 @@ formulae = [
   "hashicorp/tap/terraform",
   "htop",
   "hugo",
-  "node",
   "poppler",
   "uv",
   "wget",
@@ -75,7 +73,6 @@ casks = [
   "alcove",
   "appcleaner",
   "cardhop",
-  "claude-code",
   "cloudflare-warp",
   "discord",
   "dropbox",
@@ -103,8 +100,6 @@ mas = [
   { id = 904280696, name = "Things3" },
 ]
 
-[claude]
-addons = [
-  "ecc",
-  "superpowers",
-]
+[ai]
+profile = "personal"
+ref = "main"
