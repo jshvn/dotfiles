@@ -54,8 +54,9 @@ cargo = []                  # crate names
 uv = []                     # uv tool names
 npm = []                    # global npm package names
 
-[claude]
-addons = ["ecc"]            # each -> manifests/claude-addons/<name>.toml
+[ai]                        # required iff "ai" is in features.enabled
+profile = "personal"        # -> jshvn/ai profiles/<profile>.toml
+ref = "main"                # git ref the checkout is pinned to
 ```
 
 ### Feature registry (`manifests/features.toml`)
@@ -134,7 +135,7 @@ validator rejects the manifest if any is missing or empty.
 | `machine.arch` | string | `"arm64"` or `"x86_64"`; resolver backfills via `uname -m` when absent |
 | `packages.formulae` / `casks` / `vscode` / `cargo` / `uv` / `npm` | arrays of strings | Discretionary packages for this machine; unioned with the base tier and every enabled feature's packages |
 | `packages.mas` | array of `{ id, name }` objects | `id` must be an integer; `name` doubles as the `.app` verify name |
-| `claude.addons` | array of strings | Each name must have `manifests/claude-addons/<name>.toml` |
+| `ai.profile` / `ai.ref` | strings | Required together when the `ai` flag is enabled, rejected otherwise; `profile` names `profiles/<profile>.toml` in `jshvn/ai`, `ref` is the git ref dotfiles checks out |
 
 ### Tap-qualified packages
 

@@ -65,6 +65,6 @@ manifest already answers it in one file.
 - Role: runs `task lint` and `task test` against the repo. It is a real
   machine manifest rather than a special case in the workflow, so CI
   exercises the same resolver path as a laptop.
-- Special handling: no identity overlay, no GUI, no Claude surface. If a
+- Special handling: no identity overlay, no GUI, no AI surface (the ai flag is off). If a
   change makes CI need a package, that is a signal about the repo's own
   toolchain, not about CI.

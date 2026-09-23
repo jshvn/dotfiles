@@ -11,7 +11,7 @@ inherits from.
 Scope is intentionally narrow: only the tools the bootstrap script
 acquires (Homebrew, go-task, yq) and the audit signals the script
 emits before doing so. SSH key handling lives in the identity
-layer; Claude hook secret-scanning is implemented in `claude/hooks/`;
+layer; Claude hook secret-scanning lives in the jshvn/ai repo;
 per-machine credential management is documented in `docs/MACHINES.md`.
 
 The repository's per-machine security boundary is the manifest model
@@ -98,8 +98,8 @@ The bootstrap trust chain inherits from three named anchors:
 - **1Password agent integration** -- the non-server machines route SSH
   agent traffic through 1Password; the wiring lives in
   `shell/.zprofile` and `identity/ssh/cloudflared.zsh`.
-- **Claude hook secret-scanning** -- the hook that blocks commits
-  containing secrets is implemented in `claude/hooks/secret-scan.zsh`.
+- **Claude hook secret-scanning** -- implemented in the jshvn/ai repo
+  (`claude/hooks/secret-scan.zsh` there), installed by its `task install`.
 - **Per-machine credential management** -- out of scope. Anything beyond the
   universal bootstrap path is documented in `docs/MACHINES.md`.
 
@@ -131,9 +131,6 @@ Listed for reference; not currently in scope:
 - **Pinned-checksum brew installer.** Vendor `install.sh` at a known git
   commit and verify its checksum before execution. Eliminates the residual
   Step 1 risk at the cost of installer staleness.
-- **Shellcheck integration for hooks.** Lint the Claude hook scripts and
-  any zsh script that handles secrets, surfacing common injection
-  anti-patterns at commit time.
 
 Structural regressions are already gated: `.github/workflows/ci.yml` runs the
 full pipeline, including the `task lint` catalogue, on every push to `master`

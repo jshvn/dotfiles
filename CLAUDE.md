@@ -21,7 +21,7 @@ The pipeline runs three stages: evaluate (resolver -> `resolved.json`), realize 
 
 ## Finding Things
 
-- Manifest schema: `docs/MANIFEST.md`. Claude addon schema: `docs/CLAUDE-ADDONS.md`.
+- Manifest schema: `docs/MANIFEST.md`.
 - Locked decisions, scope boundaries, performance/security constraints: `docs/DECISIONS.md`.
   Revisit only with new evidence.
 - Every top-level concept directory has a README saying what belongs there and how to name it.
@@ -45,13 +45,13 @@ What the file system will not tell you:
 - `status:` blocks evaluate before shell context exists: `{{.X}}` template vars only, never
   `$X` (empty there; the task re-runs forever). Every install task has a `status:` block
   returning 0 when converged.
-- The repo tree holds source only -- no generated file is tracked. `settings.json` is composed
-  from `claude/settings.d/*.json` plus `$XDG_STATE_HOME/dotfiles/settings.d/*.json` into
-  `$XDG_STATE_HOME/dotfiles/build/settings.json`, then installed onto
-  `$XDG_CONFIG_HOME/claude/settings.json` as a real file. Edit fragments and re-run
-  `task install`; never hand-edit the live file, and never register a hook there directly.
-  Compose reads back exactly these CLI-managed keys and no others: `enabledPlugins`,
-  `extraKnownMarketplaces`, `model`, `tui`. `task claude:audit` reports drift.
+- The repo tree holds source only -- no generated file is tracked. Build artifacts live in
+  `$XDG_STATE_HOME/dotfiles/build/`.
+- AI tooling config (Claude Code instructions, hooks, skills, settings, plugins) is not here.
+  It lives in `jshvn/ai`, checked out at `~/Git/personal/ai`; the `ai` feature flag plus a
+  machine's `[ai] profile / ref` table make `task install` clone it at that ref and run its
+  own `task install`. Dotfiles reads nothing inside that checkout. The one repo-specific
+  skill, `jshvn-verifying-dotfiles-changes`, is project-scoped under `.claude/skills/`.
 - A machine's `[features]` must account for every registry flag applicable to its `os` in
   either `enabled` or `disabled`; an unaccounted flag is a hard `task setup` error. A flag
   whose `platforms` excludes the machine's os is inapplicable and appears in neither list.
@@ -74,9 +74,6 @@ What the file system will not tell you:
 - Lint rules: catalogue table in `taskfiles/README.md`, rule bodies in `taskfiles/lint.yml`;
   `# LINT-NN:` comments cite them. LINT-01, LINT-06, and LINT-09 are retired numbers -- never
   reuse them.
-- Third-party Claude addons are declarative: `manifests/claude-addons/<name>.toml` plus the
-  machine's `[claude].addons` list; they install inside `task install`. Machine-generated
-  addon fragments live in the state tree, never the repo.
 - One concept per file, flat directories: one alias topic / function / taskfile / machine
   manifest / defaults concern per file; no subdirectories under `shell/aliases/` and no
   `os/darwin/` nesting. The one nesting that exists is `shell/functions/helpers/`, holding

@@ -16,7 +16,6 @@ manifest lists the third only.
 - `base.toml` -- the unconditional package tier every machine receives. No
   machine declares it; listing one of its packages in a machine manifest is a
   hard error.
-- `claude-addons/<name>.toml` -- third-party Claude addon definitions.
 - `tests/` -- fixtures for the resolver.
 
 The resolver (`install/resolver.zsh`) validates the active machine's TOML against

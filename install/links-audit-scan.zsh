@@ -49,7 +49,7 @@ while IFS= read -r line; do
 done
 
 # Parent dirs of expected targets (so deep expected dirs like
-# ~/.config/claude/hooks are reached). Deduplicated, word-split-safe -- NOT
+# ~/.config/zsh are reached). Deduplicated, word-split-safe -- NOT
 # the `array=($(...))` form, which word-splits on spaces in path components.
 parent_dirs=()
 raw_parents=()

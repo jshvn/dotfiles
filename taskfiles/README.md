@@ -90,5 +90,5 @@ LINT-01, LINT-06, and LINT-09 are intentionally absent; retired numbers are
 never reused, so existing `# LINT-NN:` citations in code stay unambiguous.
 LINT-01 ("every install task has a status: block") was generalized into
 LINT-03a. LINT-09 checked a generated `settings.json` tracked in the repo;
-the repo tree holds source only, and build-vs-live drift is runtime, covered
-by `task claude:audit` under both `task audit` and `task validate`.
+the repo tree holds source only, and `settings.json` is now built by the
+jshvn/ai repo, whose own audit covers build-vs-live drift.

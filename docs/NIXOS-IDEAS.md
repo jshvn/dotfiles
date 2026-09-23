@@ -229,17 +229,10 @@ corollary of staging, not a feature built on top of it.
 ### B. The repo tree holds source only
 
 Nix's hardest rule is that build products never live in the source tree.
-Machine-generated addon fragments live at
-`$XDG_STATE_HOME/dotfiles/settings.d/`, and the composed `settings.json` is
-built into the state tree and installed onto `~/.config/claude/settings.json`
-as a real file. Nothing the Claude CLI writes can reach tracked source, so
-`git status` no longer differs per machine.
-
-One impurity remains and is deliberate: compose reads `enabledPlugins`,
-`extraKnownMarketplaces`, `model`, and `tui` back out of the live file,
-because the CLI writes them there and cannot be redirected. Bounded to those
-keys, one direction, and pointed away from the repo -- the honest shape, not
-something to engineer around.
+Brewfile and links.map are built into the state tree; the Claude
+`settings.json` is built the same way by the jshvn/ai repo. Nothing a CLI
+writes can reach tracked source, so `git status` no longer differs per
+machine.
 
 ### C. Feature-to-package mapping
 
@@ -437,7 +430,7 @@ system layer.
 steps by OS in the resolver/taskfiles:
 
 - Portable layer (should run unmodified on Ubuntu): `shell/`, `configs/`,
-  `identity/` (minus 1Password specifics), `claude/`, functions/aliases.
+  `identity/` (minus 1Password specifics), functions/aliases.
   The LINT-05 portability warnings become load-bearing here --
   `os/README.md` inventories every macOS-only call with its Linux
   remediation.
@@ -479,9 +472,8 @@ confidence, and it directly exercises the multi-machine story.
 
 chezmoi's `run_onchange` scripts re-run when their *content hash* changes --
 a clean generalization of the `status:` pattern for steps whose freshness
-depends on inputs, not outputs. Candidate: `claude:settings-compose`
-(hash the `settings.d/` fragment dir into the status check instead of, or in
-addition to, mtime comparison). The existing mtime-gated `manifest:resolve`
+depends on inputs, not outputs. Candidate: `packages:compose`
+(hash the manifests into the status check instead of mtime). The existing mtime-gated `manifest:resolve`
 and `packages:compose` freshness checks are already most of the way there;
 use content hashes where mtime lies (e.g. git checkout normalizing mtimes).
 

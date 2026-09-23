@@ -18,8 +18,6 @@ stage in this list.
   Self-bootstrapping under `set -u` via the `${DOTFILES_MESSAGES_LOADED:-}`
   guard -- callers source it with a bare `source` line (see the `set -u
   contract` block at the top of the file).
-- `compose-settings.zsh` -- Single source of truth for the settings-compose
-  algorithm shared by `claude:settings-compose` and `claude:audit`.
 
 ### evaluate (manifests -> resolved.json)
 
@@ -42,10 +40,10 @@ stage in this list.
 
 ### operate (drift detection, addon lifecycle, repo hygiene)
 
-- `claude-addons.zsh` -- Install / upgrade / remove / list / validate the
-  third-party Claude addons declared in `manifests/claude-addons/<name>.toml`
-  and selected per machine via `[claude].addons`. Invoked by
-  `taskfiles/claude-addons.yml`.
+- `ai-checkout.zsh` -- Clone `jshvn/ai` into `~/Git/personal/ai` when absent
+  and put it at the machine's pinned ref (branch: tracking checkout plus an
+  optional fast-forward via `repo-sync.zsh`; tag or commit: detached).
+  Invoked by `taskfiles/ai.yml :: ai:install`.
 - `lint-rules.zsh` -- Shared lint detectors used by both the production scan
   (`taskfiles/lint.yml :: lint:taskfile`) and the fixture self-test
   (`lint:test-fixtures`), so one implementation backs both.
@@ -58,12 +56,9 @@ stage in this list.
 
 ### tests (`install/tests/`)
 
-- `hooks.zsh` -- Smoke-test runner for the repo-owned Claude hooks that pass
-  or block on their input (`secret-scan`, `no-emojis`, `no-ai-comments`,
-  `agent-transparency`, `block-destructive`). `notify` and `post-compact`
-  are not covered.
-  Invoked by `taskfiles/test.yml :: test:hooks`; exit code is the count of
-  scenario failures (0 == all pass).
+- `ai-checkout.zsh` -- Smoke tests for `ai-checkout.zsh` against a throwaway
+  bare remote (clone, tag detach, branch re-attach, unknown ref). Invoked by
+  `taskfiles/test.yml :: test:ai-checkout`.
 - `links-audit.zsh` -- Smoke test for `links-audit-scan.zsh` against a
   throwaway repo + config tree. Invoked by `test:links-audit`.
 - `repo-sync.zsh` -- Smoke test exercising every guard branch of
