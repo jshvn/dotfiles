@@ -9,7 +9,7 @@
     "ssh": "none"
   },
   "meta": {
-    "description": "typed-01-baseline fixture"
+    "description": "typed-08-taps fixture"
   },
   "packages": {
     "brew": {
@@ -19,7 +19,9 @@
         "git"
       ],
       "mas": [],
-      "taps": []
+      "taps": [
+        "homebrew/brew-vulns"
+      ]
     },
     "cargo": {
       "crates": []

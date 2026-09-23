@@ -1,0 +1,16 @@
+# negative fixture -- a tap is <user>/<repo>; a three-segment name is a
+# package, not a tap. Reject.
+
+schema_version = 3
+
+[machine]
+description = "taps-shape fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = []
+disabled = []
+
+[packages]
+taps = ["homebrew/brew-vulns/vulns"]

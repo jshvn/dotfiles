@@ -26,8 +26,13 @@
 #     publishing no RDAP service. "whois" is keg-only, so whois() names it
 #     through $HOMEBREW_PREFIX/opt/ rather than relying on PATH.
 #   - "mas" is the Mac App Store CLI that installs every [packages] mas entry.
+#   - "homebrew/brew-vulns" is a bare tap: it ships no package, only the
+#     `brew vulns` command that `task packages:vulns` (under `task audit`)
+#     runs on every machine.
 
 [packages]
+taps = ["homebrew/brew-vulns"]
+
 formulae = [
   "antidote",
   "cloudflared",

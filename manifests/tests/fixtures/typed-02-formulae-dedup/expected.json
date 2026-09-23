@@ -22,7 +22,8 @@
         "git",
         "ripgrep"
       ],
-      "mas": []
+      "mas": [],
+      "taps": []
     },
     "cargo": {
       "crates": []

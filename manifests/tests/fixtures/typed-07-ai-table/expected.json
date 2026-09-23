@@ -20,7 +20,8 @@
         "curl",
         "git"
       ],
-      "mas": []
+      "mas": [],
+      "taps": []
     },
     "cargo": {
       "crates": []

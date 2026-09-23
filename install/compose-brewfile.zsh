@@ -17,7 +17,8 @@ set -euo pipefail
 #   Lines 2-5 -- Machine: / Bundles: / Extras: counts / DO NOT EDIT notice
 #   Body      -- typed extras emitted as Ruby DSL lines, in fixed order:
 #                  taps -> formulae -> casks -> mas -> vscode -> cargo -> uv -> npm
-#                taps lead so a third-party tap is registered before the
+#                taps (declared bare taps plus the prefixes of qualified
+#                names) lead so a third-party tap is registered before the
 #                qualified entry that needs it.
 #
 # The resolver folds the base tier (manifests/base.toml) and every enabled
@@ -122,12 +123,14 @@ compose() {
     # refusal is a hard error rather than a prompt, so the composer declares
     # both the tap and the grant. The qualified name in a reviewed, tracked
     # manifest is the consent; nothing needs to be confirmed on the machine.
+    # packages.brew.taps adds bare taps that ship no package, only commands
+    # (homebrew/brew-vulns); they merge with the derived prefixes.
     echo "# === taps ==="
-    { echo "$formulae_json" | jq -r '.[]'
-      echo "$casks_json"    | jq -r '.[].name'
-    } | ggrep -E '^[^/]+/[^/]+/[^/]+$' \
-      | sed -E 's#^([^/]+/[^/]+)/.*#\1#' \
-      | sort -u \
+    { echo "$taps_json" | jq -r '.[]'
+      { echo "$formulae_json" | jq -r '.[]'
+        echo "$casks_json"    | jq -r '.[].name'
+      } | ggrep -E '^[^/]+/[^/]+/[^/]+$' | sed -E 's#^([^/]+/[^/]+)/.*#\1#' || true
+    } | sort -u \
       | while IFS= read -r tap_name; do
           printf "tap '%s'\n" "$tap_name"
         done
@@ -175,6 +178,7 @@ main() {
   # `// []` covers the case where a sub-array is absent (defense-in-depth
   # for ad-hoc resolved.json variants where defaults didn't supply the shape).
   local formulae_json casks_json mas_json
+  taps_json=$(jq -c     '.packages.brew.taps     // []' "$RESOLVED_JSON")
   formulae_json=$(jq -c '.packages.brew.formulae // []' "$RESOLVED_JSON")
   casks_json=$(jq -c    '.packages.brew.casks    // []' "$RESOLVED_JSON")
   mas_json=$(jq -c      '.packages.brew.mas      // []' "$RESOLVED_JSON")

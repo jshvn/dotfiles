@@ -42,6 +42,7 @@ installed_brew_formulae() {
   has brew || return 1
   print -r -- "$(brew leaves 2>/dev/null | ggrep -c . || true) leaves / $(brew list --formula 2>/dev/null | ggrep -c . || true) total"
 }
+installed_brew_taps()     { has brew || return 1; brew tap 2>/dev/null | ggrep -c . || true; }
 installed_brew_casks()    { has brew || return 1; brew list --cask 2>/dev/null | ggrep -c . || true; }
 installed_brew_mas()      { has mas  || return 1; mas list 2>/dev/null | ggrep -c . || true; }
 installed_vscode_extensions() { has code || return 1; code --list-extensions 2>/dev/null | ggrep -c . || true; }

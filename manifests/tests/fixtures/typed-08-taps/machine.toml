@@ -1,0 +1,16 @@
+# typed-08-taps -- a bare tap declared in [packages].taps is emitted under
+# packages.brew.taps, alongside the taps derived from qualified names.
+
+schema_version = 3
+
+[machine]
+description = "typed-08-taps fixture"
+os = "darwin"
+identity = "none"
+
+[features]
+enabled = []
+disabled = []
+
+[packages]
+taps = ["homebrew/brew-vulns"]

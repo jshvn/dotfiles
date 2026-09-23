@@ -5,7 +5,8 @@
 #
 # Purpose:      Assert the composed Brewfile grants trust to tap-qualified
 #               entries and leaves core entries bare, emits one tap line per
-#               distinct tap prefix, and still escapes single quotes so a
+#               distinct tap prefix or declared bare tap, and still escapes
+#               single quotes so a
 #               package name can never break out of its Ruby string literal.
 # Depends on:   DOTFILEDIR env var (exported by taskfiles/test.yml);
 #               install/compose-brewfile.zsh; jq; install/messages.zsh.
@@ -31,6 +32,7 @@ cat > "${BASE}/dotfiles/resolved.json" <<'JSON'
   "meta": { "description": "compose-fixture" },
   "packages": {
     "brew": {
+      "taps": ["homebrew/brew-vulns"],
       "formulae": ["git", "oven-sh/bun/bun"],
       "casks": [{ "name": "firefox" }, { "name": "wouterdebie/tap/davit" }],
       "mas": []
@@ -65,13 +67,14 @@ assert_line "qualified formula is trusted"   "brew 'oven-sh/bun/bun', trusted: t
 assert_line "qualified cask is trusted"      "cask 'wouterdebie/tap/davit', trusted: true"
 assert_line "formula tap is declared"        "tap 'oven-sh/bun'"
 assert_line "cask tap is declared"           "tap 'wouterdebie/tap'"
+assert_line "bare tap is declared"           "tap 'homebrew/brew-vulns'"
 
 # One tap line per distinct prefix, never a duplicate.
 tap_lines=$(ggrep -cE "^tap '" "$out" || true)
-if [[ "$tap_lines" -eq 2 ]]; then
+if [[ "$tap_lines" -eq 3 ]]; then
   check "exactly one tap line per distinct tap"
 else
-  cross "expected 2 tap lines, got ${tap_lines}"
+  cross "expected 3 tap lines, got ${tap_lines}"
   failed=$(( failed + 1 ))
 fi
 

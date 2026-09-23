@@ -32,7 +32,8 @@
           "id": 497799835,
           "name": "Xcode-machine"
         }
-      ]
+      ],
+      "taps": []
     },
     "cargo": {
       "crates": []

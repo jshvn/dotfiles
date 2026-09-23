@@ -134,13 +134,15 @@ validator rejects the manifest if any is missing or empty.
 |-------|------|-------|
 | `machine.arch` | string | `"arm64"` or `"x86_64"`; resolver backfills via `uname -m` when absent |
 | `packages.formulae` / `casks` / `vscode` / `cargo` / `uv` / `npm` | arrays of strings | Discretionary packages for this machine; unioned with the base tier and every enabled feature's packages |
+| `packages.taps` | array of `<user>/<repo>` strings | Bare taps that ship commands rather than packages (the base tier declares `homebrew/brew-vulns`); a tap that provides a package is declared by that package's qualified name instead |
 | `packages.mas` | array of `{ id, name }` objects | `id` must be an integer; `name` doubles as the `.app` verify name |
 | `ai.profile` / `ai.ref` | strings | Required together when the `ai` flag is enabled, rejected otherwise; `profile` names `profiles/<profile>.toml` in `jshvn/ai`, `ref` is the git ref dotfiles checks out |
 
 ### Tap-qualified packages
 
 A `formulae` or `casks` entry written as `<user>/<tap>/<name>` names a
-third-party tap. The composer emits a matching `tap` line and marks the entry
+third-party tap. A tap that provides only commands is declared bare in
+`packages.taps`. The composer emits a matching `tap` line and marks the entry
 `trusted: true`, because Homebrew refuses to load an entry from an untrusted
 tap and raises rather than prompting. Declaring the qualified name in the
 manifest is the trust decision -- there is nothing to confirm on the machine.
@@ -218,7 +220,7 @@ while running its own ssh-agent.
 ## Compiled output (`resolved.json`)
 
 The resolver emits a stable JSON contract consumed by every taskfile. Package
-paths in the compiled artifact are `packages.brew.{formulae,casks,mas}` and
+paths in the compiled artifact are `packages.brew.{taps,formulae,casks,mas}` and
 `packages.{vscode,cargo,uv,npm}`, each holding the resolved union of every
 tier. `features` is materialized as a boolean map over the full
 registry (enabled -> true, everything else -> false). `schema_version` is not

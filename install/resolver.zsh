@@ -77,6 +77,7 @@ typeset -ra ALLOWED_KEYS=(
   "machine.identity"
   "features.enabled"
   "features.disabled"
+  "packages.taps"
   "packages.formulae"
   "packages.casks"
   "packages.mas"
@@ -272,7 +273,7 @@ validate_manifest() {
       | map(select((.value | type) == "object" and (.value | has("packages"))))
       | map(.key as $flag | (.value.packages | to_entries | map(
           .key as $bucket
-          | if (["formulae","casks","mas","vscode","cargo","uv","npm"] | index($bucket)) == null
+          | if (["taps","formulae","casks","mas","vscode","cargo","uv","npm"] | index($bucket)) == null
           then "registry flag \($flag): unknown packages bucket \($bucket)"
           elif $bucket == "mas"
           then (if (.value | map(select((.id | type) != "number" or (.name | type) != "string")) | length) > 0
@@ -316,7 +317,7 @@ validate_manifest() {
   # packages.* buckets: bare-string arrays except mas ({ id, name } objects).
   local bad_shape
   bad_shape=$(jq -rn --argjson p "$(yq -o=json '.packages // {}' "$machine_file" 2>/dev/null || echo '{}')" '
-    [ "formulae", "casks", "vscode", "cargo", "npm", "uv" ] as $bare
+    [ "taps", "formulae", "casks", "vscode", "cargo", "npm", "uv" ] as $bare
     | ( $bare | map(. as $k | ($p[$k] // []) | map(select(type != "string")) | length > 0 | select(.) | $k) )
     + ( ($p.mas // []) | map(select((.id | type) != "number" or (.name | type) != "string")) | if length > 0 then ["mas"] else [] end )
     | .[]' 2>/dev/null || true)
@@ -331,6 +332,17 @@ validate_manifest() {
       errors=$(( errors + 1 ))
     done <<< "$bad_shape"
   fi
+
+  # packages.taps: a bare tap is exactly <user>/<repo>; a third segment makes
+  # it a package name, which belongs in formulae or casks instead.
+  local taps_bad tap_name
+  taps_bad=$(yq -o=json '.packages.taps // []' "$machine_file" 2>/dev/null \
+    | jq -r '.[] | select(type == "string") | select(test("^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$") | not)' 2>/dev/null || true)
+  while IFS= read -r tap_name; do
+    [[ -z "$tap_name" ]] && continue
+    error "packages.taps entries must be <user>/<repo>: '${tap_name}'"
+    errors=$(( errors + 1 ))
+  done <<< "$taps_bad"
 
   # Redundancy: a machine must not list a package that the base tier or an
   # ENABLED feature already provides -- the machine manifest is the record of
@@ -349,7 +361,7 @@ validate_manifest() {
       --argjson reg "$reg_json_local" \
       --argjson en "$enabled_json" \
       --argjson mach "$machine_pkgs_json" '
-      ["formulae","casks","vscode","cargo","uv","npm"] as $buckets
+      ["taps","formulae","casks","vscode","cargo","uv","npm"] as $buckets
       | [ $buckets[] as $b
           | ( ($base[$b] // []) + [ $en[] as $f | ($reg[$f].packages[$b] // [])[] ] ) as $provided
           | ( ($mach[$b] // []) | map(select(IN($provided[])))
@@ -470,7 +482,8 @@ resolve_pipeline() {
   }
 
   # Per-bucket union across base tier, enabled features, and the machine.
-  local union_formulae union_casks union_mas union_vscode union_cargo union_uv union_npm
+  local union_taps union_formulae union_casks union_mas union_vscode union_cargo union_uv union_npm
+  union_taps=$(union_bucket     "$machine_file" taps     'add | unique' "$(feature_bucket taps)")
   union_formulae=$(union_bucket "$machine_file" formulae 'add | unique' "$(feature_bucket formulae)")
   union_casks=$(union_bucket    "$machine_file" casks    'add | unique | map({ name: . })' "$(feature_bucket casks)")
   union_mas=$(union_bucket      "$machine_file" mas      'add | group_by(.id) | map(.[-1])' "$(feature_bucket mas)")
@@ -509,11 +522,12 @@ resolve_pipeline() {
   ai_json=$(yq -o=json '{"profile": (.ai.profile // ""), "ref": (.ai.ref // "")}' "$machine_file")
 
   # Assemble the resolved.json contract. schema_version is intentionally
-  # omitted -- nothing consumes it. packages.brew.{formulae,casks,mas} hold the
-  # full brew package set (base tier + enabled-feature packages + machine).
+  # omitted -- nothing consumes it. packages.brew.{taps,formulae,casks,mas}
+  # hold the full brew set (base tier + enabled-feature packages + machine).
   jq -n \
     --arg desc "$desc" --arg os "$os" --arg arch "$arch" --arg ident "$ident" \
     --argjson features "$features_map" \
+    --argjson taps "$union_taps" \
     --argjson formulae "$union_formulae" --argjson casks "$union_casks" --argjson mas "$union_mas" \
     --argjson vscode "$union_vscode" --argjson cargo "$union_cargo" \
     --argjson uv "$union_uv" --argjson npm "$union_npm" \
@@ -525,6 +539,7 @@ resolve_pipeline() {
       identity: { git: $ident, ssh: $ident },
       packages: {
         brew: {
+          taps: $taps,
           formulae: $formulae,
           casks: $casks,
           mas: $mas
