@@ -11,7 +11,6 @@ identity = "personal"
 [features]
 enabled = [
   "one-password-signing",
-  "claude-marketplace",
   "repo-auto-update",
   "ghostty",
   "jgrid-net",
@@ -26,6 +25,7 @@ enabled = [
   "macos-animations",
 ]
 disabled = [
+  "ai",
   "one-password-ssh",
   "server-include",
 ]

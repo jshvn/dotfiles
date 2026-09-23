@@ -4,8 +4,8 @@
 # Purpose:      Single canonical entry (`task install`) plus public operator
 #               surface (default banner, setup, test, validate). Wires every
 #               included taskfile module under one namespace.
-# Depends on:   taskfiles/{audit,claude,claude-addons,hostname,identity,links,
-#               lint,macos,manifest,packages,repo,shell,show,test,tunnel}.yml;
+# Depends on:   taskfiles/{ai,hostname,identity,links,lint,macos,manifest,
+#               packages,repo,shell,test,tunnel}.yml;
 #               install/messages.zsh (sourced via {{.TASKFILE_DIR}} so the
 #               banner renders the same regardless of include parse order).
 # Side effects: deferred to subtasks; this file declares no direct mutations.
@@ -23,6 +23,12 @@ vars:
   XDG_STATE_HOME: '{{.HOME}}/.local/state'
   XDG_CACHE_HOME: '{{.HOME}}/.cache'
   ZDOTDIR: '{{.XDG_CONFIG_HOME}}/zsh'
+
+  # jshvn/ai checkout: a working tree the operator edits, so it lives next
+  # to the dotfiles checkout, not in an XDG data dir. Same path on every
+  # machine, hence a var and not a manifest field.
+  AI_DIR: '{{.HOME}}/Git/personal/ai'
+  AI_REMOTE: 'git@github.com:jshvn/ai.git'
 
   # Homebrew prefix -- detect from arch when brew not yet installed.
   HOMEBREW_PREFIX:
@@ -100,8 +106,7 @@ includes:
   shell:    ./taskfiles/shell.yml
   identity: ./taskfiles/identity.yml
   packages: ./taskfiles/packages.yml
-  claude:   ./taskfiles/claude.yml
-  claude-addons: ./taskfiles/claude-addons.yml
+  ai:       ./taskfiles/ai.yml
   repo: ./taskfiles/repo.yml
   test: ./taskfiles/test.yml
   macos:    ./taskfiles/macos.yml
@@ -141,16 +146,15 @@ tasks:
         echo
         header "Diagnostics (read-only, domain-first)"
         info "  task show                            List inspectable domains"
-        info "  task <domain>:show                   manifest | features | claude | claude-addons | hostname | tunnel"
-        info "  task <domain>:audit                  manifest | packages | links | claude | claude-addons"
+        info "  task <domain>:show                   manifest | features | ai | hostname | tunnel"
+        info "  task <domain>:audit                  manifest | packages | links"
         info "  task packages:vulns                  OSV.dev scan of declared packages"
-        info "  task <domain>:diff                   packages | links | claude"
+        info "  task <domain>:diff                   packages | links"
         echo
         header "State mutations"
         info "  task setup -- <name>                 Set active machine manifest (\$XDG_STATE_HOME/dotfiles/machine)"
         info "  task hostname:set -- <name>          Set live macOS hostname (requires sudo; self-heals on task install)"
         info "  task tunnel:roll                     Restart the cloudflared pair one colour at a time (cloudflared-tunnel machines)"
-        info "  task claude-addons:remove -- <name>  Remove a Claude addon"
         echo
         echo "Run 'task --list' for the full task graph."
 
@@ -168,18 +172,16 @@ tasks:
 
   # lint-allow: cmds-without-status
   test:
-    desc: "Run all smoke tests (manifest + hook + repo-sync + links-audit + packages-declared + packages-trust + brewfile-compose + shell-startup + settings-compose + claude-addons-manifest + report + tunnel + lint fixtures)"
+    desc: "Run all smoke tests (manifest + repo-sync + ai-checkout + links-audit + packages-declared + packages-trust + brewfile-compose + shell-startup + report + tunnel + lint fixtures)"
     cmds:
       - task: test:manifest
-      - task: test:hooks
       - task: test:repo-sync
+      - task: test:ai-checkout
       - task: test:links-audit
       - task: test:packages-declared
       - task: test:packages-trust
       - task: test:brewfile-compose
       - task: test:shell-startup
-      - task: test:settings-compose
-      - task: test:claude-addons-manifest
       - task: test:report
       - task: test:tunnel
       - task: lint:test-fixtures
@@ -190,7 +192,7 @@ tasks:
     status: [false]
     deps: [manifest:resolve]
     cmds:
-      - DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/install/report.zsh'
+      - DOTFILEDIR='{{.ROOT_DIR}}' AI_DIR='{{.AI_DIR}}' zsh '{{.ROOT_DIR}}/install/report.zsh'
 
   # lint-allow: cmds-without-status
   validate:
@@ -203,9 +205,9 @@ tasks:
     # aggregator therefore dispatches via go-task's `task:` keyword, which
     # bypasses the CLI-level internal gate. `ignore_error: true` applies per
     # `for:` iteration, preserving run-all-aggregate semantics: every component
-    # runs regardless of prior failures. The list holds full task names (not
-    # `<domain>` + a fixed verb) because claude-addons has no validate; its
-    # audit is the state probe.
+    # runs regardless of prior failures. The list holds full task names so a
+    # domain can contribute a differently named probe (packages:vulns under
+    # audit).
     #
     # Per-component pass/fail status is emitted INLINE by each validate via
     # `check`/`cross`/`warn` from messages.zsh; there is no cross-component
@@ -214,7 +216,7 @@ tasks:
     cmds:
       - for: [manifest:validate, identity:validate, links:validate,
               macos:validate, hostname:validate, tunnel:validate, packages:validate,
-              claude:validate, claude-addons:audit, shell:validate]
+              ai:validate, shell:validate]
         task: '{{.ITEM}}'
         ignore_error: true
 
@@ -231,8 +233,7 @@ tasks:
     # messages.zsh. Full names because packages contributes two probes
     # (audit + vulns).
     cmds:
-      - for: [manifest:audit, packages:audit, packages:vulns, links:audit,
-              claude:audit, claude-addons:audit]
+      - for: [manifest:audit, packages:audit, packages:vulns, links:audit]
         task: '{{.ITEM}}'
         ignore_error: true
 
@@ -247,8 +248,7 @@ tasks:
         echo
         info "  task manifest:show         Resolved manifest (-- [--machine] NAME for any machine)"
         info "  task features:show         Feature flags: enabled/disabled per the active machine"
-        info "  task claude:show           Installed marketplaces + plugins"
-        info "  task claude-addons:show    Known / enabled / installed Claude addons"
+        info "  task ai:show               jshvn/ai checkout: path, profile, ref, plugins"
         info "  task hostname:show         Hostname state file + live system hostnames"
 
   # lint-allow: cmds-without-status
@@ -256,13 +256,13 @@ tasks:
     desc: "Preview what task install would change (read-only)"
     status: [false]
     deps: [manifest:resolve]
-    # Bare-verb aggregate over the three domains with a build artifact. Each
+    # Bare-verb aggregate over the two domains with a build artifact. Each
     # <domain>:diff deps its own realize step, so the artifacts are refreshed
     # exactly once and a standalone `task links:diff` is never stale.
     # ignore_error: true per `for:` iteration preserves run-all-aggregate
     # semantics.
     cmds:
-      - for: [packages:diff, links:diff, claude:diff]
+      - for: [packages:diff, links:diff]
         task: '{{.ITEM}}'
         ignore_error: true
 
@@ -272,8 +272,8 @@ tasks:
     summary: |
       task install IS task update -- there is no separate update pipeline.
       Subtasks are state-converging: links/packages/macos/hostname short-circuit
-      when already at desired state; claude-addons:install always pulls latest
-      marketplaces + plugins so re-running keeps Claude artifacts fresh.
+      when already at desired state; ai:install always re-runs the ai repo's
+      install so plugins stay current.
     status: [false]
     deps: [manifest:resolve]
     cmds:
@@ -283,8 +283,9 @@ tasks:
       # present/refreshed before its cloned bundles (OMZ + plugins) are
       # git-pulled. Non-fatal on network failure.
       - task: shell:antidote-update
-      - task: claude:install
-      - task: claude-addons:install
+      # ai:install runs after packages:install (the claude-code cask must
+      # exist) and is a no-op unless features.ai is on.
+      - task: ai:install
       - task: macos:install
       # hostname:apply -- status:-gated; no-op when state file missing OR
       # when state file matches live LocalHostName. Sudo prompts only on

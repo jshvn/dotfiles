@@ -36,7 +36,7 @@ cat > "${STATE}/resolved.json" <<'JSON'
     "brew": {"formulae": ["x", "y"], "casks": []},
     "future-manager": {"things": ["one", "two", "three"]}
   },
-  "claude": {"addons": []}
+  "ai": {"profile": "", "ref": ""}
 }
 JSON
 

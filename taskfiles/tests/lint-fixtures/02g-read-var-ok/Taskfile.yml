@@ -5,8 +5,8 @@ version: '3'
 #
 # Negative fixture for LINT-02: status: entry references $rel where `rel` is
 # defined by `while IFS= read -r rel` in the SAME entry. read-defined vars
-# are real shell vars in the entry's execution context (the links.yml
-# install-claude shape); the rule must NOT fire on them.
+# are real shell vars in the entry's execution context (a while-read
+# status: entry); the rule must NOT fire on them.
 #
 # Expected outcome: LINT-02 does not fire (expect: pass)
 # =============================================================================

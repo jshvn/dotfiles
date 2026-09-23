@@ -250,7 +250,7 @@ tasks:
         # Hardcoded paths break the Apple Silicon / Intel split. The
         # legitimate dispatch sites (Taskfile.yml HOMEBREW_PREFIX resolution,
         # bootstrap.zsh brew shellenv, identity/ssh/cloudflared.zsh arch
-        # dispatch, claude/hooks/lib.zsh fallback default) carry a same-line
+        # dispatch) carry a same-line
         # `# lint-allow: hardcoded-prefix` annotation. Comment-only lines are
         # ignored; taskfiles/lint.yml is excluded because this rule body
         # contains the pattern literally.

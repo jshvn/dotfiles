@@ -1,0 +1,2 @@
+must set both profile and ref
+ai enabled without an ai table rejected

@@ -29,7 +29,7 @@ enabled = [
 disabled = [
   "one-password-ssh",
   "one-password-signing",
-  "claude-marketplace",
+  "ai",
   "repo-dev-toolchain",
   "herdr",
   "vscode",

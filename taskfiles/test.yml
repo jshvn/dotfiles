@@ -3,11 +3,11 @@ version: '3'
 # =============================================================================
 # taskfiles/test.yml -- smoke-test surface
 #
-# Purpose:      Hook smoke tests (install/tests/hooks.zsh) plus manifest
-#               deep-merge fixtures, shell-startup and cloudflared pair
-#               (install/tests/tunnel.zsh) smoke tests. Composed by the root
-#               `task test` aggregator.
-# Depends on:   install/tests/hooks.zsh; install/resolver.zsh;
+# Purpose:      Manifest deep-merge fixtures plus the repo-sync, ai-checkout,
+#               links-audit, packages, brewfile, shell-startup, report and
+#               cloudflared smoke tests. Composed by the root `task test`
+#               aggregator.
+# Depends on:   install/tests/ai-checkout.zsh; install/resolver.zsh;
 #               install/tests/shell-startup.zsh; install/messages.zsh;
 #               manifests/tests/fixtures/.
 # Side effects: temporary copies under manifests/machines/ (negative
@@ -15,19 +15,6 @@ version: '3'
 # =============================================================================
 
 tasks:
-
-  # lint-allow: cmds-without-status
-  hooks:
-    desc: "Run Claude hook smoke tests via install/tests/hooks.zsh"
-    internal: true
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        info "running hook smoke tests"
-        export DOTFILEDIR="{{.ROOT_DIR}}"
-        zsh "${DOTFILEDIR}/install/tests/hooks.zsh"
-    status:
-      - false
 
   # lint-allow: cmds-without-status
   repo-sync:
@@ -39,6 +26,19 @@ tasks:
         info "running repo-sync smoke tests"
         export DOTFILEDIR="{{.ROOT_DIR}}"
         zsh "${DOTFILEDIR}/install/tests/repo-sync.zsh"
+    status:
+      - false
+
+  # lint-allow: cmds-without-status
+  ai-checkout:
+    desc: "Run ai-checkout smoke tests via install/tests/ai-checkout.zsh"
+    internal: true
+    cmds:
+      - |
+        {{.DOTFILES_MESSAGES}}
+        info "running ai-checkout smoke tests"
+        export DOTFILEDIR="{{.ROOT_DIR}}"
+        zsh "${DOTFILEDIR}/install/tests/ai-checkout.zsh"
     status:
       - false
 
@@ -104,32 +104,6 @@ tasks:
         info "running shell startup smoke tests"
         export DOTFILEDIR="{{.ROOT_DIR}}"
         zsh "${DOTFILEDIR}/install/tests/shell-startup.zsh"
-    status:
-      - false
-
-  # lint-allow: cmds-without-status
-  settings-compose:
-    desc: "Run settings-compose smoke tests via install/tests/settings-compose.zsh"
-    internal: true
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        info "running settings-compose smoke tests"
-        export DOTFILEDIR="{{.ROOT_DIR}}"
-        zsh "${DOTFILEDIR}/install/tests/settings-compose.zsh"
-    status:
-      - false
-
-  # lint-allow: cmds-without-status
-  claude-addons-manifest:
-    desc: "Run addon TOML contract tests via install/tests/claude-addons-manifest.zsh"
-    internal: true
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        info "running claude-addons manifest tests"
-        export DOTFILEDIR="{{.ROOT_DIR}}"
-        zsh "${DOTFILEDIR}/install/tests/claude-addons-manifest.zsh"
     status:
       - false
 

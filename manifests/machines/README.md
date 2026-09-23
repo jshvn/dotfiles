@@ -3,7 +3,7 @@
 One self-contained TOML manifest per machine. Each declares `schema_version`, a
 `[machine]` table (description, os, identity), a `[features]` table (`enabled`
 and `disabled` arrays that account for every applicable flag in
-`../features.toml`), a `[packages]` table, and an optional `[claude]` table.
+`../features.toml`), a `[packages]` table, and an `[ai]` table when the `ai` flag is enabled.
 
 `[packages]` lists discretionary choices only -- applications wanted on that
 machine. Packages the dotfiles config itself needs are guaranteed elsewhere:
