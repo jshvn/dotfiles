@@ -12,7 +12,7 @@ new evidence. Referenced from CLAUDE.md.
 | Explicit machine selection at setup | Hostname-based detection has bitten us; explicit selection beats clever auto-detect. |
 | macOS-only | All target machines are macOS laptops; avoids cross-platform complexity until a real Linux machine enters scope. |
 | Keep alanpeabody-based prompt; reject Starship | The existing `theme.zsh` is small, fast, and not on life support; Starship would be a behavior change with no problem to solve. |
-| Bootstrap without curl-to-shell | Removes supply-chain risk on every fresh install. |
+| Bootstrap without curl-to-shell, except Homebrew's own installer | Removes supply-chain risk on every fresh install; the Homebrew installer is the one accepted exception, consent-gated and HTTPS-only (`docs/SECURITY.md`). |
 | One concept per file; README per top-level directory | Reduces AI's inference burden; every directory teaches itself. |
 | `task install` is the canonical entry; update path runs through the same task | Prevents the "add a package to update path, forget install, fresh machine breaks" drift class — single source of truth, single pipeline. |
 | Five-tier testing: static lint, validate, reconcile, smoke, system | Each tier catches different drift; without verify+reconcile we'd ship "looks installed but isn't" or "symlink-soup-after-refactor". |
@@ -49,11 +49,12 @@ new evidence.
 
 ## Performance and Security Constraints
 
-- **Performance target** — interactive shell cold start under 200ms; `task install` re-run
+- **Performance target** — interactive shell cold start under 500ms (the
+  `task shell:startup-time` budget); `task install` re-run
   under 30s on a converged machine (includes `brew update` network round-trip; under 5s
   without network).
-- **Security** — bootstrap verifies install integrity; no curl-to-shell without checksum;
-  no secrets in repo; public SSH keys only.
+- **Security** — no curl-to-shell except the consent-gated Homebrew installer
+  (`docs/SECURITY.md`); no secrets in repo; public SSH keys only.
 - **Idempotency** — every install task has a working `status:` check; re-running
   `task install` is a fast no-op.
 
