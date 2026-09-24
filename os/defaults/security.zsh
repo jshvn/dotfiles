@@ -5,8 +5,7 @@
 #                             (gated on features.macos-security)
 #
 # Purpose:      Declare screen-lock delay, hot-plug-image-capture, guest-
-#               account, and firewall posture; servers also enable this
-#               concern, so keys must stay server-safe (no GUI assumptions).
+#               account, and firewall posture.
 # Depends on:   install/messages.zsh; os/defaults/_apply_verify.zsh;
 #               $DOTFILEDIR exported by caller.
 # Side effects: `defaults -currentHost write` for

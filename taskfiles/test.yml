@@ -4,9 +4,8 @@ version: '3'
 # taskfiles/test.yml -- smoke-test surface
 #
 # Purpose:      Manifest deep-merge fixtures plus the repo-sync, ai-checkout,
-#               links-audit, packages, brewfile, shell-startup, report and
-#               cloudflared smoke tests. Composed by the root `task test`
-#               aggregator.
+#               links-audit, packages, brewfile, shell-startup and report
+#               smoke tests. Composed by the root `task test` aggregator.
 # Depends on:   install/tests/ai-checkout.zsh; install/resolver.zsh;
 #               install/tests/shell-startup.zsh; install/messages.zsh;
 #               manifests/tests/fixtures/.
@@ -282,15 +281,3 @@ tasks:
         fi
         exit "$failures"
 
-  # lint-allow: cmds-without-status
-  tunnel:
-    desc: "Run cloudflared pair smoke tests via install/tests/tunnel.zsh"
-    internal: true
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        info "running tunnel smoke tests"
-        export DOTFILEDIR="{{.ROOT_DIR}}"
-        zsh "${DOTFILEDIR}/install/tests/tunnel.zsh"
-    status:
-      - false

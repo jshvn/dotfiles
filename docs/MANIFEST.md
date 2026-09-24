@@ -38,9 +38,7 @@ enabled = [
   "ghostty",
   # ...
 ]
-disabled = [
-  "server-include",
-]
+disabled = []
 
 [packages]
 # One table for every package manager. Bare strings everywhere except mas.
@@ -214,8 +212,8 @@ A machine must not list a package that the base tier or an **enabled** feature
 already provides; the resolver rejects it. This keeps the machine manifest a
 record of deliberate choices: a package appears there if and only if it was a
 free choice. Listing a package that a **disabled** flag would have provided is
-legitimate and stays legal -- that is how atium keeps the 1Password application
-while running its own ssh-agent.
+legitimate and stays legal -- that is how a machine keeps the 1Password
+application while running its own ssh-agent.
 
 ## Compiled output (`resolved.json`)
 

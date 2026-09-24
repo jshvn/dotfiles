@@ -36,8 +36,6 @@ disabled = [
   "herdr",
   "vscode",
   "jgrid-net",
-  "server-include",
-  "cloudflared-tunnel",
   "macos-dock",
   "macos-finder",
   "macos-input",

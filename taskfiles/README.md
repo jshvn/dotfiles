@@ -23,10 +23,6 @@ every symlink goes through `_:safe-link` in `helpers.yml`.
   `shell/.zsh_plugins.txt`). `shell.yml` exposes `task shell:startup-time`
   (cold-start gate); `shell:validate` is internal-only (invoked by root
   `task validate`).
-- **Tunnel.** `tunnel.yml` -- `tunnel:install` (feature-gated on
-  `cloudflared-tunnel`, part of `task install`), `tunnel:roll`,
-  `tunnel:validate`, `tunnel:show`. A blue/green pair of cloudflared
-  LaunchAgents driven by `../os/tunnel.zsh`.
 - **Smoke-test fixtures.** `tests/lint-fixtures/` -- fixture taskfiles
   consumed by `task lint:test-fixtures`. The production lint scans exclude
   this directory by name (`lint-fixtures`), since the fixtures deliberately

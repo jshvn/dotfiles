@@ -5,7 +5,7 @@
 #               surface (default banner, setup, test, validate). Wires every
 #               included taskfile module under one namespace.
 # Depends on:   taskfiles/{ai,hostname,identity,links,lint,macos,manifest,
-#               packages,repo,shell,test,tunnel}.yml;
+#               packages,repo,shell,test}.yml;
 #               install/messages.zsh (sourced via {{.TASKFILE_DIR}} so the
 #               banner renders the same regardless of include parse order).
 # Side effects: deferred to subtasks; this file declares no direct mutations.
@@ -115,9 +115,6 @@ includes:
   # NOT a manifest feature -- two machines sharing one manifest (JMBP +
   # JAIR consuming personal-laptop.toml) need distinct hostnames.
   hostname: ./taskfiles/hostname.yml
-  # tunnel:* is the third macOS system-state layer: a feature-gated pair of
-  # LaunchAgents (cloudflared-tunnel) that keeps a server reachable.
-  tunnel: ./taskfiles/tunnel.yml
 
 tasks:
 
@@ -146,7 +143,7 @@ tasks:
         echo
         header "Diagnostics (read-only, domain-first)"
         info "  task show                            List inspectable domains"
-        info "  task <domain>:show                   manifest | features | ai | hostname | tunnel"
+        info "  task <domain>:show                   manifest | features | ai | hostname"
         info "  task <domain>:audit                  manifest | packages | links"
         info "  task packages:vulns                  OSV.dev scan of declared packages"
         info "  task <domain>:diff                   packages | links"
@@ -154,7 +151,6 @@ tasks:
         header "State mutations"
         info "  task setup -- <name>                 Set active machine manifest (\$XDG_STATE_HOME/dotfiles/machine)"
         info "  task hostname:set -- <name>          Set live macOS hostname (requires sudo; self-heals on task install)"
-        info "  task tunnel:roll                     Restart the cloudflared pair one colour at a time (cloudflared-tunnel machines)"
         echo
         echo "Run 'task --list' for the full task graph."
 
@@ -172,7 +168,7 @@ tasks:
 
   # lint-allow: cmds-without-status
   test:
-    desc: "Run all smoke tests (manifest + repo-sync + ai-checkout + links-audit + packages-declared + packages-trust + brewfile-compose + shell-startup + report + tunnel + lint fixtures)"
+    desc: "Run all smoke tests (manifest + repo-sync + ai-checkout + links-audit + packages-declared + packages-trust + brewfile-compose + shell-startup + report + lint fixtures)"
     cmds:
       - task: test:manifest
       - task: test:repo-sync
@@ -183,7 +179,6 @@ tasks:
       - task: test:brewfile-compose
       - task: test:shell-startup
       - task: test:report
-      - task: test:tunnel
       - task: lint:test-fixtures
 
   # lint-allow: cmds-without-status
@@ -215,7 +210,7 @@ tasks:
     # codes back to the surrounding shell context.
     cmds:
       - for: [manifest:validate, identity:validate, links:validate,
-              macos:validate, hostname:validate, tunnel:validate, packages:validate,
+              macos:validate, hostname:validate, packages:validate,
               ai:validate, shell:validate]
         task: '{{.ITEM}}'
         ignore_error: true
@@ -291,9 +286,6 @@ tasks:
       # when state file matches live LocalHostName. Sudo prompts only on
       # a fresh setup or after manual `sudo scutil` drift.
       - task: hostname:apply
-      # tunnel:install runs after packages:install (cloudflared must exist)
-      # and is a no-op unless features.cloudflared-tunnel is on.
-      - task: tunnel:install
       # packages:verify is the LAST FATAL task-call in the install pipeline.
       # A missing bin or missing /Applications/<App>.app fails the entire
       # `task install` with exit 1 -- no `success "install complete"` line

@@ -31,32 +31,6 @@ manifest already answers it in one file.
 - Special handling: the divergence from personal-laptop is the identity, not
   the toolchain. The personal-network identity does not apply here.
 
-## atium
-
-- Purpose: mostly-headless Mac server.
-- Hardware: Apple Silicon or Intel -- arch detected via `uname -m`.
-- Role: light CLI ops. Usually headless but occasionally attached to a
-  display, so it keeps a minimal GUI surface. Nothing on this machine should
-  require a graphical session.
-- Special handling: remote access is plain SSH -- the 1Password SSH agent is
-  off because a headless server cannot answer a TouchID prompt. Its own
-  git/ssh identity keeps this machine's commits and authorized-key set
-  attributable separately from personal and work.
-- Remote access: a blue/green pair of cloudflared connectors run as
-  LaunchAgents (`cloudflared-tunnel` feature, `os/tunnel.zsh`), replicas of
-  one remotely managed tunnel whose ingress lives in `jshvn/terraform`. The
-  only local input is the tunnel token at `~/.config/cloudflared/tunnel.token`
-  (mode 600), written by hand at install from 1Password; the item's notes and
-  `jshvn/terraform` `docs/tunnels.md` say which item. `task install` refuses to
-  converge the pair until that file exists. After `brew upgrade cloudflared`,
-  `task tunnel:roll` restarts one colour at a time; `task tunnel:show` prints
-  each replica's state. The pair carries ssh (`atium-ssh.jgrid.net`) and Screen
-  Sharing (`atium-vnc.jgrid.net`; `vnc atium-vnc.jgrid.net` from a laptop). WARP Mesh
-  to `atium.jgrid.net` is best-effort: its edge mapping has gone stale after hours of
-  idle while the tunnel pair stayed up, and only `warp-cli disconnect && warp-cli
-  connect` on atium clears it.
-- No container runtime. Dropbox, WARP and the tunnel pair are host processes.
-
 ## ci
 
 - Purpose: the GitHub Actions runner profile.

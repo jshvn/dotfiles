@@ -1,14 +1,10 @@
 # identity/git/config -- main git config; symlinked to ~/.config/git/config.
 #
 # Identity selection model:
-#   Workstation identities are loaded via [includeIf gitdir/i:] blocks below
-#   that match a project directory prefix. Server identities are loaded via
-#   the unconditional [include] path = server-include.config block; that file
-#   is materialized by `task identity:server-include` when
-#   features.server-include = true, and is absent (silent no-op) on
-#   workstations (silent no-op pattern).
+#   Identities are loaded via [includeIf gitdir/i:] blocks below that match a
+#   project directory prefix.
 #
-# Adding a new workstation identity: add a matching [includeIf
+# Adding a new identity: add a matching [includeIf
 # "gitdir/i:~/git/<name>/"] block below (mirrors the personal/work pattern).
 # One overlay may back several directories (personal covers ~/git/personal/
 # and the katoptra organization at ~/git/katoptra/).
@@ -27,9 +23,6 @@
 
 [includeIf "gitdir/i:~/git/work/"]
     path = identities/work
-
-[include]
-    path = server-include.config
 
 [core]
     editor = code

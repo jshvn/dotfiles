@@ -5,13 +5,10 @@ version: '3'
 #
 # Purpose:      Reads identity.git, identity.ssh, features.one-password-ssh,
 #               features.one-password-signing from resolved.json; composes
-#               git+ssh symlink topology; materializes server-include.config
-#               on server machines.
+#               git+ssh symlink topology.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh;
 #               :manifest:resolve (deps); identity/{git,ssh}/ overlay tree.
-# Side effects: writes symlinks under $XDG_CONFIG_HOME/git and $HOME/.ssh;
-#               writes $HOME/.config/git/server-include.config when the
-#               feature is on.
+# Side effects: writes symlinks under $XDG_CONFIG_HOME/git and $HOME/.ssh.
 # =============================================================================
 
 includes:
@@ -22,7 +19,6 @@ vars:
   SSH_DIR: '{{.HOME}}/.ssh'
   SSH_IDENTITIES_DIR: '{{.SSH_DIR}}/identities'
   SSH_KEYS_DIR: '{{.SSH_IDENTITIES_DIR}}/keys'
-  SERVER_INCLUDE_CONFIG: '{{.GIT_CONFIG_DIR}}/server-include.config'
 
 tasks:
 
@@ -37,7 +33,7 @@ tasks:
       - task: install-one-password-agent
 
   install-git:
-    desc: "Link git identity files; materialize server-include.config on servers"
+    desc: "Link git identity files"
     internal: true
     # Adding a new identity = drop a file in identity/git/identities/; no
     # edits to this task or the resolver.
@@ -69,7 +65,6 @@ tasks:
         vars:
           SOURCE: '{{.ROOT_DIR}}/identity/git/identities/{{.ITEM}}'
           TARGET: '{{.GIT_CONFIG_DIR}}/identities/{{.ITEM}}'
-      - task: server-include
     status:
       - test -L "{{.GIT_CONFIG_DIR}}/config"
       - test -L "{{.GIT_CONFIG_DIR}}/ignore"
@@ -80,36 +75,6 @@ tasks:
           [[ -e "$f" ]] || continue
           test -L "{{.GIT_CONFIG_DIR}}/identities/$(basename "$f")" || exit 1
         done
-
-  server-include:
-    desc: "Materialize ~/.config/git/server-include.config when features.server-include = true"
-    internal: true
-    cmds:
-      - |
-        {{.DOTFILES_MESSAGES}}
-        {{if index .MANIFEST.features "server-include"}}
-        identity="{{.MANIFEST.identity.git}}"
-        mkdir -p "{{.GIT_CONFIG_DIR}}"
-        printf '[includeIf "gitdir:~/"]\n    path = identities/%s\n' "$identity" > "{{.SERVER_INCLUDE_CONFIG}}"
-        check "server-include.config materialized for $identity"
-        {{else}}
-        if [[ -f "{{.SERVER_INCLUDE_CONFIG}}" ]]; then
-          rm -f "{{.SERVER_INCLUDE_CONFIG}}"
-          info "removed stale server-include.config (features.server-include = false)"
-        fi
-        {{end}}
-    status:
-      # Exact-match check against the canonical two-line content the cmd
-      # writes. A loose grep would pass on stale-content cases (e.g., a file
-      # containing the wrong identity path from a prior install) and skip the
-      # rewrite that fixes them.
-      - |
-        {{if index .MANIFEST.features "server-include"}}
-        test -f "{{.SERVER_INCLUDE_CONFIG}}" || exit 1
-        diff <(printf '[includeIf "gitdir:~/"]\n    path = identities/%s\n' "{{.MANIFEST.identity.git}}") "{{.SERVER_INCLUDE_CONFIG}}" >/dev/null
-        {{else}}
-        test ! -f "{{.SERVER_INCLUDE_CONFIG}}"
-        {{end}}
 
   install-ssh:
     desc: "Link SSH identity files; swap active symlink to manifest value"
@@ -241,17 +206,11 @@ tasks:
 
         expected_email=$(git config -f "{{.ROOT_DIR}}/identity/git/identities/${identity}" user.email 2>/dev/null || echo "")
 
-        # Resolve the probe source. Two patterns based on features.server-include:
-        # - server-include = true:  server-include.config has an unconditional
-        #   [includeIf gitdir:~/] block; identity loads from $HOME directly.
-        # - server-include = false: identity/git/config uses
-        #   [includeIf gitdir/i:~/git/<identity>/] blocks; probe inside a real
-        #   git repo under $HOME/git/<identity>/ so the includeIf fires. The
-        #   parent directory is not a git repo, so the gitdir-conditioned
-        #   includeIf would never fire if probe_dir pointed there.
-        {{if index .MANIFEST.features "server-include"}}
-        probe_dir="$HOME"
-        {{else}}
+        # identity/git/config uses [includeIf gitdir/i:~/git/<identity>/]
+        # blocks; probe inside a real git repo under $HOME/git/<identity>/ so
+        # the includeIf fires. The parent directory is not a git repo, so the
+        # gitdir-conditioned includeIf would never fire if probe_dir pointed
+        # there.
         root="$HOME/git/$identity"
         # Locate the first .git directory under the identity root (depth 2 =
         # standard clone layout: $root/<repo>/.git).
@@ -261,7 +220,6 @@ tasks:
           exit 0
         fi
         probe_dir=$(dirname "$dotgit")
-        {{end}}
 
         if [[ -z "$expected_email" ]]; then
           info "expected git user.email for identity.git=$identity is empty -- skipping"
@@ -270,7 +228,7 @@ tasks:
 
         # Verify $probe_dir is actually a git work tree before running config
         # queries. A `[[ -d "$gitdir" ]]` guard would only check directory
-        # existence, not git-repo-ness. On a fresh server with no git history,
+        # existence, not git-repo-ness. On a broken or empty .git directory,
         # rev-parse fails non-zero and we skip cleanly.
         if ! git -C "$probe_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
           info "$probe_dir is not a git work tree -- skipping email assertion"

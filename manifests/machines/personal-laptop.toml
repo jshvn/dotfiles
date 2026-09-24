@@ -40,10 +40,7 @@ enabled = [
   "macos-display",
   "macos-animations",
 ]
-disabled = [
-  "server-include",
-  "cloudflared-tunnel",
-]
+disabled = []
 
 [packages]
 # container: Apple's container runtime; requires macOS 15+, so machines on
