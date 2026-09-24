@@ -130,8 +130,9 @@ jobs:
         run: task install
 
       # The job summary is the durable record of a run: what the converged
-      # install contained (packages per manager, links, hooks, addons) plus
-      # the validate tally, so a past run can be read without opening logs.
+      # install contained (machine, features, packages per manager, links,
+      # the jshvn/ai checkout, shell plumbing) plus the validate tally, so a
+      # past run can be read without opening logs.
       - name: Write job summary
         if: always()
         run: |

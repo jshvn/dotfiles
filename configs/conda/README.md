@@ -7,15 +7,14 @@ clean and consistent with XDG base directory conventions.
 
 ## Files
 
-- `condarc` -- conda's main YAML configuration; read from `~/.config/conda/condarc`
-  (via the `CONDARC` env var or the XDG config path, depending on conda version)
-  or from `~/.condarc` when symlinked there.
+- `condarc` -- conda's main YAML configuration; conda reads it from
+  `~/.config/conda/condarc`, one of its standard search paths.
 
 ## Symlink destination
 
-`~/.condarc` -> `${DOTFILEDIR}/configs/conda/condarc`
+`~/.config/conda/condarc` -> `${DOTFILEDIR}/configs/conda/condarc`
 
-Wired via the `_:safe-link` entry in `taskfiles/links.yml` `configs:` sub-task.
+Wired via the `_:safe-link` entry in `taskfiles/links.yml` `install-configs` task.
 
 ## Feature gate
 
@@ -26,4 +25,4 @@ paths and disables telemetry).
 
 ## References
 
-- `taskfiles/links.yml` -- `configs:` sub-task registers the symlink
+- `taskfiles/links.yml` -- `install-configs` registers the symlink

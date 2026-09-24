@@ -32,13 +32,14 @@ stage in this list.
 ### realize (resolved.json + repo source -> build artifacts)
 
 - `compose-brewfile.zsh` -- Reads `resolved.json`'s typed buckets
-  (`packages.brew.{formulae,casks,mas}`, already folded
-  in by `resolver.zsh` from the base tier and enabled feature flags) and writes
-  a composed `$XDG_STATE_HOME/dotfiles/build/Brewfile` (atomic mktemp+mv).
+  (`packages.brew.{taps,formulae,casks,mas}` and
+  `packages.{vscode,cargo,uv,npm}`, already folded in by `resolver.zsh` from
+  the base tier and enabled feature flags) and writes a composed
+  `$XDG_STATE_HOME/dotfiles/build/Brewfile` (atomic mktemp+mv).
   Invoked by `taskfiles/packages.yml :: packages:compose` and indirectly
   by `packages:install`.
 
-### operate (drift detection, addon lifecycle, repo hygiene)
+### operate (drift detection, reporting, ai checkout, repo hygiene)
 
 - `ai-checkout.zsh` -- Clone `jshvn/ai` into `~/Git/personal/ai` when absent
   and put it at the machine's pinned ref (branch: tracking checkout plus an
@@ -50,37 +51,51 @@ stage in this list.
 - `links-audit-scan.zsh` -- Orphan-detection logic for `task links:audit`.
   Reads expected symlink targets on stdin and prints repo-targeted links that
   are dangling or unexpected under the scan roots.
+- `packages-trust-scan.zsh` -- Tap and trust-grant drift detector. Compares
+  subscribed taps and the Homebrew trust store against the declared taps and
+  prints one finding per line. Invoked by
+  `taskfiles/packages.yml :: packages:audit`.
 - `repo-sync.zsh` -- Fast-forward pull run before install (the `update` alias
   runs this, then `task install`). Fetches then fast-forwards the current
   branch; never merges or rebases. Invoked by `taskfiles/repo.yml :: repo:sync`.
+- `report.zsh` -- Markdown overview of the converged install (machine,
+  features, declared-vs-installed package counts, symlinks, the jshvn/ai
+  checkout). Read-only. Invoked by the root `task report`.
 
 ### tests (`install/tests/`)
 
 - `ai-checkout.zsh` -- Smoke tests for `ai-checkout.zsh` against a throwaway
   bare remote (clone, tag detach, branch re-attach, unknown ref). Invoked by
   `taskfiles/test.yml :: test:ai-checkout`.
+- `brewfile-compose.zsh` -- Smoke test for `compose-brewfile.zsh` against a
+  throwaway state tree (tap lines, trust grants, `brew bundle list` parse).
+  Invoked by `test:brewfile-compose`.
 - `links-audit.zsh` -- Smoke test for `links-audit-scan.zsh` against a
   throwaway repo + config tree. Invoked by `test:links-audit`.
+- `packages-declared.zsh` -- Smoke test pinning the `brew bundle list` output
+  that `packages:audit` and `packages:diff` rely on. Invoked by
+  `test:packages-declared`.
+- `packages-trust.zsh` -- Smoke test for `packages-trust-scan.zsh` against
+  fixture tap and trust-store inputs. Invoked by `test:packages-trust`.
 - `repo-sync.zsh` -- Smoke test exercising every guard branch of
   `repo-sync.zsh` against throwaway git repos. Invoked by `test:repo-sync`.
+- `report.zsh` -- Smoke test for `report.zsh` against a fixture state tree
+  (package table rows, link count). Invoked by `test:report`.
 - `shell-startup.zsh` -- Smoke test for the zsh startup files (`.zshenv`,
   `.zprofile`, `.zshrc`, `.zlogin`, `.zlogout`). Invoked by
   `test:shell-startup`.
-- `settings-compose.zsh` -- Smoke test for the two-directory fragment merge
-  and preserved-key layering in `compose-settings.zsh`. Invoked by
-  `test:settings-compose`.
 
 ## Adding a pattern
 
 - **A new install-engine script.** Create `install/<name>.zsh`. Start with
   the standard shebang plus `set -euo pipefail` if the file is executable
   (LINT-04 enforces; library files sourced from taskfiles are exempt and
-  must still guard double-source via a `<NAME>_LOADED` flag). Add a
-  file-header comment block per `resolver.zsh` / `compose-brewfile.zsh`
-  shape naming purpose, callers, reads/writes, and side effects. Wire the
-  script into a task by referencing it as
-  `{{.DOTFILEDIR}}/install/<name>.zsh` from the appropriate
-  `taskfiles/<concern>.yml`.
+  must still guard double-source via a `<NAME>_LOADED` flag). Add the
+  file-header banner per `resolver.zsh` / `compose-brewfile.zsh` shape:
+  `Purpose:` / `Depends on:` / `Side effects:` between `# ===` rules
+  (LINT-12). Wire the script into a task from the appropriate
+  `taskfiles/<concern>.yml` as
+  `DOTFILEDIR="{{.ROOT_DIR}}" zsh "{{.ROOT_DIR}}/install/<name>.zsh"`.
 - **A new task-helper function.** If the helper produces user-facing
   output, add it to `messages.zsh` -- the existing self-bootstrap contract
   applies to new functions automatically. Otherwise create a new file

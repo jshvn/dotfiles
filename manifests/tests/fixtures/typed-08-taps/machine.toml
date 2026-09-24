@@ -1,5 +1,5 @@
-# typed-08-taps -- a bare tap declared in [packages].taps is emitted under
-# packages.brew.taps, alongside the taps derived from qualified names.
+# typed-08-taps -- a bare tap declared in [packages].taps is emitted verbatim
+# under packages.brew.taps.
 
 schema_version = 3
 

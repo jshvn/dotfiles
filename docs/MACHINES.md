@@ -11,7 +11,7 @@ flags, identity selection, packages -- lives in
 Nothing here enumerates packages or flags. That duplication drifts, and the
 manifest already answers it in one file.
 
-## personal-laptop
+## personal
 
 - Purpose: primary personal Mac, daily driver for personal projects and
   personal AI/CLI work.
@@ -21,24 +21,26 @@ manifest already answers it in one file.
 - Special handling: the personal git/ssh identity is wired here, with SSH
   auth and commit signing flowing through the 1Password agent.
 
-## work-laptop
+## work
 
 - Purpose: work-issued MacBook carrying the work git/ssh identity.
 - Hardware: Apple Silicon or Intel -- arch is detected by the resolver via
   `uname -m` because `[machine].arch` is absent.
 - Role: primary work development machine. Commits and remote access carry
   the work attribution.
-- Special handling: the divergence from personal-laptop is the identity, not
-  the toolchain. The personal-network identity does not apply here.
+- Special handling: the main divergence from personal is the identity; the
+  toolchain is a subset of personal's. The personal network (the `jgrid-net`
+  aliases and the `*.jgrid.net` SSH host blocks) does not apply here.
 
 ## ci
 
 - Purpose: the GitHub Actions runner profile.
-- Hardware: whatever the runner image provides; arch detected at resolve
-  time.
-- Role: runs `task lint` and `task test` against the repo. It is a real
+- Hardware: the `macos-latest` runner image; `[machine].arch` is declared
+  `arm64`.
+- Role: drives the full operator pipeline (bootstrap, setup, install,
+  validate, test, lint, converged re-install) on a fresh runner. It is a real
   machine manifest rather than a special case in the workflow, so CI
   exercises the same resolver path as a laptop.
-- Special handling: no identity overlay, no GUI, no AI surface (the ai flag is off). If a
-  change makes CI need a package, that is a signal about the repo's own
-  toolchain, not about CI.
+- Special handling: the no-op `none` identity, no GUI, no AI surface (the ai
+  flag is off). If a change makes CI need a package, that is a signal about
+  the repo's own toolchain, not about CI.

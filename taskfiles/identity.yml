@@ -3,12 +3,12 @@ version: '3'
 # =============================================================================
 # taskfiles/identity.yml -- manifest-driven git + SSH identity layer
 #
-# Purpose:      Reads identity.git, identity.ssh, features.one-password-ssh,
-#               features.one-password-signing from resolved.json; composes
-#               git+ssh symlink topology.
+# Purpose:      Reads identity.git, identity.ssh, features.one-password-ssh
+#               from resolved.json; composes git+ssh symlink topology.
 # Depends on:   taskfiles/helpers.yml; install/messages.zsh;
 #               :manifest:resolve (deps); identity/{git,ssh}/ overlay tree.
-# Side effects: writes symlinks under $XDG_CONFIG_HOME/git and $HOME/.ssh.
+# Side effects: writes symlinks under $XDG_CONFIG_HOME/git, $HOME/.ssh, and
+#               $XDG_CONFIG_HOME/1Password/ssh (one-password-ssh).
 # =============================================================================
 
 includes:
@@ -22,7 +22,6 @@ vars:
 
 tasks:
 
-  # lint-allow: cmds-without-status
   install:
     desc: "Install identity layer (git + ssh)"
     internal: true
@@ -41,8 +40,9 @@ tasks:
       # glob + basename (go-task's embedded sh, not zsh) -- no ls parsing.
       GIT_IDENTITY_NAMES:
         sh: for f in '{{.ROOT_DIR}}/identity/git/identities'/*; do [ -e "$f" ] || continue; printf '%s\n' "${f##*/}"; done
-    # MANIFEST_JSON falls back to '{}' when resolved.json is missing, which
-    # renders {{.MANIFEST.identity.git}} as the literal string "<no value>".
+    # MANIFEST_JSON falls back to a stub with no identity key when
+    # resolved.json is missing, which renders {{.MANIFEST.identity.git}} as
+    # the literal string "<no value>".
     # Refuse to install against the empty fallback rather than silently
     # materializing broken state.
     preconditions:
@@ -86,8 +86,9 @@ tasks:
       # Only *.pub: not every identity has a pub key (work uses 1Password agent).
       SSH_KEY_NAMES:
         sh: for f in '{{.ROOT_DIR}}/identity/ssh/keys'/*.pub; do [ -e "$f" ] || continue; printf '%s\n' "${f##*/}"; done
-    # MANIFEST_JSON falls back to '{}' when resolved.json is missing, which
-    # renders {{.MANIFEST.identity.ssh}} as the literal string "<no value>".
+    # MANIFEST_JSON falls back to a stub with no identity key when
+    # resolved.json is missing, which renders {{.MANIFEST.identity.ssh}} as
+    # the literal string "<no value>".
     # Without these preconditions the active-symlink swap below would create
     # ~/.ssh/identities/active -> .../<no value> (silent corruption of the
     # active SSH identity).
@@ -118,8 +119,9 @@ tasks:
           TARGET: '{{.SSH_KEYS_DIR}}/{{.ITEM}}'
       - task: _:safe-link
         vars: { SOURCE: "{{.ROOT_DIR}}/identity/ssh/cloudflared.zsh", TARGET: "{{.SSH_IDENTITIES_DIR}}/cloudflared.zsh" }
-      # Active-identity swap: relink at install time; readlink resolves to a
-      # short name like "personal" since SOURCE is given as a sibling path.
+      # Active-identity swap: relink at install time. SOURCE is absolute, so
+      # readlink returns {{.SSH_IDENTITIES_DIR}}/<name>; status accepts that
+      # or a bare name.
       - task: _:safe-link
         vars: { SOURCE: "{{.SSH_IDENTITIES_DIR}}/{{.MANIFEST.identity.ssh}}", TARGET: "{{.SSH_IDENTITIES_DIR}}/active" }
     status:
@@ -150,7 +152,6 @@ tasks:
     status:
       - '{{if not (index .MANIFEST.features "one-password-ssh")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/1Password/ssh/agent.toml"{{end}}'
 
-  # lint-allow: cmds-without-status
   validate:
     desc: "Validate identity layer: symlinks, git config, ssh-add, keys/ contents"
     internal: true

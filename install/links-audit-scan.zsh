@@ -15,7 +15,7 @@
 #                    always an orphan -- the source it pointed at is gone --
 #                    regardless of inventory completeness. (readlink -f returns
 #                    empty for these, which is why a resolved-only gate misses
-#                    them.) This is the removed-tool case (~/.config/glow).
+#                    them.) This is the removed-tool case.
 #                 B. LIVE repo-targeted links that are not expected, but ONLY
 #                    under an expected parent dir. Scoped this way so a live
 #                    link legitimately owned by another installer (e.g.
@@ -85,7 +85,7 @@ orphans=()
 # the LITERAL target (readlink), since readlink -f yields nothing for a dead
 # link. No expected-membership filter: a dangling link whose source is gone is
 # removable regardless; a dangling EXPECTED link is a broken install that
-# links:verify reports, but it is still an orphan to clear here.
+# links:validate reports, but it is still an orphan to clear here.
 for dir in "${roots[@]}"; do
   [[ -d "$dir" ]] || continue
   while IFS= read -r lnk; do

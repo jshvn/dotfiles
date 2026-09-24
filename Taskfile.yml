@@ -2,12 +2,14 @@
 # Taskfile.yml -- root taskfile for v2 dotfiles
 #
 # Purpose:      Single canonical entry (`task install`) plus public operator
-#               surface (default banner, setup, test, validate). Wires every
-#               included taskfile module under one namespace.
-# Depends on:   taskfiles/{ai,hostname,identity,links,lint,macos,manifest,
-#               packages,repo,shell,test}.yml;
+#               surface (default banner, setup, validate, test, lint, audit,
+#               diff, report, show). Wires every included taskfile module
+#               under one namespace.
+# Depends on:   taskfiles/{ai,features,hostname,identity,links,lint,macos,
+#               manifest,packages,repo,shell,test}.yml;
 #               install/messages.zsh (sourced via {{.TASKFILE_DIR}} so the
-#               banner renders the same regardless of include parse order).
+#               banner renders the same regardless of include parse order);
+#               install/lint-rules.zsh; install/report.zsh.
 # Side effects: deferred to subtasks; this file declares no direct mutations.
 # =============================================================================
 
@@ -113,12 +115,11 @@ includes:
   # hostname:* lives alongside macos: -- both are macOS-only system-state
   # layers. State is per-physical-machine ($XDG_STATE_HOME/dotfiles/hostname),
   # NOT a manifest feature -- two machines sharing one manifest (JMBP +
-  # JAIR consuming personal-laptop.toml) need distinct hostnames.
+  # JAIR consuming personal.toml) need distinct hostnames.
   hostname: ./taskfiles/hostname.yml
 
 tasks:
 
-  # lint-allow: cmds-without-status
   default:
     desc: "Print curated task surface"
     # status: [false] forces the cmd to run every invocation. status: [true]
@@ -154,7 +155,6 @@ tasks:
         echo
         echo "Run 'task --list' for the full task graph."
 
-  # lint-allow: cmds-without-status
   setup:
     desc: "Persist active machine selection: task setup -- <machine-name>"
     # Top-level alias for `manifest:set`. Every doc and operator-facing
@@ -166,7 +166,6 @@ tasks:
       - task: manifest:set
         vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
 
-  # lint-allow: cmds-without-status
   test:
     desc: "Run all smoke tests (manifest + repo-sync + ai-checkout + links-audit + packages-declared + packages-trust + brewfile-compose + shell-startup + report + lint fixtures)"
     cmds:
@@ -181,7 +180,6 @@ tasks:
       - task: test:report
       - task: lint:test-fixtures
 
-  # lint-allow: cmds-without-status
   report:
     desc: "Print a markdown overview of the converged install (read-only)"
     status: [false]
@@ -189,7 +187,6 @@ tasks:
     cmds:
       - DOTFILEDIR='{{.ROOT_DIR}}' AI_DIR='{{.AI_DIR}}' zsh '{{.ROOT_DIR}}/install/report.zsh'
 
-  # lint-allow: cmds-without-status
   validate:
     desc: "Validate full installation state (all components; run-all-aggregate)"
     status: [false]
@@ -200,9 +197,7 @@ tasks:
     # aggregator therefore dispatches via go-task's `task:` keyword, which
     # bypasses the CLI-level internal gate. `ignore_error: true` applies per
     # `for:` iteration, preserving run-all-aggregate semantics: every component
-    # runs regardless of prior failures. The list holds full task names so a
-    # domain can contribute a differently named probe (packages:vulns under
-    # audit).
+    # runs regardless of prior failures.
     #
     # Per-component pass/fail status is emitted INLINE by each validate via
     # `check`/`cross`/`warn` from messages.zsh; there is no cross-component
@@ -215,7 +210,6 @@ tasks:
         task: '{{.ITEM}}'
         ignore_error: true
 
-  # lint-allow: cmds-without-status
   audit:
     desc: "Detect drift and known vulnerabilities across all domains (read-only; run-all-aggregate)"
     status: [false]
@@ -232,7 +226,6 @@ tasks:
         task: '{{.ITEM}}'
         ignore_error: true
 
-  # lint-allow: cmds-without-status
   show:
     desc: "List inspectable domains (run task <domain>:show for state)"
     status: [false]
@@ -246,7 +239,6 @@ tasks:
         info "  task ai:show               jshvn/ai checkout: path, profile, ref, plugins"
         info "  task hostname:show         Hostname state file + live system hostnames"
 
-  # lint-allow: cmds-without-status
   diff:
     desc: "Preview what task install would change (read-only)"
     status: [false]
@@ -261,14 +253,14 @@ tasks:
         task: '{{.ITEM}}'
         ignore_error: true
 
-  # lint-allow: cmds-without-status
   install:
     desc: "Install dotfiles for active machine (canonical entry)"
     summary: |
       task install IS task update -- there is no separate update pipeline.
-      Subtasks are state-converging: links/packages/macos/hostname short-circuit
-      when already at desired state; ai:install always re-runs the ai repo's
-      install so plugins stay current.
+      Subtasks are state-converging: links/macos/hostname short-circuit when
+      already at desired state; packages:install and shell:antidote-update
+      always re-run to pull upstream updates; ai:install always re-runs the ai
+      repo's install so plugins stay current.
     status: [false]
     deps: [manifest:resolve]
     cmds:
@@ -282,9 +274,9 @@ tasks:
       # exist) and is a no-op unless features.ai is on.
       - task: ai:install
       - task: macos:install
-      # hostname:apply -- status:-gated; no-op when state file missing OR
-      # when state file matches live LocalHostName. Sudo prompts only on
-      # a fresh setup or after manual `sudo scutil` drift.
+      # hostname:apply -- status:-gated; no-op when the state file matches
+      # live LocalHostName. A missing state file is back-filled from the live
+      # name (no sudo); sudo prompts only when state and live differ.
       - task: hostname:apply
       # packages:verify is the LAST FATAL task-call in the install pipeline.
       # A missing bin or missing /Applications/<App>.app fails the entire
@@ -299,6 +291,6 @@ tasks:
       - task: links:audit
         vars: { CLI_ARGS: "--warn-only" }
       - |
-        # Source via TASKFILE_DIR (mirrors default: and validate: above).
+        # Source via TASKFILE_DIR (mirrors default: and show: above).
         source '{{.TASKFILE_DIR}}/install/messages.zsh'
         success "install complete"

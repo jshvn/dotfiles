@@ -6,7 +6,7 @@
 # Purpose:      Read $XDG_STATE_HOME/dotfiles/resolved.json and emit a
 #               composed per-machine Brewfile to
 #               $XDG_STATE_HOME/dotfiles/build/Brewfile (atomic mktemp + mv).
-# Depends on:   jq (>= 1.7), zsh (>= 5); install/messages.zsh.
+# Depends on:   jq (>= 1.7), zsh (>= 5), ggrep; install/messages.zsh.
 # Side effects: writes $XDG_STATE_HOME/dotfiles/build/Brewfile.
 # =============================================================================
 
@@ -14,8 +14,8 @@ set -euo pipefail
 
 # Output structure (composed Brewfile written to the build dir):
 #   Line 1    -- AUTO-GENERATED header banner (ISO-8601 UTC timestamp)
-#   Lines 2-5 -- Machine: / Bundles: / Extras: counts / DO NOT EDIT notice
-#   Body      -- typed extras emitted as Ruby DSL lines, in fixed order:
+#   Lines 2-5 -- Machine: / Packages: / Managers: counts / DO NOT EDIT notice
+#   Body      -- package entries emitted as Ruby DSL lines, in fixed order:
 #                  taps -> formulae -> casks -> mas -> vscode -> cargo -> uv -> npm
 #                taps (declared bare taps plus the prefixes of qualified
 #                names) lead so a third-party tap is registered before the
@@ -23,11 +23,11 @@ set -euo pipefail
 #
 # The resolver folds the base tier (manifests/base.toml) and every enabled
 # feature's [<flag>.packages] buckets into resolved.json's
-# packages.brew.{formulae,casks,mas} during resolve, so the composer reads a
-# single flat package set.
+# packages.brew.{taps,formulae,casks,mas} during resolve, so the composer reads
+# a single flat package set.
 #
-# Extras line shapes (canonical; literal single-quotes around the name):
-#   tap '<user>/<tap>'                         (third-party tap, from a qualified name)
+# Line shapes (canonical; literal single-quotes around the name):
+#   tap '<user>/<tap>'                         (bare tap, or a qualified name's prefix)
 #   brew '<name>'[, trusted: true]             (formula; trusted when qualified)
 #   cask '<name>'[, trusted: true]             (cask; trusted when qualified)
 #   mas  '<name>', id: <id>                    (Mac App Store entry)
@@ -36,14 +36,13 @@ set -euo pipefail
 #   uv     '<name>'                            (Python tool -- uv tool install)
 #   npm    '<name>'                            (global npm package -- needs node)
 #
-# packages:verify is brew-info-driven. Package
-# names are validated against a strict allow-list at resolve time; the `esc`
-# gsub in the emit below escapes any stray single quote as a second guard so a
-# name can never break out of the Ruby string literal a Brewfile line is.
+# Package names are validated against a strict allow-list at resolve time; the
+# `esc` gsub in the emit below escapes any stray single quote as a second guard
+# so a name can never break out of the Ruby string literal a Brewfile line is.
 #
-# .packages.brew.{formulae,casks,mas} hold the full package set for the
+# .packages.brew.{taps,formulae,casks,mas} hold the full package set for the
 # machine: the union of the base tier, every enabled feature's packages, and
-# the machine's inline entries (deduped, machine wins).
+# the machine's inline entries (deduped; for mas the machine entry wins).
 
 # messages.zsh self-guards under set -u via the `:-` default expansion on
 # $DOTFILES_MESSAGES_LOADED; a bare source is sufficient and idempotent.

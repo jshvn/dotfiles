@@ -18,7 +18,7 @@ basename.
 
 `~/.config/eza/theme.yaml` -> `${DOTFILEDIR}/configs/eza/theme.yaml`
 
-Wired via the `_:safe-link` entry in `taskfiles/links.yml` `configs:` sub-task.
+Wired via the `_:safe-link` entry in `taskfiles/links.yml` `install-configs` task.
 
 ## Feature gate
 
@@ -27,5 +27,5 @@ Always on -- no feature flag. Every machine that installs `eza` (declared in
 
 ## References
 
-- `taskfiles/links.yml` -- `configs:` sub-task registers the symlink
+- `taskfiles/links.yml` -- `install-configs` registers the symlink
 - `../README.md` -- match-destination-filename convention

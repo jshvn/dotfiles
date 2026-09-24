@@ -8,7 +8,8 @@
 #               per manager, symlinks, the jshvn/ai checkout, and shell plumbing.
 #               Consumed by `task report` at a prompt and by CI, which writes
 #               it to the job summary so a run can be read at a glance later.
-# Depends on:   jq; $XDG_STATE_HOME/dotfiles/{machine,resolved.json,build/};
+# Depends on:   DOTFILEDIR env var; jq; ggrep; git;
+#               $XDG_STATE_HOME/dotfiles/{machine,resolved.json,build/};
 #               AI_DIR env var (optional).
 #               Per-manager installed counts probe the manager CLI when it is
 #               on PATH (brew, mas, code, cargo, uv, npm) and print `-` when
@@ -29,7 +30,7 @@ if [[ ! -s "$RESOLVED" ]]; then
   exit 1
 fi
 
-# count <text>: number of non-empty lines. `-` when the probe is unavailable.
+# count <text>: number of non-empty lines.
 count() { [[ -z "$1" ]] && print 0 || print -r -- "$1" | ggrep -c . || true; }
 has() { command -v "$1" >/dev/null 2>&1; }
 

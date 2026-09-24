@@ -4,11 +4,12 @@
 # shell/aliases/jgrid.zsh -- jgrid.net allomantic-metals ssh-jump aliases
 #
 # Purpose:      Define 22 ssh-jump aliases (one per allomantic metal) that
-#               connect to <metal>-ssh.jgrid.net via the local Cloudflared
-#               daemon. Gated on features.jgrid-net via source-time gate
-#               (bulk-alias-loop pattern -- one feature query covers all 22).
-# Depends on:   shell/functions/_dotfiles_feature.zsh (sourced earlier by
-#               .zshrc's functions glob).
+#               connect to <metal>-ssh.jgrid.net via the cloudflared
+#               ProxyCommand in the active SSH identity. Gated on
+#               features.jgrid-net via source-time gate (bulk-alias-loop
+#               pattern -- one feature query covers all 22).
+# Depends on:   shell/functions/helpers/_dotfiles_feature.zsh (sourced by
+#               .zshrc's helpers glob before aliases).
 # Side effects: defines 22 aliases (steel, iron, ..., raysium) on
 #               feature-on machines; no-op (returns 0) on feature-off.
 # =============================================================================

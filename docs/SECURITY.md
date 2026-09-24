@@ -11,8 +11,7 @@ inherits from.
 Scope is intentionally narrow: only the tools the bootstrap script
 acquires (Homebrew, go-task, yq) and the audit signals the script
 emits before doing so. SSH key handling lives in the identity
-layer; Claude hook secret-scanning lives in the jshvn/ai repo;
-per-machine credential management is documented in `docs/MACHINES.md`.
+layer; Claude hook secret-scanning lives in the jshvn/ai repo.
 
 The repository's per-machine security boundary is the manifest model
 itself: every install action keys off the machine name written to
@@ -97,11 +96,13 @@ The bootstrap trust chain inherits from three named anchors:
   the `one-password-ssh` feature flag.
 - **1Password agent integration** -- machines with `one-password-ssh` route
   SSH agent traffic through 1Password; the wiring lives in
-  `shell/.zprofile` and `identity/ssh/cloudflared.zsh`.
+  `shell/.zprofile` (`SSH_AUTH_SOCK`), the `IdentityAgent` lines in
+  `identity/ssh/identities/<name>`, and `identity/ssh/agent.toml` (linked by
+  `taskfiles/identity.yml`).
 - **Claude hook secret-scanning** -- implemented in the jshvn/ai repo
   (`claude/hooks/secret-scan.zsh` there), installed by its `task install`.
-- **Per-machine credential management** -- out of scope. Anything beyond the
-  universal bootstrap path is documented in `docs/MACHINES.md`.
+- **Per-machine credential management** -- out of scope. No secret enters the
+  repo; SSH and signing keys stay in 1Password.
 
 ---
 

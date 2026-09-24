@@ -6,7 +6,7 @@
 # Purpose:      Reformat a JSON, YAML, or TOML file with the canonical tool
 #               for its type, then pipe through highlight for color. Format
 #               is chosen from the file extension (.json / .yaml|.yml /
-#               .toml). Supersedes the JSON-only prettyjson.
+#               .toml).
 # Depends on:   jq (JSON), yq (YAML), taplo (TOML), highlight.
 # Side effects: stdout only.
 # =============================================================================

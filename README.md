@@ -9,6 +9,7 @@ macOS dotfiles managed with go-task, symlinks, and XDG base directory spec.
 ### Install
 ```zsh
 $ git clone https://github.com/jshvn/dotfiles.git
+$ cd dotfiles
 $ ./bootstrap.zsh
 $ task setup -- <machine-name>
 $ task install
@@ -20,8 +21,8 @@ $ update
 ```
 `update` fast-forwards the repo from its remote (`task repo:sync`), then runs `task install`.
 The pull is fast-forward-only and skips cleanly -- with a warning, never blocking the install --
-on a dirty working tree, a diverged branch, or when offline / SSH auth is unavailable. Set
-`repo-auto-update = false` in a machine manifest to skip the pull entirely.
+on a dirty working tree, a diverged branch, or when offline / SSH auth is unavailable. List
+`repo-auto-update` under `features.disabled` in a machine manifest to skip the pull entirely.
 
 ## ⚙️ Common Tasks
 
@@ -34,7 +35,7 @@ The top-level commands are:
 | `task validate`  | Validate full installation state                       |
 | `task test`      | Run all smoke tests                                    |
 | `task lint`      | Run all lint checks                                    |
-| `task audit`     | Detect drift across all domains (read-only)            |
+| `task audit`     | Detect drift and known vulnerabilities (read-only)     |
 | `task diff`      | Preview what `task install` would change (read-only)   |
 | `task report`    | Markdown overview of the converged install (read-only) |
 
@@ -43,7 +44,7 @@ the full graph.
 
 ## 📦 Where things live
 
-- `docs/MANIFEST.md` -- manifest schema, inheritance rules, worked examples
+- `docs/MANIFEST.md` -- manifest schema, feature accounting, package tiers, worked examples
 - `docs/SECURITY.md` -- bootstrap trust chain
 - `docs/MACHINES.md` -- per-machine purpose and hardware
 

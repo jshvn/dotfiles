@@ -1,6 +1,7 @@
 # identity/git/identities/none -- no-op git identity.
 #
-# This file is the no-op identity used when identity.git = "none" in the machine manifest.
+# This file is the no-op identity used when machine.identity = "none" in the
+# machine manifest.
 # It is never loaded via any [includeIf] block because no gitdir pattern matches it.
 #
 # Purpose: provides a named, committed artifact for the "none" enum value so that

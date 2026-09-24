@@ -8,10 +8,11 @@
 #               declares. Emits one finding per line on stdout; the caller
 #               counts them. A tap is a code-execution boundary, so a tap
 #               nobody declared -- or a trust grant for one -- is drift.
-# Depends on:   jq (>= 1.7); zsh (>= 5). Reads three input files -- declared
-#               taps, installed taps, and a trust store in `brew trust --json
-#               v1` shape (keys taps/formulae/casks/commands). Runs no brew
-#               commands itself so the logic stays testable in isolation.
+# Depends on:   jq (>= 1.7); zsh (>= 5); ggrep. Reads three input files --
+#               declared taps, installed taps, and a trust store in `brew
+#               trust --json v1` shape (keys taps/formulae/casks/commands).
+#               Runs no brew commands itself so the logic stays testable in
+#               isolation.
 # Side effects: none. Writes findings to stdout only.
 # =============================================================================
 

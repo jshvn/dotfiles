@@ -6,9 +6,11 @@
 # Purpose:      Pull the latest dotfiles before install (the `update` alias
 #               runs this, then `task install`, in two processes). Fetches
 #               then fast-forwards the current branch; never merges, rebases,
-#               or clobbers local work.
+#               or clobbers local work. install/ai-checkout.zsh reuses it
+#               against the jshvn/ai checkout.
 # Depends on:   DOTFILEDIR env var (the repo to pull; exported by
-#               taskfiles/repo.yml); git; install/messages.zsh (sourced
+#               taskfiles/repo.yml or install/ai-checkout.zsh); git;
+#               install/messages.zsh (sourced
 #               relative to this script, NOT from DOTFILEDIR, so the repo
 #               under operation is decoupled from the library location).
 # Side effects: at most a `git merge --ff-only` of the working tree to the
@@ -48,7 +50,7 @@ report_release() {
 # install converge local state (including offline).
 
 # 1. Is it a git repo at all? (Covers "don't already have the repo"; the
-#    initial clone is bootstrap's job per README, not the update path.)
+#    initial clone is a manual `git clone` per README, not the update path.)
 if ! git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   warn "dotfiles dir is not a git repo (${repo}); skipping pull"
   exit 0

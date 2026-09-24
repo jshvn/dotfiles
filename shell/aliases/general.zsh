@@ -18,9 +18,7 @@ alias fsa='ncdu'
 alias perms='permissions'
 
 # Lazy expansion (single quotes) + presence guard: when eza is absent,
-# the alias is not defined and the system `ls` falls through. Eager
-# `$(command -v eza)` expansion at source time was masking the system
-# `ls` entirely when eza was uninstalled (Plan 13-02 REVIEW.md row 13).
+# the alias is not defined and the system `ls` falls through.
 if command -v eza >/dev/null 2>&1; then
     alias ls='eza --time-style long-iso'
 fi

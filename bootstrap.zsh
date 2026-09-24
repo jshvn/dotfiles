@@ -71,8 +71,8 @@ else
   info "go-task already installed: $(task --version)"
 fi
 
-# Step 3: yq. Minimum version 4.52.1 (full TOML read/write; `. * .`
-# deep-merge operator). Older versions trigger a warning but do NOT abort
+# Step 3: yq. Minimum version 4.52.1 (full TOML read; TOML-to-JSON for the
+# resolver). Older versions trigger a warning but do NOT abort
 # -- `task setup` will fail more obviously if yq is inadequate.
 if ! command -v yq >/dev/null 2>&1; then
   info "installing yq..."

@@ -5,9 +5,8 @@
 #
 # Purpose:      Single source of truth for the two lint detectors that the
 #               production scan (taskfiles/lint.yml `taskfile`) AND the
-#               self-test harness (`test-fixtures`) both need. Keeping one
-#               implementation removes the verbatim-copy drift hazard the
-#               fixture block used to warn about.
+#               self-test harness (`test-fixtures`) both need. One
+#               implementation, so the two callers cannot drift apart.
 # Depends on:   yq, jq, ggrep, awk, sed (same toolchain as lint.yml).
 # Side effects: none -- defines lint02_scan_file / lint03a_scan_file; both are
 #               read-only (yq reads of the target taskfile) and print to stdout.

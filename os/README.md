@@ -2,20 +2,23 @@
 
 macOS configuration: per-concern `defaults write` scripts plus shell
 registration. Each concern is feature-gated via `../manifests/machines/<name>.toml`;
-`task macos:apply-defaults` orchestrates the apply path; `task macos:validate`
-asserts current state matches the in-script expected values. macOS-only; the
-flat layout (no platform subdirectories) reflects that single-platform scope.
+`macos:apply-defaults` (run by `task install`) orchestrates the apply path;
+`macos:validate` (run by `task validate`) asserts current state matches the
+in-script expected values. macOS-only; the flat layout (no platform
+subdirectories) reflects that single-platform scope.
 
 ## Purpose
 
-Each `defaults/<concern>.zsh` sourced library declares a single tuple-array
-source of truth for its concern (`(domain, key, expected_value, write_type)`
-rows) and exposes `apply_<concern>` and `verify_<concern>`, which
-delegate to the shared `_apply_defaults` / `_verify_defaults` loop in
-`defaults/_apply_verify.zsh` (apply runs `defaults write`; verify reads back,
-printing `check`/`cross` via `../install/messages.zsh` and returning non-zero
-on any drift). The taskfile sources the script for both write and read paths,
-so the array is the contract for both sides.
+Each `defaults/<concern>.zsh` sourced library exposes `apply_<concern>` and
+`verify_<concern>`. Most declare a single tuple-array source of truth for
+their concern (`(domain, key, expected_value, write_type)` rows), and their
+two functions delegate to the shared `_apply_defaults` / `_verify_defaults`
+loop in `defaults/_apply_verify.zsh` (apply runs `defaults write`; verify
+reads back, printing `check`/`cross` via `../install/messages.zsh` and
+returning non-zero on any drift). The taskfile sources the script for both
+write and read paths, so the array is the contract for both sides.
+`display.zsh` (a Swift helper) and `spotlight.zsh` (the symbolic-hotkeys
+plist) fit no tuple and implement both functions directly.
 
 `shell-registration.zsh` is the always-on sibling (no feature gate): it adds
 Homebrew zsh to `/etc/shells` and `chsh`es the user to it. The task's
@@ -41,7 +44,8 @@ skips the re-apply.
 - `defaults/spotlight.zsh` -- Disable the Spotlight Cmd+Space binding to free
   it for Raycast (gated on `macos-spotlight`)
 - `defaults/_apply_verify.zsh` -- Shared `_apply_defaults` / `_verify_defaults`
-  loop that every concern library delegates to (not feature-gated; sourced).
+  loop that the tuple-array concern libraries delegate to (not feature-gated;
+  sourced).
 - `shell-registration.zsh` -- `/etc/shells` + chsh (always-on, no gate;
   `status:` uses the `{{.BREW_ZSH}}` template var, not `$BREW_ZSH`)
 - `hostname.zsh` -- `apply_hostname` / `verify_hostname` plus state-file
@@ -55,21 +59,24 @@ skips the re-apply.
   `verify_<concern>` functions -- one source of truth per concern.
   Register a `[macos-<concern>]` block in `../manifests/features.toml`
   (`description` plus `platforms = ["darwin"]`), and list the key in every
-  machine's `[features]` enabled or disabled array. Add the concern to the parameterized
-  `macos:apply-defaults:concern` task in `../taskfiles/macos.yml` (sources
-  the script; gates on the feature flag via
-  `index .MANIFEST.features "macos-<concern>"` -- kebab-case keys
-  require the `index` form). Wire it into the `macos:apply-defaults`
-  aggregator's `cmds:` list. Wire the verify call into the
-  `macos:validate` task body. Add it to the `[features] enabled` array on
-  machines that want it (and `disabled` elsewhere) in
-  `../manifests/machines/<name>.toml`.
+  machine's `[features]` enabled or disabled array. Add an
+  `apply-defaults:concern` call with `CONCERN: <concern>` and
+  `FEATURE: macos-<concern>` to the `macos:apply-defaults` aggregator's
+  `cmds:` list in `../taskfiles/macos.yml` (the parameterized task sources
+  the script and gates on `index .MANIFEST.features .FEATURE` -- kebab-case
+  keys require the `index` form). If the concern changes anything visible,
+  add its flag to the `apply-defaults:refresh-ui` gate. Wire the verify call
+  into the `macos:validate` task body.
 - **A new key inside an existing concern.** Append one 4-tuple to the
   existing `<CONCERN>_DEFAULTS` array; both apply and verify pick it up
   automatically -- the array is the contract. For `-currentHost`-scoped
   keys (per-host plists under `~/Library/Preferences/ByHost/`), append to
-  the `<CONCERN>_DEFAULTS_CURRENTHOST` array instead and let the apply /
-  verify loop call `defaults -currentHost write|read`.
+  the `<CONCERN>_DEFAULTS_CURRENTHOST` array instead, and pass that array
+  with `-currentHost` as the third argument to `_apply_defaults` /
+  `_verify_defaults` in `apply_<concern>` / `verify_<concern>` (as
+  `security.zsh` does); the loop then calls `defaults -currentHost
+  write|read`.
+
 ## Expected LINT-05 portability warnings
 
 LINT-05 flags platform-specific commands as a forward signal for a future

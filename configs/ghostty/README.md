@@ -13,7 +13,7 @@ integration used on machines where the `ghostty` feature flag is enabled.
 
 `~/.config/ghostty/config` -> `${DOTFILEDIR}/configs/ghostty/config`
 
-Wired via the `_:safe-link` entry in `taskfiles/links.yml` `configs:` sub-task.
+Wired via the `_:safe-link` entry in `taskfiles/links.yml` `configs:ghostty` sub-task.
 
 ## Feature gate
 
@@ -23,5 +23,5 @@ without Ghostty installed list it in `[features] disabled` instead.
 
 ## References
 
-- `taskfiles/links.yml` -- `configs:` sub-task registers the symlink
+- `taskfiles/links.yml` -- `configs:ghostty` sub-task registers the symlink
 - `manifests/features.toml` -- registers the `ghostty` flag

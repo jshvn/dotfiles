@@ -38,9 +38,8 @@ tasks:
     #     shell function rather than `task install` gets back-filled on
     #     the next `task install`).
     #   - state file present AND mismatch -> apply state -> system.
-    # LINT-02 -- the only template var in status is {{.HOSTNAME_STATE_FILE}};
-    # the rest is shell inside the nested zsh -c body (same false-positive
-    # baseline class accepted in manifest.yml).
+    # LINT-02 -- the outer status shell uses template vars only; $desired and
+    # ${DOTFILEDIR} live inside the nested zsh -c body.
     status:
       - |
         if [[ ! -f "{{.HOSTNAME_STATE_FILE}}" ]]; then
@@ -91,7 +90,6 @@ tasks:
           apply_hostname "$desired"
         '
 
-  # lint-allow: cmds-without-status
   set:
     desc: "Write hostname state file + apply: task hostname:set -- <name>"
     platforms: [darwin]
@@ -117,7 +115,7 @@ tasks:
     # the template-rendered `{{.CLI_ARGS}}` -- making a valid name look
     # rejected. Inline validation against `${CLI_ARGS_ENV}` defaults-empty
     # to "" (NOT unbound) and lets the regex check below produce the right
-    # decision either way. Mirrors `manifest:set` exactly.
+    # decision either way. Same env-forwarding pattern as `manifest:set`.
     preconditions:
       - sh: |
           name="${CLI_ARGS_ENV:-}"
@@ -171,7 +169,6 @@ tasks:
           fi
         '
 
-  # lint-allow: cmds-without-status
   show:
     desc: "Show hostname state file + live ComputerName/HostName/LocalHostName"
     platforms: [darwin]

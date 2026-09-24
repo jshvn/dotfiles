@@ -3,19 +3,18 @@ version: '3'
 # =============================================================================
 # taskfiles/test.yml -- smoke-test surface
 #
-# Purpose:      Manifest deep-merge fixtures plus the repo-sync, ai-checkout,
-#               links-audit, packages, brewfile, shell-startup and report
-#               smoke tests. Composed by the root `task test` aggregator.
-# Depends on:   install/tests/ai-checkout.zsh; install/resolver.zsh;
-#               install/tests/shell-startup.zsh; install/messages.zsh;
-#               manifests/tests/fixtures/.
-# Side effects: temporary copies under manifests/machines/ (negative
-#               fixtures) -- always cleaned up via EXIT trap.
+# Purpose:      Manifest resolver fixtures (typed-* golden output, _invalid-*
+#               rejections) plus the repo-sync, ai-checkout, links-audit,
+#               packages, brewfile, shell-startup and report smoke tests.
+#               Composed by the root `task test` aggregator.
+# Depends on:   install/tests/*.zsh; install/resolver.zsh;
+#               install/messages.zsh; manifests/tests/{fixtures,shared}/.
+# Side effects: temporary copies under manifests/machines/ (typed and
+#               negative fixtures) -- always cleaned up via EXIT trap.
 # =============================================================================
 
 tasks:
 
-  # lint-allow: cmds-without-status
   repo-sync:
     desc: "Run repo:sync fast-forward smoke tests via install/tests/repo-sync.zsh"
     internal: true
@@ -28,7 +27,6 @@ tasks:
     status:
       - false
 
-  # lint-allow: cmds-without-status
   ai-checkout:
     desc: "Run ai-checkout smoke tests via install/tests/ai-checkout.zsh"
     internal: true
@@ -41,7 +39,6 @@ tasks:
     status:
       - false
 
-  # lint-allow: cmds-without-status
   links-audit:
     desc: "Run links:audit orphan-scan smoke tests via install/tests/links-audit.zsh"
     internal: true
@@ -54,7 +51,6 @@ tasks:
     status:
       - false
 
-  # lint-allow: cmds-without-status
   packages-declared:
     desc: "Run declared-set extraction smoke tests via install/tests/packages-declared.zsh"
     internal: true
@@ -67,7 +63,6 @@ tasks:
     status:
       - false
 
-  # lint-allow: cmds-without-status
   packages-trust:
     desc: "Run tap/trust drift smoke tests via install/tests/packages-trust.zsh"
     internal: true
@@ -80,7 +75,6 @@ tasks:
     status:
       - false
 
-  # lint-allow: cmds-without-status
   brewfile-compose:
     desc: "Run Brewfile composition smoke tests via install/tests/brewfile-compose.zsh"
     internal: true
@@ -93,7 +87,6 @@ tasks:
     status:
       - false
 
-  # lint-allow: cmds-without-status
   shell-startup:
     desc: "Run shell startup smoke tests via install/tests/shell-startup.zsh"
     internal: true
@@ -106,7 +99,6 @@ tasks:
     status:
       - false
 
-  # lint-allow: cmds-without-status
   report:
     desc: "Run install-report smoke test via install/tests/report.zsh"
     internal: true
@@ -120,7 +112,7 @@ tasks:
       - false
 
   manifest:
-    desc: "Run deep-merge fixtures (positive + negative)"
+    desc: "Run manifest resolver fixtures (typed golden + invalid rejections)"
     internal: true
     # No status: always re-run; this is a test runner.
     cmds:
@@ -132,10 +124,11 @@ tasks:
         # Cleanup tracker for negative-fixture copies. Any failure between
         # cp and rm -f (yq crash, SIGINT, validator coredump) would otherwise
         # leak _invalid-* files into manifests/machines/, polluting
-        # AVAILABLE_MACHINES and breaking `task setup` autocomplete. go-task's
-        # mvdan/sh interpreter only supports EXIT in trap (not INT/TERM by
-        # name); go-task forwards received signals to its child shell, which
-        # then runs the EXIT trap on its way out, so EXIT alone covers Ctrl-C.
+        # AVAILABLE_MACHINES (the machine list task setup prints on error).
+        # go-task's mvdan/sh interpreter only supports EXIT in trap (not
+        # INT/TERM by name); go-task forwards received signals to its child
+        # shell, which then runs the EXIT trap on its way out, so EXIT alone
+        # covers Ctrl-C.
         neg_copies=()
         cleanup_neg() {
           local f
@@ -169,7 +162,7 @@ tasks:
         # the same manifests/machines/<name>.toml path.
         #
         # _run_negative_fixture registers the copy in neg_copies BEFORE cp
-        # so the EXIT trap (line 79) cleans up on cp failure / SIGINT.
+        # so the EXIT trap set above cleans up on cp failure / SIGINT.
         _run_negative_fixture() {
           local fixture_name="$1"
           local grep_substring="$2"

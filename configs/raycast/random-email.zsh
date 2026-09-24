@@ -5,7 +5,7 @@
 #
 # Purpose:      Build `<prefix>.<8 random [a-z0-9]>@jgrid.net` from the prefix
 #               typed in Raycast, copy it to the clipboard, and show it as a
-#               HUD toast. Local /dev/urandom stands in for random.org. The
+#               HUD toast. The random suffix comes from /dev/urandom. The
 #               prefix is reduced to ASCII letters and digits, so a stray
 #               trailing "." or any punctuation/unicode is dropped.
 # Depends on:   /dev/urandom; tr; head; pbcopy; Raycast passing the prefix

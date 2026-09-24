@@ -1,9 +1,9 @@
 # Tool: motd
 
 The MOTD (message of the day) is a Tron-themed login greeting shown on
-interactive shell login. It combines a static ASCII art / quote file with a
-fastfetch sysinfo template, rendered by `shell/functions/motd.zsh` with a
-24-hour cache. These files are read directly from the repo at runtime -- they
+interactive shell login. It combines the jgrid logo (image or inline ASCII art), a
+random Tron quote, and a fastfetch sysinfo template, rendered by
+`shell/functions/motd.zsh`. These files are read directly from the repo at runtime -- they
 are not symlinked.
 
 ## Files
@@ -20,8 +20,7 @@ are not symlinked.
 
 No symlink -- these files are read at runtime by `shell/functions/motd.zsh`
 directly from `${DOTFILEDIR}/configs/motd/`. The motd function uses
-`${DOTFILEDIR}/configs/motd/motd_tron.txt` and
-`${DOTFILEDIR}/configs/motd/motd_sysinfo.jsonc`.
+`motd_tron.txt`, `motd_sysinfo.jsonc` and `motd_jgrid.png` from there.
 
 This is the runtime-read exception: motd files live under `configs/motd/` for
 structural symmetry with the other tool subdirectories but require no symlink
@@ -30,7 +29,7 @@ because the shell function reads the repo path directly.
 ## Feature gate
 
 Always on -- no feature flag. `.zshrc`'s functions glob defines the `motd`
-function, and `.zlogin` calls it unconditionally on login. These data files
+function, and `.zlogin` calls it on login when the function is defined. These data files
 are always present on disk and consume negligible footprint.
 
 ## References

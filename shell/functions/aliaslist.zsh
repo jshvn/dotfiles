@@ -27,7 +27,7 @@ function aliaslist() {    # aliaslist() lists all dotfiles and system aliases. e
         done
     }
 
-    # Dotfiles aliases (flat layout — no profile walk)
+    # Dotfiles aliases (flat shell/aliases/ directory)
     echo "${yellow}── Dotfiles ──${reset}"
     _print_aliases_from_dir "${DOTFILEDIR}/shell/aliases"
 
