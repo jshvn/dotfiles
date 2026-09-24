@@ -36,7 +36,8 @@ identity is selected by a single symlink swap.
   repo; the `keys/.gitignore` allowlist (`*` + `!*.pub` +
   `!.gitignore`) is the enforcement.
 - `ssh/cloudflared.zsh` -- ProxyCommand wrapper invoked by the personal
-  identity's `ProxyCommand` directive for `*.jgrid.net` and `*.plex.me` hosts.
+  identity's `ProxyCommand` directive for `*-*.jgrid.net` (the tunnel
+  hostnames) and `*.plex.me` hosts.
   Deployed on every machine even though only the personal identity
   references it.
 
