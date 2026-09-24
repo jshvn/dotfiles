@@ -4,8 +4,8 @@ Git + SSH identity. Manifest-driven: each machine's `[machine]`
 table declares a single `identity` scalar -- the basename of a file that must
 exist under both `identity/git/identities/` and `identity/ssh/identities/`
 (filesystem-driven enum — drop a file in each, the resolver picks it up).
-The gates `features.one-password-ssh`, `features.one-password-signing`, and
-`features.server-include` further shape per-machine behavior. macOS-only
+The gates `features.one-password-ssh` and `features.one-password-signing`
+further shape per-machine behavior. macOS-only
 (Apple Silicon + Intel); the model would carry cleanly to other platforms
 because no logic branches on platform here -- only on identity. Symlinks
 deploy via `taskfiles/identity.yml` and `_:safe-link`; the active SSH
@@ -14,17 +14,12 @@ identity is selected by a single symlink swap.
 ## Key files
 
 - `git/config` -- main git config; symlinked to `~/.config/git/config`. Carries
-  the workstation `[includeIf "gitdir/i:~/git/personal/"]`,
+  the `[includeIf "gitdir/i:~/git/personal/"]`,
   `[includeIf "gitdir/i:~/git/katoptra/"]` (same personal overlay), and
-  `[includeIf "gitdir/i:~/git/work/"]` blocks plus the universal
-  `[include] path = server-include.config` hook (absent on workstations
-  is a silent no-op).
+  `[includeIf "gitdir/i:~/git/work/"]` blocks.
 - `git/ignore` -- global gitignore, referenced via `core.excludesfile = ignore`.
-- `git/identities/<name>` -- flat per-identity overlays. Workstation overlays
-  are loaded via the `[includeIf gitdir/i:...]` blocks in `git/config`; server
-  overlays are loaded via the `server-include.config` wildcard that
-  `taskfiles/identity.yml` materializes when the `server-include` feature is
-  enabled.
+- `git/identities/<name>` -- flat per-identity overlays, loaded via the
+  `[includeIf gitdir/i:...]` blocks in `git/config`.
 - `ssh/config` -- main SSH config; symlinked to `~/.ssh/config`. Contains a
   single `Include ~/.ssh/identities/active` directive; no `Match exec`
   blocks. Identity is resolved at install time, not connection time.

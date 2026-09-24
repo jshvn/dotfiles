@@ -118,13 +118,6 @@ vscode = [
 [jgrid-net]
 description = "gate shell/aliases/jgrid.zsh"
 
-[server-include]
-description = "materialize ~/.config/git/server-include.config for headless server identities"
-
-[cloudflared-tunnel]
-description = "run a blue/green pair of cloudflared connectors as LaunchAgents; token at ~/.config/cloudflared/tunnel.token"
-platforms = ["darwin"]
-
 [macos-dock]
 description = "gate os/defaults/dock.zsh and macos:defaults:dock"
 platforms = ["darwin"]

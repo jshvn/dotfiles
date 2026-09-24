@@ -95,8 +95,8 @@ The bootstrap trust chain inherits from three named anchors:
 - **SSH key handling** -- the identity layer (`identity/ssh/`) documents
   how SSH keys are organized, with 1Password agent integration gated by
   the `one-password-ssh` feature flag.
-- **1Password agent integration** -- the non-server machines route SSH
-  agent traffic through 1Password; the wiring lives in
+- **1Password agent integration** -- machines with `one-password-ssh` route
+  SSH agent traffic through 1Password; the wiring lives in
   `shell/.zprofile` and `identity/ssh/cloudflared.zsh`.
 - **Claude hook secret-scanning** -- implemented in the jshvn/ai repo
   (`claude/hooks/secret-scan.zsh` there), installed by its `task install`.

@@ -371,7 +371,7 @@ tasks:
         # `|| true` on each: a type with zero entries exits non-zero, which
         # under errexit+pipefail (set at the root Taskfile) would abort the
         # entire audit silently. Machines with `mas = []` / `casks = []` are
-        # legitimate (e.g., atium headless), so an empty section must yield an
+        # legitimate (ci declares neither), so an empty section must yield an
         # empty declared-set, not a hard fail.
         declared_formulae=$(brew bundle list --formulae --file="$bf" 2>/dev/null | sort -u || true)
         declared_casks=$(brew bundle list --casks     --file="$bf" 2>/dev/null | sort -u || true)
@@ -399,7 +399,7 @@ tasks:
         fi
 
         # Installed sets for the non-brew managers. Each is gated on its CLI
-        # being present (a server without the vscode flag has no `code`); a
+        # being present (a machine without the vscode flag has no `code`); a
         # missing CLI yields an empty installed-set so the section skips
         # cleanly. The skip is announced only when something was declared, so
         # a machine that uses none of these stays quiet.
