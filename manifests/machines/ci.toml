@@ -48,8 +48,6 @@ disabled = [
 ]
 
 [packages]
-# repo-dev-toolchain is enabled: this machine runs task lint and task test, so
-# it needs the lint and format tooling that flag carries.
 formulae = [
   "bat",
   "bottom",

@@ -7,7 +7,7 @@
 #               features.ghostty via the wrapper-function pattern (single
 #               alias, so the helpful stderr message wins over the
 #               bulk-loop source-time gate).
-# Depends on:   shell/functions/_dotfiles_require_feature.zsh.
+# Depends on:   shell/functions/helpers/_dotfiles_require_feature.zsh.
 # Side effects: defines function g(); execs Ghostty.app/MacOS/ghostty
 #               on feature-on machines.
 # =============================================================================

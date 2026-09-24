@@ -28,14 +28,12 @@ function sethostname() {    # sethostname() will set the machine's hostname to t
     local name="${1:-}"
 
     # Locate os/hostname.zsh via the three-tier fallback:
-    #   1. $DOTFILEDIR exported by the caller (task hostname:* heredoc, or
-    #      an explicit export in .zshrc / .zprofile);
+    #   1. $DOTFILEDIR exported by shell/.zshrc;
     #   2. derive from this file's own sourced path -- ${(%):-%N} expands
     #      to the path of the currently sourced file; `:A:h` resolves to
     #      its absolute parent directory. repo_root is then ../..
     #      (shell/functions -> shell -> repo root);
-    #   3. fall back to the canonical XDG_CONFIG_HOME dotfiles install
-    #      location.
+    #   3. fall back to an $XDG_CONFIG_HOME/dotfiles checkout, if present.
     local lib=""
     if [[ -n "${DOTFILEDIR:-}" && -f "${DOTFILEDIR}/os/hostname.zsh" ]]; then
         lib="${DOTFILEDIR}/os/hostname.zsh"

@@ -12,8 +12,9 @@
 #               shell/.zsh_plugins.txt; shell/theme.zsh;
 #               shell/functions/helpers/*.zsh; shell/functions/*.zsh;
 #               shell/aliases/*.zsh.
-# Side effects: exports ANTIDOTE_HOME, HISTFILE, HIST_STAMPS, HISTSIZE,
-#               SAVEHIST; creates HISTFILE parent dir; enables SHARE_HISTORY
+# Side effects: exports TLRC_CONFIG, DOTFILEDIR, ANTIDOTE_HOME, HISTFILE,
+#               HIST_STAMPS, HISTSIZE, SAVEHIST; creates HISTFILE parent
+#               dir; enables SHARE_HISTORY
 #               setopt; clones plugin repos + writes static init file under
 #               $ANTIDOTE_HOME; writes zcompdump under $XDG_CACHE_HOME/zsh;
 #               conditionally sources VS Code shell integration; prints

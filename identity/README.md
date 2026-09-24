@@ -26,8 +26,9 @@ identity is selected by a single symlink swap.
 - `ssh/identities/<name>` -- flat per-identity host configs; deployed at
   `~/.ssh/identities/<name>` on every machine. Swapping identities is
   a relink, not an edit.
-- `ssh/identities/active` -- symlink to the manifest-selected identity file.
-  Created by `taskfiles/identity.yml`'s ssh task.
+- `~/.ssh/identities/active` (not in the repo) -- symlink to the
+  manifest-selected identity file. Created by `identity:install-ssh` in
+  `taskfiles/identity.yml`.
 - `ssh/agent.toml` -- 1Password SSH agent key-order config; symlinked to
   `~/.config/1Password/ssh/agent.toml` by `taskfiles/identity.yml` when
   the `one-password-ssh` feature is enabled.
@@ -49,9 +50,8 @@ overlay with a capability sentinel comment (`# capability: one-password-ssh`
 in the ssh overlay, `# capability: one-password-signing` in the git overlay);
 `install/resolver.zsh validate_manifest()` then requires any machine using
 that identity to enable the matching feature. Cover a new sentinel with a
-negative fixture under `manifests/tests/fixtures/_invalid-*/` so
-`task test:manifest` verifies it. Update `docs/MANIFEST.md`
-`machine.identity` allowed-values.
+negative fixture under `manifests/tests/fixtures/_invalid-*/` so `task test`
+verifies it.
 
 **A machine.** Create `manifests/machines/<name>.toml`, then
 `task setup -- <name>`. Set `identity` in the `[machine]` table to the desired

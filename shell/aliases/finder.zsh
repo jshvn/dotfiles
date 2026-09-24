@@ -5,9 +5,9 @@
 #
 # Purpose:      Finder GUI wrappers (finder / findershow / finderhide);
 #               gated on features.macos-finder via wrapper-function pattern
-#               so calls on non-GUI machines surface a stderr
-#               message instead of silently no-opping.
-# Depends on:   shell/functions/_dotfiles_require_feature.zsh.
+#               so calls on machines with macos-finder disabled surface a
+#               stderr message instead of silently no-opping.
+# Depends on:   shell/functions/helpers/_dotfiles_require_feature.zsh.
 # Side effects: defines functions finder / findershow / finderhide;
 #               feature-gated `open -a Finder` + `defaults write` +
 #               `killall Finder` on macos-finder=true machines.

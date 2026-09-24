@@ -12,10 +12,11 @@ so `_:safe-link` calls are straightforward.
 | ghostty | `ghostty/config` | `~/.config/ghostty/config` | `features.ghostty` |
 | herdr | `herdr/config.toml` | `~/.config/herdr/config.toml` | `features.herdr` |
 | tlrc | `tlrc/config.toml` | `~/.config/tlrc/config.toml` | always on |
-| conda | `conda/condarc` | `~/.condarc` | always on |
+| conda | `conda/condarc` | `~/.config/conda/condarc` | always on |
 | eza | `eza/theme.yaml` | `~/.config/eza/theme.yaml` | always on |
 | dust | `dust/config.toml` | `~/.config/dust/config.toml` | always on |
-| motd | `motd/motd_tron.txt`, `motd/motd_sysinfo.jsonc` | no symlink -- read at runtime | always on (runtime-read) |
+| motd | `motd/motd_tron.txt`, `motd/motd_sysinfo.jsonc`, `motd/motd_jgrid.png` | no symlink -- read at runtime | always on (runtime-read) |
+| raycast | `raycast/random-email.zsh` | no symlink -- directory registered in Raycast | none |
 
 ## How to add a tool config
 
@@ -23,12 +24,15 @@ so `_:safe-link` calls are straightforward.
    match the destination basename (match-destination-filename rule).
 2. Add `configs/<tool>/README.md` documenting purpose, files, symlink
    destination, and feature gate.
-3. Register a `_:safe-link` entry in `taskfiles/links.yml` under the `configs:`
-   sub-task (never use bare `ln -s`; see `CLAUDE.md` LINT-03b).
+3. Add a `_:safe-link` call and a matching `status:` line to `install-configs`
+   in `taskfiles/links.yml` (never bare `ln -s`; LINT-03b), then add the target
+   to `EXPECTED_TARGETS` and its source to `LINKS_RESOLVE_SOURCE` so
+   `links:validate` and `links:diff` see it.
 4. If the tool needs feature-gating, register a kebab-case flag in
    `manifests/features.toml` (its own `[flag-name]` block), account for it in
-   every machine's `[features]` enabled or disabled array, and wrap the link
-   entry in `{{if index .MANIFEST.features "flag-name"}}`.
+   every machine's `[features]` enabled or disabled array, and give the link
+   its own `configs:<tool>` sub-task gated in `status:` (mirror
+   `configs:ghostty`), with the inline-ternary form in `EXPECTED_TARGETS`.
 
 ## Conventions
 

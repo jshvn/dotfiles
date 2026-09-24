@@ -13,7 +13,6 @@ version: '3'
 
 tasks:
 
-  # lint-allow: cmds-without-status
   show:
     desc: "Show feature flags (enabled/disabled) for the active machine"
     cmds:

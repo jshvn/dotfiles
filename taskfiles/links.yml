@@ -6,9 +6,14 @@ version: '3'
 # Purpose:      All symlink creation owned by this taskfile (shell startup,
 #               tool configs); identity-layer symlinks live in
 #               taskfiles/identity.yml.
-# Depends on:   taskfiles/helpers.yml (_:safe-link, _:check-link).
+# Depends on:   taskfiles/helpers.yml (_:safe-link); install/messages.zsh;
+#               install/links-audit-scan.zsh; :manifest:resolve (deps);
+#               :identity:install.
 # Side effects: writes symlinks under $ZDOTDIR + $XDG_CONFIG_HOME; writes
-#               $ZDOTDIR export to /etc/zshenv (sudo, idempotent).
+#               $ZDOTDIR export to /etc/zshenv (sudo, idempotent); writes
+#               $XDG_STATE_HOME/dotfiles/build/links.map (emit-map);
+#               `links:audit -- --remove` unlinks confirmed orphans and
+#               rmdirs their emptied parent dirs.
 # =============================================================================
 
 includes:
@@ -17,7 +22,7 @@ includes:
 vars:
   # EXPECTED_TARGETS -- single source of truth for every symlink target owned
   # by this taskfile. Identity-layer symlinks are intentionally EXCLUDED --
-  # they live in taskfiles/identity.yml's equivalent and are validated by
+  # they are created by identity:install and validated by
   # identity:validate. Feature-gated entries use the inline-ternary form
   # which renders an empty line when the feature is off; consumers skip
   # empty lines via `[[ -z "$target" ]] && continue`.
@@ -64,7 +69,6 @@ vars:
 
 tasks:
 
-  # lint-allow: cmds-without-status
   install:
     desc: "Create all symlinks (shell + identity + configs)"
     internal: true
@@ -160,9 +164,8 @@ tasks:
     internal: true
     deps: [":manifest:resolve"]
     # Isolated as its own sub-task so the inline-ternary status: gate works
-    # independently of the always-on tool configs. Avoids the regression
-    # where a missing always-on link forces cmds: to run unconditionally
-    # including the gated ghostty link.
+    # independently of the always-on tool configs, so a missing always-on
+    # link cannot force the gated ghostty link to be created.
     cmds:
       - task: _:safe-link
         vars: { SOURCE: "{{.ROOT_DIR}}/configs/ghostty/config", TARGET: "{{.XDG_CONFIG_HOME}}/ghostty/config" }
@@ -180,7 +183,6 @@ tasks:
     status:
       - '{{if not (index .MANIFEST.features "herdr")}}true{{else}}test -L "{{.XDG_CONFIG_HOME}}/herdr/config.toml" && [[ "$(readlink -f "{{.XDG_CONFIG_HOME}}/herdr/config.toml")" == "{{.ROOT_DIR}}/configs/herdr/config.toml" ]]{{end}}'
 
-  # lint-allow: cmds-without-status
   validate:
     desc: "Validate all symlinks (strict-mode SOURCE check)"
     internal: true
@@ -190,9 +192,10 @@ tasks:
       # Iterates EXPECTED_TARGETS line-by-line and verifies each symlink with
       # the same three-condition logic as helpers.yml _:check-link BUT
       # increments an explicit failures counter on each failing path, ending
-      # with `exit "$failures"`. This closes the _:check-link-always-exits-0
-      # gap so root `task validate` can bubble links:validate failures via
-      # exit code. Feature-off entries in EXPECTED_TARGETS render as empty
+      # with `exit "$failures"`, so links:validate itself exits non-zero on
+      # drift (_:check-link always exits 0). The root `task validate`
+      # aggregate still exits 0; failures surface there as cross marks.
+      # Feature-off entries in EXPECTED_TARGETS render as empty
       # lines and are skipped via `[[ -z "$target" ]] && continue`.
       - |
         {{.DOTFILES_MESSAGES}}
@@ -232,7 +235,6 @@ tasks:
 
         exit "$failures"
 
-  # lint-allow: cmds-without-status
   diff:
     desc: "Preview symlink changes: links install would create or retarget"
     # deps the single artifact this domain reads (see packages:diff).
@@ -262,13 +264,12 @@ tasks:
           info "links: ${changes} change(s) pending -- run 'task install'"
         fi
 
-  # lint-allow: cmds-without-status
   emit-map:
     desc: "Write the expected-symlink map to the build dir (target TAB source)"
     internal: true
-    # ponytail: links:install still derives its targets from EXPECTED_TARGETS
-    # and its own cmds: entries rather than reading links.map, so the map
-    # serves links:diff only (packages does consume its built artifact).
+    # ponytail: links:install creates links from its own literal cmds:
+    # entries rather than reading links.map, so the map serves links:diff
+    # only (packages does consume its built artifact).
     # Upgrade path: drive links:install from links.map, which
     # collapses the resolve_source case statement and the install cmds: list
     # into one source.
@@ -294,7 +295,6 @@ tasks:
         trap - EXIT
         check "build/links.map written ($(wc -l < '{{.STATE_DIR}}/build/links.map' | tr -d ' ') links)"
 
-  # lint-allow: cmds-without-status
   audit:
     desc: "Audit symlink drift (detect orphans); -- --remove for interactive cleanup"
     deps: [":manifest:resolve"]
@@ -337,8 +337,8 @@ tasks:
         # the repo root plus the scan roots ($XDG_CONFIG_HOME, $ZDOTDIR) are
         # args. The scanner flags two orphan kinds: a live symlink into the repo
         # that is not expected, AND a dangling symlink whose literal target was
-        # under the repo (a tool removed + its config deleted) -- the latter is
-        # the case a readlink -f-only gate silently dropped.
+        # under the repo (a tool removed + its config deleted); a
+        # `readlink -f` check alone misses the latter.
         #
         # `(( expr ))` evaluates to exit-1 when expr is zero -- under errexit
         # that aborts the script. Use `if ... ; then ... ; fi` instead.

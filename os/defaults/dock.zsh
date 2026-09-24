@@ -9,7 +9,8 @@
 # Depends on:   install/messages.zsh; os/defaults/_apply_verify.zsh;
 #               $DOTFILEDIR exported by caller (taskfiles/macos.yml heredoc).
 # Side effects: apply_dock runs `defaults write` per tuple then `killall Dock`
-#               (guarded with `|| true` for headless/pre-launch machines);
+#               (guarded with `|| true` so a missing Dock process is not an
+#               error);
 #               verify_dock is unprivileged read-only.
 # =============================================================================
 
@@ -20,8 +21,7 @@ set -euo pipefail
 : "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task macos:*' or export it manually}"
 source "${DOTFILEDIR}/install/messages.zsh"
 
-# Shared apply / verify helpers, extracted from the 5 near-identical
-# per-concern loops.
+# Shared apply / verify helpers.
 source "${DOTFILEDIR}/os/defaults/_apply_verify.zsh"
 
 # Tuple stride 4: (domain, key, expected_value, write_type).

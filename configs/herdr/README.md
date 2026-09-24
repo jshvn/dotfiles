@@ -14,7 +14,7 @@ the theme (a DuoTone Dark Sky mapping over the catppuccin base, matching the
 
 `~/.config/herdr/config.toml` -> `${DOTFILEDIR}/configs/herdr/config.toml`
 
-Wired via the `_:safe-link` entry in `taskfiles/links.yml` `configs:` sub-task.
+Wired via the `_:safe-link` entry in `taskfiles/links.yml` `configs:herdr` sub-task.
 
 ## Feature gate
 

@@ -31,7 +31,7 @@ source "${DOTFILEDIR}/os/defaults/_apply_verify.zsh"
 # AppleIconAppearanceTheme value grammar: "<mode><tone>" where mode is
 # "Regular" (Always) or "Auto" (follows system appearance), tone is one of
 # Light, Dark, Clear, Tinted. "RegularDark" = Icon & widget style: Dark,
-# Always (the screenshot's state).
+# Always.
 typeset -ga APPEARANCE_DEFAULTS=(
   "NSGlobalDomain"  "AppleInterfaceStyle"        "Dark"         "string"
   "NSGlobalDomain"  "AppleIconAppearanceTheme"   "RegularDark"  "string"

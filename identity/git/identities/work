@@ -6,11 +6,10 @@
 # capability: one-password-signing (a machine using this identity must enable features.one-password-signing)
 #
 # Note: work email is not yet set. Fill in before activating work identity.
-# Open question tracked in .planning/phases/04-identity-layer-git-ssh-per-machine/04-CONTEXT.md.
 
 [user]
     name = Josh Vaughen
-    # TODO: set work email before merge -- email = <work>
+    # TODO: set work email -- email = <work>
 
 [gpg]
     format = ssh

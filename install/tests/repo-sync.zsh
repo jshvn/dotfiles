@@ -3,7 +3,7 @@
 # =============================================================================
 # install/tests/repo-sync.zsh -- smoke tests for install/repo-sync.zsh
 #
-# Purpose:      Exercise every guard branch of the repo-sync fast-forward
+# Purpose:      Exercise the guard branches of the repo-sync fast-forward
 #               pull against throwaway git repos: non-repo, detached HEAD,
 #               no upstream, dirty tree, up-to-date, behind (clean ff),
 #               local-ahead, and diverged. Asserts exit 0 (warn-only) plus

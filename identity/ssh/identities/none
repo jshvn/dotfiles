@@ -6,5 +6,5 @@
 #
 # Purpose: ensures the Include ~/.ssh/identities/active line in the main config
 # resolves to a real file. This avoids any "Include of missing file" ambiguity
-# across SSH versions (RESEARCH Pitfall 5). The file is intentionally comment-only;
-# no Host blocks or directives are set.
+# across SSH versions. The file is intentionally comment-only; no Host blocks or
+# directives are set.

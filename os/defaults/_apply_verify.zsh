@@ -12,7 +12,7 @@
 # Depends on:   defaults, killall (optional); install/messages.zsh check/
 #               cross must already be sourced; $DOTFILEDIR exported.
 # Side effects: _apply_defaults writes to macOS user defaults and may kill
-#               UI processes; _verify_defaults emits check/cross to stderr
+#               UI processes; _verify_defaults emits check/cross to stdout
 #               and returns 0 on full convergence, 1 otherwise.
 # =============================================================================
 
@@ -32,8 +32,8 @@ _apply_defaults() {
     key="${arr[$((i + 1))]}"
     value="${arr[$((i + 2))]}"
     type="${arr[$((i + 3))]}"
-    # Narrow substitution: literal $HOME token only. Avoids the (e)-flag
-    # command-exec sink documented in the screenshots.zsh prior implementation.
+    # Narrow substitution: literal $HOME token only. No (e)-flag expansion,
+    # which would execute command substitutions embedded in a value.
     expanded="${value/\$HOME/$HOME}"
     if [[ -n "$scope_flag" ]]; then
       defaults "$scope_flag" write "$domain" "$key" "-${type}" "$expanded"

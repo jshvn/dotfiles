@@ -41,9 +41,8 @@ typeset -r OUT="${STATE_DIR}/resolved.json"
 typeset -r MACHINE_NAME_RE='^[a-z0-9_][a-z0-9_-]*$'
 
 # Path-component regex for every TOML-sourced name concatenated into a
-# filesystem path (identity value, ai profile). Only
-# the machine name was guarded before; a value like "../evil" would otherwise
-# resolve a path outside its intended directory.
+# filesystem path (identity value, ai profile). A value like "../evil" would
+# otherwise resolve a path outside its intended directory.
 typeset -r PATH_NAME_RE='^[a-z0-9_][a-z0-9_-]*$'
 
 # Git ref allow-list for ai.ref: branch, tag or sha. No leading `-` (would
@@ -265,7 +264,8 @@ validate_manifest() {
     fi
 
     # Registry packages shape: a flag's optional [<flag>.packages] table may
-    # only declare the seven bucket keys; bare-string arrays except mas
+    # only declare the eight bucket keys (taps, formulae, casks, mas, vscode,
+    # cargo, uv, npm); bare-string arrays except mas
     # ({ id, name } objects). One line per violation.
     local reg_pkg_bad
     reg_pkg_bad=$(jq -rn --argjson reg "$registry_json" '
@@ -381,7 +381,7 @@ validate_manifest() {
   # profiles/<profile>.toml, ref -> the git ref dotfiles checks out) and
   # rejected when it is not: the machine file records deliberate choices only,
   # the same stance as the packages redundancy rule. $enabled_json is the
-  # machine's enabled array, computed above for the identity sentinels.
+  # machine's enabled array, computed above in the [features] block.
   local ai_enabled ai_profile ai_ref
   ai_enabled=$(printf '%s' "$enabled_json" | jq -r 'index("ai") != null')
   ai_profile=$(yq -r '.ai.profile // ""' "$machine_file" 2>/dev/null || echo "")

@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-: "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task macos:shell' or export it manually}"
+: "${DOTFILEDIR:?DOTFILEDIR not set -- run via 'task install' or export it manually}"
 source "${DOTFILEDIR}/install/messages.zsh"
 
 # Mandatory parameter assertion -- the structural contract on the script

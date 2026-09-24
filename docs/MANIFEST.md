@@ -42,6 +42,7 @@ disabled = []
 
 [packages]
 # One table for every package manager. Bare strings everywhere except mas.
+taps = []                   # bare <user>/<repo> taps that ship commands
 formulae = ["node"]         # brew formulae wanted on this machine
 casks = ["discord"]         # bare cask names
 mas = [                     # Mac App Store: { id = <number>, name = "..." }
@@ -66,7 +67,7 @@ Every valid flag is declared once:
 description = "fast-forward the dotfiles repo from its remote before install"
 
 [macos-dock]
-description = "gate os/defaults/dock.zsh and macos:defaults:dock"
+description = "gate os/defaults/dock.zsh"
 platforms = ["darwin"]      # optional; when present the flag applies only on these os
 ```
 
@@ -85,11 +86,11 @@ description = "gate shell/aliases/ghostty.zsh and the ghostty config link"
 casks = ["ghostty"]
 ```
 
-Buckets mirror the base and machine `[packages]` shape (`formulae`, `casks`,
-`mas`, `vscode`, `cargo`, `uv`, `npm`). When a machine enables the flag, the
-resolver unions these into the resolved set; a disabled flag contributes
-nothing. Machines list applications you want; a feature's own tooling belongs
-on the flag, so enabling the feature guarantees its tools.
+Buckets mirror the base and machine `[packages]` shape (`taps`, `formulae`,
+`casks`, `mas`, `vscode`, `cargo`, `uv`, `npm`). When a machine enables the
+flag, the resolver unions these into the resolved set; a disabled flag
+contributes nothing. Machines list applications you want; a feature's own
+tooling belongs on the flag, so enabling the feature guarantees its tools.
 
 Two flags may declare the same package -- `one-password-ssh` and
 `one-password-signing` both declare the `1password` cask, and the union dedupes.
@@ -102,15 +103,12 @@ machine manifest is a hard error:
 
 ```toml
 [packages]
+taps = ["homebrew/brew-vulns"]
 formulae = [
-  "bat",
-  "fd",
+  "antidote",
+  "coreutils",
+  # ...
 ]
-casks = [
-  "firefox",
-]
-mas = []
-vscode = []
 ```
 
 ### Required fields
@@ -198,7 +196,7 @@ The resolver unions each `[packages]` bucket across three sources in order --
 the base tier, then every enabled feature's packages, then the machine's
 inline entries -- and dedupes:
 
-- `formulae`, `casks`, `vscode`, `cargo`, `uv`, `npm`: bare-string values,
+- `taps`, `formulae`, `casks`, `vscode`, `cargo`, `uv`, `npm`: bare-string values,
   deduplicated (sorted); a name declared in several sources collapses to one.
 - `mas`: deduplicated by `id`; the machine's entry wins on a collision, which
   is why `mas` is exempt from the redundancy rule below.
@@ -218,8 +216,9 @@ application while running its own ssh-agent.
 ## Compiled output (`resolved.json`)
 
 The resolver emits a stable JSON contract consumed by every taskfile. Package
-paths in the compiled artifact are `packages.brew.{taps,formulae,casks,mas}` and
-`packages.{vscode,cargo,uv,npm}`, each holding the resolved union of every
+paths in the compiled artifact are `packages.brew.{taps,formulae,casks,mas}`,
+`packages.vscode.extensions`, `packages.cargo.crates`, `packages.uv.tools` and
+`packages.npm.packages`, each holding the resolved union of every
 tier. `features` is materialized as a boolean map over the full
 registry (enabled -> true, everything else -> false). `schema_version` is not
 part of the compiled output.
@@ -275,7 +274,7 @@ is enforced by LINT-13.
 
 3. Add the consuming task or asset that gates on the flag. In taskfiles, access
    it via `{{index .MANIFEST.features "<flag>"}}` (kebab-case keys require the
-   `index` form; see the LINT-11 note in `CLAUDE.md`).
+   `index` form; see `CLAUDE.md`, enforced by LINT-11).
 
 ## Adding a New Identity
 
@@ -293,8 +292,10 @@ basenames of files under `identity/git/identities/` and
    sentinel comment to the ssh / git overlay so the resolver enforces the
    feature is enabled.
 
-4. If the identity carries its own SSH key (not 1Password-managed), drop the
-   public key at `identity/ssh/keys/<name>.pub`. Private keys never go in the repo.
+4. If the identity should offer one specific key (its `IdentityFile`, and what
+   `task validate` checks `ssh-add -L` against when `one-password-ssh` is on),
+   drop its public key at `identity/ssh/keys/<name>.pub`. Private keys never go
+   in the repo.
 
 5. Reference the new identity from a machine manifest:
 

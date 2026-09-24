@@ -40,8 +40,7 @@ function whois() {    # whois() looks up a domain, IP, or URL over RDAP, falling
     # This delegates to libpsl's `psl` tool, which embeds the full, current
     # Public Suffix List (the same library curl / wget / git use) and resolves
     # wildcard and exception rules a hand-maintained list cannot express.
-    # libpsl is installed on every machine via the shared `dotfiles` brew
-    # bundle specifically so this function can compute eTLD+1 correctly.
+    # libpsl is in manifests/base.toml, so every machine has it.
     #   PSL: https://publicsuffix.org/  --  libpsl: https://github.com/rockdaboot/libpsl
     # Skipped for IP addresses. If psl is absent, or returns no registrable
     # domain (e.g. a bare host like "localhost", reported as "(null)"), the

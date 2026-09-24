@@ -5,9 +5,8 @@
 #
 # Purpose:      Assert the composed Brewfile grants trust to tap-qualified
 #               entries and leaves core entries bare, emits one tap line per
-#               distinct tap prefix or declared bare tap, and still escapes
-#               single quotes so a
-#               package name can never break out of its Ruby string literal.
+#               distinct tap prefix or declared bare tap, and parses under
+#               `brew bundle list` when brew is on PATH.
 # Depends on:   DOTFILEDIR env var (exported by taskfiles/test.yml);
 #               install/compose-brewfile.zsh; jq; install/messages.zsh.
 # Side effects: composes into a throwaway XDG_STATE_HOME under mktemp -d,

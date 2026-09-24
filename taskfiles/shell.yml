@@ -50,7 +50,6 @@ tasks:
         fi
         check "shell start within budget"
 
-  # lint-allow: cmds-without-status
   antidote-update:
     desc: "Update antidote-managed zsh bundles (OMZ + plugins) to latest upstream"
     internal: true
@@ -115,9 +114,7 @@ tasks:
           failures=$(( failures + 1 ))
         fi
 
-        # Embed the template var directly in the literal grep pattern so the
-        # status equivalent never references a shell var (LINT-02 hygiene;
-        # mirrors the zdotdir task in taskfiles/links.yml).
+        # Same grep literal as the links:zdotdir status block.
         ZDOTDIR_EXPORT='export ZDOTDIR="{{.ZDOTDIR}}"'
         if [[ -f /etc/zshenv ]] && grep -qF "$ZDOTDIR_EXPORT" /etc/zshenv; then
           check "ZDOTDIR configured in /etc/zshenv"

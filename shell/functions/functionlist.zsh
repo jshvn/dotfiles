@@ -12,7 +12,7 @@
 # =============================================================================
 
 function functionlist() {
-    # Dotfiles functions (flat layout — no profile walk)
+    # Dotfiles functions (flat shell/functions/ directory)
     echo "$(tput setaf 3)── Dotfiles ──$(tput sgr0)"
     for file in "${DOTFILEDIR}/shell/functions/"*.zsh(.N)
     do

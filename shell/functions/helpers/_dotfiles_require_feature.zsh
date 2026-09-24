@@ -3,10 +3,9 @@
 # =============================================================================
 # shell/functions/helpers/_dotfiles_require_feature.zsh -- feature-gate guard helper
 #
-# Purpose:      Collapse the two-line `[[ "$(_dotfiles_feature X)" == "true"
-#               ]] || { echo ... >&2; return 1; }` guard previously
-#               duplicated in every wrapper-function alias.
-# Depends on:   $_DOTFILES_FEATURES (populated by _dotfiles_feature).
+# Purpose:      Guard a wrapper function on a feature flag: warn to stderr
+#               and return 1 when the flag is off.
+# Depends on:   _dotfiles_feature.
 # Side effects: prints "<wrapper>: feature '<X>' is disabled on this
 #               machine" to stderr when the feature is off; returns 0
 #               (enabled) or 1 (disabled).

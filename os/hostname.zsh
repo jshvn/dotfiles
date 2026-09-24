@@ -9,7 +9,7 @@
 #               install-time apply step; contents are the authoritative value.
 # Depends on:   install/messages.zsh; $DOTFILEDIR exported by caller
 #               (taskfiles/hostname.yml heredoc, or interactive shell function
-#               sethostname). macOS scutil + defaults (gated by callers).
+#               sethostname). macOS scutil (gated by callers).
 # Side effects: apply_hostname runs three sudo commands (scutil ComputerName /
 #               HostName / LocalHostName). NetBIOSName is deliberately NOT
 #               managed -- macOS derives it from the reverse-DNS PTR record at

@@ -5,7 +5,8 @@ version: '3'
 #
 # Purpose:      Single source of truth for symlink creation + validation
 #               helpers (_:safe-link, _:check-link).
-# Depends on:   nothing.
+# Depends on:   install/messages.zsh (via root DOTFILES_MESSAGES; _:check-link
+#               only).
 # Side effects: _:safe-link creates symlinks (_:check-link is read-only).
 # =============================================================================
 

@@ -12,10 +12,10 @@
 #
 # packages: a flag may declare an optional [<flag>.packages] table using the
 # same bucket shape as manifests/base.toml and a machine's [packages]
-# (formulae, casks, mas, vscode, cargo, uv, npm). The resolver unions those
-# buckets into the resolved set when a machine enables the flag; a disabled
-# flag contributes nothing. A feature's own tooling belongs here, so enabling
-# the feature guarantees the tools it needs.
+# (taps, formulae, casks, mas, vscode, cargo, uv, npm). The resolver unions
+# those buckets into the resolved set when a machine enables the flag; a
+# disabled flag contributes nothing. A feature's own tooling belongs here, so
+# enabling the feature guarantees the tools it needs.
 #
 # platforms: when present, the flag applies only on the listed operating
 # systems (machine.os). Omit it for platform-neutral flags (the default:
@@ -50,10 +50,12 @@ casks = ["claude-code"]
 description = "fast-forward the dotfiles repo from its remote before install"
 
 [repo-dev-toolchain]
-description = "lint and format tooling required to run task lint on this repo"
+description = "developer tooling for working on this repo (linters, formatters, hyperfine)"
 
-# Consumed by taskfiles/lint.yml and install/lint-rules.zsh. A machine that
-# only uses these dotfiles (rather than developing them) does not need these.
+# hyperfine backs task shell:startup-time and taplo backs pretty(); biome,
+# ruff, shellcheck and shfmt are editing aids. Neither task lint nor task test
+# invokes any of them. A machine that only uses these dotfiles (rather than
+# developing them) does not need these.
 [repo-dev-toolchain.packages]
 formulae = [
   "biome",
@@ -119,7 +121,7 @@ vscode = [
 description = "gate shell/aliases/jgrid.zsh"
 
 [macos-dock]
-description = "gate os/defaults/dock.zsh and macos:defaults:dock"
+description = "gate os/defaults/dock.zsh"
 platforms = ["darwin"]
 
 [macos-finder]
@@ -127,7 +129,7 @@ description = "gate shell/aliases/finder.zsh and os/defaults/finder.zsh"
 platforms = ["darwin"]
 
 [macos-input]
-description = "gate os/defaults/input.zsh and macos:defaults:input"
+description = "gate os/defaults/input.zsh"
 platforms = ["darwin"]
 
 [macos-spotlight]
@@ -135,11 +137,11 @@ description = "gate os/defaults/spotlight.zsh (free Cmd+Space for Raycast)"
 platforms = ["darwin"]
 
 [macos-screenshots]
-description = "gate os/defaults/screenshots.zsh and macos:defaults:screenshots"
+description = "gate os/defaults/screenshots.zsh"
 platforms = ["darwin"]
 
 [macos-security]
-description = "gate os/defaults/security.zsh and macos:defaults:security"
+description = "gate os/defaults/security.zsh"
 platforms = ["darwin"]
 
 [macos-appearance]

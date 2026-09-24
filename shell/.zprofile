@@ -13,9 +13,8 @@
 #               may export SSH_AUTH_SOCK to the 1Password agent socket.
 # =============================================================================
 
-# v1 targets darwin only. Every machine TOML enforces platform.os = "darwin",
-# so the previous Linux (linuxbrew) else-branch was unreachable;
-# re-introduce it when a Linux machine TOML is added.
+# Darwin only: every machine in manifests/machines/ sets machine.os = "darwin".
+# A Linux machine needs a linuxbrew branch here.
 if [[ "$(uname -m)" == "arm64" ]]; then
     DIRECTORY="/opt/homebrew/bin/brew"
 else
@@ -31,9 +30,9 @@ fi
 
 # SSH Agent. .zprofile runs BEFORE .zshrc, so the _dotfiles_feature helper
 # is not yet defined; use an inline jq read of resolved.json. On missing
-# resolved.json (fresh machine, before `task setup`), the jq read returns
-# nothing, the local var defaults to false, and SSH_AUTH_SOCK stays unset
-# (graceful degrade -- the system ssh-agent handles key lookup).
+# resolved.json (fresh machine, before `task setup`), the block is skipped
+# and SSH_AUTH_SOCK stays unset (graceful degrade -- the system ssh-agent
+# handles key lookup).
 if [[ -r "${XDG_STATE_HOME}/dotfiles/resolved.json" ]]; then
     _opssh=$(jq -r '.features."one-password-ssh" // false' "${XDG_STATE_HOME}/dotfiles/resolved.json" 2>/dev/null)
     if [[ "$_opssh" == "true" ]]; then

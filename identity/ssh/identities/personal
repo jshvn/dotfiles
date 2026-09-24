@@ -7,7 +7,7 @@
 # capability: one-password-ssh (a machine using this identity must enable features.one-password-ssh)
 # Path conventions:
 #   IdentityFile: ~/.ssh/identities/keys/personal.pub (per-identity key dir)
-#   ProxyCommand: ~/.ssh/identities/cloudflared.zsh (deployed per identity)
+#   ProxyCommand: ~/.ssh/identities/cloudflared.zsh (shared by all identities)
 
 # Use 1Password SSH agent for all personal connections
 Host *

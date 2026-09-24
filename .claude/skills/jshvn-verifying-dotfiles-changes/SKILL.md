@@ -12,9 +12,9 @@ Run the narrowest check that can fail, then the relevant aggregate.
 | Any taskfile | `task lint` | LINT rules pass, banner drift caught |
 | Machine/base/feature TOML | `task setup -- "$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/machine")" && task manifest:audit` | resolver validates, resolved.json fresh |
 | Package declarations | `task diff` then `task install && task packages:audit` | preview is what you expected, Brewfile converges, no drift |
-| Symlink entries (links.yml) | `task diff` then `task install && task links:audit` | preview lists the intended links, they exist and point into the repo |
+| Symlink entries (links.yml) | `task diff` then `task install && task validate && task links:audit` | preview lists the intended links, they exist and point into the repo, no orphans |
 | Shell files (.zsh) | `task lint && task test && exec zsh` | parse-check, smoke tests, live shell loads |
-| `[ai]` table or the `ai` flag | `task setup -- "$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/machine")" && task install && task ai:validate` | resolver accepts the table, the checkout is at the pinned ref, the ai repo's own validate passes |
+| `[ai]` table or the `ai` flag | `task setup -- "$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/machine")" && task install && task validate` | resolver accepts the table, the checkout is at the pinned ref, the ai repo's own validate passes |
 | os/defaults | `task install`, then log out/in for domains that need it | defaults applied |
 
 Aggregates: `task diff` (preview, read-only), `task validate` (installation state),

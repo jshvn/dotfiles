@@ -31,8 +31,9 @@ platform subdirectories) reflects that single-platform scope.
 
 - **An alias.** Create `aliases/<topic>.zsh`. If the alias is GUI-coupled
   or identity-coupled, gate inside the file: wrapper-function gate for
-  1-3 aliases -- each function calls `_dotfiles_feature <name>`
-  before delegating; source-time gate for bulk-alias loops --
+  1-3 aliases -- each function begins with
+  `_dotfiles_require_feature <name> || return 1`; source-time gate for
+  bulk-alias loops --
   prepend `[[ "$(_dotfiles_feature <name>)" == "true" ]] || return 0`.
 - **A function.** Create `functions/<name>.zsh`; the filename equals the
   function name. Add a docstring as an inline comment on the
