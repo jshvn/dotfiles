@@ -11,7 +11,7 @@ flags, identity selection, packages -- lives in
 Nothing here enumerates packages or flags. That duplication drifts, and the
 manifest already answers it in one file.
 
-## personal-laptop
+## personal
 
 - Purpose: primary personal Mac, daily driver for personal projects and
   personal AI/CLI work.
@@ -21,14 +21,14 @@ manifest already answers it in one file.
 - Special handling: the personal git/ssh identity is wired here, with SSH
   auth and commit signing flowing through the 1Password agent.
 
-## work-laptop
+## work
 
 - Purpose: work-issued MacBook carrying the work git/ssh identity.
 - Hardware: Apple Silicon or Intel -- arch is detected by the resolver via
   `uname -m` because `[machine].arch` is absent.
 - Role: primary work development machine. Commits and remote access carry
   the work attribution.
-- Special handling: the divergence from personal-laptop is the identity, not
+- Special handling: the divergence from personal is the identity, not
   the toolchain. The personal-network identity does not apply here.
 
 ## ci

@@ -1,7 +1,6 @@
-# manifests/machines/personal-laptop.toml -- Josh's personal MacBook.
+# manifests/machines/work.toml -- Work MacBook.
 #
-# Self-contained: every feature this machine has (and every registry flag it
-# deliberately lacks) is listed below; nothing is inherited.
+# Self-contained; arch is auto-detected by the resolver.
 #
 # [packages] lists discretionary choices only -- applications wanted on this
 # machine. Packages required by the dotfiles config itself are not listed here:
@@ -14,10 +13,9 @@
 schema_version = 3
 
 [machine]
-description = "Josh's personal MacBook -- Apple Silicon, primary dev machine"
+description = "Work MacBook -- work identity, GUI + dev environment"
 os = "darwin"
-arch = "arm64"
-identity = "personal"
+identity = "work"
 
 [features]
 enabled = [
@@ -27,41 +25,35 @@ enabled = [
   "repo-auto-update",
   "repo-dev-toolchain",
   "ghostty",
-  "herdr",
   "vscode",
-  "jgrid-net",
   "macos-dock",
   "macos-finder",
   "macos-input",
-  "macos-spotlight",
   "macos-screenshots",
   "macos-security",
   "macos-appearance",
   "macos-display",
   "macos-animations",
 ]
-disabled = []
+disabled = [
+  "herdr",
+  "jgrid-net",
+  "macos-spotlight",
+]
 
 [packages]
-# container: Apple's container runtime; requires macOS 15+, so machines on
-# older releases must not list it.
-# hashicorp/tap/terraform: terraform is not in homebrew-core (BSL licence), so
-# it comes tap-qualified from HashiCorp's own tap.
+# container: Apple's container runtime; requires macOS 15+.
 formulae = [
   "bat",
   "bottom",
   "container",
   "doggo",
   "duf",
-  "dust",
   "fd",
   "gh",
   "git-crypt",
-  "go",
-  "hashicorp/tap/terraform",
   "htop",
   "hugo",
-  "node",
   "poppler",
   "uv",
   "wget",
@@ -72,9 +64,6 @@ casks = [
   "alcove",
   "appcleaner",
   "cardhop",
-  "cloudflare-warp",
-  "discord",
-  "dropbox",
   "fantastical",
   "firefox",
   "gitfox",
@@ -82,10 +71,6 @@ casks = [
   "microsoft-powerpoint",
   "microsoft-word",
   "miniconda",
-  "nvidia-geforce-now",
-  "proton-drive",
-  "proton-mail",
-  "protonvpn",
   "raycast",
   "slack",
   "spotify",
@@ -99,11 +84,6 @@ mas = [
   { id = 904280696, name = "Things3" },
 ]
 
-vscode = [
-  "golang.go",
-  "josh.terminal-here-button",
-]
-
 [ai]
-profile = "personal"
-ref = "main"
+profile = "work"
+ref = "2026.09.23"
