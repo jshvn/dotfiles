@@ -13,15 +13,14 @@
 Host *
     IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 
+# JGRID mesh addresses
 Host *.jgrid.net
     IdentityFile ~/.ssh/identities/keys/personal.pub
     IdentitiesOnly yes
     User josh
     RequestTTY yes
 
-# <machine>-<service>.jgrid.net is a tunnel hostname behind Access, so cloudflared carries
-# it. A bare <machine>.jgrid.net is a private address WARP carries (a host's tunnel route,
-# a device's Mesh address), so plain ssh reaches it and this block does not match.
+# JGRID tunnel addresses
 Host *-*.jgrid.net
     ProxyCommand ~/.ssh/identities/cloudflared.zsh access ssh --hostname %h
 
