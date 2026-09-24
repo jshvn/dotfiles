@@ -3,7 +3,7 @@
 # Symlinked as ~/.ssh/identities/active when identity.ssh = "personal".
 # Included via the Include directive in identity/ssh/config -> ~/.ssh/config.
 # Side effects: routes all SSH connections through the 1Password agent; applies
-#   cloudflared ProxyCommand for jgrid.net and plex.me hosts.
+#   cloudflared ProxyCommand for jgrid.net tunnel hostnames and plex.me hosts.
 # capability: one-password-ssh (a machine using this identity must enable features.one-password-ssh)
 # Path conventions:
 #   IdentityFile: ~/.ssh/identities/keys/personal.pub (per-identity key dir)
@@ -17,8 +17,13 @@ Host *.jgrid.net
     IdentityFile ~/.ssh/identities/keys/personal.pub
     IdentitiesOnly yes
     User josh
-    ProxyCommand ~/.ssh/identities/cloudflared.zsh access ssh --hostname %h
     RequestTTY yes
+
+# <machine>-<service>.jgrid.net is a tunnel hostname behind Access, so cloudflared carries
+# it. A bare <machine>.jgrid.net is a private address WARP carries (a host's tunnel route,
+# a device's Mesh address), so plain ssh reaches it and this block does not match.
+Host *-*.jgrid.net
+    ProxyCommand ~/.ssh/identities/cloudflared.zsh access ssh --hostname %h
 
 Host *.plex.me
     IdentityFile ~/.ssh/identities/keys/personal.pub
