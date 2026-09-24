@@ -128,10 +128,6 @@ tasks:
   verify:
     desc: "Verify declared packages: brew bundle check (Layer 1) + brew info artifact probe (Layer 2)"
     internal: true
-    # silent: false restores stdout/stderr visibility for THIS task only --
-    # the root Taskfile.yml `silent: true` would hide verify output through
-    # pipes / non-TTY captures.
-    silent: false
     deps: [":manifest:resolve", ":packages:compose"]
     preconditions:
       - sh: test -s '{{.RESOLVED_JSON_PATH}}'

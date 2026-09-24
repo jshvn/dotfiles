@@ -43,8 +43,8 @@
 #   - bootstrap's interactive brew consent gate (runners ship brew)
 #   - the shell cold-start budget (shell:startup-time is not part
 #     of task test) and multi-machine state (JMBP/JAIR hostname split)
-#   - linux: nothing here runs on linux; an ubuntu-latest job arrives with
-#     Linux support (docs/NIXOS-IDEAS.md, roadmap phases 3-4)
+#   - linux: nothing here runs on linux; the repo is macOS-only
+#     (docs/DECISIONS.md)
 
 name: ci
 
