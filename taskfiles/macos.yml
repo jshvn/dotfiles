@@ -13,9 +13,10 @@ version: '3'
 #               os/defaults/<concern>.zsh; os/shell-registration.zsh;
 #               :manifest:resolve (deps).
 # Side effects: writes macOS user defaults via `defaults write`; relaunches
-#               Dock / Finder / SystemUIServer / ControlCenter at the end of
-#               apply-defaults so visual changes take effect immediately
-#               (gated on dock/finder/appearance features); appends
+#               Dock / WindowManager / Finder / SystemUIServer /
+#               ControlCenter at the end of apply-defaults so visual changes
+#               take effect immediately (gated on dock/finder/appearance
+#               features); appends
 #               $HOMEBREW_PREFIX/bin/zsh to /etc/shells (sudo); runs chsh.
 # =============================================================================
 
@@ -97,7 +98,11 @@ tasks:
     # appearance-on/dock-off case (Dark mode still needs the Dock to
     # repaint). `|| true` keeps the step from failing when a target process
     # is not running.
-    desc: "Relaunch UI processes (Dock, Finder, SystemUIServer, ControlCenter)"
+    # ponytail: WindowManager follows the Dock because on macOS 27.0 a Dock
+    # restart under a running WindowManager leaves Mission Control's Spaces
+    # thumbnails wallpaper-only. Covers only install-triggered Dock restarts;
+    # drop the line once a 27.x ships the fix.
+    desc: "Relaunch UI processes (Dock, WindowManager, Finder, SystemUIServer, ControlCenter)"
     internal: true
     platforms: [darwin]
     deps: [":manifest:resolve"]
@@ -105,6 +110,7 @@ tasks:
       - |
         {{if not (or (index .MANIFEST.features "macos-dock") (index .MANIFEST.features "macos-finder") (index .MANIFEST.features "macos-appearance"))}}exit 0{{end}}
         killall Dock 2>/dev/null || true
+        killall WindowManager 2>/dev/null || true
         killall Finder 2>/dev/null || true
         killall SystemUIServer 2>/dev/null || true
         killall ControlCenter 2>/dev/null || true
