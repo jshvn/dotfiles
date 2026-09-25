@@ -46,7 +46,7 @@ if git_q show-ref --verify --quiet "refs/remotes/origin/${AI_REF}"; then
     git_q checkout --quiet "$AI_REF"
   fi
   if [[ "$AI_SYNC" == "true" ]]; then
-    DOTFILEDIR="$AI_DIR" zsh "${0:A:h}/repo-sync.zsh"
+    DOTFILEDIR="$AI_DIR" REPO_NAME=jshvn/ai zsh "${0:A:h}/repo-sync.zsh"
   fi
 elif git_q rev-parse --verify --quiet "${AI_REF}^{commit}" >/dev/null; then
   if [[ "$(git_q rev-parse HEAD)" != "$(git_q rev-parse "${AI_REF}^{commit}")" ]]; then

@@ -16,7 +16,7 @@ version: '3'
 tasks:
 
   sync:
-    desc: "Pull latest dotfiles from the git remote (fast-forward only)"
+    desc: "Pull latest jshvn/dotfiles from the git remote (fast-forward only)"
     deps: [":manifest:resolve"]
     # LINT-02: template var (not shell var). Flag true -> "true" != "true" is
     # false -> status non-zero -> task runs. Flag false/absent -> status 0 ->
@@ -25,4 +25,4 @@ tasks:
     status:
       - 'test "{{index .MANIFEST.features "repo-auto-update"}}" != "true"'
     cmds:
-      - DOTFILEDIR="{{.ROOT_DIR}}" zsh "{{.ROOT_DIR}}/install/repo-sync.zsh"
+      - DOTFILEDIR="{{.ROOT_DIR}}" REPO_NAME=jshvn/dotfiles zsh "{{.ROOT_DIR}}/install/repo-sync.zsh"

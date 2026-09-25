@@ -40,7 +40,7 @@ export GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@example.com
 OUT=""; CODE=0
 run_sync() {
   CODE=0
-  OUT="$(DOTFILEDIR="$1" zsh "$SCRIPT" 2>&1)" || CODE=$?
+  OUT="$(DOTFILEDIR="$1" REPO_NAME=test/repo zsh "$SCRIPT" 2>&1)" || CODE=$?
 }
 
 # assert <label> <expected-substring>; every path must also exit 0.
@@ -84,7 +84,7 @@ advance_remote() {
 # 1. Not a git repo.
 mkdir -p "${BASE}/plain"
 run_sync "${BASE}/plain"
-assert "not-a-repo" "not a git repo"
+assert "not-a-repo" "test/repo dir is not a git repo"
 
 # 2. Detached HEAD.
 det="${BASE}/detached"
@@ -108,22 +108,23 @@ git -C "$dirty" tag v7.7.7
 echo localedit >> "$dirty/file"  # uncommitted change
 run_sync "$dirty"
 assert "dirty-tree" "uncommitted local changes"
-assert "dirty-tree.release" "currently on dotfiles release v7.7.7"
+assert "dirty-tree.release" "currently on test/repo release v7.7.7"
 
 # 5. Clean and current -> already up to date; still reports release position.
 cur_bare="${BASE}/current.git"; cur="${BASE}/current"
 mk_pair "$cur_bare" "$cur"
 git -C "$cur" tag v6.6.6
 run_sync "$cur"
-assert "up-to-date" "already up to date"
-assert "up-to-date.release" "currently on dotfiles release v6.6.6"
+assert "up-to-date" "test/repo already up to date"
+assert "up-to-date.fetch" "fetching latest test/repo..."
+assert "up-to-date.release" "currently on test/repo release v6.6.6"
 
 # 6. Behind by a clean fast-forward.
 ff_bare="${BASE}/ff.git"; ff="${BASE}/ff"
 mk_pair "$ff_bare" "$ff"
 advance_remote "$ff_bare"
 run_sync "$ff"
-assert "fast-forward" "dotfiles updated to"
+assert "fast-forward" "test/repo updated to"
 # HEAD must now equal the fetched upstream tip.
 if [[ "$(git -C "$ff" rev-parse HEAD)" == "$(git -C "$ff" rev-parse '@{u}')" ]]; then
   check "repo-sync.fast-forward.head-moved"
@@ -138,7 +139,7 @@ fft_bare="${BASE}/fftag.git"; fft="${BASE}/fftag"
 mk_pair "$fft_bare" "$fft"
 advance_remote "$fft_bare" v9.9.9
 run_sync "$fft"
-assert "fast-forward-tag" "currently on dotfiles release v9.9.9"
+assert "fast-forward-tag" "currently on test/repo release v9.9.9"
 
 # 6c. Fast-forward past an older release tag: HEAD ends 1 commit after it.
 ffa_bare="${BASE}/fftagahead.git"; ffa="${BASE}/fftagahead"
@@ -147,7 +148,7 @@ git -C "$ffa" tag v8.8.8
 git -C "$ffa" push -q origin v8.8.8
 advance_remote "$ffa_bare"
 run_sync "$ffa"
-assert "fast-forward-tag-ahead" "currently on dotfiles release v8.8.8 + 1 commits"
+assert "fast-forward-tag-ahead" "currently on test/repo release v8.8.8 + 1 commits"
 
 # 7. Local ahead of remote -> nothing to pull.
 ahead_bare="${BASE}/ahead.git"; ahead="${BASE}/ahead"

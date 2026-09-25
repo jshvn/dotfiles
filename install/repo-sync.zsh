@@ -3,16 +3,17 @@
 # =============================================================================
 # install/repo-sync.zsh -- fast-forward the dotfiles repo from its remote
 #
-# Purpose:      Pull the latest dotfiles before install (the `update` alias
-#               runs this, then `task install`, in two processes). Fetches
-#               then fast-forwards the current branch; never merges, rebases,
-#               or clobbers local work. install/ai-checkout.zsh reuses it
-#               against the jshvn/ai checkout.
-# Depends on:   DOTFILEDIR env var (the repo to pull; exported by
+# Purpose:      Pull the latest jshvn/dotfiles before install (the `update`
+#               alias runs this, then `task install`, in two processes).
+#               Fetches then fast-forwards the current branch; never merges,
+#               rebases, or clobbers local work. install/ai-checkout.zsh
+#               reuses it against the jshvn/ai checkout.
+# Depends on:   DOTFILEDIR and REPO_NAME env vars (the repo to pull and its
+#               owner/repo label for messages; exported by
 #               taskfiles/repo.yml or install/ai-checkout.zsh); git;
-#               install/messages.zsh (sourced
-#               relative to this script, NOT from DOTFILEDIR, so the repo
-#               under operation is decoupled from the library location).
+#               install/messages.zsh (sourced relative to this script, NOT
+#               from DOTFILEDIR, so the repo under operation is decoupled
+#               from the library location).
 # Side effects: at most a `git merge --ff-only` of the working tree to the
 #               upstream tip. No-op (warn + exit 0) on non-repo, detached
 #               HEAD, no upstream, dirty tree, offline/auth failure, or
@@ -22,6 +23,7 @@
 set -euo pipefail
 
 : "${DOTFILEDIR:?DOTFILEDIR must be set (run via task repo:sync)}"
+: "${REPO_NAME:?REPO_NAME must be set (owner/repo label for messages)}"
 
 # Source the messaging library from this script's own directory (${0:A:h}),
 # so DOTFILEDIR is free to point at any repo (notably the throwaway repos in
@@ -30,6 +32,7 @@ set -euo pipefail
 source "${0:A:h}/messages.zsh"
 
 repo="${DOTFILEDIR}"
+name="${REPO_NAME}"
 
 # report_release: one [INFO] line locating HEAD relative to the most recent
 # tag reachable from it; silent if the repo has no tags.
@@ -39,9 +42,9 @@ report_release() {
   [[ -z "$latest_tag" ]] && return 0
   ahead="$(git -C "$repo" rev-list --count "${latest_tag}..HEAD")"
   if (( ahead == 0 )); then
-    info "currently on dotfiles release ${latest_tag}"
+    info "currently on ${name} release ${latest_tag}"
   else
-    info "currently on dotfiles release ${latest_tag} + ${ahead} commits"
+    info "currently on ${name} release ${latest_tag} + ${ahead} commits"
   fi
 }
 
@@ -52,7 +55,7 @@ report_release() {
 # 1. Is it a git repo at all? (Covers "don't already have the repo"; the
 #    initial clone is a manual `git clone` per README, not the update path.)
 if ! git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  warn "dotfiles dir is not a git repo (${repo}); skipping pull"
+  warn "${name} dir is not a git repo (${repo}); skipping pull"
   exit 0
 fi
 
@@ -81,7 +84,7 @@ fi
 # 5. Fetch. Network/auth errors surface here. Disable credential prompts and
 #    cap the SSH handshake so a missing/locked/invalid key or a dead network
 #    fails fast instead of hanging or blocking on a passphrase prompt.
-step "fetching latest dotfiles..."
+step "fetching latest ${name}..."
 fetch_err="$(mktemp "${TMPDIR:-/tmp}/dotfiles-fetch.XXXXXX")"
 trap 'rm -f "$fetch_err"' EXIT INT TERM
 if ! GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND='ssh -o BatchMode=yes -o ConnectTimeout=10' \
@@ -98,7 +101,7 @@ remote_rev="$(git -C "$repo" rev-parse '@{u}' 2>/dev/null || true)"
 base_rev="$(git -C "$repo" merge-base HEAD '@{u}' 2>/dev/null || true)"
 
 if [[ "$local_rev" == "$remote_rev" ]]; then
-  info "dotfiles already up to date"
+  info "${name} already up to date"
   report_release
   exit 0
 fi
@@ -116,7 +119,7 @@ fi
 # 7. Behind by a clean fast-forward only.
 step "fast-forwarding ${branch}..."
 if git -C "$repo" merge --ff-only --quiet '@{u}'; then
-  success "dotfiles updated to $(git -C "$repo" rev-parse --short HEAD)"
+  success "${name} updated to $(git -C "$repo" rev-parse --short HEAD)"
   report_release
 else
   warn "fast-forward failed; resolve manually (git -C ${repo} status)"
