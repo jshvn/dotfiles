@@ -1,17 +1,18 @@
 #!/bin/zsh
 
 # =============================================================================
-# os/defaults/dock.zsh -- Dock defaults (gated on features.macos-dock)
+# os/defaults/dock.zsh -- Desktop & Dock defaults (gated on features.macos-dock)
 #
-# Purpose:      Declare the Dock keys this fleet wants; provide apply_dock /
-#               verify_dock entry points consuming a single tuple-array
-#               source of truth.
+# Purpose:      Declare the Desktop & Dock keys this fleet wants -- the Dock
+#               itself, the Spaces edge switch, and window tiling (which lives
+#               in com.apple.WindowManager); provide apply_dock / verify_dock
+#               entry points consuming a single tuple-array source of truth.
 # Depends on:   install/messages.zsh; os/defaults/_apply_verify.zsh;
 #               $DOTFILEDIR exported by caller (taskfiles/macos.yml heredoc).
 # Side effects: apply_dock runs `defaults write` per tuple then `killall Dock`
 #               (guarded with `|| true` so a missing Dock process is not an
-#               error);
-#               verify_dock is unprivileged read-only.
+#               error); WindowManager reads its keys live, so it needs no
+#               restart. verify_dock is unprivileged read-only.
 # =============================================================================
 
 set -euo pipefail
@@ -39,6 +40,15 @@ typeset -ga DOCK_DEFAULTS=(
   # Dock reveal: no hover delay, 0.15 s slide (macOS default is 0.5 s).
   "com.apple.dock"  "autohide-delay"          "0"     "float"
   "com.apple.dock"  "autohide-time-modifier"  "0.15"  "float"
+  # Spaces edge switch: a window held against a screen edge no longer jumps
+  # to the next desktop (stock delay 0.75 s), so the tiling outline below
+  # can be held as long as needed. The Dock reads this at launch.
+  "com.apple.dock"  "workspaces-edge-delay"  "1000"  "float"
+  # Window tiling (Desktop & Dock > Windows): drag to a side edge for a
+  # half, to the menu bar to fill the screen; hold Option while dragging
+  # to skip the edge hold.
+  "com.apple.WindowManager"  "EnableTilingByEdgeDrag"     "true"  "bool"
+  "com.apple.WindowManager"  "EnableTopTilingByEdgeDrag"  "true"  "bool"
 )
 
 apply_dock() {

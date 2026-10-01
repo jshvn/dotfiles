@@ -46,7 +46,7 @@ taps = []                   # bare <user>/<repo> taps that ship commands
 formulae = ["node"]         # brew formulae wanted on this machine
 casks = ["discord"]         # bare cask names
 mas = [                     # Mac App Store: { id = <number>, name = "..." }
-  { id = 441258766, name = "Magnet" },
+  { id = 904280696, name = "Things3" },
 ]
 vscode = []                 # extension ids ("publisher.name")
 cargo = []                  # crate names

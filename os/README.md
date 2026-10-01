@@ -28,7 +28,8 @@ skips the re-apply.
 
 ## Key files
 
-- `defaults/dock.zsh` -- Dock keys (gated on `macos-dock`)
+- `defaults/dock.zsh` -- Desktop & Dock keys: Dock, Spaces edge switch,
+  window tiling via `com.apple.WindowManager` (gated on `macos-dock`)
 - `defaults/finder.zsh` -- Finder keys (gated on `macos-finder`; shared
   with `../shell/aliases/finder.zsh` as same-flag-two-consumers --
   any machine that wants the Finder aliases also wants the Finder
