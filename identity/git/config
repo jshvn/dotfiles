@@ -32,6 +32,13 @@
 [init]
     defaultBranch = main
 
+[credential]
+    # Keep HTTPS auth out of the macOS keychain. Homebrew and Apple both ship
+    # git with a system-level "helper = osxkeychain"; the empty value below
+    # resets the helper list so that default is ignored. Remotes should use
+    # SSH, which the 1Password agent handles.
+    helper =
+
 [fetch]
     prune = true  # Auto-prune deleted remote branches
 
