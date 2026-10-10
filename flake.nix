@@ -22,10 +22,16 @@
     }:
     let
       lib = nixpkgs.lib;
+      # the <name> of each <name>.nix in a directory; any other file there (a README.md) is not a module
+      nixFiles =
+        dir:
+        map (lib.removeSuffix ".nix") (
+          builtins.filter (lib.hasSuffix ".nix") (builtins.attrNames (builtins.readDir dir))
+        );
       # machines/<name>.nix is the whole list: one file per physical laptop, chosen explicitly
       # at switch time (`darwin-rebuild switch --flake .#lerasium`), never inferred from the hostname
-      names = map (lib.removeSuffix ".nix") (builtins.attrNames (builtins.readDir ./machines));
-      profiles = map (lib.removeSuffix ".nix") (builtins.attrNames (builtins.readDir ./profiles));
+      names = nixFiles ./machines;
+      profiles = nixFiles ./profiles;
       mkDarwin =
         name:
         nix-darwin.lib.darwinSystem {
