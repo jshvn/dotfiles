@@ -10,7 +10,7 @@ merely installed is a package name in the profile.
 
 | App | Option | Owns |
 |-----|--------|------|
-| `1password/` | none: a base app | the cask, `env.zsh` (SSH_AUTH_SOCK), the link to the profile's `agent.toml` |
+| `1password/` | none: a base app | the cask, `env.zsh` (SSH_AUTH_SOCK), the link to the profile's `agent.toml`; `README.md` on the agent's by-hand switch |
 | `claude-code/` | `apps.claude-code.{enable,profile,ref,dir}` | the cask; the jshvn/ai checkout at its ref, its profile, its own `task install` (an activation step: `checkout.zsh`, `repo-sync.zsh`) |
 | `conda/` | `apps.conda.enable` | the miniconda cask, `condarc` |
 | `dust/` | `apps.dust.enable` | the formula, `config.toml`, the `dust` alias |
