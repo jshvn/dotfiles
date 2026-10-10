@@ -82,12 +82,18 @@ What the file system will not tell you:
   Taskfile `env:` entry cannot override the caller's PATH.
 - `task install` and `task rollback` run `sudo darwin-rebuild`, which prompts for a password.
   An agent cannot answer it: print the command, let Josh run it, read the result.
-- Homebrew cleanup uninstalls what is not declared. The first switch on a new machine runs
-  with `cleanup = "none"` and its `task audit` is read first (README, First switch).
+- The switch never uninstalls (`homebrew.onActivation.cleanup = "none"`): `task install`
+  (`tasks/install.zsh`) lets brew list what is installed beyond the declaration and uninstalls
+  it only on an explicit yes at brew's prompt, or with `task install -- --yes`. Brew is always
+  read with `HOMEBREW_NO_AUTO_UPDATE=1` and stdin from `/dev/null` where nothing may prompt.
+- A Mac's first `task install` (no `/run/current-system` yet) clears the way itself, after the
+  build succeeds: the symlinks at every `dotfiles.links` path go, anything else there moves to
+  `<path>.before-dotfiles`, and `/etc/zshenv` and `/etc/shells` move to `*.before-nix-darwin`.
+  `./bootstrap.zsh <machine>` is the whole install; there is no manual procedure.
 - `path` is the zsh array tied to `$PATH`; never use it as a variable name. The `nixos/nix`
   image has no `sed`: mutate files in checks with bash `${var//old/new}`. `nix fmt` outside a
   git checkout needs `--tree-root`.
-- `task diff` and the first switch leave a `result` symlink in the repo root; it is ignored.
+- `task install` and `task diff` leave a `result` symlink in the repo root; it is ignored.
 - Executable `.zsh`: `set -euo pipefail`, the three-label banner (Purpose / Depends on / Side
   effects between `# ===` rules), messages via `tasks/messages.zsh`; `tasks/lint.zsh` enforces
   these plus `zsh -n` and no hardcoded `/opt/homebrew` or `/usr/local` outside a

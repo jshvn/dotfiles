@@ -9,62 +9,43 @@ shell.
 
 ## Install
 
-### Fresh machine
+One command per Mac, fresh or already set up:
 
 ```zsh
 git clone https://github.com/jshvn/dotfiles.git ~/Git/personal/dotfiles
 cd ~/Git/personal/dotfiles
-# Homebrew, go-task and Nix. The Homebrew and Nix installers are consent-gated, Nix needs sudo
-./bootstrap.zsh
 # lerasium or harmonium
-task setup -- <machine>
+./bootstrap.zsh <machine>
 ```
 
-Then open a new terminal (the Nix installer put `nix` on an interactive shell's PATH) and do
-the first switch. The checkout path is fixed: `dotfiles.checkout` in `modules/default.nix`
-is where every link points.
+`bootstrap.zsh` installs Homebrew, go-task and Nix (each skipped when present; the Homebrew
+and Nix installers ask first, and Nix needs sudo), selects the machine with `task setup`, and
+runs the first `task install`. Re-running it is safe. Then open a new terminal; from then on
+`update` is the only command. The checkout path is fixed: `dotfiles.checkout` in
+`modules/default.nix` is where every link points.
 
-### First switch
+On a factory-fresh Mac, before that:
 
-Once per machine. nix-darwin refuses to overwrite `/etc` files it did not write, home-manager
-refuses to replace paths it does not own, and Homebrew cleanup must not run before its audit
-has been read.
+- The first `git` command offers to install the Xcode Command Line Tools; accept, then clone.
+- Sign in to the App Store: the profile installs Mac App Store apps through `mas`, and
+  `brew bundle` fails without a signed-in App Store, which stops the switch.
+- The jshvn/ai checkout clones over SSH through 1Password's agent, so on a fresh Mac that step
+  only warns. Once 1Password is signed in with its SSH agent on, run `task install` again.
 
-```zsh
-cd ~/Git/personal/dotfiles
-export NIX_CONFIG='experimental-features = nix-command flakes'
-M=$(cat ~/.local/state/dotfiles/machine)
-# Homebrew cleanup stays off until the audit is read
-sed -i '' 's/cleanup = "uninstall"/cleanup = "none"/' modules/homebrew.nix
-# build the closure, no sudo
-nix build ".#darwinConfigurations.$M.system"
-# clear the way for home-manager, only if the build produced darwin-rebuild
-test -x result/sw/bin/darwin-rebuild && task show | jq -r '.links | keys[]' | while read -r p; do
-  if [[ -L ~/$p ]]; then rm ~/$p; elif [[ -e ~/$p ]]; then mv ~/$p ~/$p.before-v3; fi; done
-# Run the next line as one command, and open no new terminal until it finishes,
-# because between the move and the switch a new shell finds no ZDOTDIR.
-test -x result/sw/bin/darwin-rebuild && sudo sh -c 'for f in /etc/zshenv /etc/shells; do [ -e $f ] && [ ! -L $f ] && mv $f $f.before-nix-darwin; done; true' && sudo env NIX_CONFIG="$NIX_CONFIG" ./result/sw/bin/darwin-rebuild switch --flake ".#$M"
-```
+The first `task install` on a Mac clears the way itself: it removes the symlinks at every path
+home-manager will link, moves anything else there to `<path>.before-dotfiles` (check those,
+then delete them), and moves `/etc/zshenv` and `/etc/shells` to `*.before-nix-darwin`, all only
+after the build succeeds.
 
-If the switch stops at "Unexpected files in /etc", rename what it lists with the
-`.before-nix-darwin` suffix and run the last command again. If it stops at "Build user group
-has mismatching GID", set `ids.gids.nixbld` in `modules/default.nix` to the GID it reports,
-`git add`, rebuild, switch again. Open a new terminal, then:
-
-```zsh
-cd ~/Git/personal/dotfiles
-# every declared thing is on the machine
-task validate
-# what is on the machine beyond the declaration: read "Would uninstall"
-task audit
-# Homebrew cleanup back on
-git checkout -- modules/homebrew.nix
-# the second switch removes what the audit listed
-task install
-```
-
-Remove the `*.before-v3` paths and anything else `task audit` lists; `task validate` and
-`task audit` are then clean.
+If a first install stops partway (a cask download, the App Store), the terminal it ran in
+still works: fix the cause and run `task install` again. A terminal opened before a switch
+completes has an empty zsh config and no Homebrew on its PATH; there, run
+`/opt/homebrew/bin/task -d ~/Git/personal/dotfiles install`. If the switch stops at
+"Unexpected files in /etc", rename each file it lists to `<file>.before-nix-darwin` (sudo) and
+run `task install` again. If it stops at "Build user group has mismatching GID", set
+`ids.gids.nixbld` in `modules/default.nix` to the GID it reports and run `task install` again.
+If home-manager reports a path it "would clobber" (a file that appeared where a newly
+registered link goes), move it aside and run `task install` again.
 
 ### Update
 
@@ -74,15 +55,17 @@ update
 ```
 
 `task install` fast-forwards the checkout (warn-only: offline, dirty or diverged never block),
-builds and activates the selected machine with `darwin-rebuild switch` (sudo), and refreshes
-the antidote bundles.
+builds and activates the selected machine with `darwin-rebuild switch` (sudo), then lists what
+Homebrew has installed beyond the declaration and uninstalls it only if you say yes (`task install
+-- --yes` answers yes up front; the switch itself never uninstalls), and refreshes the antidote
+bundles.
 
 ## Commands
 
 | Command | Purpose |
 |---------|---------|
 | `task setup -- <machine>` | Persist the machine selection |
-| `task install` | Fast-forward, switch, refresh plugin bundles |
+| `task install [-- --yes]` | Fast-forward, build and switch, uninstall what is no longer declared after asking, refresh plugin bundles |
 | `task rollback` | Activate the previous generation |
 | `task show` | The evaluated declaration as JSON |
 | `task diff` | What install would change: the closure diff, then what brew bundle would add |

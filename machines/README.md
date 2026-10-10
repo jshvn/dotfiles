@@ -25,8 +25,8 @@ machine from the live hostname.
 1. Create `machines/<name>.nix` as above; `uname -m` on the laptop decides
    `nixpkgs.hostPlatform` (`aarch64-darwin` for `arm64`, `x86_64-darwin` for `x86_64`).
 2. `git add` it and run `task check`.
-3. On the laptop: `./bootstrap.zsh`, `task setup -- <name>`, then the first-switch procedure
-   in the root README.
+3. On the laptop: `./bootstrap.zsh <name>` (the root README lists what a factory-fresh Mac
+   needs first).
 4. Describe it in `docs/MACHINES.md`.
 
 The hostname lives here, so renaming a machine is an edit and a switch.

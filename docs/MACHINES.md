@@ -26,7 +26,7 @@ answers it in one file.
 - Hardware: assumed Apple Silicon; confirm `uname -m` before its first switch and change
   `nixpkgs.hostPlatform` in `machines/harmonium.nix` to `x86_64-darwin` if it prints `x86_64`.
 - Profile: `personal`, identical to lerasium's.
-- Special handling: none beyond the first-switch procedure in the root README.
+- Special handling: none; `./bootstrap.zsh harmonium` installs it.
 
 ## work (profile only)
 
