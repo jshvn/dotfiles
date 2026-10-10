@@ -22,6 +22,7 @@ merely installed is a package name in the profile.
 | `ssh/` | none: a base app | openssh, `config` (every host through the 1Password agent), `cloudflared.zsh` (the tunnel ProxyCommand), the links to the profile's `ssh` and `key.pub`, GitHub's host keys in `/etc/ssh/ssh_known_hosts` |
 | `tlrc/` | none: a base app | the formula, `config.toml` |
 | `vscode/` | `apps.vscode.{enable,extensions}` | the cask and the bundled extension set; a profile adds extras |
+| `wget/` | `apps.wget.enable` | the formula, `wgetrc` (the HSTS cache under `~/.cache`), `env.zsh` (WGETRC) |
 
 A base app declares no option and is always on: `shell/` breaks without eza and tlrc, and
 every profile's identity runs through git, ssh and 1Password. Every other app's `enable` has

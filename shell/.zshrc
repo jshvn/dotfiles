@@ -21,7 +21,7 @@
 #               stderr warning when no machine selected.
 # =============================================================================
 
-export TLRC_CONFIG="$XDG_CONFIG_HOME/tlrc"
+export TLRC_CONFIG="$XDG_CONFIG_HOME/tlrc/config.toml"
 
 # Resolve $DOTFILEDIR (absolute path to repo root) via symlink-walk.
 SOURCE="${(%):-%N}"

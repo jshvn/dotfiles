@@ -8,8 +8,10 @@
 #               non-interactive contexts (scripts, scp, cron). Must stay tiny.
 # Depends on:   nothing.
 # Side effects: exports XDG_{CONFIG,DATA,STATE,CACHE}_HOME, XDG_{DATA,CONFIG}_DIRS,
-#               ZDOTDIR, CLAUDE_CONFIG_DIR, EDITOR, VEDITOR, VISUAL, LANG, LC_ALL,
-#               BROWSER (gated), SHELL_SESSIONS_DISABLE, __CF_USER_TEXT_ENCODING,
+#               ZDOTDIR, CLAUDE_CONFIG_DIR, GNUPGHOME, GOPATH, NPM_CONFIG_CACHE,
+#               NODE_REPL_HISTORY, PYTHON_HISTORY, MPLCONFIGDIR, CHECKPOINT_DISABLE,
+#               EDITOR, VEDITOR, VISUAL, LANG, LC_ALL, BROWSER (gated),
+#               SHELL_SESSIONS_DISABLE, __CF_USER_TEXT_ENCODING,
 #               DOTFILES_MACHINE (gated).
 # =============================================================================
 
@@ -28,6 +30,16 @@ export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
 
 # Claude Code: XDG-compliant config directory instead of ~/.claude.
 export CLAUDE_CONFIG_DIR="${XDG_CONFIG_HOME}/claude"
+
+# Tools that otherwise write a dot-directory or dot-file straight into $HOME.
+export GNUPGHOME="${XDG_DATA_HOME}/gnupg"
+export GOPATH="${XDG_DATA_HOME}/go"
+export NPM_CONFIG_CACHE="${XDG_CACHE_HOME}/npm"
+export NODE_REPL_HISTORY="${XDG_STATE_HOME}/node_repl_history"
+export PYTHON_HISTORY="${XDG_STATE_HOME}/python_history"
+export MPLCONFIGDIR="${XDG_CONFIG_HOME}/matplotlib"
+# HashiCorp's version check, the only thing terraform writes to ~/.terraform.d unless logged in
+export CHECKPOINT_DISABLE=1
 
 export EDITOR="nano"
 export VEDITOR="code"

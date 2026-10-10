@@ -19,5 +19,6 @@
     ./ssh
     ./tlrc
     ./vscode
+    ./wget
   ];
 }

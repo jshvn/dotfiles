@@ -33,6 +33,7 @@
       };
       conda.enable = true;
       dust.enable = true;
+      wget.enable = true;
     };
     shell.jgrid-net = true;
     repo.devToolchain = true;
@@ -54,7 +55,6 @@
         "node"
         "poppler"
         "uv"
-        "wget"
       ];
       casks = [
         "1password-cli"
