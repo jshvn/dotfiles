@@ -80,10 +80,14 @@ everything, with its bottle checksums.
 ## Trust Anchors
 
 1. **Apple.** macOS itself, `curl`, `sh`, `zsh`, the system TLS trust store.
-2. **GitHub Inc.** `raw.githubusercontent.com` and `ghcr.io`.
+2. **GitHub Inc.** `raw.githubusercontent.com` and `ghcr.io`, and the flake inputs
+   `flake.nix` declares and `flake.lock` pins (the nixpkgs, nix-darwin and home-manager
+   sources).
 3. **The Homebrew project.** The install script, formula metadata, the bottling pipeline.
 4. **The NixOS Foundation.** `nixos.org`, `releases.nixos.org`, `cache.nixos.org` and its
-   signing key, and the nix-darwin and home-manager projects whose sources the lock pins.
+   signing key, and the nixpkgs sources the lock pins.
+5. **The nix-darwin and home-manager projects.** The module code the lock pins and the
+   switch evaluates.
 
 ---
 

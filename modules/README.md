@@ -11,7 +11,7 @@ home-manager configuration. Nothing here is named by a profile directly; a profi
 | `base.nix` | the unconditional formulae (the bootstrap toolchain and what `shell/` breaks without) and the one bare tap, `homebrew/brew-vulns` |
 | `homebrew.nix` | `homebrew.onActivation`: update, upgrade, cleanup |
 | `identity.nix` | `dotfiles.identity` (personal, work, none); the git and ssh links; turns 1Password on for a real identity |
-| `shell.nix` | the login shell, `/etc/zshenv`, the startup-file links, `dotfiles.shell.aliases` and `.env` (what the switch links into `aliases.d/` and `env.d/`), `shell.jgrid-net` |
+| `shell.nix` | the login shell's entry in `/etc/shells`, `/etc/zshenv`, the startup-file links, `dotfiles.shell.aliases` and `.env` (what the switch links into `aliases.d/` and `env.d/`), `shell.jgrid-net` |
 | `repo.nix` | `repo.devToolchain` |
 
 Rules that live here and fail evaluation when broken:

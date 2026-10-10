@@ -1,7 +1,7 @@
 # apps
 
 One directory per application, owning everything about it: the install (a formula or cask in
-`dotfiles.provided`), the config files beside it (linked out of the store through
+`dotfiles.provided`), the config files beside it (linked straight from the checkout through
 `dotfiles.links`), the shell integration (`aliases.zsh` linked into `aliases.d/`, `env.zsh`
 into `env.d/`, only when the app is on), and any system setting that exists only for that app.
 
@@ -28,8 +28,8 @@ Conventions:
 
 - The config file's basename equals its destination basename (`apps/tlrc/config.toml` links
   to `~/.config/tlrc/config.toml`).
-- Shell integration files carry the three-label banner and define functions or aliases only;
-  there is no gate inside the file. Whether the switch linked it is the gate.
+- Shell integration files carry the three-label banner and define functions, aliases or
+  exports only; there is no gate inside the file. Whether the switch linked it is the gate.
 - `apps/raycast/` is read by Raycast from the checkout path: Raycast > Settings > Extensions
   > Script Commands > Add Directories, once per machine.
 - `repo-sync.zsh` is also what `task install` runs against this repo before a switch.

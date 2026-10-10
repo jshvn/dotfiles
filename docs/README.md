@@ -7,7 +7,7 @@ directory holds what spans several.
 - `MACHINES.md` -- per-machine prose (purpose, hardware, role)
 - `DECISIONS.md` -- locked decisions, scope boundaries, performance/security constraints
 
-The declaration's schema is the option descriptions in `modules/`, `system/` and `apps/`;
+The declaration's schema is the option declarations in `modules/`, `system/` and `apps/`;
 `task show` prints a machine's evaluated declaration.
 
 Design records and implementation plans are not kept here. A decision worth

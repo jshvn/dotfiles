@@ -3,10 +3,11 @@
 ## What This Is
 
 macOS laptops declared as one nix-darwin configuration each. `machines/<name>.nix` names the
-laptop and imports `profiles/<name>.nix`; the profile sets every option; `modules/`, `system/`
-and `apps/` declare the options and turn them into nix-darwin and home-manager configuration.
-Nix evaluates and activates; Homebrew installs every package; the shell is the repo's own zsh,
-linked out of the store so an edit is live without a switch.
+laptop and imports a profile (lerasium and harmonium import `profiles/personal.nix`); the
+profile sets every option; `modules/`, `system/` and `apps/` declare the options and turn them
+into nix-darwin and home-manager configuration. Nix evaluates and activates; Homebrew installs
+every package; the shell is the repo's own zsh, linked straight from the checkout
+(out-of-store symlinks) so an edit is live without a switch.
 
 Three stages: evaluate (`nix eval` of the selected machine, the `SHAPE` in `Taskfile.yml`),
 activate (`task install`: fast-forward, `darwin-rebuild switch`, antidote bundles), read back
@@ -51,30 +52,34 @@ What the file system will not tell you:
 - Links only through `dotfiles.links` (home path to checkout path). Shell integration only
   through `dotfiles.shell.aliases` and `dotfiles.shell.env`: the switch links an enabled
   owner's file into `aliases.d/` or `env.d/`, and the startup files source whatever is there.
-  `.zshrc` globs `shell/functions/` directly and never globs alias files.
-- Every read task runs one `nix eval` (`SHAPE`) and pipes JSON to a script in `tasks/`.
-  `homebrew.casks` and `homebrew.taps` are lists of records: read `.name`. The eval prints one
+  `.zshrc` globs `shell/functions/` directly and never globs `shell/aliases/`.
+- Every read task runs one `nix eval` (`SHAPE`) and pipes the JSON on: `validate` and `audit`
+  to a script in `tasks/`, `show` and `diff` to jq. `homebrew.casks` and `homebrew.taps` are
+  lists of records: read `.name`. The eval prints one
   `trace: Obsolete option ... expose-group-by-app` line; it is noise.
 - Activation runs as root. A step that must run as the user is
   `sudo -u ${config.system.primaryUser} -H ...` with an explicit `PATH` if it needs Homebrew.
   What an activation script runs is copied into the store with its generation (`${./.}`,
-  `${./file}`); everything else is linked out of the store. nix-darwin's activate runs under
-  `set -e` and moves `/run/current-system` only after `postActivation`, so a user step that
-  depends on the network or hardware ends in `|| echo ... >&2` and leaves the read-back to
-  `task validate`.
+  `${./file}`); everything else is linked straight from the checkout. nix-darwin's activate
+  runs under `set -e` and moves `/run/current-system` only after `postActivation`, so a user
+  step that depends on the network or hardware ends in `|| echo ... >&2` and leaves the
+  read-back to `task validate`.
 - nix-darwin writes a nested defaults value whole, never merging: the Spotlight hotkey (entry
   64 of `AppleSymbolicHotKeys`) stays a `-dict-add` activation script in `apps/raycast/`.
   nix-darwin has no `-currentHost` writes: ByHost keys go through home-manager's
   `targets.darwin.currentHostDefaults`. `tasks/validate.zsh` reads every defaults key back; a
   nix-darwin group it has no row for is a cross, so a new group needs a row in its `DOMAIN`
   table.
-- The one `/etc` file declared is `/etc/zshenv` (the ZDOTDIR line). nix-darwin refuses any
-  `/etc` file it did not write ("Unexpected files in /etc"): rename it `.before-nix-darwin`.
-  `programs.zsh` and `programs.bash` stay off; Apple's `/etc/zshrc`, `/etc/zprofile` and
-  `/etc/bashrc` are untouched, and the Nix installer's block in `/etc/zshrc` is what puts
-  `nix` on an interactive shell's PATH. A non-interactive shell does not have it:
-  `Taskfile.yml` calls nix by that path (`NIX`), because a Taskfile `env:` entry cannot
-  override the caller's PATH.
+- This repo declares two `/etc` files: `/etc/zshenv` (the ZDOTDIR line) and `/etc/shells`
+  (Homebrew zsh, through `environment.shells` in `modules/shell.nix`); nix-darwin also writes
+  `/etc/nix/nix.conf` and others of its own. nix-darwin refuses any `/etc` file it did not
+  write ("Unexpected files in /etc"): rename it `.before-nix-darwin`, as the README's First
+  switch does for `/etc/zshenv` and `/etc/shells`. `programs.zsh` and `programs.bash` stay
+  off; nix-darwin leaves Apple's `/etc/zshrc`, `/etc/zprofile` and `/etc/bashrc` alone, and
+  the Nix installer's block at the top of `/etc/zshrc` and `/etc/bashrc` is what puts `nix`
+  on an interactive shell's PATH. A non-interactive shell does not have it: `Taskfile.yml`
+  calls nix by its absolute path, `/nix/var/nix/profiles/default/bin/nix` (`NIX`), because a
+  Taskfile `env:` entry cannot override the caller's PATH.
 - `task install` and `task rollback` run `sudo darwin-rebuild`, which prompts for a password.
   An agent cannot answer it: print the command, let Josh run it, read the result.
 - Homebrew cleanup uninstalls what is not declared. The first switch on a new machine runs

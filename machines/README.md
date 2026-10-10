@@ -29,5 +29,4 @@ machine from the live hostname.
    in the root README.
 4. Describe it in `docs/MACHINES.md`.
 
-The hostname lives here, so renaming a machine is an edit and a switch; there is no
-`sethostname` command.
+The hostname lives here, so renaming a machine is an edit and a switch.

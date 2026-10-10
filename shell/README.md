@@ -2,7 +2,8 @@
 
 Zsh startup files, theme, functions, shell-level aliases and the MOTD. Sourced by every login
 or interactive shell on a converged machine. The switch links the five startup files into
-`$ZDOTDIR` (`~/.config/zsh`) out of the Nix store, so an edit here is live in the next shell.
+`$ZDOTDIR` (`~/.config/zsh`) straight from the checkout (out-of-store symlinks), so an edit
+here is live in the next shell.
 
 ## Key files
 
@@ -50,4 +51,4 @@ Cold interactive shell start under 500 ms, measured by `task shell:startup-time`
 ## References
 
 - `../CLAUDE.md` -- project conventions
-- `../docs/DECISIONS.md` -- why the terminal must not change
+- `../docs/DECISIONS.md` -- why the terminal is the repo's own zsh

@@ -17,8 +17,8 @@ answers it in one file.
 - Hardware: Apple Silicon (`nixpkgs.hostPlatform = "aarch64-darwin"`).
 - Profile: `personal`. Full GUI, dev and personal set; the personal git/ssh identity with
   SSH auth and commit signing through the 1Password agent; the jgrid.net aliases.
-- Special handling: the first machine on v3 (2026-10). Raycast's script-command directory
-  (`apps/raycast/`) is registered in Raycast by hand, once.
+- Special handling: Raycast's script-command directory (`apps/raycast/`) is registered in
+  Raycast by hand, once.
 
 ## harmonium
 

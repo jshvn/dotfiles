@@ -30,8 +30,12 @@ socket and `ssh-add -L`.
 ## Adding an identity
 
 1. Create `git/identities/<name>` and `ssh/identities/<name>`.
-2. Add `<name>` to the `dotfiles.identity` enum in `modules/identity.nix`. A real identity
+2. Add a `[includeIf "gitdir/i:~/git/<name>/"]` block to `git/config` with
+   `path = identities/<name>`, as the personal and work blocks do.
+3. Add `ssh/keys/<name>.pub`, the identity's public key; `task validate` checks that
+   `ssh-add -L` offers it.
+4. Add `<name>` to the `dotfiles.identity` enum in `modules/identity.nix`. A real identity
    routes through the 1Password agent (`IdentityAgent` in the ssh overlay, `op-ssh-sign` in
    the git overlay) and turns the app on; `none` turns it off.
-3. Set `dotfiles.identity = "<name>"` in the profile that wants it; `task install`, then
+5. Set `dotfiles.identity = "<name>"` in the profile that wants it; `task install`, then
    `task validate`.

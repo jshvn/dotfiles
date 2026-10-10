@@ -4,7 +4,8 @@
 
 macOS laptops declared as one nix-darwin configuration per machine. Nix evaluates the
 declaration and activates it; Homebrew installs every package; the shell is the repo's own
-zsh, linked out of the Nix store so an edit is live in the next shell.
+zsh, linked straight from the checkout (out-of-store symlinks) so an edit is live in the next
+shell.
 
 ## Install
 
@@ -13,8 +14,10 @@ zsh, linked out of the Nix store so an edit is live in the next shell.
 ```zsh
 git clone https://github.com/jshvn/dotfiles.git ~/Git/personal/dotfiles
 cd ~/Git/personal/dotfiles
-./bootstrap.zsh              # Homebrew, go-task, Nix (each consent-gated; Nix needs sudo)
-task setup -- <machine>      # lerasium or harmonium
+# Homebrew, go-task and Nix. The Homebrew and Nix installers are consent-gated, Nix needs sudo
+./bootstrap.zsh
+# lerasium or harmonium
+task setup -- <machine>
 ```
 
 Then open a new terminal (the Nix installer put `nix` on an interactive shell's PATH) and do
@@ -28,14 +31,19 @@ refuses to replace paths it does not own, and Homebrew cleanup must not run befo
 has been read.
 
 ```zsh
+cd ~/Git/personal/dotfiles
 export NIX_CONFIG='experimental-features = nix-command flakes'
 M=$(cat ~/.local/state/dotfiles/machine)
-sed -i '' 's/cleanup = "uninstall"/cleanup = "none"/' modules/homebrew.nix   # until the audit is read
-task show | jq -r '.links | keys[]' | while read -r p; do          # clear the way for home-manager
+# Homebrew cleanup stays off until the audit is read
+sed -i '' 's/cleanup = "uninstall"/cleanup = "none"/' modules/homebrew.nix
+# build the closure, no sudo
+nix build ".#darwinConfigurations.$M.system"
+# clear the way for home-manager, only if the build produced darwin-rebuild
+test -x result/sw/bin/darwin-rebuild && task show | jq -r '.links | keys[]' | while read -r p; do
   if [[ -L ~/$p ]]; then rm ~/$p; elif [[ -e ~/$p ]]; then mv ~/$p ~/$p.before-v3; fi; done
-nix build ".#darwinConfigurations.$M.system"                      # the closure, no sudo
-sudo sh -c 'for f in /etc/zshenv /etc/shells; do [ -e $f ] && [ ! -L $f ] && mv $f $f.before-nix-darwin; done; true'
-sudo env NIX_CONFIG="$NIX_CONFIG" ./result/sw/bin/darwin-rebuild switch --flake ".#$M"
+# Run the next line as one command, and open no new terminal until it finishes,
+# because between the move and the switch a new shell finds no ZDOTDIR.
+test -x result/sw/bin/darwin-rebuild && sudo sh -c 'for f in /etc/zshenv /etc/shells; do [ -e $f ] && [ ! -L $f ] && mv $f $f.before-nix-darwin; done; true' && sudo env NIX_CONFIG="$NIX_CONFIG" ./result/sw/bin/darwin-rebuild switch --flake ".#$M"
 ```
 
 If the switch stops at "Unexpected files in /etc", rename what it lists with the
@@ -44,10 +52,15 @@ has mismatching GID", set `ids.gids.nixbld` in `modules/default.nix` to the GID 
 `git add`, rebuild, switch again. Open a new terminal, then:
 
 ```zsh
-task validate          # every declared thing is on the machine
-task audit             # what is on the machine beyond the declaration: read "Would uninstall"
-git checkout -- modules/homebrew.nix   # cleanup back on
-task install           # the second switch removes what the audit listed
+cd ~/Git/personal/dotfiles
+# every declared thing is on the machine
+task validate
+# what is on the machine beyond the declaration: read "Would uninstall"
+task audit
+# Homebrew cleanup back on
+git checkout -- modules/homebrew.nix
+# the second switch removes what the audit listed
+task install
 ```
 
 Remove the `*.before-v3` paths and anything else `task audit` lists; `task validate` and
@@ -56,7 +69,8 @@ Remove the `*.before-v3` paths and anything else `task audit` lists; `task valid
 ### Update
 
 ```zsh
-update                 # task -d "$DOTFILEDIR" install
+# the update alias runs task install from any directory
+update
 ```
 
 `task install` fast-forwards the checkout (warn-only: offline, dirty or diverged never block),
@@ -79,6 +93,10 @@ the antidote bundles.
 | `task lint` | zsh parse, `set -euo`, banners, no hardcoded prefix; `nix fmt -- --ci` |
 | `task fmt` | Format the Nix sources in place |
 | `task test` | Smoke tests and the negative evaluations |
+
+`task check`, `lint`, `fmt` and `test` run in the pinned nix image, so they need Apple
+`container` (daemon up) or Docker; the Taskfile uses `container` when its daemon is up, else
+Docker, and `ENGINE=docker` forces Docker.
 
 Run `task` for the banner; `task --list` for descriptions.
 
