@@ -9,11 +9,13 @@
 #               the machine matches it: shell plumbing, hostname, every link,
 #               the identity (keys, git email, ssh agent), every Homebrew
 #               package and cask artifact, the jshvn/ai checkout, and every
-#               macOS default plus the display preset and Spotlight hotkey.
+#               macOS default plus the display preset, the Spotlight hotkey
+#               and the application firewall.
 #               One check/cross line per item; exits 1 on any drift.
-# Depends on:   jq; git; brew; defaults; PlistBuddy; scutil; ssh-add; swift
-#               (Xcode CLT); tasks/messages.zsh; system/display-mode.swift;
-#               MACHINE env var (the selected machine name, optional).
+# Depends on:   jq; git; brew; defaults; PlistBuddy; scutil; ssh-add;
+#               socketfilterfw; swift (Xcode CLT); tasks/messages.zsh;
+#               system/display-mode.swift; MACHINE env var (the selected
+#               machine name, optional).
 # Side effects: none (read-only; one temp file for the Brewfile).
 # =============================================================================
 
@@ -244,6 +246,17 @@ if [[ "$(j .dotfiles.system.display)" == true ]]; then
     check "display.builtin = More Space ($out)"
   else
     fail "display.builtin: $out"
+  fi
+fi
+
+# --getglobalstate needs no sudo: "Firewall is enabled. (State = 1)", or State = 2 for on and
+# block-all, both enabled; State = 0 is off
+if [[ "$(j .dotfiles.system.security)" == true ]]; then
+  fw=$(/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>&1 || true)
+  if [[ "$fw" == *'(State = '[12]')'* ]]; then
+    check "security.firewall = enabled"
+  else
+    fail "security.firewall: expected enabled, got '${fw:-<unset>}'"
   fi
 fi
 
