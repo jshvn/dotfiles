@@ -8,6 +8,9 @@ let
   # activation runs as root with nix-darwin's PATH; the user steps need Homebrew's tools
   path = "${config.homebrew.prefix}/bin:/usr/bin:/bin:/usr/sbin:/sbin";
   task = "${config.homebrew.prefix}/bin/task";
+  # CLAUDE_CONFIG_DIR as shell/.zshenv exports it; sudo drops it, and the ai repo's install needs
+  # it for every claude CLI call, which otherwise writes to ~/.claude
+  claudeDir = "${config.users.users.${user}.home}/.config/claude";
 in
 {
   options.dotfiles.apps.claude-code = {
@@ -43,8 +46,8 @@ in
     system.activationScripts.postActivation.text = lib.mkIf cfg.enable ''
       sudo -u ${user} -H env PATH=${path} AI_DIR=${cfg.dir} AI_REMOTE=git@github.com:jshvn/ai.git AI_REF=${cfg.ref} AI_SYNC=true \
         MESSAGES=${../../tasks/messages.zsh} zsh ${./.}/checkout.zsh \
-        && sudo -u ${user} -H env PATH=${path} ${task} -d ${cfg.dir} setup -- ${cfg.profile} \
-        && sudo -u ${user} -H env PATH=${path} ${task} -d ${cfg.dir} install \
+        && sudo -u ${user} -H env PATH=${path} CLAUDE_CONFIG_DIR=${claudeDir} ${task} -d ${cfg.dir} setup -- ${cfg.profile} \
+        && sudo -u ${user} -H env PATH=${path} CLAUDE_CONFIG_DIR=${claudeDir} ${task} -d ${cfg.dir} install \
         || echo "claude-code: the jshvn/ai checkout, setup or install failed (above); the switch continues" >&2
     '';
   };
