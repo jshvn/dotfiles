@@ -106,7 +106,7 @@ tasks:
       - sh: test -f '{{.ROOT_DIR}}/machines/{{.MACHINE}}.nix'
         msg: 'no machine selected (no machines/{{.MACHINE}}.nix): task setup -- <name>; the machines are: {{.MACHINES | trim}}'
     cmds:
-      - DOTFILEDIR='{{.ROOT_DIR}}' REPO_NAME=jshvn/dotfiles zsh '{{.ROOT_DIR}}/apps/claude-code/repo-sync.zsh'
+      - DOTFILEDIR='{{.ROOT_DIR}}' REPO_NAME=jshvn/dotfiles zsh '{{.ROOT_DIR}}/tasks/install-repo-sync.zsh'
       - '{{.EVAL}} | DOTFILEDIR="{{.ROOT_DIR}}" MACHINE={{.MACHINE}} NIX={{.NIX}} zsh "{{.ROOT_DIR}}/tasks/install.zsh" {{.CLI_ARGS}}'
       # a login shell, because .zprofile puts Homebrew on the PATH and bootstrap's shell lacks it
       - zsh -lic 'antidote update --bundles' >/dev/null 2>&1 || echo "antidote update failed (offline?), bundles unchanged"
@@ -173,7 +173,7 @@ tasks:
   test:
     desc: 'Smoke tests (orphan scan, trust scan, cleanup scan and link clearing, repo sync, ai checkout, the live shell on a Mac) and the negative evaluations'
     cmds:
-      - for: [links-audit, packages-trust, install, repo-sync, ai-checkout]
+      - for: [audit-brew-cleanup, audit-links, audit-trust, install-clear-links, install-repo-sync, ai-checkout]
         cmd: DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/tasks/tests/{{.ITEM}}.zsh'
       - '{{if eq OS "darwin"}}DOTFILEDIR="{{.ROOT_DIR}}" zsh "{{.ROOT_DIR}}/tasks/tests/shell-startup.zsh"{{else}}echo "shell-startup: skipped, it needs the live Mac shell"{{end}}'
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && SRC=/work bash tasks/tests/negative.sh"'

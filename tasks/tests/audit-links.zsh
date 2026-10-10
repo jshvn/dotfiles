@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 # =============================================================================
-# tasks/tests/links-audit.zsh -- smoke tests for tasks/links-audit-scan.zsh
+# tasks/tests/audit-links.zsh -- smoke tests for tasks/audit-links.zsh
 #
 # Purpose:      Exercise the orphan detector against a throwaway repo + config
 #               tree. Asserts it flags (a) a dangling repo-targeted link
@@ -11,7 +11,7 @@
 #               dangling external link, or a live repo link owned by another
 #               tool (outside any registered link's parent dir).
 # Depends on:   DOTFILEDIR env var (exported by Taskfile.yml);
-#               tasks/links-audit-scan.zsh; tasks/messages.zsh.
+#               tasks/audit-links.zsh; tasks/messages.zsh.
 # Side effects: creates a throwaway tree under mktemp -d, removed via trap.
 # =============================================================================
 
@@ -22,7 +22,7 @@ set -euo pipefail
 # shellcheck source=tasks/messages.zsh
 source "${DOTFILEDIR}/tasks/messages.zsh"
 
-SCRIPT="${DOTFILEDIR}/tasks/links-audit-scan.zsh"
+SCRIPT="${DOTFILEDIR}/tasks/audit-links.zsh"
 failed=0
 
 BASE="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-linksaudit-test.XXXXXX")"
@@ -51,18 +51,18 @@ OUT="$(zsh "$SCRIPT" "$repo" "$cfg" <<< "${cfg}/keep/expected.txt")"
 # assert_flagged / assert_absent <label> <path>
 assert_flagged() {
   if echo "$OUT" | grep -qxF -- "$2"; then
-    check "links-audit.$1"
+    check "audit-links.$1"
   else
-    cross "links-audit.$1: expected '$2' in output (out=${OUT})"
+    cross "audit-links.$1: expected '$2' in output (out=${OUT})"
     failed=$((failed + 1))
   fi
 }
 assert_absent() {
   if echo "$OUT" | grep -qxF -- "$2"; then
-    cross "links-audit.$1: '$2' should NOT be flagged (out=${OUT})"
+    cross "audit-links.$1: '$2' should NOT be flagged (out=${OUT})"
     failed=$((failed + 1))
   else
-    check "links-audit.$1"
+    check "audit-links.$1"
   fi
 }
 
@@ -74,8 +74,8 @@ assert_absent  "dangling-external"         "${cfg}/dead-external.conf"
 assert_absent  "expected-link"             "${cfg}/keep/expected.txt"
 
 if (( failed == 0 )); then
-  info "links-audit: all checks passed"
+  info "audit-links: all checks passed"
 else
-  error "links-audit: ${failed} check(s) failed"
+  error "audit-links: ${failed} check(s) failed"
 fi
 exit "$failed"

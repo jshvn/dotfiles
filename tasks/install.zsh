@@ -14,7 +14,7 @@
 # Depends on:   DOTFILEDIR, MACHINE, NIX env vars (NIX_CONFIG when set); jq;
 #               brew (under the declaration's brewPrefix, which the switch
 #               installs when missing); sudo; tasks/messages.zsh;
-#               tasks/clear-links.zsh.
+#               tasks/install-clear-links.zsh.
 # Side effects: writes the `result` link in the checkout; on a first switch,
 #               removes or renames paths under $HOME and (sudo) renames
 #               /etc/zshenv and /etc/shells; activates the system (sudo);
@@ -43,7 +43,7 @@ info "building $MACHINE"
 # --- first switch: clear the way for home-manager and nix-darwin -------------
 if [[ ! -e /run/current-system ]]; then
   info "first switch on this Mac: clearing the paths home-manager will link"
-  jq -r '.dotfiles.links | keys[]' <<< "$declared" | zsh "$HERE/clear-links.zsh"
+  jq -r '.dotfiles.links | keys[]' <<< "$declared" | zsh "$HERE/install-clear-links.zsh"
   # nix-darwin refuses /etc files it did not write
   sudo sh -c 'for f in /etc/zshenv /etc/shells; do if [ -f "$f" ] && [ ! -L "$f" ]; then mv "$f" "$f.before-nix-darwin"; fi; done'
 fi

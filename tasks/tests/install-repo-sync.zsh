@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 # =============================================================================
-# tasks/tests/repo-sync.zsh -- smoke tests for apps/claude-code/repo-sync.zsh
+# tasks/tests/install-repo-sync.zsh -- smoke tests for tasks/install-repo-sync.zsh
 #
 # Purpose:      Exercise the guard branches of the repo-sync fast-forward
 #               pull against throwaway git repos: non-repo, detached HEAD,
@@ -9,7 +9,7 @@
 #               local-ahead, and diverged. Asserts exit 0 (warn-only) plus
 #               the expected message substring on each path.
 # Depends on:   DOTFILEDIR env var (exported by Taskfile.yml); git;
-#               apps/claude-code/repo-sync.zsh; tasks/messages.zsh.
+#               tasks/install-repo-sync.zsh; tasks/messages.zsh.
 # Side effects: creates throwaway git repos under mktemp -d (bare "remote"
 #               + working clones), removed via EXIT trap. Hermetic git
 #               config (GIT_CONFIG_GLOBAL/SYSTEM) so user signing config
@@ -23,7 +23,7 @@ set -euo pipefail
 # shellcheck source=tasks/messages.zsh
 source "${DOTFILEDIR}/tasks/messages.zsh"
 
-SCRIPT="${DOTFILEDIR}/apps/claude-code/repo-sync.zsh"
+SCRIPT="${DOTFILEDIR}/tasks/install-repo-sync.zsh"
 failed=0
 
 BASE="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-reposync-test.XXXXXX")"
@@ -47,9 +47,9 @@ run_sync() {
 assert() {
   local label="$1" want="$2"
   if [[ "$CODE" -eq 0 ]] && echo "$OUT" | grep -qi -- "$want"; then
-    check "repo-sync.${label}"
+    check "install-repo-sync.${label}"
   else
-    cross "repo-sync.${label}: expected exit 0 + '${want}' (exit=${CODE}, out=${OUT})"
+    cross "install-repo-sync.${label}: expected exit 0 + '${want}' (exit=${CODE}, out=${OUT})"
     failed=$((failed + 1))
   fi
 }
@@ -127,9 +127,9 @@ run_sync "$ff"
 assert "fast-forward" "test/repo updated to"
 # HEAD must now equal the fetched upstream tip.
 if [[ "$(git -C "$ff" rev-parse HEAD)" == "$(git -C "$ff" rev-parse '@{u}')" ]]; then
-  check "repo-sync.fast-forward.head-moved"
+  check "install-repo-sync.fast-forward.head-moved"
 else
-  cross "repo-sync.fast-forward.head-moved: HEAD != upstream after ff"
+  cross "install-repo-sync.fast-forward.head-moved: HEAD != upstream after ff"
   failed=$((failed + 1))
 fi
 

@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # =============================================================================
-# tasks/clear-links.zsh -- clear the paths home-manager is about to link
+# tasks/install-clear-links.zsh -- clear the paths home-manager is about to link
 #
 # Purpose:      home-manager refuses to replace a path it does not own, so the
 #               first switch on a Mac clears every registered link path first.

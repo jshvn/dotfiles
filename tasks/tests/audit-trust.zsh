@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 # =============================================================================
-# tasks/tests/packages-trust.zsh -- smoke tests for packages-trust-scan.zsh
+# tasks/tests/audit-trust.zsh -- smoke tests for tasks/audit-trust.zsh
 #
 # Purpose:      Exercise the tap/trust drift detector against fixture inputs.
 #               Asserts it flags (a) an installed tap the declaration does not
@@ -9,7 +9,7 @@
 #               whole-tap grant for an undeclared tap, while NOT flagging a
 #               declared tap or a grant belonging to a declared tap.
 # Depends on:   DOTFILEDIR env var (exported by Taskfile.yml);
-#               tasks/packages-trust-scan.zsh; tasks/messages.zsh; jq.
+#               tasks/audit-trust.zsh; tasks/messages.zsh; jq.
 # Side effects: creates fixture files under mktemp -d, removed via trap.
 # =============================================================================
 
@@ -20,7 +20,7 @@ set -euo pipefail
 # shellcheck source=tasks/messages.zsh
 source "${DOTFILEDIR}/tasks/messages.zsh"
 
-SCRIPT="${DOTFILEDIR}/tasks/packages-trust-scan.zsh"
+SCRIPT="${DOTFILEDIR}/tasks/audit-trust.zsh"
 failed=0
 
 BASE="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-trust-test.XXXXXX")"

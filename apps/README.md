@@ -11,7 +11,7 @@ merely installed is a package name in the profile.
 | App | Option | Owns |
 |-----|--------|------|
 | `1password/` | none: a base app | the cask, `env.zsh` (SSH_AUTH_SOCK), the link to the profile's `agent.toml`; `README.md` on the agent's by-hand switch |
-| `claude-code/` | `apps.claude-code.{enable,profile,ref,dir}` | the cask; the jshvn/ai checkout at its ref, its profile, its own `task install` (an activation step: `checkout.zsh`, `repo-sync.zsh`) |
+| `claude-code/` | `apps.claude-code.{enable,profile,ref,dir}` | the cask; the jshvn/ai checkout at its ref, its profile, its own `task install` (an activation step: `checkout.zsh`, which fast-forwards with `tasks/install-repo-sync.zsh`) |
 | `conda/` | `apps.conda.enable` | the miniconda cask, `condarc` |
 | `dust/` | `apps.dust.enable` | the formula, `config.toml`, the `dust` alias |
 | `eza/` | none: a base app | the formula, `theme.yaml` |
@@ -36,7 +36,6 @@ Conventions:
   exports only; there is no gate inside the file. Whether the switch linked it is the gate.
 - `apps/raycast/` is read by Raycast from the checkout path: Raycast > Settings > Extensions
   > Script Commands > Add Directories, once per machine.
-- `repo-sync.zsh` is also what `task install` runs against this repo before a switch.
 
 ## Adding an app
 

@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # =============================================================================
-# tasks/brew-cleanup-scan.zsh -- what `brew bundle cleanup` would uninstall
+# tasks/audit-brew-cleanup.zsh -- what `brew bundle cleanup` would uninstall
 #
 # Purpose:      Read the dry-run output of `brew bundle cleanup --file=<Brewfile>`
 #               (run without a terminal, so it never prompts) on stdin and print

@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 # =============================================================================
-# tasks/links-audit-scan.zsh -- symlink orphan detector for task audit
+# tasks/audit-links.zsh -- symlink orphan detector for task audit
 #
 # Purpose:      Single source of orphan-detection logic for `task audit`.
 #               Reads the registered link paths on stdin (one per line, the
@@ -23,7 +23,7 @@
 
 set -euo pipefail
 
-dotfiledir="${1:?usage: links-audit-scan.zsh <repo-root> <scan-root>... < expected}"
+dotfiledir="${1:?usage: audit-links.zsh <repo-root> <scan-root>... < expected}"
 shift
 roots=("$@")
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 # =============================================================================
-# tasks/packages-trust-scan.zsh -- tap and trust-grant drift detector
+# tasks/audit-trust.zsh -- tap and trust-grant drift detector
 #
 # Purpose:      Compare the taps a machine is subscribed to, and the entries in
 #               its Homebrew trust store, against the taps the declaration
@@ -19,7 +19,7 @@
 set -euo pipefail
 
 if [[ $# -ne 3 ]]; then
-  print -u2 "usage: packages-trust-scan.zsh <declared-taps> <installed-taps> <trust-json>"
+  print -u2 "usage: audit-trust.zsh <declared-taps> <installed-taps> <trust-json>"
   exit 2
 fi
 

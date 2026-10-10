@@ -5,12 +5,14 @@
 #
 # Purpose:      Clone $AI_REMOTE into $AI_DIR when absent, then check out
 #               $AI_REF: a branch on origin is checked out (tracking) and,
-#               when $AI_SYNC is "true", fast-forwarded via repo-sync.zsh;
-#               a tag or commit is checked out detached. Anything else is an
-#               error. Invoked by the apps/claude-code activation step.
+#               when $AI_SYNC is "true", fast-forwarded via
+#               tasks/install-repo-sync.zsh; a tag or commit is checked out
+#               detached. Anything else is an error. Invoked by the
+#               apps/claude-code activation step.
 # Depends on:   AI_DIR, AI_REMOTE, AI_REF env vars (AI_SYNC optional,
-#               default false); git; repo-sync.zsh beside it;
-#               tasks/messages.zsh ($MESSAGES, else relative to this script).
+#               default false); git; tasks/install-repo-sync.zsh
+#               ($REPO_SYNC) and tasks/messages.zsh ($MESSAGES), each else
+#               relative to this script.
 # Side effects: git clone into $AI_DIR; git fetch; git checkout; at most a
 #               fast-forward merge of the current branch.
 # =============================================================================
@@ -46,7 +48,7 @@ if git_q show-ref --verify --quiet "refs/remotes/origin/${AI_REF}"; then
     git_q checkout --quiet "$AI_REF"
   fi
   if [[ "$AI_SYNC" == "true" ]]; then
-    DOTFILEDIR="$AI_DIR" REPO_NAME=jshvn/ai zsh "${0:A:h}/repo-sync.zsh"
+    DOTFILEDIR="$AI_DIR" REPO_NAME=jshvn/ai zsh "${REPO_SYNC:-${0:A:h}/../../tasks/install-repo-sync.zsh}"
   fi
 elif git_q rev-parse --verify --quiet "${AI_REF}^{commit}" >/dev/null; then
   if [[ "$(git_q rev-parse HEAD)" != "$(git_q rev-parse "${AI_REF}^{commit}")" ]]; then

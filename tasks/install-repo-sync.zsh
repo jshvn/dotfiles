@@ -1,18 +1,18 @@
 #!/bin/zsh
 
 # =============================================================================
-# apps/claude-code/repo-sync.zsh -- fast-forward the dotfiles repo from its remote
+# tasks/install-repo-sync.zsh -- fast-forward a checkout from its remote
 #
 # Purpose:      Pull the latest jshvn/dotfiles before the switch; the first
 #               thing `task install` runs. Fetches then fast-forwards the
 #               current branch; never merges, rebases, or clobbers local work.
-#               apps/claude-code/checkout.zsh reuses it against the jshvn/ai
-#               checkout.
+#               The claude-code activation (apps/claude-code/checkout.zsh)
+#               reuses it against the jshvn/ai checkout.
 # Depends on:   DOTFILEDIR and REPO_NAME env vars (the repo to pull and its
 #               owner/repo label for messages; exported by the Taskfile's
 #               `install` for this repo and by apps/claude-code/checkout.zsh
 #               for the jshvn/ai checkout); git;
-#               tasks/messages.zsh (sourced relative to this script, NOT
+#               tasks/messages.zsh ($MESSAGES, else beside this script, never
 #               from DOTFILEDIR, so the repo under operation is decoupled
 #               from the library location).
 # Side effects: at most a `git merge --ff-only` of the working tree to the
@@ -26,11 +26,11 @@ set -euo pipefail
 : "${DOTFILEDIR:?DOTFILEDIR must be set (run via task install)}"
 : "${REPO_NAME:?REPO_NAME must be set (owner/repo label for messages)}"
 
-# Source the messaging library from this script's own directory (${0:A:h}),
+# Source the messaging library from beside this script ($MESSAGES in the store),
 # so DOTFILEDIR is free to point at any repo (notably the throwaway repos in
-# tasks/tests/repo-sync.zsh).
+# tasks/tests/install-repo-sync.zsh).
 # shellcheck source=tasks/messages.zsh
-source "${MESSAGES:-${0:A:h}/../../tasks/messages.zsh}"
+source "${MESSAGES:-${0:A:h}/messages.zsh}"
 
 repo="${DOTFILEDIR}"
 name="${REPO_NAME}"

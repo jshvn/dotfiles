@@ -11,8 +11,8 @@
 #               evaluated declaration on stdin (`task audit`). Findings are
 #               warnings; exits 1 only with --strict.
 # Depends on:   jq; brew (with the homebrew/brew-vulns tap); tasks/messages.zsh;
-#               tasks/brew-cleanup-scan.zsh; tasks/packages-trust-scan.zsh;
-#               tasks/links-audit-scan.zsh.
+#               tasks/audit-brew-cleanup.zsh; tasks/audit-trust.zsh;
+#               tasks/audit-links.zsh.
 # Side effects: none (read-only; temp files for the Brewfile and scan inputs).
 # =============================================================================
 
@@ -45,7 +45,7 @@ info "packages beyond the declaration (brew bundle cleanup, dry run)"
 # uninstall something, so a non-zero exit with nothing listed means the dry run itself failed
 rc=0
 brew bundle cleanup --file="$tmpdir/Brewfile" < /dev/null > "$tmpdir/cleanup" 2>/dev/null || rc=$?
-extra=$(zsh "$HERE/brew-cleanup-scan.zsh" < "$tmpdir/cleanup")
+extra=$(zsh "$HERE/audit-brew-cleanup.zsh" < "$tmpdir/cleanup")
 if [[ -n "$extra" ]]; then
   while IFS=$'\t' read -r kind name; do
     warn "drift: $kind: $name"
@@ -63,7 +63,7 @@ info "taps and trust"
 j '.taps[].name' | sort -u > "$tmpdir/declared" # homebrew.taps is a list of records
 brew tap 2>/dev/null | sort -u > "$tmpdir/installed" || true
 brew trust --json v1 2>/dev/null > "$tmpdir/trust" || true
-findings=$(zsh "$HERE/packages-trust-scan.zsh" "$tmpdir/declared" "$tmpdir/installed" "$tmpdir/trust")
+findings=$(zsh "$HERE/audit-trust.zsh" "$tmpdir/declared" "$tmpdir/installed" "$tmpdir/trust")
 if [[ -z "$findings" ]]; then
   check "every tap and trust grant is declared"
 else
@@ -75,7 +75,7 @@ fi
 
 # --- symlinks into the checkout that nothing registers -----------------------
 info "orphan links"
-orphans=$(j '.dotfiles.links | keys[]' | sed "s|^|$HOME/|" | zsh "$HERE/links-audit-scan.zsh" "$CHECKOUT" \
+orphans=$(j '.dotfiles.links | keys[]' | sed "s|^|$HOME/|" | zsh "$HERE/audit-links.zsh" "$CHECKOUT" \
   "${XDG_CONFIG_HOME:-$HOME/.config}" "${ZDOTDIR:-$HOME/.config/zsh}" "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles" "$HOME/.ssh")
 if [[ -z "$orphans" ]]; then
   check "no orphan links into the checkout"
