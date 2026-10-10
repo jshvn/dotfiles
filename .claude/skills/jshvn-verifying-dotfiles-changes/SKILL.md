@@ -17,7 +17,7 @@ Run the narrowest check that can fail, then the relevant aggregate. `git add -A`
 | `system/<concern>.nix` | `task install && task validate` | every defaults key reads back (log out and in for the domains that need it) |
 | `apps.claude-code.{profile,ref}` | `task install && task validate` | the checkout is at the ref, the ai repo's own validate passes |
 | `Taskfile.yml`, `tasks/*.zsh`, `tasks/tests/*` | `task lint && task test` | the rules and the smoke tests |
-| `.github/workflows/ci.yml` | push a branch, open a PR | the same `check`, `lint`, `test` with Docker |
+| `.github/workflows/ci.yml` | push a branch, open a PR | the same `check`, `lint`, `test` with Docker; lerasium's closure builds on macOS |
 
 Aggregates: `task diff` (preview, read-only), `task validate` (installation state),
 `task test` (smoke tests and the negative evaluations), `task audit` (drift beyond the

@@ -40,5 +40,5 @@ answers it in one file.
 ## CI
 
 There is no CI machine. GitHub Actions evaluates every machine file and every profile inside
-the pinned `nixos/nix` image (`task check`) and runs lint and the hermetic smoke tests; it
-never switches a Mac.
+the pinned `nixos/nix` image (`task check`) and runs lint and the hermetic smoke tests; a
+macOS runner builds lerasium's closure. It never switches a Mac.

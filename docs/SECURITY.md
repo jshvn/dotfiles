@@ -129,4 +129,5 @@ Not in scope:
   of installer staleness.
 
 Structural regressions are gated: `.github/workflows/ci.yml` evaluates every machine and
-profile, lints and runs the hermetic tests on every push to `master` and every pull request.
+profile, lints, runs the hermetic tests and builds lerasium's closure on every push to `master`
+and every pull request.

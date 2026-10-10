@@ -1,25 +1,33 @@
 # =============================================================================
-# ci.yml -- evaluate every machine and profile, lint, and the hermetic tests
+# ci.yml -- evaluate every machine and profile, lint, the hermetic tests, and
+#           build lerasium's closure on a Mac
 #
-# Purpose:      The same `task check`, `task lint` and `task test` as on a
-#               laptop, with Docker as the container engine: every machine
-#               file and every profile evaluates to its system closure in
-#               the pinned nixos/nix image, the Nix sources are formatted,
-#               the declaration rules fail the way they should, the zsh
-#               sources parse and carry their banners, and the four
-#               hermetic smoke tests pass.
+# Purpose:      Two parallel jobs. check: the same `task check`, `task lint`
+#               and `task test` as on a laptop, with Docker as the container
+#               engine: every machine file and every profile evaluates to its
+#               system closure in the pinned nixos/nix image, the Nix sources
+#               are formatted, the declaration rules fail the way they should,
+#               the zsh sources parse and carry their banners, and the
+#               hermetic smoke tests pass. build: the official Nix installer
+#               (as bootstrap.zsh runs it) and a build of lerasium's system
+#               closure, without switching.
 # Depends on:   Taskfile.yml (ENGINE=docker); the nixos/nix image pinned
-#               there; zsh, jq and GNU grep as ggrep on the runner.
-# Side effects: none outside the ephemeral runner.
+#               there; zsh, jq and GNU grep as ggrep on the ubuntu runner; an
+#               arm64 macos runner for the build. The runner's macOS version
+#               does not matter: the build only realises aarch64-darwin
+#               derivations.
+# Side effects: none outside the ephemeral runners.
 # =============================================================================
 #
 # COVERS: an option typo, an unaccounted switch in any profile, a failed
 #   assertion, an unformatted .nix file, a zsh file that does not parse or
 #   lacks its banner, a hardcoded Homebrew prefix, the orphan-link and
-#   tap-trust scanners, the ai checkout and repo-sync scripts.
+#   tap-trust scanners, the ai checkout and repo-sync scripts; a closure
+#   that evaluates but fails to build (a script or generated file, a
+#   home-manager generation, a package that does not build on darwin).
 # DOES NOT COVER (a Mac only): the switch and its activation scripts, brew
-#   bundle, the live shell (shell-startup, shell:startup-time), task validate
-#   and task audit.
+#   bundle and every formula and cask name, the live shell (shell-startup,
+#   shell:startup-time), task validate and task audit.
 
 name: ci
 
@@ -58,3 +66,17 @@ jobs:
       - run: task check
       - run: task lint
       - run: task test
+
+  # ponytail: lerasium only; harmonium differs by hostname alone. Every closure
+  # path is downloaded from cache.nixos.org on each run; a binary cache action
+  # is the upgrade if this job grows slow.
+  build:
+    name: build lerasium (macos)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: cachix/install-nix-action@v31.11.1
+
+      - run: nix build --no-link -L .#darwinConfigurations.lerasium.system
