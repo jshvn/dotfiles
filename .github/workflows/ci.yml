@@ -1,50 +1,25 @@
 # =============================================================================
-# ci.yml -- full install-pipeline regression net
+# ci.yml -- evaluate every machine and profile, lint, and the hermetic tests
 #
-# Purpose:      Run the real operator pipeline (bootstrap -> setup -> install
-#               -> validate -> test -> lint -> converged re-install) against
-#               manifests/machines/ci.toml on a fresh macOS runner.
-# Depends on:   bootstrap.zsh; manifests/machines/ci.toml; go-task surface.
+# Purpose:      The same `task check`, `task lint` and `task test` as on a
+#               laptop, with Docker as the container engine: every machine
+#               file and every profile evaluates to its system closure in
+#               the pinned nixos/nix image, the Nix sources are formatted,
+#               the declaration rules fail the way they should, the zsh
+#               sources parse and carry their banners, and the four
+#               hermetic smoke tests pass.
+# Depends on:   Taskfile.yml (ENGINE=docker); the nixos/nix image pinned
+#               there; zsh, jq and GNU grep as ggrep on the runner.
 # Side effects: none outside the ephemeral runner.
 # =============================================================================
 #
-# COVERS (fails this workflow when broken):
-#   - bootstrap.zsh tool acquisition (go-task, yq) on a machine with brew
-#   - resolver end-to-end on a real manifest: schema validation, total
-#     feature accounting (a new registry flag unaccounted in ci.toml fails
-#     here), package tier merge, resolved.json compile
-#   - every symlink in links.yml via _:safe-link, incl. the sudo /etc/zshenv
-#     ZDOTDIR write and identity overlay links (identity "none")
-#   - Brewfile composition + real `brew bundle` install of every formula in
-#     the base tier + declared packages, then packages:verify binary probes
-#   - antidote plugin clone + first sourcing of the linked .zshrc
-#   - feature gates render to clean no-ops (ai, all macos-*)
-#   - hostname state capture path (fresh runner, no scutil --set)
-#   - all component validators (task validate output grepped for cross
-#     marks, since the aggregate itself always exits 0)
-#   - full smoke suite (task test), incl. shell-startup: login+interactive
-#     zsh boots with theme/git-prompt/highlighting/autosuggest markers
-#   - full lint catalogue (task lint) and orphan-link audit (links:audit)
-#   - status-block idempotency: converged second `task install` must exit 0
-#     with every state-converging task short-circuiting
-#   - task report renders against a real converged state (job summary)
-#   - runner-preinstalled tap trust (aws/tap) so Homebrew tap-trust warnings
-#     do not bury real pipeline output
-#
-# DOES NOT COVER (only exercised on real machines):
-#   - macOS defaults apply/verify paths (all macos-* flags disabled in
-#     ci.toml) and the UI relaunch step
-#   - 1Password identities (personal/work), op agent link, commit signing
-#   - the ai flag: cloning jshvn/ai and running its task install
-#   - the chsh code path in macos:install-shell (pre-satisfied below --
-#     bare chsh needs a tty the runner lacks) and scutil hostname:set
-#   - GUI casks, mas apps, vscode extensions (no such entries in ci.toml
-#     packages; needs App Store login / .app probes)
-#   - bootstrap's interactive brew consent gate (runners ship brew)
-#   - the shell cold-start budget (shell:startup-time is not part
-#     of task test) and multi-machine state (JMBP/JAIR hostname split)
-#   - linux: nothing here runs on linux; the repo is macOS-only
-#     (docs/DECISIONS.md)
+# COVERS: an option typo, an unaccounted switch in any profile, a failed
+#   assertion, an unformatted .nix file, a zsh file that does not parse or
+#   lacks its banner, a hardcoded Homebrew prefix, the orphan-link and
+#   tap-trust scanners, the ai checkout and repo-sync scripts.
+# DOES NOT COVER (a Mac only): the switch and its activation scripts, brew
+#   bundle, the live shell (shell-startup, shell:startup-time), task validate
+#   and task audit.
 
 name: ci
 
@@ -59,85 +34,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  install:
-    name: full pipeline (macos)
-    runs-on: macos-latest
-    timeout-minutes: 45
+  check:
+    name: check, lint, test (linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ENGINE: docker
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
-      # The runner image preinstalls aws/tap for its aws-sam-cli. Homebrew
-      # ignores items from untrusted taps and warns on every invocation, which
-      # buries real output. Nothing here installs from aws/tap; the grant is
-      # scoped to this ephemeral runner and exists solely to quiet the warning.
-      # Guarded on presence so a future image that drops the tap is not a
-      # failure.
-      - name: Trust runner-preinstalled taps
+      - uses: go-task/setup-task@v2.2.0
+        with:
+          version: 3.x
+
+      # tasks/lint.zsh and the smoke tests are zsh and call GNU grep by its
+      # Homebrew name, ggrep
+      - name: zsh, jq, ggrep
         run: |
-          if brew tap | grep -qxF 'aws/tap'; then
-            brew trust --tap aws/tap
-          fi
+          sudo apt-get update -q
+          sudo apt-get install -y -q zsh jq
+          sudo ln -sf "$(command -v grep)" /usr/local/bin/ggrep
 
-      # bootstrap.zsh acquires go-task + yq. Its interactive consent gate
-      # only fires when brew is absent; runners ship brew, so the script is
-      # non-interactive here and gets real CI coverage. jq ships on the
-      # runner image; the guard keeps the resolver's requirement explicit.
-      - name: Bootstrap trust anchors
-        run: |
-          zsh bootstrap.zsh
-          command -v jq >/dev/null || brew install jq
-
-      # chsh for the current user prompts for a password via PAM on a tty;
-      # the runner has none. Satisfy macos:install-shell's status: gate up
-      # front with the passwordless-sudo variants of the same two writes.
-      - name: Pre-register Homebrew zsh as login shell
-        run: |
-          brew install zsh
-          BREW_ZSH="$(brew --prefix)/bin/zsh"
-          grep -qxF "$BREW_ZSH" /etc/shells || echo "$BREW_ZSH" | sudo tee -a /etc/shells
-          sudo chsh -s "$BREW_ZSH" "$(id -un)"
-
-      - name: task setup
-        run: task setup -- ci
-
-      - name: task install
-        run: task install
-
-      # validate is a run-all aggregate: every component runs with
-      # ignore_error, so the task exits 0 regardless. Component failures
-      # surface only as cross-mark lines -- fail the step on any of them.
-      - name: task validate
-        run: |
-          task validate 2>&1 | tee validate.log
-          ! grep -qF "$(printf '✗')" validate.log
-
-      - name: task test
-        run: task test
-
-      - name: task lint
-        run: task lint
-
-      # Standalone links:audit keeps the exit-non-zero-on-orphans contract
-      # (the in-pipeline invocation is --warn-only by design).
-      - name: task links:audit
-        run: task links:audit
-
-      # Converged re-run must exit 0 with every state-converging task
-      # short-circuiting on its status: block. This asserts state-level
-      # idempotency; it is not a zero-work run -- packages:install always
-      # re-runs brew update + brew bundle by design (install IS update).
-      - name: task install (converged re-run)
-        run: task install
-
-      # The job summary is the durable record of a run: what the converged
-      # install contained (machine, features, packages per manager, links,
-      # the jshvn/ai checkout, shell plumbing) plus the validate tally, so a
-      # past run can be read without opening logs.
-      - name: Write job summary
-        if: always()
-        run: |
-          {
-            task report
-            echo
-            echo "## Validate: $(grep -cF "$(printf '✓')" validate.log || true) passed, $(grep -cF "$(printf '✗')" validate.log || true) failed"
-          } >> "$GITHUB_STEP_SUMMARY"
+      - run: task check
+      - run: task lint
+      - run: task test
