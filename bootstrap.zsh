@@ -3,45 +3,36 @@
 # =============================================================================
 # bootstrap.zsh -- acquire trust anchors on a fresh macOS machine
 #
-# Purpose:      Install brew, go-task, and yq -- the three tools required
-#               before any `task` invocation. Tools-only: does NOT take a
-#               machine name and does NOT invoke `task setup`.
-# Depends on:   zsh (>= 5), curl, /bin/bash (for the brew installer);
-#               install/messages.zsh; docs/SECURITY.md (trust chain doc).
+# Purpose:      Install Homebrew, go-task and Nix: everything `task setup`
+#               and the first switch need. Tools-only: takes no machine
+#               name and runs no task.
+# Depends on:   zsh (>= 5), curl, /bin/bash (the brew installer), sh (the
+#               Nix installer), sudo (the Nix installer); tasks/messages.zsh;
+#               docs/SECURITY.md (the trust chain).
 # Side effects: installs Homebrew (HTTPS-fetched script, no checksum pin);
-#               brew-installs go-task + yq; warns if installed yq < 4.52.1.
+#               brew-installs go-task; runs the official multi-user Nix
+#               installer (HTTPS-fetched to a temp file, no checksum pin):
+#               creates the /nix volume, the build users and the nix-daemon
+#               launchd job, prepends a Nix block to /etc/zshrc and
+#               /etc/bashrc with .backup-before-nix copies.
 # =============================================================================
 
 set -euo pipefail
 
-# DOTFILEDIR resolution (symlink-walk pattern). BASH_SOURCE[0]:-$0 fallback
-# ensures the variable is defined even in contexts where BASH_SOURCE is
-# unavailable (plain zsh execution without bash compatibility).
-SOURCE="${BASH_SOURCE[0]:-$0}"
-while [[ -h "$SOURCE" ]]; do
-  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
-  SOURCE="$(readlink "$SOURCE")"
-  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
-done
-DOTFILEDIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+DOTFILEDIR="${0:A:h}"
 export DOTFILEDIR
 
-# messages.zsh self-guards under set -u via the `:-` default expansion on
-# $DOTFILES_MESSAGES_LOADED; a bare source is sufficient and idempotent.
-source "${DOTFILEDIR}/install/messages.zsh"
+source "${DOTFILEDIR}/tasks/messages.zsh"
 
-header "Dotfiles v2 Bootstrap"
+header "Dotfiles v3 Bootstrap"
 
-# Step 1: Homebrew. If brew is absent, emit an AUDIT block to stderr and
-# require an explicit Enter keypress BEFORE fetching the installer script
-# -- surfaces the supply-chain trust boundary (HTTPS, no checksum pin) so
-# the user must consciously consent (any other key aborts).
-if ! command -v brew >/dev/null 2>&1; then
+# consent WHAT SOURCE TRUST-NOTE: print the AUDIT block, require Enter from the tty
+consent() {
   {
     echo
-    echo "AUDIT: about to fetch and execute brew install script"
-    echo "  source: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
-    echo "  trust:  HTTPS only, no checksum pin (see docs/SECURITY.md)"
+    echo "AUDIT: about to execute $1"
+    echo "  source: $2"
+    echo "  trust:  $3 (see docs/SECURITY.md)"
     echo
     echo "  Press Enter to continue. Any other key aborts."
     echo
@@ -52,8 +43,12 @@ if ! command -v brew >/dev/null 2>&1; then
     error "aborted by user"
     exit 1
   fi
+}
+
+# Step 1: Homebrew.
+if ! command -v brew >/dev/null 2>&1; then
+  consent "the brew install script" "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh" "HTTPS only, no checksum pin"
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  # Re-shellenv so brew is on PATH for the rest of this script.
   if [[ "$(uname -m)" == "arm64" ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)" # lint-allow: hardcoded-prefix
   else
@@ -71,27 +66,23 @@ else
   info "go-task already installed: $(task --version)"
 fi
 
-# Step 3: yq. Minimum version 4.52.1 (full TOML read; TOML-to-JSON for the
-# resolver). Older versions trigger a warning but do NOT abort
-# -- `task setup` will fail more obviously if yq is inadequate.
-if ! command -v yq >/dev/null 2>&1; then
-  info "installing yq..."
-  brew install yq
+# Step 3: Nix, the official multi-user installer. Downloaded to a file first so it can be read
+# before it runs; --daemon is the multi-user install, --yes answers its questions (sudo still
+# asks for the password).
+if [[ -x /nix/var/nix/profiles/default/bin/nix ]]; then
+  info "nix already installed: $(/nix/var/nix/profiles/default/bin/nix --version)"
 else
-  yq_ver=$(yq --version | sed -nE 's/.*version v([0-9]+\.[0-9]+\.[0-9]+).*/\1/p')
-  info "yq already installed: v${yq_ver}"
-  if ! printf '%s\n%s\n' "4.52.1" "$yq_ver" | sort -V -C 2>/dev/null; then
-    warn "yq v${yq_ver} is older than minimum 4.52.1 -- upgrade with: brew upgrade yq"
-  fi
+  installer=$(mktemp "${TMPDIR:-/tmp}/nix-install.XXXXXX")
+  trap 'rm -f "$installer"' EXIT
+  curl -fsSL https://nixos.org/nix/install -o "$installer"
+  consent "the Nix multi-user installer, saved at $installer (read it first: less $installer)" \
+    "https://nixos.org/nix/install" "HTTPS only, no checksum pin; sudo; edits /etc/zshrc and /etc/bashrc"
+  sh "$installer" --daemon --yes
 fi
 
-# Tools-only: no task setup, no task install invocation. The user
-# completes setup by running the two commands below.
 echo
-success "Bootstrap complete. Next steps:"
-echo "  task setup -- <machine-name>     # write machine state"
-echo "  task install                     # install dotfiles"
-echo
-# zsh glob (N: null-glob, :t tail/basename, :r remove .toml) -- no ls parsing.
-machines=( "${DOTFILEDIR}/manifests/machines"/*.toml(N:t:r) )
-echo "  Available machines: ${machines[*]}"
+success "Bootstrap complete. Next steps (README.md, First switch):"
+echo "  task setup -- <machine>          # write the machine state file"
+echo "  open a new terminal, then the First switch procedure"
+machines=( "${DOTFILEDIR}/machines"/*.nix(N:t:r) )
+echo "  Machines: ${machines[*]}"
