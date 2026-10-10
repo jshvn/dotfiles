@@ -65,7 +65,8 @@
       darwinConfigurations = lib.genAttrs names mkDarwin;
       formatter = lib.genAttrs linux (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
       # a Mac's closure builds only on a Mac; forcing the full evaluation here means an option
-      # typo, an unaccounted flag or a failed assertion fails `nix flake check` on a Linux runner
+      # typo, an unaccounted flag or a failed assertion fails `nix flake check` on a Linux runner.
+      # The dotfiles namespace is forced too, because `task show` and friends read all of it.
       checks = lib.genAttrs linux (
         system:
         let
@@ -76,6 +77,7 @@
           lib.nameValuePair "darwin-${name}" (
             pkgs.runCommand "dotfiles-eval-${name}" { } ''
               echo ${builtins.unsafeDiscardStringContext host.config.system.build.toplevel.drvPath} > $out
+              echo ${builtins.hashString "sha256" (builtins.toJSON host.config.dotfiles)} >> $out
             ''
           )
         ) (self.darwinConfigurations // lib.genAttrs profiles mkProfileCheck)

@@ -45,6 +45,7 @@ vars:
       dotfiles = c.dotfiles;
       defaults = builtins.mapAttrs (n: safe) c.system.defaults;
       currentHost = c.home-manager.users.josh.targets.darwin.currentHostDefaults;
+      loginShell = c.users.users.josh.shell;
       brewfile = c.homebrew.brewfile;
       taps = c.homebrew.taps;
       casks = c.homebrew.casks;
@@ -59,7 +60,7 @@ tasks:
       - |
         echo "dotfiles v3  machine: {{.MACHINE}}"
         echo
-        echo "  change     setup -- <name>   install   rollback"
+        echo "  change     setup -- <name>   install [-- --yes]   rollback"
         echo "  inspect    show   diff   validate   audit [-- --strict]   shell:startup-time"
         echo "  develop    check   lint   test   fmt"
         echo
@@ -75,13 +76,13 @@ tasks:
       - 'echo "machine: {{.CLI_ARGS}}"'
 
   install:
-    desc: 'Fast-forward the checkout (warn-only), build and activate the selected machine, refresh the zsh plugin bundles'
+    desc: 'Fast-forward the checkout (warn-only), build and switch the selected machine (a first run on a Mac clears the way itself), uninstall what is no longer declared after asking (-- --yes answers yes), refresh the zsh plugin bundles'
     preconditions: &need-machine
       - sh: test -f '{{.ROOT_DIR}}/machines/{{.MACHINE}}.nix'
         msg: 'no machine selected (no machines/{{.MACHINE}}.nix): task setup -- <name>; the machines are: {{.MACHINES | trim}}'
     cmds:
       - DOTFILEDIR='{{.ROOT_DIR}}' REPO_NAME=jshvn/dotfiles zsh '{{.ROOT_DIR}}/apps/claude-code/repo-sync.zsh'
-      - sudo {{.REBUILD}} switch --flake '{{.ROOT_DIR}}#{{.MACHINE}}'
+      - '{{.EVAL}} | DOTFILEDIR="{{.ROOT_DIR}}" MACHINE={{.MACHINE}} NIX={{.NIX}} zsh "{{.ROOT_DIR}}/tasks/install.zsh" {{.CLI_ARGS}}'
       - zsh -ic 'antidote update --bundles' >/dev/null 2>&1 || echo "antidote update failed (offline?), bundles unchanged"
 
   rollback:
@@ -103,7 +104,7 @@ tasks:
       - |
         bf=$(mktemp); trap 'rm -f "$bf"' EXIT
         {{.EVAL}} | jq -r .brewfile > "$bf"
-        brew bundle check --no-upgrade --verbose --file="$bf" || true
+        HOMEBREW_NO_AUTO_UPDATE=1 brew bundle check --no-upgrade --verbose --file="$bf" || true
 
   validate:
     desc: 'Read the whole declared state back from the live system (read-only; exits 1 on drift)'
@@ -146,9 +147,9 @@ tasks:
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && nix fmt --no-write-lock-file"'
 
   test:
-    desc: 'Smoke tests (orphan scan, trust scan, repo sync, ai checkout, the live shell on a Mac) and the negative evaluations'
+    desc: 'Smoke tests (orphan scan, trust scan, cleanup scan and link clearing, repo sync, ai checkout, the live shell on a Mac) and the negative evaluations'
     cmds:
-      - for: [links-audit, packages-trust, repo-sync, ai-checkout]
+      - for: [links-audit, packages-trust, install, repo-sync, ai-checkout]
         cmd: DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/tasks/tests/{{.ITEM}}.zsh'
       - '{{if eq OS "darwin"}}DOTFILEDIR="{{.ROOT_DIR}}" zsh "{{.ROOT_DIR}}/tasks/tests/shell-startup.zsh"{{else}}echo "shell-startup: skipped, it needs the live Mac shell"{{end}}'
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && SRC=/work bash tasks/tests/negative.sh"'

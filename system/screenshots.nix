@@ -6,6 +6,8 @@
   };
 
   config = lib.mkIf config.dotfiles.system.screenshots {
+    # macOS falls back to the Desktop when the folder is missing, so the switch creates it
+    home-manager.users.josh.home.file."Pictures/Screenshots/.keep".text = "";
     system.defaults.screencapture = {
       location = "/Users/josh/Pictures/Screenshots";
       type = "png";

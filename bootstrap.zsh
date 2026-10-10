@@ -1,20 +1,25 @@
 #!/bin/zsh
 
 # =============================================================================
-# bootstrap.zsh -- acquire trust anchors on a fresh macOS machine
+# bootstrap.zsh -- bring a Mac from nothing to its declared state
 #
-# Purpose:      Install Homebrew, go-task and Nix: everything `task setup`
-#               and the first switch need. Tools-only: takes no machine
-#               name and runs no task.
+# Purpose:      ./bootstrap.zsh <machine>: install Homebrew, go-task and Nix
+#               (each skipped when present), select the machine (`task setup`)
+#               and run the first `task install`, which builds and switches.
+#               Safe to re-run; afterwards `task install` is the only command.
+#               The machine is named explicitly, never inferred from the
+#               hostname.
 # Depends on:   zsh (>= 5), curl, /bin/bash (the brew installer), sh (the
-#               Nix installer), sudo (the Nix installer); tasks/messages.zsh;
+#               Nix installer), sudo (the Nix installer and the switch);
+#               tasks/messages.zsh; machines/<machine>.nix; Taskfile.yml;
 #               docs/SECURITY.md (the trust chain).
 # Side effects: installs Homebrew (HTTPS-fetched script, no checksum pin);
 #               brew-installs go-task; runs the official multi-user Nix
 #               installer (HTTPS-fetched to a temp file, no checksum pin):
 #               creates the /nix volume, the build users and the nix-daemon
 #               launchd job, prepends a Nix block to /etc/zshrc and
-#               /etc/bashrc with .backup-before-nix copies.
+#               /etc/bashrc with .backup-before-nix copies; then everything
+#               `task setup` and `task install` do.
 # =============================================================================
 
 set -euo pipefail
@@ -24,7 +29,14 @@ export DOTFILEDIR
 
 source "${DOTFILEDIR}/tasks/messages.zsh"
 
-header "Dotfiles v3 Bootstrap"
+machines=( "${DOTFILEDIR}/machines"/*.nix(N:t:r) )
+machine="${1:-}"
+if [[ -z "$machine" || ! -f "${DOTFILEDIR}/machines/${machine}.nix" ]]; then
+  error "usage: ./bootstrap.zsh <machine>   (the machines: ${machines[*]})"
+  exit 1
+fi
+
+header "Dotfiles v3 Bootstrap: $machine"
 
 # consent WHAT SOURCE TRUST-NOTE: print the AUDIT block, require Enter from the tty
 consent() {
@@ -80,9 +92,10 @@ else
   sh "$installer" --daemon --yes
 fi
 
+# Step 4: select the machine and converge it. task calls nix by its absolute path, so this works
+# in the same shell that just installed Nix.
+task -d "$DOTFILEDIR" setup -- "$machine"
+task -d "$DOTFILEDIR" install
+
 echo
-success "Bootstrap complete. Next steps (README.md, First switch):"
-echo "  task setup -- <machine>          # write the machine state file"
-echo "  open a new terminal, then the First switch procedure"
-machines=( "${DOTFILEDIR}/machines"/*.nix(N:t:r) )
-echo "  Machines: ${machines[*]}"
+success "Bootstrap complete: open a new terminal. From now on, update (task install) is the only command."

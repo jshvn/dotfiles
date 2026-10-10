@@ -11,7 +11,8 @@
 #               evaluated declaration on stdin (`task audit`). Findings are
 #               warnings; exits 1 only with --strict.
 # Depends on:   jq; brew (with the homebrew/brew-vulns tap); tasks/messages.zsh;
-#               tasks/packages-trust-scan.zsh; tasks/links-audit-scan.zsh.
+#               tasks/brew-cleanup-scan.zsh; tasks/packages-trust-scan.zsh;
+#               tasks/links-audit-scan.zsh.
 # Side effects: none (read-only; temp files for the Brewfile and scan inputs).
 # =============================================================================
 
@@ -19,6 +20,8 @@ set -euo pipefail
 
 typeset -r HERE="${0:A:h}"
 source "$HERE/messages.zsh"
+# read-only: brew must not update itself mid-audit (its update report would land in the output)
+export HOMEBREW_NO_AUTO_UPDATE=1
 
 strict=0
 [[ "${1:-}" == --strict ]] && strict=1
@@ -38,21 +41,21 @@ j .brewfile > "$tmpdir/Brewfile"
 
 # --- packages installed beyond the declaration -------------------------------
 info "packages beyond the declaration (brew bundle cleanup, dry run)"
-# sections "Would uninstall formulae/casks/VSCode extensions:" and "Would untap:" list one item
-# per line; the trailing "Would `brew cleanup`:" section is brew's own cache housekeeping, not drift
-# stdout only: brew's own warnings (stale keg tabs, circular dependency notes) go to stderr
-extra=$(brew bundle cleanup --file="$tmpdir/Brewfile" 2>/dev/null | awk '/^Would `brew cleanup`/ { exit } NF { print }' || true)
-if [[ -z "$extra" ]]; then
-  check "nothing installed beyond the declaration"
-else
-  while IFS= read -r line; do
-    if [[ "$line" == Would* ]]; then
-      info "  $line"
-    else
-      warn "drift: $line"
-      drift=$((drift + 1))
-    fi
+# stdin from /dev/null: without a terminal brew lists and never prompts; it exits 1 when it would
+# uninstall something, so a non-zero exit with nothing listed means the dry run itself failed
+rc=0
+brew bundle cleanup --file="$tmpdir/Brewfile" < /dev/null > "$tmpdir/cleanup" 2>/dev/null || rc=$?
+extra=$(zsh "$HERE/brew-cleanup-scan.zsh" < "$tmpdir/cleanup")
+if [[ -n "$extra" ]]; then
+  while IFS=$'\t' read -r kind name; do
+    warn "drift: $kind: $name"
+    drift=$((drift + 1))
   done <<< "$extra"
+elif (( rc != 0 )); then
+  cross "brew bundle cleanup dry run failed (exit $rc): what cleanup would remove is unknown"
+  drift=$((drift + 1))
+else
+  check "nothing installed beyond the declaration"
 fi
 
 # --- taps and trust grants nobody declared -----------------------------------

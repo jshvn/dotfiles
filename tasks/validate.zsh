@@ -12,7 +12,7 @@
 #               macOS default plus the display preset, the Spotlight hotkey
 #               and the application firewall.
 #               One check/cross line per item; exits 1 on any drift.
-# Depends on:   jq; git; brew; defaults; PlistBuddy; scutil; ssh-add;
+# Depends on:   jq; git; brew; defaults; dscl; PlistBuddy; scutil; ssh-add;
 #               socketfilterfw; swift (Xcode CLT); tasks/messages.zsh;
 #               system/display-mode.swift; MACHINE env var (the selected
 #               machine name, optional).
@@ -24,6 +24,8 @@ set -euo pipefail
 typeset -r HERE="${0:A:h}"
 typeset -r ROOT="${HERE:h}"
 source "$HERE/messages.zsh"
+# read-only: brew must not update itself mid-check
+export HOMEBREW_NO_AUTO_UPDATE=1
 
 declared=$(cat)
 if ! jq -e '.dotfiles | type == "object"' <<< "$declared" >/dev/null 2>&1; then
@@ -52,6 +54,18 @@ if [[ -f /etc/zshenv ]] && grep -qF 'ZDOTDIR="$HOME/.config/zsh"' /etc/zshenv; t
   check "/etc/zshenv exports ZDOTDIR"
 else
   fail "/etc/zshenv does not export ZDOTDIR (nix-darwin environment.etc.zshenv)"
+fi
+login_shell=$(j .loginShell)
+have_shell=$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{ print $2 }')
+if [[ "$have_shell" == "$login_shell" && -x "$login_shell" ]]; then
+  check "login shell $login_shell"
+else
+  fail "login shell: expected $login_shell, got ${have_shell:-<unset>}"
+fi
+if grep -qxF "$login_shell" /etc/shells 2>/dev/null; then
+  check "/etc/shells lists $login_shell"
+else
+  fail "/etc/shells does not list $login_shell"
 fi
 if [[ -r "$STATE/machine" ]]; then
   if [[ -z "${MACHINE:-}" || "$(<"$STATE/machine")" == "$MACHINE" ]]; then
@@ -126,7 +140,8 @@ if brew bundle check --no-upgrade --file="$brewfile" >/dev/null 2>&1; then
   check "brew bundle check: every declared formula, cask, mas app and extension is installed"
 else
   fail "brew bundle check:"
-  brew bundle check --no-upgrade --verbose --file="$brewfile" 2>&1 | sed 's/^/      /'
+  # the detail exits 1 as well; the cross is recorded, so keep reading the other domains
+  brew bundle check --no-upgrade --verbose --file="$brewfile" 2>&1 | sed 's/^/      /' || true
 fi
 installed=$(brew info --installed --json=v2 2>/dev/null || echo '{}')
 # homebrew.casks is a list of records (name, args, greedy ...), so take the name

@@ -32,11 +32,16 @@ in
 
   config = {
     system.primaryUser = "josh"; # activation runs as root; user-scoped defaults apply to this user
-    users.knownUsers = [ "josh" ]; # lets nix-darwin own the login shell
+    # ponytail: listing the login account in knownUsers is what lets nix-darwin own its shell,
+    # though nix-darwin's option text says not to list the admin user. At the locked rev an
+    # existing user only gets PrimaryGroupID and UserShell re-set and deletion is guarded;
+    # isHidden is pinned in case a later rev starts syncing it. Recheck on every flake update.
+    users.knownUsers = [ "josh" ];
     users.users.josh = {
       uid = 501;
       home = "/Users/josh";
-      shell = "${config.homebrew.prefix}/bin/zsh"; # Homebrew's zsh, as today
+      shell = "${config.homebrew.prefix}/bin/zsh"; # Homebrew's zsh
+      isHidden = false;
     };
 
     nix.settings.experimental-features = [
