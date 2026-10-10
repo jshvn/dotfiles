@@ -15,7 +15,8 @@ in
 
   # GitHub's published host keys in /etc/ssh/ssh_known_hosts, so ssh to github.com never stops
   # at an unknown host; the switch's clone of jshvn/ai (apps/claude-code) runs in BatchMode and
-  # cannot answer that prompt. Source and fingerprints:
+  # cannot answer that prompt. Homebrew's ssh, first on that step's PATH, reads this file only
+  # because apps/ssh/config names it. Source and fingerprints:
   #   https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
   #   https://api.github.com/meta (ssh_keys)
   programs.ssh.knownHosts =

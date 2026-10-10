@@ -11,5 +11,8 @@
 Host *
     SetEnv TERM=xterm-256color
     IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+    # Homebrew's ssh looks under its own prefix (etc/ssh) by default; both ssh
+    # binaries read the /etc file apps/ssh/default.nix writes (GitHub's keys).
+    GlobalKnownHostsFile /etc/ssh/ssh_known_hosts
 
 Include ~/.ssh/profile
