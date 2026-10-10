@@ -7,7 +7,8 @@
 #               (zsh -n), every executable .zsh sets -euo pipefail, every .zsh
 #               carries the Purpose / Depends on / Side effects banner, and no
 #               source hardcodes /opt/homebrew or /usr/local outside a line
-#               marked `# lint-allow: hardcoded-prefix`. Nix formatting is
+#               marked `# lint-allow: hardcoded-prefix`, and every task in
+#               Taskfile.yml has a row in the default menu. Nix formatting is
 #               checked by `task lint` separately with `nix fmt -- --ci`.
 # Depends on:   zsh; ggrep (GNU grep); tasks/messages.zsh.
 # Side effects: none.
@@ -63,5 +64,18 @@ if [[ -n "$hits" ]]; then
 else
   check "none outside annotated lines"
 fi
+
+info "every task in the task menu"
+taskfile="$ROOT/Taskfile.yml"
+menu=$(awk '/^  default:$/ { f = 1; next } /^  [a-z][a-z:-]*:$/ { f = 0 } f' "$taskfile")
+tasks=(${(f)"$(awk '/^tasks:$/ { t = 1 } t && /^  [a-z][a-z:-]*:$/ { sub(/^  /, ""); sub(/:$/, ""); print }' "$taskfile")"})
+tasks=(${tasks:#default})
+for t in $tasks; do
+  if ! ggrep -qE "row 'task ${t}[ ']" <<< "$menu"; then
+    cross "Taskfile.yml: task $t has no row in the default menu"
+    failed=1
+  fi
+done
+check "${#tasks} tasks have a row"
 
 exit $failed

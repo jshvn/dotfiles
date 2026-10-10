@@ -70,8 +70,9 @@ What the file system will not tell you:
   `targets.darwin.currentHostDefaults`. `tasks/validate.zsh` reads every defaults key back; a
   nix-darwin group it has no row for is a cross, so a new group needs a row in its `DOMAIN`
   table.
-- This repo declares two `/etc` files: `/etc/zshenv` (the ZDOTDIR line) and `/etc/shells`
-  (Homebrew zsh, through `environment.shells` in `modules/shell.nix`); nix-darwin also writes
+- This repo declares three `/etc` files: `/etc/zshenv` (the ZDOTDIR line), `/etc/shells`
+  (Homebrew zsh, through `environment.shells` in `modules/shell.nix`) and
+  `/etc/ssh/ssh_known_hosts` (GitHub's host keys, `modules/identity.nix`); nix-darwin also writes
   `/etc/nix/nix.conf` and others of its own. nix-darwin refuses any `/etc` file it did not
   write ("Unexpected files in /etc"): rename it `.before-nix-darwin`, as the README's First
   switch does for `/etc/zshenv` and `/etc/shells`. `programs.zsh` and `programs.bash` stay

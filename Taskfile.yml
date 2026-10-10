@@ -18,6 +18,7 @@ vars:
   MACHINES:
     sh: for f in '{{.ROOT_DIR}}/machines'/*.nix; do b=${f##*/}; printf '%s ' "${b%.nix}"; done
   REBUILD: /run/current-system/sw/bin/darwin-rebuild
+  COLD_START_BUDGET: 500
   # the official installer's profile, called by path: a Taskfile env cannot override the caller's PATH
   NIX: /nix/var/nix/profiles/default/bin/nix
   # Apple container when its daemon is up, else Docker; ENGINE=docker reproduces a CI run
@@ -56,16 +57,38 @@ vars:
 
 tasks:
   default:
-    desc: 'Print the operator surface'
+    desc: 'Print the menu'
+    # ponytail: hand-maintained listing -- go-task can neither group nor annotate, so a new task
+    # means a row below (task lint fails on a task missing here). `task --list` is the generated view.
     cmds:
       - |
-        echo "dotfiles v3  machine: {{.MACHINE}}"
-        echo
-        echo "  change     setup -- <name>   install [-- --yes]   rollback"
-        echo "  inspect    show   diff   validate   audit [-- --strict]   shell:startup-time"
-        echo "  develop    check   lint   test   fmt"
-        echo
-        echo "task --list for descriptions"
+        b= c= d= r=
+        if [ -t 1 ]; then b=$(printf '\033[1m'); c=$(printf '\033[1;36m'); d=$(printf '\033[2m'); r=$(printf '\033[0m'); fi
+        group() { printf '\n%s\n' "${c}$1${r}"; }
+        row() { printf '  %-25s %s\n' "$1" "$2"; [ -z "$3" ] || printf '  %-25s %s\n' '' "${d}$3${r}"; }
+        m='{{.MACHINE}}'
+        if [ -z "$m" ]; then m='none selected, run task setup -- <name>'
+        elif [ ! -f "{{.ROOT_DIR}}/machines/$m.nix" ]; then m="$m is not a machine, run task setup -- <name>"
+        else m="${b}$m${r}"; fi
+        printf '\n%s\n%s\n' \
+          "${b}dotfiles${r}   ${d}this Mac as one nix-darwin configuration${r}" \
+          "machine: $m   ${d}(machines: {{.MACHINES | trim}})${r}"
+        group 'read -- looks at this Mac, changes nothing'
+        row 'task show' 'The evaluated declaration: identity, system, apps, links, packages'
+        row 'task diff' 'What install would change: closure diff, then what brew would add' 'builds the closure and leaves ./result (ignored)'
+        row 'task validate' 'Read the whole declaration back from the live system' 'exits 1 on drift; run it after every install'
+        row 'task audit [-- --strict]' 'State beyond the declaration, and known CVEs' '--strict exits 1 on findings'
+        row 'task shell:startup-time' 'Cold interactive zsh start against the {{.COLD_START_BUDGET}} ms budget'
+        group 'checks -- the checkout, not this Mac; nix runs in the pinned image via {{.ENGINE}}'
+        row 'task check' 'Evaluate every machine and profile, as CI does' 'git add -A first: the flake sees only tracked or staged files'
+        row 'task lint' 'zsh parse, set -euo, banners, hardcoded prefixes, this menu; nix fmt --ci'
+        row 'task test' 'Smoke tests and the negative evaluations' 'shell-startup runs only on a Mac'
+        row 'task fmt' 'Format every .nix file in place'
+        group 'write -- changes this Mac'
+        row 'task setup -- <name>' 'Select the machine; never inferred from the hostname'
+        row 'task install [-- --yes]' 'Fast-forward, build and switch, uninstall the undeclared, refresh plugins' 'sudo prompts; brew asks before uninstalling, --yes answers it'
+        row 'task rollback' 'Activate the previous generation' 'sudo prompts'
+        printf '\n%s\n\n' "${d}task --list for the generated view; ENGINE=docker forces Docker${r}"
 
   setup:
     desc: 'Persist the machine selection: task setup -- <name>'
@@ -122,8 +145,6 @@ tasks:
 
   shell:startup-time:
     desc: 'Measure cold interactive zsh startup time (fails above {{.COLD_START_BUDGET}} ms)'
-    vars:
-      COLD_START_BUDGET: 500
     cmds:
       - |
         out=$(mktemp); trap 'rm -f "$out"' EXIT
@@ -138,7 +159,7 @@ tasks:
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && nix flake check --no-write-lock-file"'
 
   lint:
-    desc: 'Static checks: zsh parse, set -euo, banners, no hardcoded prefix; Nix formatting via nix fmt'
+    desc: 'Static checks: zsh parse, set -euo, banners, no hardcoded prefix, every task in the menu; Nix formatting via nix fmt'
     cmds:
       - zsh '{{.ROOT_DIR}}/tasks/lint.zsh'
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && nix fmt --no-write-lock-file -- --ci"'

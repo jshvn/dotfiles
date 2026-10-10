@@ -73,7 +73,7 @@ bundles.
 | `task audit [-- --strict]` | State beyond the declaration, known CVEs |
 | `task shell:startup-time` | Cold interactive zsh start against the 500 ms budget |
 | `task check` | Evaluate every machine and profile in the pinned nix image |
-| `task lint` | zsh parse, `set -euo`, banners, no hardcoded prefix; `nix fmt -- --ci` |
+| `task lint` | zsh parse, `set -euo`, banners, no hardcoded prefix, every task in the menu; `nix fmt -- --ci` |
 | `task fmt` | Format the Nix sources in place |
 | `task test` | Smoke tests and the negative evaluations |
 
@@ -81,7 +81,8 @@ bundles.
 `container` (daemon up) or Docker; the Taskfile uses `container` when its daemon is up, else
 Docker, and `ENGINE=docker` forces Docker.
 
-Run `task` for the banner; `task --list` for descriptions.
+Run `task` for the menu, grouped by what each task does to the Mac; `task --list` for the
+generated view.
 
 ## Where things live
 
