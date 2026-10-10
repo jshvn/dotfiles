@@ -11,7 +11,7 @@
 #               shellenv); antidote at $HOMEBREW_PREFIX/opt/antidote/;
 #               shell/.zsh_plugins.txt; shell/theme.zsh;
 #               shell/functions/helpers/*.zsh; shell/functions/*.zsh;
-#               shell/aliases/*.zsh.
+#               $XDG_STATE_HOME/dotfiles/aliases.d/*.zsh (linked by the switch).
 # Side effects: exports TLRC_CONFIG, DOTFILEDIR, ANTIDOTE_HOME, HISTFILE,
 #               HIST_STAMPS, HISTSIZE, SAVEHIST; creates HISTFILE parent
 #               dir; enables SHARE_HISTORY
@@ -120,9 +120,7 @@ setopt SHARE_HISTORY
 # Source order matters. theme.zsh defines `alias highlight=...`; zsh
 # expands aliases at function PARSE time, so functions that pipe through
 # `highlight` (aliaslist, functionlist) need the alias in scope when their
-# body is sourced. theme FIRST, functions SECOND, aliases THIRD --
-# source-time gates in shell/aliases/*.zsh (e.g. jgrid.zsh) call
-# _dotfiles_feature, which is defined by the functions glob.
+# body is sourced. theme FIRST, functions SECOND, aliases THIRD.
 source "${DOTFILEDIR}/shell/theme.zsh"
 
 # helpers/ holds the private `_dotfiles_*` primitives the user-facing

@@ -1,5 +1,5 @@
-# configs/ghostty/config -- Ghostty terminal config; symlinked to
-# ~/.config/ghostty/config when features.ghostty is enabled.
+# apps/ghostty/config -- Ghostty terminal config; linked to
+# ~/.config/ghostty/config by apps/ghostty/default.nix when the app is on.
 #
 # Only options that differ from Ghostty's defaults are set here.
 #

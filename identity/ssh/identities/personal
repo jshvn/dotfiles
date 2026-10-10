@@ -1,10 +1,9 @@
 # identity/ssh/identities/personal -- personal SSH identity.
 #
-# Symlinked as ~/.ssh/identities/active when identity.ssh = "personal".
+# Symlinked as ~/.ssh/identities/active when dotfiles.identity = "personal".
 # Included via the Include directive in identity/ssh/config -> ~/.ssh/config.
 # Side effects: routes all SSH connections through the 1Password agent; applies
 #   cloudflared ProxyCommand for jgrid.net tunnel hostnames and plex.me hosts.
-# capability: one-password-ssh (a machine using this identity must enable features.one-password-ssh)
 # Path conventions:
 #   IdentityFile: ~/.ssh/identities/keys/personal.pub (per-identity key dir)
 #   ProxyCommand: ~/.ssh/identities/cloudflared.zsh (shared by all identities)

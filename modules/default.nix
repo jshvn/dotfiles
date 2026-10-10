@@ -32,7 +32,7 @@ in
 
   config = {
     system.primaryUser = "josh"; # activation runs as root; user-scoped defaults apply to this user
-    users.knownUsers = [ "josh" ]; # lets nix-darwin own the login shell (was os/shell-registration.zsh)
+    users.knownUsers = [ "josh" ]; # lets nix-darwin own the login shell
     users.users.josh = {
       uid = 501;
       home = "/Users/josh";

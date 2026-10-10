@@ -1,6 +1,6 @@
 # identity/ssh/identities/none -- no-op SSH identity.
 #
-# Symlinked as ~/.ssh/identities/active when identity.ssh = "none".
+# Symlinked as ~/.ssh/identities/active when dotfiles.identity = "none".
 # Included via the Include directive in identity/ssh/config -> ~/.ssh/config.
 # Side effects: none. No host-specific configuration is applied.
 #

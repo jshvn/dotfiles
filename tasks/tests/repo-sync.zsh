@@ -18,7 +18,7 @@
 
 set -euo pipefail
 
-: "${DOTFILEDIR:?DOTFILEDIR must be set (run via task test:repo-sync)}"
+: "${DOTFILEDIR:?DOTFILEDIR must be set (run via task test)}"
 
 # shellcheck source=tasks/messages.zsh
 source "${DOTFILEDIR}/tasks/messages.zsh"

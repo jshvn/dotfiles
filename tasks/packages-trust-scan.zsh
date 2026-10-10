@@ -4,8 +4,8 @@
 # tasks/packages-trust-scan.zsh -- tap and trust-grant drift detector
 #
 # Purpose:      Compare the taps a machine is subscribed to, and the entries in
-#               its Homebrew trust store, against the taps the manifest
-#               declares. Emits one finding per line on stdout; the caller
+#               its Homebrew trust store, against the taps the declaration
+#               derives. Emits one finding per line on stdout; the caller
 #               counts them. A tap is a code-execution boundary, so a tap
 #               nobody declared -- or a trust grant for one -- is drift.
 # Depends on:   jq (>= 1.7); zsh (>= 5); ggrep. Reads three input files --

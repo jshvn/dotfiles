@@ -4,7 +4,7 @@
 # tasks/tests/packages-trust.zsh -- smoke tests for packages-trust-scan.zsh
 #
 # Purpose:      Exercise the tap/trust drift detector against fixture inputs.
-#               Asserts it flags (a) an installed tap no manifest declares,
+#               Asserts it flags (a) an installed tap the declaration does not derive,
 #               (b) a trust grant whose tap is undeclared, and (c) a whole-tap
 #               grant for an undeclared tap, while NOT flagging a declared tap
 #               or a grant belonging to a declared tap.
@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-: "${DOTFILEDIR:?DOTFILEDIR must be set (run via task test:packages-trust)}"
+: "${DOTFILEDIR:?DOTFILEDIR must be set (run via task test)}"
 
 # shellcheck source=tasks/messages.zsh
 source "${DOTFILEDIR}/tasks/messages.zsh"

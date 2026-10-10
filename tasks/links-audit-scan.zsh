@@ -1,25 +1,22 @@
 #!/usr/bin/env zsh
 
 # =============================================================================
-# tasks/links-audit-scan.zsh -- symlink orphan detector for links:audit
+# tasks/links-audit-scan.zsh -- symlink orphan detector for task audit
 #
-# Purpose:      Single source of orphan-detection logic for `task links:audit`.
-#               Reads expected symlink targets on stdin (one per line); takes
-#               the repo root and one or more scan roots as args. Prints every
-#               orphan symlink path on stdout, one per line, deduplicated.
-#               Two orphan kinds, scoped differently because EXPECTED_TARGETS
-#               is NOT a complete inventory of repo-managed links (identity
-#               git/ssh links are created elsewhere):
+# Purpose:      Single source of orphan-detection logic for `task audit`.
+#               Reads the registered link paths on stdin (one per line, the
+#               dotfiles.links registry); takes the repo root and one or more
+#               scan roots as args. Prints every orphan symlink path on
+#               stdout, one per line, deduplicated. Two orphan kinds:
 #                 A. DANGLING repo-targeted links anywhere under the scan roots.
 #                    A dead link whose literal target was under the repo is
-#                    always an orphan -- the source it pointed at is gone --
-#                    regardless of inventory completeness. (readlink -f returns
-#                    empty for these, which is why a resolved-only gate misses
-#                    them.) This is the removed-tool case.
-#                 B. LIVE repo-targeted links that are not expected, but ONLY
-#                    under an expected parent dir. Scoped this way so a live
-#                    link legitimately owned by another installer (e.g.
-#                    ~/.config/git/config) is never misjudged as an orphan.
+#                    always an orphan -- the source it pointed at is gone.
+#                    (readlink -f returns empty for these, which is why a
+#                    resolved-only gate misses them.) The removed-tool case.
+#                 B. LIVE repo-targeted links that are not registered, but ONLY
+#                    under a registered link's parent dir. Scoped this way so a
+#                    live link legitimately owned by another installer is never
+#                    misjudged as an orphan.
 # Depends on:   readlink, dirname, find, sort (macOS base tools).
 # Side effects: none -- read-only; emits orphan paths to stdout.
 # =============================================================================

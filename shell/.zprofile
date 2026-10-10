@@ -3,17 +3,16 @@
 # =============================================================================
 # shell/.zprofile -- zsh login-shell initialization
 #
-# Purpose:      Load Homebrew shellenv; conditionally configure SSH_AUTH_SOCK
-#               to the 1Password agent socket (manifest-driven via
-#               features.one-password-ssh).
-# Depends on:   brew (at $HOMEBREW_PREFIX/bin/brew); resolved.json (read
-#               via jq for the one-password-ssh feature gate); .zshenv
-#               for XDG_STATE_HOME.
+# Purpose:      Load Homebrew shellenv, then the login-shell fragments the
+#               switch linked into $XDG_STATE_HOME/dotfiles/env.d/ (the
+#               1Password agent socket when that app is on).
+# Depends on:   brew (at $HOMEBREW_PREFIX/bin/brew); .zshenv for
+#               XDG_STATE_HOME; $XDG_STATE_HOME/dotfiles/env.d/*.zsh.
 # Side effects: evals `brew shellenv` (PATH/MANPATH/INFOPATH/HOMEBREW_* exports);
-#               may export SSH_AUTH_SOCK to the 1Password agent socket.
+#               whatever the fragments export (SSH_AUTH_SOCK).
 # =============================================================================
 
-# Darwin only: every machine in manifests/machines/ sets machine.os = "darwin".
+# Darwin only: every machine file is a Mac (docs/DECISIONS.md).
 # A Linux machine needs a linuxbrew branch here.
 if [[ "$(uname -m)" == "arm64" ]]; then
     DIRECTORY="/opt/homebrew/bin/brew"

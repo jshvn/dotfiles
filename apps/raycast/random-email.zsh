@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # =============================================================================
-# configs/raycast/random-email.zsh -- Raycast script command: random email
+# apps/raycast/random-email.zsh -- Raycast script command: random email
 #
 # Purpose:      Build `<prefix>.<8 random [a-z0-9]>@jgrid.net` from the prefix
 #               typed in Raycast, copy it to the clipboard, and show it as a

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tasks/tests/negative.sh -- the resolver rules, proven by breaking them
+# tasks/tests/negative.sh -- the declaration rules, proven by breaking them
 #
 # Purpose:      Mutate a copy of profiles/personal.nix three ways (an app left
 #               unaccounted, a cask the registry already provides, a bundled

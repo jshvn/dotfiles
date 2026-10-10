@@ -17,7 +17,7 @@
 
 set -euo pipefail
 
-: "${DOTFILEDIR:?DOTFILEDIR must be set (run via task test:links-audit)}"
+: "${DOTFILEDIR:?DOTFILEDIR must be set (run via task test)}"
 
 # shellcheck source=tasks/messages.zsh
 source "${DOTFILEDIR}/tasks/messages.zsh"
@@ -34,17 +34,17 @@ BASE="$(cd "$BASE" && pwd -P)"
 
 repo="${BASE}/repo"
 cfg="${BASE}/config"
-mkdir -p "${repo}/configs/live" "${cfg}/glow" "${cfg}/git" "${cfg}/keep"
-echo x > "${repo}/configs/live/keep.txt"   # real target; configs/gone/* never created
+mkdir -p "${repo}/apps/live" "${cfg}/glow" "${cfg}/git" "${cfg}/keep"
+echo x > "${repo}/apps/live/keep.txt"   # real target; apps/gone/* never created
 
 # Orphans we expect to be flagged.
-ln -s "${repo}/configs/gone/dead.toml" "${cfg}/glow/dead.toml"    # pass A: dangling, repo-targeted
-ln -s "${repo}/configs/live/keep.txt" "${cfg}/keep/sibling.txt"   # pass B: live, repo, unexpected, under expected parent
+ln -s "${repo}/apps/gone/dead.toml" "${cfg}/glow/dead.toml"    # pass A: dangling, repo-targeted
+ln -s "${repo}/apps/live/keep.txt" "${cfg}/keep/sibling.txt"   # pass B: live, repo, unexpected, under expected parent
 # Non-orphans we expect to be ignored.
-ln -s "${repo}/configs/live/keep.txt" "${cfg}/git/config"         # live, repo, unexpected, but NOT under an expected parent (identity case)
+ln -s "${repo}/apps/live/keep.txt" "${cfg}/git/config"         # live, repo, unexpected, but NOT under an expected parent (identity case)
 ln -s /etc/hosts "${cfg}/control.conf"                            # live, non-repo
 ln -s "${BASE}/nowhere/x" "${cfg}/dead-external.conf"             # dangling, non-repo
-ln -s "${repo}/configs/live/keep.txt" "${cfg}/keep/expected.txt"  # repo-targeted but EXPECTED
+ln -s "${repo}/apps/live/keep.txt" "${cfg}/keep/expected.txt"  # repo-targeted but EXPECTED
 
 OUT="$(zsh "$SCRIPT" "$repo" "$cfg" <<< "${cfg}/keep/expected.txt")"
 

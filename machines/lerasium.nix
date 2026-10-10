@@ -1,5 +1,4 @@
-# lerasium, the personal MacBook Pro: the personal profile plus the names this machine answers to
-# (was the machine-local hostname state file).
+# lerasium, the personal MacBook Pro: the personal profile plus the names this machine answers to.
 {
   imports = [ ../profiles/personal.nix ];
   networking = {

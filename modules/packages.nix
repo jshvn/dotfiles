@@ -1,5 +1,5 @@
-# The package tiers (was manifests/base.toml, [<flag>.packages] and a machine's [packages]) and
-# the redundancy rule: a profile may not list what base or an enabled app already provides.
+# The package tiers (base, what an enabled app provides, a profile's free choices) and the
+# redundancy rule: a profile may not list what base or an enabled app already provides.
 # Everything is Homebrew, rolling. Taps are derived from tap-qualified names, never listed.
 { config, lib, ... }:
 let

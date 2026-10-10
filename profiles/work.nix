@@ -1,4 +1,5 @@
-# The work MacBook (was manifests/machines/work.toml).
+# The work MacBook. No machine file imports it yet; the flake check evaluates it under a
+# synthetic machine, so it cannot rot.
 { ... }:
 {
   dotfiles = {

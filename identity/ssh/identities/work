@@ -1,9 +1,8 @@
 # identity/ssh/identities/work -- work SSH identity.
 #
-# Symlinked as ~/.ssh/identities/active when identity.ssh = "work".
+# Symlinked as ~/.ssh/identities/active when dotfiles.identity = "work".
 # Included via the Include directive in identity/ssh/config -> ~/.ssh/config.
 # Side effects: routes all SSH connections through the 1Password agent.
-# capability: one-password-ssh (a machine using this identity must enable features.one-password-ssh)
 
 # Use 1Password SSH agent for all work connections
 Host *

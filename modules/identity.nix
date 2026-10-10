@@ -1,4 +1,4 @@
-# Identity selection (was machine.identity plus the `# capability:` sentinels): which git and
+# Identity selection: which git and
 # ssh overlay the machine links. Both real overlays route through the 1Password agent and sign
 # with op-ssh-sign, so a real identity turns the 1Password app on; "none" turns it off.
 { config, lib, ... }:

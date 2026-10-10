@@ -4,8 +4,7 @@
 # tasks/tests/shell-startup.zsh -- smoke tests for zsh startup files
 #
 # Purpose:      Assert the interactive shell actually works: parse-check the
-#               five startup files (lint:syntax only covers *.zsh, so .zshrc
-#               et al. are otherwise never checked), verify a login
+#               five startup files, verify a login
 #               interactive shell exits 0, and assert the plugin-layer
 #               markers theme.zsh depends on (prompt_subst, git_prompt_info/
 #               status, `l` alias, extract, syntax highlighting,
@@ -20,7 +19,7 @@
 
 set -euo pipefail
 
-: "${DOTFILEDIR:?DOTFILEDIR must be set (run via task test:shell-startup)}"
+: "${DOTFILEDIR:?DOTFILEDIR must be set (run via task test)}"
 
 # shellcheck source=tasks/messages.zsh
 source "${DOTFILEDIR}/tasks/messages.zsh"

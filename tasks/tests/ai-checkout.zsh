@@ -14,7 +14,7 @@
 
 set -euo pipefail
 
-: "${DOTFILEDIR:?DOTFILEDIR must be set (run via task test:ai-checkout)}"
+: "${DOTFILEDIR:?DOTFILEDIR must be set (run via task test)}"
 source "${DOTFILEDIR}/tasks/messages.zsh"
 
 typeset -i failures=0

@@ -1,4 +1,4 @@
-# Josh's personal MacBooks (was manifests/machines/personal.toml): the identity, every System
+# Josh's personal MacBooks: the identity, every System
 # Settings concern, every optional app, the shell and pipeline knobs, and the free package
 # choices. A machine file imports this and adds the names it answers to.
 { ... }:

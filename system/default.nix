@@ -1,4 +1,4 @@
-# macOS settings by System Settings concern (was os/defaults/<concern>.zsh). Each file declares
+# macOS settings by System Settings concern. Each file declares
 # its own dotfiles.system.<concern> switch, with no default: a profile sets every one true or
 # false, or evaluation fails naming the concern. A typed nix-darwin option where one exists;
 # CustomUserPreferences for a plain key it lacks; an activation script only where `defaults

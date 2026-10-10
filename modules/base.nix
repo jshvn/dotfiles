@@ -1,4 +1,4 @@
-# The unconditional tier (was manifests/base.toml): the bootstrap toolchain and what shell/
+# The unconditional tier: the bootstrap toolchain and what shell/
 # breaks without. A base tool with a config file is an app directory instead (eza, tlrc).
 { ... }:
 {

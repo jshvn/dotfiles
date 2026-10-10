@@ -9,8 +9,8 @@
 # One overlay may back several directories (personal covers ~/git/personal/
 # and the katoptra organization at ~/git/katoptra/).
 #
-# Schema reference: docs/MANIFEST.md "Adding a new identity".
-# Callers: taskfiles/identity.yml via _:safe-link to ~/.config/git/config
+# Adding an identity: identity/README.md.
+# Linked to ~/.config/git/config by modules/identity.nix (dotfiles.links).
 
 [user]
     name = Josh Vaughen

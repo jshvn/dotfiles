@@ -1,5 +1,5 @@
-# The pipeline's own knob (was repo-dev-toolchain). The checkout is always fast-forwarded by
-# `task install` before a switch; that is no longer a per-machine choice.
+# The pipeline's own knob. The checkout is always fast-forwarded by `task install` before a
+# switch; that is not a per-machine choice.
 { config, lib, ... }:
 {
   options.dotfiles.repo.devToolchain = lib.mkOption {

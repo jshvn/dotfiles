@@ -22,7 +22,7 @@
 
 set -euo pipefail
 
-: "${DOTFILEDIR:?DOTFILEDIR must be set (run via task repo:sync)}"
+: "${DOTFILEDIR:?DOTFILEDIR must be set (run via task install)}"
 : "${REPO_NAME:?REPO_NAME must be set (owner/repo label for messages)}"
 
 # Source the messaging library from this script's own directory (${0:A:h}),
@@ -48,9 +48,9 @@ report_release() {
   fi
 }
 
-# Every guard below is warn-and-skip with `exit 0`: the `update` alias chains
-# `task repo:sync && task install`, so a skipped/failed pull must still let
-# install converge local state (including offline).
+# Every guard below is warn-and-skip with `exit 0`: `task install` runs this
+# before the switch, so a skipped/failed pull must still let the switch
+# converge local state (including offline).
 
 # 1. Is it a git repo at all? (Covers "don't already have the repo"; the
 #    initial clone is a manual `git clone` per README, not the update path.)
