@@ -150,7 +150,7 @@ tasks:
       - |
         out=$(mktemp); trap 'rm -f "$out"' EXIT
         hyperfine --warmup 1 --runs 5 --export-json "$out" 'zsh -lic exit' >/dev/null 2>&1
-        ms=$(jq -r '.results[0].mean * 1000 | floor' "$out")
+        ms=$(jq -r '.results[0].summary.time_wall_clock.mean * 1000 | floor' "$out")
         echo "cold shell start: ${ms} ms (budget {{.COLD_START_BUDGET}} ms)"
         test "$ms" -le {{.COLD_START_BUDGET}}
 
