@@ -4,8 +4,8 @@
 
 Per-machine prose the Nix files cannot express: purpose, hardware narrative, role, special
 handling. Declarative state lives in `machines/<name>.nix` (the names a laptop answers to,
-its platform, the profile it imports) and `profiles/<name>.nix` (identity, every System
-Settings concern, every optional app, the shell and pipeline knobs, free packages) and is
+its platform, the profile it imports) and `profiles/<name>/` (every System Settings concern,
+every optional app, the shell and pipeline knobs, free packages, and the identity files) and is
 authoritative; `task show` prints the evaluated result for the selected machine.
 
 Nothing here enumerates packages or switches. That duplication drifts, and the profile already
@@ -31,9 +31,10 @@ answers it in one file.
 ## work (profile only)
 
 - Purpose: the work-issued MacBook carrying the work git/ssh identity.
-- Status: no machine file yet. `profiles/work.nix` is kept current and the flake check
+- Status: no machine file yet. `profiles/work/` is kept current and the flake check
   evaluates it under a synthetic machine, so it cannot rot. When the laptop comes into scope,
-  add `machines/<its-name>.nix` importing it.
+  fill in the work email (`profiles/work/git`) and add `profiles/work/key.pub` and the key's
+  item in `agent.toml`, then add `machines/<its-name>.nix` importing it.
 - Role: primary work development machine; the toolchain is a subset of personal's, without
   the jgrid.net aliases or the `*.jgrid.net` SSH host blocks.
 

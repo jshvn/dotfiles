@@ -3,9 +3,9 @@
 ## What This Is
 
 macOS laptops declared as one nix-darwin configuration each. `machines/<name>.nix` names the
-laptop and imports a profile (lerasium and harmonium import `profiles/personal.nix`); the
-profile sets every option; `modules/`, `system/` and `apps/` declare the options and turn them
-into nix-darwin and home-manager configuration. Nix evaluates and activates; Homebrew installs
+laptop and imports a profile (lerasium and harmonium import `profiles/personal/`); the
+profile sets every option and carries the identity; `modules/`, `system/` and `apps/` declare
+the options and turn them into nix-darwin and home-manager configuration. Nix evaluates and activates; Homebrew installs
 every package; the shell is the repo's own zsh, linked straight from the checkout
 (out-of-store symlinks) so an edit is live without a switch.
 
@@ -16,13 +16,12 @@ activate (`task install`: fast-forward, `darwin-rebuild switch`, antidote bundle
 | Concept | Location |
 |---------|----------|
 | Machine (hostname, platform, profile import) | `machines/<name>.nix` |
-| Profile (every switch, identity, free packages) | `profiles/<name>.nix` |
-| Plumbing (user, link registry, packages, identity, shell, homebrew) | `modules/` |
+| Profile: every switch, free packages (`default.nix`) and the identity (git overlay, ssh host blocks, public key, 1Password agent config) | `profiles/<name>/` |
+| Plumbing (user, profile, link registry, packages, shell, homebrew) | `modules/` |
 | macOS settings, one file per System Settings concern | `system/` |
 | Applications, one directory each | `apps/` |
 | What the Taskfile runs, and the tests | `tasks/`, `tasks/tests/` |
 | Shell startup files, theme, functions, shell-level aliases, MOTD | `shell/` |
-| Git and SSH identities, public keys | `identity/` |
 | Active machine name (machine-local) | `$XDG_STATE_HOME/dotfiles/machine` |
 | Alias and login-env gates (machine-local, made by the switch) | `$XDG_STATE_HOME/dotfiles/aliases.d/`, `env.d/` |
 
@@ -44,11 +43,16 @@ What the file system will not tell you:
   `task check`, or a new file is silently absent from the evaluation.
 - Every optional option has no default (`system.<concern>`, `apps.<name>.enable`,
   `shell.jgrid-net`, `repo.devToolchain`, `apps.raycast.freeCmdSpace`). Adding one means
-  setting it in every profile, `work.nix` included, or `task check` fails naming it.
+  setting it in every profile, `profiles/work/` included, or `task check` fails naming it.
 - A profile may not list a formula or cask base or an enabled app provides, nor an extension
   VS Code bundles: an assertion fails. Taps are derived from tap-qualified names; the one bare
   tap is in `modules/base.nix`.
-- `dotfiles.apps."1password".enable` is readOnly: the identity sets it.
+- A profile directory holds `default.nix` and the four identity files the git, ssh and
+  1password base apps link (`git`, `ssh`, `key.pub`, `agent.toml`); `profiles/.gitignore`
+  ignores anything else and `task validate` crosses on it. `apps/git/config` includes the
+  profile's overlay with `includeIf "gitdir/i:~/git/"`, never a plain include: jshvn/ai's
+  git-identity hook reads the expected commit email from includeIf blocks and passes every
+  commit when it finds none.
 - Links only through `dotfiles.links` (home path to checkout path). Shell integration only
   through `dotfiles.shell.aliases` and `dotfiles.shell.env`: the switch links an enabled
   owner's file into `aliases.d/` or `env.d/`, and the startup files source whatever is there.
@@ -72,7 +76,7 @@ What the file system will not tell you:
   table.
 - This repo declares three `/etc` files: `/etc/zshenv` (the ZDOTDIR line), `/etc/shells`
   (Homebrew zsh, through `environment.shells` in `modules/shell.nix`) and
-  `/etc/ssh/ssh_known_hosts` (GitHub's host keys, `modules/identity.nix`); nix-darwin also writes
+  `/etc/ssh/ssh_known_hosts` (GitHub's host keys, `apps/ssh/`); nix-darwin also writes
   `/etc/nix/nix.conf` and others of its own. nix-darwin refuses any `/etc` file it did not
   write ("Unexpected files in /etc"): rename it `.before-nix-darwin`, as the README's First
   switch does for `/etc/zshenv` and `/etc/shells`. `programs.zsh` and `programs.bash` stay
@@ -101,9 +105,10 @@ What the file system will not tell you:
   `# lint-allow: hardcoded-prefix` line. Scripts get the repo root as `DOTFILEDIR`; the
   Taskfile uses `{{.ROOT_DIR}}`.
 - Machine identity is explicit (`task setup -- <name>`); never infer from hostname.
-- One concept per file, flat directories: one alias topic / function / machine / profile /
-  concern per file. The nestings that exist are `shell/functions/helpers/` (private
-  primitives), `system/finder/` (a concern with shell integration) and every `apps/<name>/`.
+- One concept per file, flat directories: one alias topic / function / machine / concern per
+  file. The nestings that exist are `shell/functions/helpers/` (private primitives),
+  `system/finder/` (a concern with shell integration), every `apps/<name>/` and every
+  `profiles/<name>/`.
 - Tests live at `tasks/tests/`; `task test` is the single aggregator. The repo tree holds
   source only; no generated file is tracked.
 - AI tooling config lives in `jshvn/ai` (`~/Git/personal/ai`): `apps.claude-code` clones it at
@@ -111,4 +116,4 @@ What the file system will not tell you:
   with `CLAUDE_CONFIG_DIR` passed explicitly (the claude CLI reads it; activation has no login
   environment); `task validate` runs its `task validate`. Dotfiles reads nothing else inside it.
 - No AI attribution and no emojis anywhere, markdown included (hooks enforce both). Public
-  keys only under `identity/ssh/keys/`.
+  keys only as `profiles/<name>/key.pub`.

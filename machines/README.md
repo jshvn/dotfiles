@@ -5,7 +5,7 @@ names the laptop answers to and its platform. Everything else is the profile it 
 
 ```nix
 {
-  imports = [ ../profiles/personal.nix ];
+  imports = [ ../profiles/personal ];
   networking = {
     hostName = "lerasium";
     computerName = "lerasium";

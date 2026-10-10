@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # tasks/tests/negative.sh -- the declaration rules, proven by breaking them
 #
-# Purpose:      Mutate a copy of profiles/personal.nix four ways (an app left
+# Purpose:      Mutate a copy of profiles/personal/default.nix five ways (an app left
 #               unaccounted, a System Settings concern left unaccounted, a
 #               cask base or an enabled app already provides, a bundled VS Code
-#               extension listed again) and require each evaluation of
+#               extension listed again, a profile naming no profiles/
+#               directory) and require each evaluation of
 #               the lerasium machine to fail with the expected message. Runs
 #               inside the nix image (`task test`), with the repo at $SRC.
 # Depends on:   nix (flakes); bash; SRC env var (default /work).
@@ -17,10 +18,10 @@ failed=0
 probe() { # probe NAME OLD NEW EXPECTED-SUBSTRING
   local name="$1" old="$2" new="$3" want="$4" f c out
   rm -rf "/tmp/$name" && cp -r "$SRC" "/tmp/$name"
-  f="/tmp/$name/profiles/personal.nix"
+  f="/tmp/$name/profiles/personal/default.nix"
   c=$(cat "$f")
   if [ "${c//"$old"/$new}" = "$c" ]; then
-    echo "  x $name: mutation '$old' matched nothing in profiles/personal.nix"
+    echo "  x $name: mutation '$old' matched nothing in profiles/personal/default.nix"
     failed=1
     return
   fi
@@ -39,5 +40,6 @@ probe unaccounted-app 'herdr.enable = true;' '# herdr omitted' "dotfiles.apps.he
 probe unaccounted-concern 'dock = true;' '# dock omitted' "dotfiles.system.dock' was accessed but has no value"
 probe redundant-cask '"1password-cli"' '"1password-cli" "raycast"' 'packages.casks lists what base or an enabled app already provides: raycast'
 probe vscode-overlap 'extensions = [ "golang.go" ];' 'extensions = [ "golang.go" "biomejs.biome" ];' 'apps.vscode.extensions lists what the app already bundles: biomejs.biome'
+probe unknown-profile 'profile = "personal";' 'profile = "nobody";' "dotfiles.profile' is not of type"
 
 exit $failed

@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # =============================================================================
-# identity/ssh/cloudflared.zsh -- ProxyCommand wrapper for cloudflared tunnels
+# apps/ssh/cloudflared.zsh -- ProxyCommand wrapper for cloudflared tunnels
 #
 # Purpose:      Locate cloudflared on the Homebrew prefix and exec it,
 #               invoked by SSH for *-*.jgrid.net / *.plex.me Host blocks.

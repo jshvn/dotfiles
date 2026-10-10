@@ -1,6 +1,7 @@
-# What every laptop shares: the one user, the checkout the live-edited files link from, the link
-# registry, Nix's own housekeeping, and the module tree. Nix installs nothing of its own; it
-# evaluates the declaration and activates it. Homebrew installs everything.
+# What every laptop shares: the one user, the checkout the live-edited files link from, the
+# profile the machine imports, the link registry, Nix's own housekeeping, and the module tree. Nix
+# installs nothing of its own; it evaluates the declaration and activates it. Homebrew installs
+# everything.
 { config, lib, ... }:
 let
   cfg = config.dotfiles;
@@ -10,7 +11,6 @@ in
     ./packages.nix
     ./base.nix
     ./homebrew.nix
-    ./identity.nix
     ./shell.nix
     ./repo.nix
     ../system
@@ -21,7 +21,13 @@ in
     checkout = lib.mkOption {
       type = lib.types.str;
       default = "/Users/josh/Git/personal/dotfiles";
-      description = "the checkout that shell/, identity/, apps/ and system/ files are linked from, outside the store";
+      description = "the checkout that shell/, profiles/, apps/ and system/ files are linked from, outside the store";
+    };
+    profile = lib.mkOption {
+      type = lib.types.enum (
+        builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ../profiles))
+      );
+      description = "the profiles/<name>/ directory the machine imports, named by the profile itself; the git, ssh and 1password apps link its git, ssh, key.pub and agent.toml";
     };
     links = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;

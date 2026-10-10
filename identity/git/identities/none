@@ -1,9 +1,0 @@
-# identity/git/identities/none -- no-op git identity.
-#
-# Purpose: the git overlay for dotfiles.identity = "none", so every identity
-# value has one overlay file. It sets no git config keys; it is comment-only.
-#
-# The identities directory is linked whole to ~/.config/git/identities, so
-# this file is present on every machine, but no [includeIf] block in
-# identity/git/config names it and git never loads it. task validate reads
-# user.email from an overlay only for a real identity.

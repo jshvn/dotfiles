@@ -6,7 +6,7 @@ casks, hostname) and pipes it as JSON to the scripts here.
 
 | Script | Task | Does |
 |--------|------|------|
-| `validate.zsh` | `task validate` | reads the whole declaration back from the live system: shell plumbing, hostname, every link, identity (keys, git email, agent socket, `ssh-add -L`), `brew bundle check` and every cask's app artifact, the jshvn/ai checkout, every defaults key, the display preset, the Spotlight hotkey, the application firewall. Exits 1 on any cross. |
+| `validate.zsh` | `task validate` | reads the whole declaration back from the live system: shell plumbing, hostname, every link, the profile's identity (stray files in `profiles/`, git email, agent socket, `ssh-add -L`), `brew bundle check` and every cask's app artifact, the jshvn/ai checkout, every defaults key, the display preset, the Spotlight hotkey, the application firewall. Exits 1 on any cross. |
 | `audit.zsh` | `task audit [-- --strict]` | the other direction: what is on the machine beyond the declaration (brew bundle cleanup dry run, taps and trust grants, orphan links into the checkout) and `brew vulns`. Findings warn; `--strict` exits 1. |
 | `lint.zsh` | `task lint` | every `.zsh` parses; every executable one sets `-euo pipefail`; every one carries the Purpose / Depends on / Side effects banner; no hardcoded Homebrew prefix outside a `# lint-allow: hardcoded-prefix` line. The Taskfile adds `nix fmt -- --ci` in the image; `task fmt` applies it. |
 | `install.zsh` | `task install` | builds the selected machine; on a Mac's first switch clears the way (`clear-links.zsh`, then `/etc/zshenv` and `/etc/shells` aside); switches; then lets brew uninstall what is installed beyond the declaration only after asking (`-- --yes` answers yes) |

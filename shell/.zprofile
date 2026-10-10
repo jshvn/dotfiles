@@ -5,7 +5,7 @@
 #
 # Purpose:      Load Homebrew shellenv, then the login-shell fragments the
 #               switch linked into $XDG_STATE_HOME/dotfiles/env.d/ (the
-#               1Password agent socket when that app is on).
+#               1Password agent socket).
 # Depends on:   brew (at $HOMEBREW_PREFIX/bin/brew); .zshenv for
 #               XDG_STATE_HOME; $XDG_STATE_HOME/dotfiles/env.d/*.zsh.
 # Side effects: evals `brew shellenv` (PATH/MANPATH/INFOPATH/HOMEBREW_* exports);
@@ -27,8 +27,8 @@ else
     echo "warn: brew not found at $DIRECTORY -- run bootstrap" >&2
 fi
 
-# Login-shell fragments linked into env.d by the switch (the 1Password agent socket when
-# that app is on). .zprofile runs before .zshrc, so nothing from functions/ exists yet.
+# Login-shell fragments linked into env.d by the switch (the 1Password agent socket).
+# .zprofile runs before .zshrc, so nothing from functions/ exists yet.
 for file in "${XDG_STATE_HOME}/dotfiles/env.d/"*.zsh(-.N); do
     source "$file"
 done

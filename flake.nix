@@ -31,7 +31,10 @@
       # machines/<name>.nix is the whole list: one file per physical laptop, chosen explicitly
       # at switch time (`darwin-rebuild switch --flake .#lerasium`), never inferred from the hostname
       names = nixFiles ./machines;
-      profiles = nixFiles ./profiles;
+      # profiles/<name>/ is one directory per profile: its default.nix and the files it links
+      profiles = builtins.attrNames (
+        lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./profiles)
+      );
       mkDarwin =
         name:
         nix-darwin.lib.darwinSystem {
@@ -49,7 +52,7 @@
           modules = [
             home-manager.darwinModules.home-manager
             ./modules
-            ./profiles/${name}.nix
+            ./profiles/${name}
             {
               networking.hostName = "profile-${name}";
               nixpkgs.hostPlatform = "aarch64-darwin";

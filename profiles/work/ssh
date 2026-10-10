@@ -1,0 +1,6 @@
+# profiles/work/ssh -- the work profile's SSH host blocks.
+#
+# Linked to ~/.ssh/profile and included by apps/ssh/config, which routes every
+# connection through the 1Password agent.
+
+# Add work-specific host configurations below

@@ -1,0 +1,25 @@
+# profiles/personal/ssh -- the personal profile's SSH host blocks.
+#
+# Linked to ~/.ssh/profile and included by apps/ssh/config, which routes every
+# connection through the 1Password agent.
+# Side effects: pins the profile's key for jgrid.net and plex.me hosts; applies
+#   the cloudflared ProxyCommand for jgrid.net tunnel hostnames and plex.me.
+# Paths: IdentityFile is the profile's key.pub (~/.ssh/profile.pub); the
+#   ProxyCommand is apps/ssh/cloudflared.zsh (~/.ssh/cloudflared.zsh).
+
+# JGRID mesh addresses
+Host *.jgrid.net
+    IdentityFile ~/.ssh/profile.pub
+    IdentitiesOnly yes
+    User josh
+    RequestTTY yes
+
+# JGRID tunnel addresses
+Host *-*.jgrid.net
+    ProxyCommand ~/.ssh/cloudflared.zsh access ssh --hostname %h
+
+Host *.plex.me
+    IdentityFile ~/.ssh/profile.pub
+    IdentitiesOnly yes
+    User josh
+    ProxyCommand ~/.ssh/cloudflared.zsh access ssh --hostname %h

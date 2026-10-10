@@ -1,9 +1,10 @@
-# The work MacBook. No machine file imports it yet; the flake check evaluates it under a
-# synthetic machine, so it cannot rot.
+# Josh's personal MacBooks: every System Settings concern, every optional app, the shell and
+# pipeline knobs, and the free package choices. The identity is the files beside this one. A
+# machine file imports this directory and adds the names it answers to.
 { ... }:
 {
   dotfiles = {
-    identity = "work";
+    profile = "personal";
     system = {
       dock = true;
       finder = true;
@@ -17,22 +18,26 @@
     apps = {
       raycast = {
         enable = true;
-        freeCmdSpace = false;
+        freeCmdSpace = true;
       };
       ghostty.enable = true;
-      herdr.enable = false;
-      vscode.enable = true;
+      herdr.enable = true;
+      vscode = {
+        enable = true;
+        extensions = [ "golang.go" ];
+      };
       claude-code = {
         enable = true;
-        profile = "work";
-        ref = "2026.09.23";
+        profile = "personal";
+        ref = "main";
       };
       conda.enable = true;
-      dust.enable = false;
+      dust.enable = true;
     };
-    shell.jgrid-net = false;
+    shell.jgrid-net = true;
     repo.devToolchain = true;
     packages = {
+      # container: Apple's runtime. hashicorp/tap/terraform: BSL, from HashiCorp's own tap.
       formulae = [
         "bat"
         "bottom"
@@ -42,8 +47,11 @@
         "fd"
         "gh"
         "git-crypt"
+        "go"
+        "hashicorp/tap/terraform"
         "htop"
         "hugo"
+        "node"
         "poppler"
         "uv"
         "wget"
@@ -53,12 +61,19 @@
         "alcove"
         "appcleaner"
         "cardhop"
+        "cloudflare-warp"
+        "discord"
+        "dropbox"
         "fantastical"
         "firefox"
         "gitfox"
         "microsoft-excel"
         "microsoft-powerpoint"
         "microsoft-word"
+        "nvidia-geforce-now"
+        "proton-drive"
+        "proton-mail"
+        "protonvpn"
         "slack"
         "spotify"
         "standard-notes"

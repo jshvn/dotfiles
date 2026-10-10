@@ -7,7 +7,7 @@
 #               evaluated declaration (JSON on stdin, produced by `task
 #               validate` via nix eval) and verifies, domain by domain, that
 #               the machine matches it: shell plumbing, hostname, every link,
-#               the identity (keys, git email, ssh agent), every Homebrew
+#               the profile identity (git email, ssh agent), every Homebrew
 #               package and cask artifact, the jshvn/ai checkout, and every
 #               macOS default plus the display preset, the Spotlight hotkey
 #               and the application firewall.
@@ -35,7 +35,7 @@ fi
 j() { jq -r "$1" <<< "$declared"; }
 
 typeset -r CHECKOUT="$(j .dotfiles.checkout)"
-typeset -r IDENTITY="$(j .dotfiles.identity)"
+typeset -r PROFILE="$(j .dotfiles.profile)"
 typeset -r STATE="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
 failed=0
 fail() {
@@ -99,36 +99,41 @@ while IFS=$'\t' read -r target source; do
   fi
 done < <(j '.dotfiles.links | to_entries[] | [.key, .value] | @tsv')
 
-# --- identity ----------------------------------------------------------------
-info "identity ($IDENTITY)"
-for f in "$CHECKOUT"/identity/ssh/keys/*(.N); do
-  if [[ "$f" == *.pub ]]; then check "keys/: ${f:t} is public"; else fail "keys/: ${f:t} is not a .pub file"; fi
-done
-if [[ "$IDENTITY" != none ]]; then
-  expected_email=$(git config -f "$CHECKOUT/identity/git/identities/$IDENTITY" user.email 2>/dev/null || true)
-  dotgit=$(find "$HOME/git/$IDENTITY" -maxdepth 2 -name .git -type d -print -quit 2>/dev/null || true)
-  if [[ -z "$expected_email" || -z "$dotgit" ]]; then
-    info "git user.email: nothing to probe under ~/git/$IDENTITY, skipped"
+# --- profile identity: stray files, git email, the 1Password agent ------------
+info "profile ($PROFILE)"
+typeset -r PROFILE_DIR="profiles/$PROFILE"
+# profiles/.gitignore allows a profile directory exactly five files; anything else it ignores
+# (a private key, say) is a cross. Finder's .DS_Store is not.
+stray=$(git -C "$CHECKOUT" ls-files --others --ignored --exclude-standard -- profiles | grep -v '/\.DS_Store$' || true)
+if [[ -z "$stray" ]]; then
+  check "profiles/: no file beyond the five a profile holds"
+else
+  for f in ${(f)stray}; do fail "$f: not a profile file (profiles/.gitignore); a private key never belongs here"; done
+fi
+expected_email=$(git config -f "$CHECKOUT/$PROFILE_DIR/git" user.email 2>/dev/null || true)
+if [[ -z "$expected_email" ]]; then
+  warn "$PROFILE_DIR/git sets no user.email, git email check skipped"
+else
+  actual_email=$(git -C "$CHECKOUT" config user.email 2>/dev/null || true)
+  if [[ "$actual_email" == "$expected_email" ]]; then
+    check "git user.email = $expected_email (this checkout, through ~/.config/git/profile)"
   else
-    actual_email=$(git -C "${dotgit:h}" config user.email 2>/dev/null || true)
-    if [[ "$actual_email" == "$expected_email" ]]; then check "git user.email = $expected_email"; else fail "git user.email: expected '$expected_email', got '$actual_email'"; fi
+    fail "git user.email in this checkout: expected '$expected_email', got '$actual_email'"
   fi
 fi
-if [[ "$(j '.dotfiles.apps."1password".enable')" == true ]]; then
-  if [[ "${SSH_AUTH_SOCK:-}" == *2BUA8C4S2C.com.1password* ]]; then
-    check "SSH_AUTH_SOCK is the 1Password agent (env.d)"
-  else
-    fail "SSH_AUTH_SOCK is '${SSH_AUTH_SOCK:-}', expected the 1Password agent socket (env.d/1password.zsh)"
-  fi
-  pub="$CHECKOUT/identity/ssh/keys/$IDENTITY.pub"
-  body=$(awk '$1 ~ /^(ssh-|ecdsa-|sk-)/ {print $2; exit}' "$pub" 2>/dev/null || true)
-  if [[ -z "$body" ]]; then
-    warn "no real public key at ${pub#$CHECKOUT/}, ssh-add check skipped"
-  elif ssh-add -L 2>/dev/null | awk '$1 ~ /^(ssh-|ecdsa-|sk-)/ {print $2}' | grep -qF "$body"; then
-    check "ssh-add -L offers $IDENTITY.pub"
-  else
-    fail "ssh-add -L does not offer $IDENTITY.pub"
-  fi
+if [[ "${SSH_AUTH_SOCK:-}" == *2BUA8C4S2C.com.1password* ]]; then
+  check "SSH_AUTH_SOCK is the 1Password agent (env.d)"
+else
+  fail "SSH_AUTH_SOCK is '${SSH_AUTH_SOCK:-}', expected the 1Password agent socket (env.d/1password.zsh)"
+fi
+pub="$CHECKOUT/$PROFILE_DIR/key.pub"
+body=$(awk '$1 ~ /^(ssh-|ecdsa-|sk-)/ {print $2; exit}' "$pub" 2>/dev/null || true)
+if [[ -z "$body" ]]; then
+  warn "no real public key at $PROFILE_DIR/key.pub, ssh-add check skipped"
+elif ssh-add -L 2>/dev/null | awk '$1 ~ /^(ssh-|ecdsa-|sk-)/ {print $2}' | grep -qF "$body"; then
+  check "ssh-add -L offers $PROFILE_DIR/key.pub"
+else
+  fail "ssh-add -L does not offer $PROFILE_DIR/key.pub"
 fi
 
 # --- packages: brew bundle check, then every cask's app artifact ------------

@@ -6,11 +6,10 @@ home-manager configuration. Nothing here is named by a profile directly; a profi
 
 | File | Owns |
 |------|------|
-| `default.nix` | the imports; `dotfiles.checkout` (where every link points) and `dotfiles.links` (the one link registry, installed by home-manager as out-of-store symlinks); the one user and its login shell; Nix's own housekeeping (flakes on, weekly GC) |
+| `default.nix` | the imports; `dotfiles.checkout` (where every link points), `dotfiles.profile` (an enum of the directories under `profiles/`) and `dotfiles.links` (the one link registry, installed by home-manager as out-of-store symlinks); the one user and its login shell; Nix's own housekeeping (flakes on, weekly GC) |
 | `packages.nix` | `dotfiles.packages.*` (a profile's free choices) and `dotfiles.provided.*` (what base and enabled apps contribute); the redundancy assertion; tap derivation; what reaches `homebrew.brews`, `casks`, `masApps`, `taps` |
 | `base.nix` | the unconditional formulae (the bootstrap toolchain and what `shell/` breaks without) and the one bare tap, `homebrew/brew-vulns` |
 | `homebrew.nix` | installing Homebrew itself when it is missing, just before `brew bundle`; `homebrew.onActivation`: update and upgrade on every switch; cleanup stays off, because `task install` uninstalls only after asking |
-| `identity.nix` | `dotfiles.identity` (personal, work, none); the git and ssh links; GitHub's ssh host keys; turns 1Password on for a real identity |
 | `shell.nix` | the login shell's entry in `/etc/shells`, `/etc/zshenv`, the startup-file links, `dotfiles.shell.aliases` and `.env` (what the switch links into `aliases.d/` and `env.d/`), `shell.jgrid-net` |
 | `repo.nix` | `repo.devToolchain` |
 
@@ -18,7 +17,8 @@ Rules that live here and fail evaluation when broken:
 
 - an unaccounted switch: every optional option is declared without a default;
 - a redundant package: `packages.nix` intersects a profile's lists with `provided`;
-- a bundled extension listed again: `apps/vscode/default.nix`.
+- a bundled extension listed again: `apps/vscode/default.nix`;
+- a profile naming no `profiles/` directory: `dotfiles.profile` in `default.nix`.
 
 `tasks/tests/negative.sh` proves each by breaking it.
 

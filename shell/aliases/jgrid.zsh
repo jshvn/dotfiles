@@ -5,10 +5,10 @@
 #
 # Purpose:      Define 22 ssh-jump aliases (one per allomantic metal) that
 #               connect to <metal>-ssh.jgrid.net via the cloudflared
-#               ProxyCommand in the active SSH identity. Linked into
+#               ProxyCommand in the profile's ssh file. Linked into
 #               aliases.d by the switch when dotfiles.shell.jgrid-net is
 #               true; absent otherwise.
-# Depends on:   the cloudflared ProxyCommand in the active SSH identity.
+# Depends on:   the cloudflared ProxyCommand in profiles/personal/ssh.
 # Side effects: defines 22 aliases (steel, iron, ..., raysium).
 # =============================================================================
 

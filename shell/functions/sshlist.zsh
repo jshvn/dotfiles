@@ -3,22 +3,19 @@
 # =============================================================================
 # shell/functions/sshlist.zsh -- enumerate configured SSH host blocks
 #
-# Purpose:      Print Host blocks from identity/ssh/config and from every
-#               file in identity/ssh/identities/, marking which identity
-#               overlay is currently active (symlink at
-#               ~/.ssh/identities/active).
-# Depends on:   $DOTFILEDIR, grep, sed, tput, readlink, basename.
+# Purpose:      Print Host blocks from apps/ssh/config and from every
+#               profile's ssh file (profiles/<name>/ssh), marking the one
+#               this machine links (~/.ssh/profile).
+# Depends on:   $DOTFILEDIR, grep, sed, tput.
 # Side effects: stdout only.
 # =============================================================================
 
-function sshlist() {    # sshlist() lists configured SSH host blocks and the active identity. ex: $ sshlist
-    local main_config="$DOTFILEDIR/identity/ssh/config"
-    local identities_dir="$DOTFILEDIR/identity/ssh/identities"
-    local active_name=""
+function sshlist() {    # sshlist() lists configured SSH host blocks per profile. ex: $ sshlist
+    local main_config="$DOTFILEDIR/apps/ssh/config"
+    local active=""
 
-    if [[ -L "$HOME/.ssh/identities/active" ]]; then
-        active_name=$(basename "$(readlink "$HOME/.ssh/identities/active")")
-    fi
+    # :A follows home-manager's store link through to the checkout file
+    [[ -L "$HOME/.ssh/profile" ]] && active="$HOME/.ssh/profile" && active=${active:A}
 
     echo "$(tput setaf 6)SSH Configurations:$(tput sgr0)"
     echo ""
@@ -29,18 +26,15 @@ function sshlist() {    # sshlist() lists configured SSH host blocks and the act
     fi
     echo ""
 
-    if [[ -d "$identities_dir" ]]; then
-        for f in "$identities_dir"/*; do
-            [[ -f "$f" ]] || continue
-            local name=$(basename "$f")
-            local marker=""
-            [[ "$name" == "$active_name" ]] && marker=" $(tput setaf 2)(active)$(tput sgr0)"
-            echo "$(tput setaf 3)── Identity: ${name}${marker} ──$(tput sgr0)"
-            grep -E "^Host " "$f" 2>/dev/null | sed 's/Host /  /'
-            echo ""
-        done
-    fi
+    local f marker
+    for f in "$DOTFILEDIR"/profiles/*/ssh(.N); do
+        marker=""
+        [[ "${f:A}" == "$active" ]] && marker=" $(tput setaf 2)(active)$(tput sgr0)"
+        echo "$(tput setaf 3)── Profile: ${f:h:t}${marker} ──$(tput sgr0)"
+        grep -E "^Host " "$f" 2>/dev/null | sed 's/Host /  /'
+        echo ""
+    done
 
     echo "$(tput setaf 8)Main config: $main_config$(tput sgr0)"
-    [[ -n "$active_name" ]] && echo "$(tput setaf 8)Active identity: $identities_dir/$active_name$(tput sgr0)"
+    [[ -n "$active" ]] && echo "$(tput setaf 8)Active profile: $active$(tput sgr0)"
 }

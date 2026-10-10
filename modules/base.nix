@@ -1,5 +1,5 @@
 # The unconditional tier: the bootstrap toolchain and what shell/
-# breaks without. A base tool with a config file is an app directory instead (eza, tlrc).
+# breaks without. A base tool with a config file is an app directory instead (eza, git, ssh, tlrc).
 { ... }:
 {
   dotfiles.provided.formulae = [
@@ -7,8 +7,6 @@
     "cloudflared"
     "coreutils"
     "fastfetch"
-    "git"
-    "git-delta"
     "go-task"
     "grc"
     "grep"
@@ -18,7 +16,6 @@
     "mas"
     "ncdu"
     "onefetch"
-    "openssh"
     "rdap"
     "trippy"
     "whois"

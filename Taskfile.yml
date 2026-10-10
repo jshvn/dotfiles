@@ -38,7 +38,7 @@ vars:
     -e NIX_CONFIG='experimental-features = nix-command flakes' {{.IMAGE}}
   PRELUDE: git config --global --add safe.directory /work
   # The evaluated declaration every read-only task consumes: the dotfiles namespace (links,
-  # identity, apps, system ...), every defaults group (wrapped in tryEval: nix-darwin keeps
+  # profile, apps, system ...), every defaults group (wrapped in tryEval: nix-darwin keeps
   # removed groups such as alf that throw when touched), the ByHost keys, the generated
   # Brewfile, taps, casks, the Homebrew prefix and the hostname.
   SHAPE: >-
@@ -74,7 +74,7 @@ tasks:
           "${b}dotfiles${r}   ${d}this Mac as one nix-darwin configuration${r}" \
           "machine: $m   ${d}(machines: {{.MACHINES | trim}})${r}"
         group 'read -- looks at this Mac, changes nothing'
-        row 'task show' 'The evaluated declaration: identity, system, apps, links, packages'
+        row 'task show' 'The evaluated declaration: profile, system, apps, links, packages'
         row 'task diff' 'What install would change: closure diff, then what brew would add' 'builds the closure and leaves ./result (ignored)'
         row 'task validate' 'Read the whole declaration back from the live system' 'exits 1 on drift; run it after every install'
         row 'task audit [-- --strict]' 'State beyond the declaration, and known CVEs' '--strict exits 1 on findings'
@@ -116,7 +116,7 @@ tasks:
       - sudo {{.REBUILD}} --rollback
 
   show:
-    desc: 'Print the evaluated declaration for the selected machine (identity, system, apps, links, packages)'
+    desc: 'Print the evaluated declaration for the selected machine (profile, system, apps, links, packages)'
     preconditions: *need-machine
     cmds:
       - '{{.EVAL}} | jq .dotfiles'

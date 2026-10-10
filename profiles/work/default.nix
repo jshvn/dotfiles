@@ -1,10 +1,9 @@
-# Josh's personal MacBooks: the identity, every System
-# Settings concern, every optional app, the shell and pipeline knobs, and the free package
-# choices. A machine file imports this and adds the names it answers to.
+# The work MacBook; the identity is the files beside this one. No machine file imports it yet;
+# the flake check evaluates it under a synthetic machine, so it cannot rot.
 { ... }:
 {
   dotfiles = {
-    identity = "personal";
+    profile = "work";
     system = {
       dock = true;
       finder = true;
@@ -18,26 +17,22 @@
     apps = {
       raycast = {
         enable = true;
-        freeCmdSpace = true;
+        freeCmdSpace = false;
       };
       ghostty.enable = true;
-      herdr.enable = true;
-      vscode = {
-        enable = true;
-        extensions = [ "golang.go" ];
-      };
+      herdr.enable = false;
+      vscode.enable = true;
       claude-code = {
         enable = true;
-        profile = "personal";
-        ref = "main";
+        profile = "work";
+        ref = "2026.09.23";
       };
       conda.enable = true;
-      dust.enable = true;
+      dust.enable = false;
     };
-    shell.jgrid-net = true;
+    shell.jgrid-net = false;
     repo.devToolchain = true;
     packages = {
-      # container: Apple's runtime. hashicorp/tap/terraform: BSL, from HashiCorp's own tap.
       formulae = [
         "bat"
         "bottom"
@@ -47,11 +42,8 @@
         "fd"
         "gh"
         "git-crypt"
-        "go"
-        "hashicorp/tap/terraform"
         "htop"
         "hugo"
-        "node"
         "poppler"
         "uv"
         "wget"
@@ -61,19 +53,12 @@
         "alcove"
         "appcleaner"
         "cardhop"
-        "cloudflare-warp"
-        "discord"
-        "dropbox"
         "fantastical"
         "firefox"
         "gitfox"
         "microsoft-excel"
         "microsoft-powerpoint"
         "microsoft-word"
-        "nvidia-geforce-now"
-        "proton-drive"
-        "proton-mail"
-        "protonvpn"
         "slack"
         "spotify"
         "standard-notes"

@@ -10,19 +10,22 @@ merely installed is a package name in the profile.
 
 | App | Option | Owns |
 |-----|--------|------|
-| `1password/` | readOnly, set by the identity | the cask, `agent.toml`, `env.zsh` (SSH_AUTH_SOCK) |
+| `1password/` | none: a base app | the cask, `env.zsh` (SSH_AUTH_SOCK), the link to the profile's `agent.toml` |
 | `claude-code/` | `apps.claude-code.{enable,profile,ref,dir}` | the cask; the jshvn/ai checkout at its ref, its profile, its own `task install` (an activation step: `checkout.zsh`, `repo-sync.zsh`) |
 | `conda/` | `apps.conda.enable` | the miniconda cask, `condarc` |
 | `dust/` | `apps.dust.enable` | the formula, `config.toml`, the `dust` alias |
 | `eza/` | none: a base app | the formula, `theme.yaml` |
 | `ghostty/` | `apps.ghostty.enable` | the cask, `config`, the `g` launcher |
+| `git/` | none: a base app | git and git-delta, `config` (includes the profile's overlay under `~/git/`), `ignore`, the link to the profile's `git` |
 | `herdr/` | `apps.herdr.enable` | the formula, `config.toml` |
 | `raycast/` | `apps.raycast.{enable,freeCmdSpace}` | the cask, the script-command directory (registered in Raycast by hand), Spotlight's Cmd+Space |
+| `ssh/` | none: a base app | openssh, `config` (every host through the 1Password agent), `cloudflared.zsh` (the tunnel ProxyCommand), the links to the profile's `ssh` and `key.pub`, GitHub's host keys in `/etc/ssh/ssh_known_hosts` |
 | `tlrc/` | none: a base app | the formula, `config.toml` |
 | `vscode/` | `apps.vscode.{enable,extensions}` | the cask and the bundled extension set; a profile adds extras |
 
-A base app (eza, tlrc) declares no option because `shell/` breaks without it; it is always
-on. Every other app's `enable` has no default, so a profile must say yes or no.
+A base app declares no option and is always on: `shell/` breaks without eza and tlrc, and
+every profile's identity runs through git, ssh and 1Password. Every other app's `enable` has
+no default, so a profile must say yes or no.
 
 Conventions:
 

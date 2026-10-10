@@ -5,7 +5,7 @@
 The trust chain `bootstrap.zsh` establishes on a fresh machine: what is fetched, from where,
 how (or whether) each artifact is verified, and which trust anchors the installer inherits
 from. Scope is Nix, which the script installs; go-task, which it runs from the Nix store; and
-Homebrew, which the first switch installs; and the audit signals emitted before each. SSH keys live in the identity layer; Claude hook
+Homebrew, which the first switch installs; and the audit signals emitted before each. SSH keys live in 1Password; Claude hook
 secret-scanning lives in the jshvn/ai repo.
 
 The per-machine security boundary is explicit selection: every switch keys off the machine
@@ -101,9 +101,10 @@ Homebrew, with its bottle checksums.
 
 ## What This Document Does NOT Cover
 
-- **SSH key handling** -- `identity/`; the 1Password agent is wired by `apps/1password/`
-  (`env.zsh` exports `SSH_AUTH_SOCK`, `agent.toml` orders the keys) and the `IdentityAgent`
-  lines in `identity/ssh/identities/<name>`.
+- **SSH key handling** -- each profile's `profiles/<name>/` holds its public key (`key.pub`)
+  and the 1Password agent config (`agent.toml`, which keys the agent offers, in order);
+  `apps/1password/env.zsh` exports `SSH_AUTH_SOCK` and `apps/ssh/config` sets `IdentityAgent`
+  for every host.
 - **Claude hook secret-scanning** -- the jshvn/ai repo.
 - **Per-machine credential management** -- no secret enters the repo; SSH and signing keys
   stay in 1Password.

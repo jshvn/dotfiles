@@ -1,6 +1,6 @@
 # harmonium, the second personal MacBook. Confirm `uname -m` before the first switch.
 {
-  imports = [ ../profiles/personal.nix ];
+  imports = [ ../profiles/personal ];
   networking = {
     hostName = "harmonium";
     computerName = "harmonium";
