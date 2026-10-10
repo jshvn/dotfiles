@@ -66,10 +66,10 @@ tasks:
         echo "task --list for descriptions"
 
   setup:
-    desc: 'Persist the machine selection: task setup -- <lerasium|harmonium>'
+    desc: 'Persist the machine selection: task setup -- <name>'
     preconditions:
       - sh: test -f '{{.ROOT_DIR}}/machines/{{.CLI_ARGS}}.nix'
-        msg: 'no machines/{{.CLI_ARGS}}.nix; the machines are: {{.MACHINES}}'
+        msg: 'no machines/{{.CLI_ARGS}}.nix; the machines are: {{.MACHINES | trim}}'
     cmds:
       - mkdir -p '{{.STATE}}' && printf '%s' '{{.CLI_ARGS}}' > '{{.STATE}}/machine'
       - 'echo "machine: {{.CLI_ARGS}}"'
@@ -77,8 +77,8 @@ tasks:
   install:
     desc: 'Fast-forward the checkout (warn-only), build and activate the selected machine, refresh the zsh plugin bundles'
     preconditions: &need-machine
-      - sh: test -n '{{.MACHINE}}'
-        msg: 'no machine selected: task setup -- <lerasium|harmonium>'
+      - sh: test -f '{{.ROOT_DIR}}/machines/{{.MACHINE}}.nix'
+        msg: 'no machine selected (no machines/{{.MACHINE}}.nix): task setup -- <name>; the machines are: {{.MACHINES | trim}}'
     cmds:
       - DOTFILEDIR='{{.ROOT_DIR}}' REPO_NAME=jshvn/dotfiles zsh '{{.ROOT_DIR}}/apps/claude-code/repo-sync.zsh'
       - sudo {{.REBUILD}} switch --flake '{{.ROOT_DIR}}#{{.MACHINE}}'
