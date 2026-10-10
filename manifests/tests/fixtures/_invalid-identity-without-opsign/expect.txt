@@ -1,2 +1,0 @@
-must include one-password-signing
-one-password-signing capability in stderr

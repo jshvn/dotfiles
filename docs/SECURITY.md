@@ -2,62 +2,72 @@
 
 ## What This Document Covers
 
-This document describes the trust chain established by `bootstrap.zsh`
-when a fresh machine first runs the dotfiles installer. It enumerates
-what software is fetched, where it is fetched from, how (or whether)
-each artifact is verified, and which trust anchors the installer
-inherits from.
+The trust chain `bootstrap.zsh` establishes on a fresh machine: what is fetched, from where,
+how (or whether) each artifact is verified, and which trust anchors the installer inherits
+from. Scope is Nix, which the script installs; go-task, which it runs from the Nix store; and
+Homebrew, which the first switch installs; and the audit signals emitted before each. SSH keys live in 1Password; Claude hook
+secret-scanning lives in the jshvn/ai repo.
 
-Scope is intentionally narrow: only the tools the bootstrap script
-acquires (Homebrew, go-task, yq) and the audit signals the script
-emits before doing so. SSH key handling lives in the identity
-layer; Claude hook secret-scanning lives in the jshvn/ai repo.
-
-The repository's per-machine security boundary is the manifest model
-itself: every install action keys off the machine name written to
-`$XDG_STATE_HOME/dotfiles/machine` by `task setup`, so an install never
-proceeds on the basis of hostname inference or environment-variable
-sniffing.
+The per-machine security boundary is explicit selection: every switch keys off the machine
+name `task setup` wrote to `$XDG_STATE_HOME/dotfiles/machine`, never a hostname or an
+environment variable.
 
 ---
 
 ## Bootstrap Trust Chain
 
-### Step 1 -- Homebrew installer
+### Step 1 -- Nix, the official multi-user installer
+
+- **What is downloaded:** the Nix install script, then the Nix release tarball it fetches.
+- **From where:** `https://nixos.org/nix/install` (a redirect to `releases.nixos.org`); the
+  tarball from `releases.nixos.org`, with the SHA-256 the script embeds.
+- **How it is verified:** the script, HTTPS only, no checksum pin; the tarball, by the SHA-256
+  inside the script.
+- **What it does with sudo:** creates the `/nix` APFS volume (`/etc/synthetic.conf`,
+  `/etc/fstab` through `vifs`), the `nixbld` group and build users, the `nix-daemon` launchd
+  job and `/etc/nix/nix.conf`; prepends a block sourcing `nix-daemon.sh` to `/etc/zshrc` and
+  `/etc/bashrc`, keeping `.backup-before-nix` copies.
+- **Why this trust boundary is accepted:** it is the upstream installer, the same path
+  jgrid.net's Macs use. `bootstrap.zsh` downloads it to a file first and prints the path, so
+  it can be read before the consent keypress; the script then runs from that file, not from a
+  pipe.
+- **Audit signal:** before running it, `bootstrap.zsh` prints an `AUDIT:` block to stderr
+  naming the source URL and the trust note, then requires a single keypress read from
+  `/dev/tty` (Enter to proceed; any other key aborts). Consent from the terminal means
+  bootstrap cannot run through a `curl ... | zsh` pipe.
+
+### Step 2 -- go-task, for the first run
+
+- **What is downloaded:** the go-task store path the flake's locked nixpkgs names
+  (`nix run --inputs-from <checkout> nixpkgs#go-task`). Nothing is installed: every later run
+  uses the go-task Homebrew installs.
+- **From where:** `cache.nixos.org`; the nixpkgs source from GitHub.
+- **How it is verified:** Nix checks the store path's signature against the cache's key; the
+  nixpkgs source by the content hash `flake.lock` pins.
+- **Why this trust boundary is accepted:** the same anchors every switch already trusts.
+
+### Step 3 -- Homebrew installer, run by the first switch
 
 - **What is downloaded:** the Homebrew install shell script (`install.sh`).
 - **From where:** `https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh`.
 - **How it is verified:** HTTPS only. No checksum pin. No signature verification.
-- **Why this trust boundary is accepted:** this is the canonical install path
-  published by `brew.sh`. Pinning to a checksum would require updating the pin
-  every time Homebrew ships an installer change; the maintenance burden
-  outweighs the security delta over HTTPS-only retrieval. We accept the same
-  trust boundary as the wider macOS development community.
-- **Audit signal:** before fetching the installer, `bootstrap.zsh` prints an
-  `AUDIT:` block to stderr identifying the source URL and the trust note, then
-  requires an explicit single-keypress consent read from `/dev/tty` (Enter to
-  proceed; any other key aborts). Because consent is read from the terminal,
-  bootstrap intentionally cannot be run non-interactively via a
-  `curl ... | zsh` pipe. The audit line wording is:
-  ```
-  AUDIT: about to fetch and execute brew install script
-    source: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
-    trust:  HTTPS only, no checksum pin (see docs/SECURITY.md)
-  ```
+- **What it does with sudo:** runs as the user (it refuses root), creates `/opt/homebrew` and
+  hands it to the user, and installs the Xcode Command Line Tools if they are missing. Its
+  sudo calls reuse the password the switch just asked for.
+- **Why this trust boundary is accepted:** the canonical install path published by `brew.sh`;
+  a checksum pin would need updating on every installer change for little gain over HTTPS.
+- **Audit signal:** none of its own. `modules/homebrew.nix` runs it inside the switch, only
+  when `/opt/homebrew/bin/brew` is missing, after printing `installing Homebrew...`; the
+  password the switch asks for is the consent.
 
-### Step 2 -- go-task and yq
+### Every switch
 
-- **What is downloaded:** Homebrew formula bottles for `go-task` and `yq`.
-- **From where:** Homebrew's CDN. Bottle artifacts come from
-  `ghcr.io/homebrew/core/...`; formula metadata is served from
-  `formulae.brew.sh`.
-- **How it is verified:** Homebrew computes SHA-256 checksums for every
-  bottle and refuses to install if the downloaded artifact does not match
-  the formula's declared checksum.
-- **Why this trust boundary is accepted:** stronger than Step 1. We inherit
-  Homebrew's standard formula-verification path: any tampering with the
-  bottle artifact at rest in the CDN is caught by checksum mismatch before
-  installation proceeds.
+`darwin-rebuild switch` fetches the nixpkgs, nix-darwin and home-manager sources
+`flake.lock` pins (by content hash) and any store paths from `cache.nixos.org`, each
+signature-checked against the cache's key. Nix supplies nix-darwin, home-manager, the Nix
+daemon nix-darwin runs in place of the installer's, and nixpkgs' CA bundle at
+`/etc/ssl/certs/ca-certificates.crt`; every package Josh uses, go-task included, comes from
+Homebrew, with its bottle checksums.
 
 ---
 
@@ -65,74 +75,62 @@ sniffing.
 
 | Threat | Mitigation | Residual Risk |
 |--------|------------|---------------|
-| MITM on `raw.githubusercontent.com` during installer fetch | TLS only | Real -- accepted as the pragmatic cost of a non-pinned install path |
-| Compromise of GitHub mirror serving the installer | HTTPS only; no signature check | Real -- documented; mitigated only by GitHub's own infrastructure integrity |
-| Compromise of a Homebrew bottle artifact in the CDN | SHA-256 checksum validated by `brew` before install | Mitigated |
-| Compromise of formula metadata declaring a wrong SHA-256 | Formula commits are PR-reviewed by Homebrew | Mitigated -- accept Homebrew's review process as the gate |
-| Local user runs bootstrap with hostile `$DOTFILEDIR` env override | `bootstrap.zsh` re-resolves `DOTFILEDIR` from `$0` at script start, ignoring inherited env | Mitigated |
+| MITM on `raw.githubusercontent.com` or `nixos.org` during an installer fetch | TLS only | Real -- accepted as the cost of an unpinned install path |
+| Compromise of the GitHub mirror or `releases.nixos.org` serving an installer | HTTPS only; the Nix script is saved and can be read before it runs | Real -- documented |
+| Compromise of a Homebrew bottle in the CDN | SHA-256 validated by `brew` | Mitigated |
+| Compromise of formula metadata declaring a wrong SHA-256 | Formula commits are PR-reviewed by Homebrew | Mitigated |
+| A tampered store path from `cache.nixos.org` | Nix verifies the narinfo signature | Mitigated |
+| A flake input moved under the same name | `flake.lock` pins content hashes | Mitigated |
+| Local user runs bootstrap with a hostile `$DOTFILEDIR` | `bootstrap.zsh` resolves it from `$0` | Mitigated |
 
 ---
 
 ## Trust Anchors
 
-The bootstrap trust chain inherits from three named anchors:
-
-1. **Apple.** macOS itself, including system `curl`, `bash`, `zsh`, and the
-   system TLS trust store. If macOS is compromised, the entire installer is
-   compromised.
-2. **GitHub Inc.** `raw.githubusercontent.com` (TLS termination, repository
-   integrity for the Homebrew install script) and `ghcr.io` (artifact storage
-   for Homebrew bottles).
-3. **The Homebrew project.** The correctness of the install script, the
-   integrity of formula metadata, and the bottling pipeline that produces
-   the artifacts in `ghcr.io`.
+1. **Apple.** macOS itself, `curl`, `sh`, `zsh`, the system TLS trust store.
+2. **GitHub Inc.** `raw.githubusercontent.com` and `ghcr.io`, and the flake inputs
+   `flake.nix` declares and `flake.lock` pins (the nixpkgs, nix-darwin and home-manager
+   sources).
+3. **The Homebrew project.** The install script, formula metadata, the bottling pipeline.
+4. **The NixOS Foundation.** `nixos.org`, `releases.nixos.org`, `cache.nixos.org` and its
+   signing key, and the nixpkgs sources the lock pins.
+5. **The nix-darwin and home-manager projects.** The module code the lock pins and the
+   switch evaluates.
 
 ---
 
 ## What This Document Does NOT Cover
 
-- **SSH key handling** -- the identity layer (`identity/ssh/`) documents
-  how SSH keys are organized, with 1Password agent integration gated by
-  the `one-password-ssh` feature flag.
-- **1Password agent integration** -- machines with `one-password-ssh` route
-  SSH agent traffic through 1Password; the wiring lives in
-  `shell/.zprofile` (`SSH_AUTH_SOCK`), the `IdentityAgent` lines in
-  `identity/ssh/identities/<name>`, and `identity/ssh/agent.toml` (linked by
-  `taskfiles/identity.yml`).
-- **Claude hook secret-scanning** -- implemented in the jshvn/ai repo
-  (`claude/hooks/secret-scan.zsh` there), installed by its `task install`.
-- **Per-machine credential management** -- out of scope. No secret enters the
-  repo; SSH and signing keys stay in 1Password.
+- **SSH key handling** -- each profile's `profiles/<name>/` holds its public key (`key.pub`)
+  and the 1Password agent config (`agent.toml`, which keys the agent offers, in order);
+  `apps/1password/env.zsh` exports `SSH_AUTH_SOCK` and `apps/ssh/config` sets `IdentityAgent`
+  for every host.
+- **Claude hook secret-scanning** -- the jshvn/ai repo.
+- **Per-machine credential management** -- no secret enters the repo; SSH and signing keys
+  stay in 1Password.
 
 ---
 
 ## How to Audit
 
-Two concrete commands let you inspect what bootstrap will run before you
-let it run:
-
 ```bash
-# Inspect what bootstrap will run (Step 1):
+# What bootstrap will run (Step 1), or read the copy bootstrap.zsh saved:
+curl -fsSL https://nixos.org/nix/install | less
+
+# What the first switch will run when Homebrew is missing (Step 3):
 curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | less
-
-# Verify go-task's bottle SHA-256 (Step 2):
-brew info --json=v2 go-task | jq '.formulae[0].bottle.stable.files'
 ```
-
-The first command pages through the actual installer source code Homebrew
-will execute. The second prints the per-platform bottle URLs and SHA-256
-checksums that `brew install go-task` will verify before completing.
 
 ---
 
 ## Future Hardening
 
-Listed for reference; not currently in scope:
+Not in scope:
 
-- **Pinned-checksum brew installer.** Vendor `install.sh` at a known git
-  commit and verify its checksum before execution. Eliminates the residual
-  Step 1 risk at the cost of installer staleness.
+- **Pinned-checksum installers.** Vendor both install scripts at a known commit and verify
+  their checksums before execution. Eliminates the residual Step 1 and Step 3 risk at the cost
+  of installer staleness.
 
-Structural regressions are already gated: `.github/workflows/ci.yml` runs the
-full pipeline, including the `task lint` catalogue, on every push to `master`
+Structural regressions are gated: `.github/workflows/ci.yml` evaluates every machine and
+profile, lints, runs the hermetic tests and builds lerasium's closure on every push to `master`
 and every pull request.

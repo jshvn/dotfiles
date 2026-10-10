@@ -10,8 +10,8 @@
 #               width / reset / cyan from motd()'s locals. Terminals with
 #               an image protocol get the jgrid logo; others the ASCII art.
 # Depends on:   tput, fastfetch (optional), shuf or sort, git, sed, tr,
-#               base64, $DOTFILEDIR, configs/motd/motd_sysinfo.jsonc,
-#               configs/motd/motd_tron.txt, configs/motd/motd_jgrid.png.
+#               base64, $DOTFILEDIR, shell/motd/motd_sysinfo.jsonc,
+#               shell/motd/motd_tron.txt, shell/motd/motd_jgrid.png.
 # Side effects: stdout only.
 # =============================================================================
 
@@ -32,7 +32,7 @@ _motd_line() {
 # iTerm2 protocol (iTerm2, WezTerm). Returns 1 where neither applies, and
 # inside tmux, which drops both unless passthrough is on.
 _motd_image() {
-    local png="${DOTFILEDIR}/configs/motd/motd_jgrid.png" rows=16
+    local png="${DOTFILEDIR}/shell/motd/motd_jgrid.png" rows=16
     [[ -r "$png" && -z "$TMUX" ]] || return 1
     # ponytail: centers on a 2:1 cell; fonts with another ratio sit a column off
     local pad=$(( (width - rows * 2) / 2 ))
@@ -94,7 +94,7 @@ function motd() {    # motd() prints the Tron-themed message-of-the-day banner. 
     
     # System info via fastfetch
     echo "${cyan}${bold}[ SYSTEM INFORMATION ]${reset}"
-    local ff_config="${DOTFILEDIR}/configs/motd/motd_sysinfo.jsonc"
+    local ff_config="${DOTFILEDIR}/shell/motd/motd_sysinfo.jsonc"
     if [[ -f "$ff_config" ]]; then
         fastfetch --config "$ff_config" 2>/dev/null | sed "s/^/   /; s/› /› ${orange}/; s/$/${reset}/"
     else
@@ -118,7 +118,7 @@ function motd() {    # motd() prints the Tron-themed message-of-the-day banner. 
     fi
     
     # Random Tron quote
-    local quotes_file="${DOTFILEDIR}/configs/motd/motd_tron.txt"
+    local quotes_file="${DOTFILEDIR}/shell/motd/motd_tron.txt"
     if [[ -f "$quotes_file" ]]; then
         local quote=$(shuf -n 1 "$quotes_file" 2>/dev/null || sort -R "$quotes_file" | head -1)
         echo "${cyan}${bold}[ TRANSMISSION ]${reset}"

@@ -1,0 +1,18 @@
+# apps/ssh/config -- main SSH config; linked to ~/.ssh/config by
+# apps/ssh/default.nix.
+#
+# Every connection goes through the 1Password agent; which keys it offers is
+# the profile's agent.toml. The profile's host blocks (profiles/<name>/ssh) are
+# linked to ~/.ssh/profile and included below, so the config is static and
+# resolves at switch time.
+#
+# Side effects: none (static config; no runtime eval).
+
+Host *
+    SetEnv TERM=xterm-256color
+    IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+    # Homebrew's ssh looks under its own prefix (etc/ssh) by default; both ssh
+    # binaries read the /etc file apps/ssh/default.nix writes (GitHub's keys).
+    GlobalKnownHostsFile /etc/ssh/ssh_known_hosts
+
+Include ~/.ssh/profile

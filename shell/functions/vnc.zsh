@@ -10,7 +10,7 @@
 #               machine, gated by the *.jgrid.net Access app): cloudflared
 #               proxies it onto 127.0.0.1:5901 and Screen Sharing opens that.
 # Depends on:   open (macOS); cloudflared at $HOMEBREW_PREFIX/bin
-#               (manifests/base.toml); pgrep, pkill, lsof.
+#               (modules/base.nix); pgrep, pkill, lsof.
 # Side effects: launches Screen Sharing or the default vnc:// handler; for a
 #               tunnel host, leaves a background `cloudflared access tcp`
 #               listening on 127.0.0.1:5901 (reused on the next call to that

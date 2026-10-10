@@ -1,0 +1,11 @@
+# apps/git/ignore -- global gitignore; linked to ~/.config/git/ignore.
+#
+# Callers: apps/git/config [core] excludesfile = ignore (relative path resolved
+#   from the git config directory, i.e., ~/.config/git/).
+# Side effects: none.
+
+*~
+.DS_Store
+**/.claude/settings.local.json
+
+**/.claude/.cc-writes/

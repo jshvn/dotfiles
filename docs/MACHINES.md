@@ -2,45 +2,44 @@
 
 ## What This Is
 
-Per-machine prose the TOML manifests cannot express: purpose, hardware
-narrative, role, and special handling notes. Declarative state -- feature
-flags, identity selection, packages -- lives in
-`manifests/machines/<name>.toml` and is authoritative; run
-`task manifest:show -- --machine <name>` to see the resolved result.
+Per-machine prose the Nix files cannot express: purpose, hardware narrative, role, special
+handling. Declarative state lives in `machines/<name>.nix` (the names a laptop answers to,
+its platform, the profile it imports) and `profiles/<name>/` (every System Settings concern,
+every optional app, the shell and pipeline knobs, free packages, and the identity files) and is
+authoritative; `task show` prints the evaluated result for the selected machine.
 
-Nothing here enumerates packages or flags. That duplication drifts, and the
-manifest already answers it in one file.
+Nothing here enumerates packages or switches. That duplication drifts, and the profile already
+answers it in one file.
 
-## personal
+## lerasium
 
-- Purpose: primary personal Mac, daily driver for personal projects and
-  personal AI/CLI work.
-- Hardware: Apple Silicon (`arm64`, declared explicitly in `[machine].arch`).
-- Role: full GUI + dev + personal feature set. Day-to-day use is
-  personal-project development, dotfiles iteration, and Claude Code work.
-- Special handling: the personal git/ssh identity is wired here, with SSH
-  auth and commit signing flowing through the 1Password agent.
+- Purpose: the personal MacBook Pro, daily driver for personal projects and AI/CLI work.
+- Hardware: Apple Silicon (`nixpkgs.hostPlatform = "aarch64-darwin"`).
+- Profile: `personal`. Full GUI, dev and personal set; the personal git/ssh identity with
+  SSH auth and commit signing through the 1Password agent; the jgrid.net aliases.
+- Special handling: Raycast's script-command directory (`apps/raycast/`) is registered in
+  Raycast by hand, once.
 
-## work
+## harmonium
 
-- Purpose: work-issued MacBook carrying the work git/ssh identity.
-- Hardware: Apple Silicon or Intel -- arch is detected by the resolver via
-  `uname -m` because `[machine].arch` is absent.
-- Role: primary work development machine. Commits and remote access carry
-  the work attribution.
-- Special handling: the main divergence from personal is the identity; the
-  toolchain is a subset of personal's. The personal network (the `jgrid-net`
-  aliases and the `*.jgrid.net` SSH host blocks) does not apply here.
+- Purpose: the second personal MacBook.
+- Hardware: assumed Apple Silicon; confirm `uname -m` before its first switch and change
+  `nixpkgs.hostPlatform` in `machines/harmonium.nix` to `x86_64-darwin` if it prints `x86_64`.
+- Profile: `personal`, identical to lerasium's.
+- Special handling: none; `./bootstrap.zsh harmonium` installs it.
 
-## ci
+## work (profile only)
 
-- Purpose: the GitHub Actions runner profile.
-- Hardware: the `macos-latest` runner image; `[machine].arch` is declared
-  `arm64`.
-- Role: drives the full operator pipeline (bootstrap, setup, install,
-  validate, test, lint, converged re-install) on a fresh runner. It is a real
-  machine manifest rather than a special case in the workflow, so CI
-  exercises the same resolver path as a laptop.
-- Special handling: the no-op `none` identity, no GUI, no AI surface (the ai
-  flag is off). If a change makes CI need a package, that is a signal about
-  the repo's own toolchain, not about CI.
+- Purpose: the work-issued MacBook carrying the work git/ssh identity.
+- Status: no machine file yet. `profiles/work/` is kept current and the flake check
+  evaluates it under a synthetic machine, so it cannot rot. When the laptop comes into scope,
+  fill in the work email (`profiles/work/git`) and add `profiles/work/key.pub` and the key's
+  item in `agent.toml`, then add `machines/<its-name>.nix` importing it.
+- Role: primary work development machine; the toolchain is a subset of personal's, without
+  the jgrid.net aliases or the `*.jgrid.net` SSH host blocks.
+
+## CI
+
+There is no CI machine. GitHub Actions evaluates every machine file and every profile inside
+the pinned `nixos/nix` image (`task check`) and runs lint and the hermetic smoke tests; a
+macOS runner builds lerasium's closure. It never switches a Mac.

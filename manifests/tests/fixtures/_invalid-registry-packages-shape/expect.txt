@@ -1,2 +1,0 @@
-unknown packages bucket
-registry flag declares an unknown packages bucket

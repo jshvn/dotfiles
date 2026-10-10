@@ -1,0 +1,10 @@
+# profiles/work/agent.toml -- which SSH keys the 1Password agent offers.
+#
+# Linked to ~/.config/1Password/ssh/agent.toml by apps/1password/default.nix.
+# The format is described in profiles/personal/agent.toml.
+#
+# Every key in the work account's Employee vault until the work key exists;
+# then name it with item (and account, if a personal account is signed in too).
+
+[[ssh-keys]]
+vault = "Employee"

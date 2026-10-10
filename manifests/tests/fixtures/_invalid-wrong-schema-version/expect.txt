@@ -1,2 +1,0 @@
-schema_version must equal 3
-schema_version mismatch in stderr

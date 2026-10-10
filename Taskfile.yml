@@ -1,296 +1,179 @@
-# =============================================================================
-# Taskfile.yml -- root taskfile for v2 dotfiles
-#
-# Purpose:      Single canonical entry (`task install`) plus public operator
-#               surface (default banner, setup, validate, test, lint, audit,
-#               diff, report, show). Wires every included taskfile module
-#               under one namespace.
-# Depends on:   taskfiles/{ai,features,hostname,identity,links,lint,macos,
-#               manifest,packages,repo,shell,test}.yml;
-#               install/messages.zsh (sourced via {{.TASKFILE_DIR}} so the
-#               banner renders the same regardless of include parse order);
-#               install/lint-rules.zsh; install/report.zsh.
-# Side effects: deferred to subtasks; this file declares no direct mutations.
-# =============================================================================
-
 version: '3'
+
+# The operator surface: thin wrappers around darwin-rebuild, nix eval and the pinned nix image.
+# The machine is picked once with `task setup -- <name>` and never inferred from the hostname.
+# Everything that reads state goes through one evaluation (SHAPE) piped to a script in tasks/.
 
 set: [errexit, pipefail]
 silent: true
 
+env:
+  # flakes on before the first switch writes them into /etc/nix/nix.conf
+  NIX_CONFIG: 'experimental-features = nix-command flakes'
+
 vars:
-  HOME: '{{.HOME}}'
-  XDG_CONFIG_HOME: '{{.HOME}}/.config'
-  XDG_DATA_HOME: '{{.HOME}}/.local/share'
-  XDG_STATE_HOME: '{{.HOME}}/.local/state'
-  XDG_CACHE_HOME: '{{.HOME}}/.cache'
-  ZDOTDIR: '{{.XDG_CONFIG_HOME}}/zsh'
-
-  # jshvn/ai checkout: a working tree the operator edits, so it lives next
-  # to the dotfiles checkout, not in an XDG data dir. Same path on every
-  # machine, hence a var and not a manifest field.
-  AI_DIR: '{{.HOME}}/Git/personal/ai'
-  AI_REMOTE: 'git@github.com:jshvn/ai.git'
-
-  # Homebrew prefix -- detect from arch when brew not yet installed.
-  HOMEBREW_PREFIX:
+  STATE: '{{.XDG_STATE_HOME | default (printf "%s/.local/state" .HOME)}}/dotfiles'
+  MACHINE:
+    sh: cat "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/machine" 2>/dev/null || true
+  MACHINES:
+    sh: for f in '{{.ROOT_DIR}}/machines'/*.nix; do b=${f##*/}; printf '%s ' "${b%.nix}"; done
+  REBUILD: /run/current-system/sw/bin/darwin-rebuild
+  COLD_START_BUDGET: 500
+  # the official installer's profile, called by path: a Taskfile env cannot override the caller's PATH
+  NIX: /nix/var/nix/profiles/default/bin/nix
+  # Apple container when its daemon is up, else Docker; ENGINE=docker reproduces a CI run
+  ENGINE:
     sh: |
-      if command -v brew >/dev/null 2>&1; then brew --prefix
-      elif [[ "$(uname -m)" == "arm64" ]]; then echo "/opt/homebrew" # lint-allow: hardcoded-prefix
-      else echo "/usr/local" # lint-allow: hardcoded-prefix
+      if [ -n "$ENGINE" ]; then echo "$ENGINE"
+      elif command -v container >/dev/null 2>&1 && container system status >/dev/null 2>&1; then echo container
+      elif command -v docker >/dev/null 2>&1; then echo docker
+      else echo container
       fi
-
-  DOTFILES_MESSAGES: |
-    source '{{.ROOT_DIR}}/install/messages.zsh'
-
-  DOTFILES_LINT_RULES: |
-    source '{{.ROOT_DIR}}/install/lint-rules.zsh'
-
-  RESOLVED_JSON_PATH: '{{.XDG_STATE_HOME}}/dotfiles/resolved.json'
-
-  STATE_DIR: '{{.XDG_STATE_HOME}}/dotfiles'
-  STATE_FILE: '{{.STATE_DIR}}/machine'
-  FEATURES_TOML: '{{.ROOT_DIR}}/manifests/features.toml'
-  MACHINES_DIR: '{{.ROOT_DIR}}/manifests/machines'
-  FIXTURES_DIR: '{{.ROOT_DIR}}/manifests/tests/fixtures'
-
-  # Shared machine-name resolution for manifest:show / manifest:validate.
-  # Defined AFTER STATE_FILE so the {{.STATE_FILE}} reference resolves -- go-task
-  # evaluates vars top-to-bottom. Inject after {{.DOTFILES_MESSAGES}} (needs
-  # error()); requires $CLI_ARGS_ENV in scope (env: forwarding). Parses
-  # --machine NAME, then a bare name, then falls back to the STATE_FILE first
-  # line; sets $machine_name or exits 1. sed extraction is portable across
-  # go-task's shell and zsh (no zsh match[]). First line + trim edges only --
-  # never strip embedded whitespace, which would silently mangle a malformed
-  # state-file value into a wrong-but-valid name.
-  RESOLVE_MACHINE_NAME: |
-    machine_name=""
-    cli_args="${CLI_ARGS_ENV}"
-    machine_name=$(printf '%s' "$cli_args" | sed -n 's/.*--machine[[:space:]]\{1,\}\([a-z0-9_][a-z0-9_-]*\).*/\1/p')
-    if [[ -z "$machine_name" ]]; then
-      candidate=$(printf '%s' "$cli_args" | tr -d '[:space:]')
-      if [[ "$candidate" =~ ^[a-z0-9_][a-z0-9_-]*$ ]]; then
-        machine_name="$candidate"
-      fi
-    fi
-    if [[ -z "$machine_name" && -f "{{.STATE_FILE}}" ]]; then
-      machine_name=$(head -n1 "{{.STATE_FILE}}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-    fi
-    if [[ -z "$machine_name" ]]; then
-      error "no machine selected and --machine not specified"
-      error "  run: task setup -- <machine-name>"
-      exit 1
-    fi
-
-  # MANIFEST_JSON cats resolved.json or echoes a stub with a stderr warning
-  # so taskfiles that ref: MANIFEST never crash on a fresh checkout. The stub
-  # includes an empty `features` map so `{{if index .MANIFEST.features "<key>"}}`
-  # evaluates to false (nil zero value) instead of erroring out with
-  # `index of untyped nil` at parse time. Deeper paths (.identity.git,
-  # .packages.brew.*) remain unset so consumers fail loudly when accessed
-  # without setup.
-  MANIFEST_JSON:
-    sh: |
-      if [[ -f "{{.RESOLVED_JSON_PATH}}" ]]; then
-        cat "{{.RESOLVED_JSON_PATH}}"
-      else
-        echo "warn: resolved.json not found (run 'task setup -- <machine>')" >&2
-        echo '{"features":{}}'
-      fi
-  MANIFEST:
-    ref: 'fromJson .MANIFEST_JSON'
-
-includes:
-  manifest: ./taskfiles/manifest.yml
-  features: ./taskfiles/features.yml
-  lint:     ./taskfiles/lint.yml
-  links:    ./taskfiles/links.yml
-  shell:    ./taskfiles/shell.yml
-  identity: ./taskfiles/identity.yml
-  packages: ./taskfiles/packages.yml
-  ai:       ./taskfiles/ai.yml
-  repo: ./taskfiles/repo.yml
-  test: ./taskfiles/test.yml
-  macos:    ./taskfiles/macos.yml
-  # hostname:* lives alongside macos: -- both are macOS-only system-state
-  # layers. State is per-physical-machine ($XDG_STATE_HOME/dotfiles/hostname),
-  # NOT a manifest feature -- two machines sharing one manifest (JMBP +
-  # JAIR consuming personal.toml) need distinct hostnames.
-  hostname: ./taskfiles/hostname.yml
+  IMAGE: nixos/nix:2.35.2@sha256:7a007c766426c1877758ddc5cb87a965ac131fc78c582ce0083d922d51ae945c
+  # root inside the image, because nix owns its store there; 4g because the evaluation dies at
+  # exit 137 under Apple container's 1 GiB default; safe.directory (PRELUDE) because under
+  # Docker the mount keeps the caller's uid and libgit2 refuses a repository root does not own
+  CONTAINER: >-
+    {{.ENGINE}} run --rm --memory 4g -v "{{.ROOT_DIR}}":/work -w /work
+    -e NIX_CONFIG='experimental-features = nix-command flakes' {{.IMAGE}}
+  PRELUDE: git config --global --add safe.directory /work
+  # The evaluated declaration every read-only task consumes: the dotfiles namespace (links,
+  # profile, apps, system ...), every defaults group (wrapped in tryEval: nix-darwin keeps
+  # removed groups such as alf that throw when touched; renamed keys such as dock's
+  # expose-group-by-app are dropped, since reading one prints a trace), the ByHost keys, the
+  # generated Brewfile, taps, casks, the Homebrew prefix and the hostname.
+  SHAPE: >-
+    c: let safe = x: let r = builtins.tryEval (builtins.deepSeq x x); in if r.success then r.value else "<error>"; in {
+      dotfiles = c.dotfiles;
+      defaults = builtins.mapAttrs (n: safe) (c.system.defaults // { dock = removeAttrs c.system.defaults.dock [ "expose-group-by-app" ]; });
+      currentHost = c.home-manager.users.josh.targets.darwin.currentHostDefaults;
+      loginShell = c.users.users.josh.shell;
+      brewfile = c.homebrew.brewfile;
+      taps = c.homebrew.taps;
+      casks = c.homebrew.casks;
+      brewPrefix = c.homebrew.prefix;
+      hostName = c.networking.localHostName;
+    }
+  EVAL: "{{.NIX}} eval --json '{{.ROOT_DIR}}#darwinConfigurations.{{.MACHINE}}.config' --apply '{{.SHAPE}}'"
 
 tasks:
-
   default:
-    desc: "Print curated task surface"
-    # status: [false] forces the cmd to run every invocation. status: [true]
-    # would consider the task up-to-date and `task` alone would print nothing
-    # instead of rendering the banner.
-    status: [false]
+    desc: 'Print the menu'
+    # ponytail: hand-maintained listing -- go-task can neither group nor annotate, so a new task
+    # means a row below (task lint fails on a task missing here). `task --list` is the generated view.
     cmds:
       - |
-        # Source via TASKFILE_DIR so the banner renders the same regardless
-        # of which included taskfile go-task parses first.
-        source '{{.TASKFILE_DIR}}/install/messages.zsh'
-        header "Dotfiles -- common tasks"
-        echo
-        info "  install     Install dotfiles for the active machine"
-        info "  setup       Set the active machine: task setup -- <machine-name>"
-        info "  validate    Validate full installation state"
-        info "  test        Run all smoke tests"
-        info "  lint        Run all lint checks"
-        info "  audit       Detect drift and known vulnerabilities across all domains"
-        info "  diff        Preview what task install would change"
-        info "  report      Markdown overview of the converged install (counts per domain)"
-        echo
-        header "Diagnostics (read-only, domain-first)"
-        info "  task show                            List inspectable domains"
-        info "  task <domain>:show                   manifest | features | ai | hostname"
-        info "  task <domain>:audit                  manifest | packages | links"
-        info "  task packages:vulns                  OSV.dev scan of declared packages"
-        info "  task <domain>:diff                   packages | links"
-        echo
-        header "State mutations"
-        info "  task setup -- <name>                 Set active machine manifest (\$XDG_STATE_HOME/dotfiles/machine)"
-        info "  task hostname:set -- <name>          Set live macOS hostname (requires sudo; self-heals on task install)"
-        echo
-        echo "Run 'task --list' for the full task graph."
+        b= c= d= r=
+        if [ -t 1 ]; then b=$(printf '\033[1m'); c=$(printf '\033[1;36m'); d=$(printf '\033[2m'); r=$(printf '\033[0m'); fi
+        group() { printf '\n%s\n' "${c}$1${r}"; }
+        row() { printf '  %-25s %s\n' "$1" "$2"; [ -z "$3" ] || printf '  %-25s %s\n' '' "${d}$3${r}"; }
+        m='{{.MACHINE}}'
+        if [ -z "$m" ]; then m='none selected, run task setup -- <name>'
+        elif [ ! -f "{{.ROOT_DIR}}/machines/$m.nix" ]; then m="$m is not a machine, run task setup -- <name>"
+        else m="${b}$m${r}"; fi
+        printf '\n%s\n%s\n' \
+          "${b}dotfiles${r}   ${d}this Mac as one nix-darwin configuration${r}" \
+          "machine: $m   ${d}(machines: {{.MACHINES | trim}})${r}"
+        group 'read -- looks at this Mac, changes nothing'
+        row 'task show' 'The evaluated declaration: profile, system, apps, links, packages'
+        row 'task diff' 'What install would change: closure diff, then what brew would add' 'builds the closure and leaves ./result (ignored)'
+        row 'task validate' 'Read the whole declaration back from the live system' 'exits 1 on drift; run it after every install'
+        row 'task audit [-- --strict]' 'State beyond the declaration, and known CVEs' '--strict exits 1 on findings'
+        row 'task shell:startup-time' 'Cold interactive zsh start against the {{.COLD_START_BUDGET}} ms budget'
+        group 'checks -- the checkout, not this Mac; nix runs in the pinned image via {{.ENGINE}}'
+        row 'task check' 'Evaluate every machine and profile, as CI does' 'git add -A first: the flake sees only tracked or staged files'
+        row 'task lint' 'zsh parse, set -euo, banners, hardcoded prefixes, this menu; nix fmt --ci'
+        row 'task test' 'Smoke tests and the negative evaluations' 'shell-startup runs only on a Mac'
+        row 'task fmt' 'Format every .nix file in place'
+        group 'write -- changes this Mac'
+        row 'task setup -- <name>' 'Select the machine; never inferred from the hostname'
+        row 'task install [-- --yes]' 'Fast-forward, build and switch, uninstall the undeclared, refresh plugins' 'sudo prompts; brew asks before uninstalling, --yes answers it'
+        row 'task rollback' 'Activate the previous generation' 'sudo prompts'
+        printf '\n%s\n\n' "${d}task --list for the generated view; ENGINE=docker forces Docker${r}"
 
   setup:
-    desc: "Persist active machine selection: task setup -- <machine-name>"
-    # Top-level alias for `manifest:set`. Every doc and operator-facing
-    # error message says `task setup -- <machine-name>` -- without this
-    # alias those instructions fail with `Task "setup" does not exist`.
-    # Forwarding CLI_ARGS preserves the `-- <name>` calling convention.
-    status: [false]
+    desc: 'Persist the machine selection: task setup -- <name>'
+    preconditions:
+      - sh: test -f '{{.ROOT_DIR}}/machines/{{.CLI_ARGS}}.nix'
+        msg: 'no machines/{{.CLI_ARGS}}.nix; the machines are: {{.MACHINES | trim}}'
     cmds:
-      - task: manifest:set
-        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
-
-  test:
-    desc: "Run all smoke tests (manifest + repo-sync + ai-checkout + links-audit + packages-declared + packages-trust + brewfile-compose + shell-startup + report + lint fixtures)"
-    cmds:
-      - task: test:manifest
-      - task: test:repo-sync
-      - task: test:ai-checkout
-      - task: test:links-audit
-      - task: test:packages-declared
-      - task: test:packages-trust
-      - task: test:brewfile-compose
-      - task: test:shell-startup
-      - task: test:report
-      - task: lint:test-fixtures
-
-  report:
-    desc: "Print a markdown overview of the converged install (read-only)"
-    status: [false]
-    deps: [manifest:resolve]
-    cmds:
-      - DOTFILEDIR='{{.ROOT_DIR}}' AI_DIR='{{.AI_DIR}}' zsh '{{.ROOT_DIR}}/install/report.zsh'
-
-  validate:
-    desc: "Validate full installation state (all components; run-all-aggregate)"
-    status: [false]
-    deps: [manifest:resolve]
-    # Each per-component validate is `internal: true` -- it cannot be invoked
-    # from a shell command line (`task shell:validate` exits 0 with
-    # `task: Task "shell:validate" is internal` and silently no-ops). The
-    # aggregator therefore dispatches via go-task's `task:` keyword, which
-    # bypasses the CLI-level internal gate. `ignore_error: true` applies per
-    # `for:` iteration, preserving run-all-aggregate semantics: every component
-    # runs regardless of prior failures.
-    #
-    # Per-component pass/fail status is emitted INLINE by each validate via
-    # `check`/`cross`/`warn` from messages.zsh; there is no cross-component
-    # summary footer because go-task does not surface `task:` dispatch exit
-    # codes back to the surrounding shell context.
-    cmds:
-      - for: [manifest:validate, identity:validate, links:validate,
-              macos:validate, hostname:validate, packages:validate,
-              ai:validate, shell:validate]
-        task: '{{.ITEM}}'
-        ignore_error: true
-
-  audit:
-    desc: "Detect drift and known vulnerabilities across all domains (read-only; run-all-aggregate)"
-    status: [false]
-    deps: [manifest:resolve]
-    # Bare-verb aggregate: runs every domain's drift check. The per-domain
-    # form (`task packages:audit`, `task links:audit`, ...) runs just one.
-    # Mirrors validate:'s dispatch -- full task names dispatched via go-task's
-    # `task:` keyword, `ignore_error: true` per `for:` iteration, so every
-    # domain runs regardless of prior drift and reports inline via
-    # messages.zsh. Full names because packages contributes two probes
-    # (audit + vulns).
-    cmds:
-      - for: [manifest:audit, packages:audit, packages:vulns, links:audit]
-        task: '{{.ITEM}}'
-        ignore_error: true
-
-  show:
-    desc: "List inspectable domains (run task <domain>:show for state)"
-    status: [false]
-    cmds:
-      - |
-        source '{{.TASKFILE_DIR}}/install/messages.zsh'
-        header "Inspectable domains -- run task <domain>:show"
-        echo
-        info "  task manifest:show         Resolved manifest (-- [--machine] NAME for any machine)"
-        info "  task features:show         Feature flags: enabled/disabled per the active machine"
-        info "  task ai:show               jshvn/ai checkout: path, profile, ref, plugins"
-        info "  task hostname:show         Hostname state file + live system hostnames"
-
-  diff:
-    desc: "Preview what task install would change (read-only)"
-    status: [false]
-    deps: [manifest:resolve]
-    # Bare-verb aggregate over the two domains with a build artifact. Each
-    # <domain>:diff deps its own realize step, so the artifacts are refreshed
-    # exactly once and a standalone `task links:diff` is never stale.
-    # ignore_error: true per `for:` iteration preserves run-all-aggregate
-    # semantics.
-    cmds:
-      - for: [packages:diff, links:diff]
-        task: '{{.ITEM}}'
-        ignore_error: true
+      - mkdir -p '{{.STATE}}' && printf '%s' '{{.CLI_ARGS}}' > '{{.STATE}}/machine'
+      - 'echo "machine: {{.CLI_ARGS}}"'
 
   install:
-    desc: "Install dotfiles for active machine (canonical entry)"
-    summary: |
-      task install IS task update -- there is no separate update pipeline.
-      Subtasks are state-converging: links/macos/hostname short-circuit when
-      already at desired state; packages:install and shell:antidote-update
-      always re-run to pull upstream updates; ai:install always re-runs the ai
-      repo's install so plugins stay current.
-    status: [false]
-    deps: [manifest:resolve]
+    desc: 'Fast-forward the checkout (warn-only), build and switch the selected machine (a first run on a Mac clears the way itself), uninstall what is no longer declared after asking (-- --yes answers yes), refresh the zsh plugin bundles'
+    preconditions: &need-machine
+      - sh: test -f '{{.ROOT_DIR}}/machines/{{.MACHINE}}.nix'
+        msg: 'no machine selected (no machines/{{.MACHINE}}.nix): task setup -- <name>; the machines are: {{.MACHINES | trim}}'
     cmds:
-      - task: links:install
-      - task: packages:install
-      # antidote-update follows packages:install so the antidote formula is
-      # present/refreshed before its cloned bundles (OMZ + plugins) are
-      # git-pulled. Non-fatal on network failure.
-      - task: shell:antidote-update
-      # ai:install runs after packages:install (the claude-code cask must
-      # exist) and is a no-op unless features.ai is on.
-      - task: ai:install
-      - task: macos:install
-      # hostname:apply -- status:-gated; no-op when the state file matches
-      # live LocalHostName. A missing state file is back-filled from the live
-      # name (no sudo); sudo prompts only when state and live differ.
-      - task: hostname:apply
-      # packages:verify is the LAST FATAL task-call in the install pipeline.
-      # A missing bin or missing /Applications/<App>.app fails the entire
-      # `task install` with exit 1 -- no `success "install complete"` line
-      # is printed when verify trips.
-      - task: packages:verify
-      # install-time orphan warning -- non-fatal. links:audit in
-      # --warn-only mode emits orphans via warn() to stderr and ALWAYS
-      # exits 0 (internal to the task body), so install exits 0 even when
-      # an orphan is detected. The standalone `task links:audit`
-      # (default mode) keeps the non-zero-exit-on-orphans contract for CI.
-      - task: links:audit
-        vars: { CLI_ARGS: "--warn-only" }
+      - DOTFILEDIR='{{.ROOT_DIR}}' REPO_NAME=jshvn/dotfiles zsh '{{.ROOT_DIR}}/tasks/install-repo-sync.zsh'
+      - '{{.EVAL}} | DOTFILEDIR="{{.ROOT_DIR}}" MACHINE={{.MACHINE}} NIX={{.NIX}} zsh "{{.ROOT_DIR}}/tasks/install.zsh" {{.CLI_ARGS}}'
+      # a login shell, because .zprofile puts Homebrew on the PATH and bootstrap's shell lacks it
+      - zsh -lic 'antidote update --bundles' >/dev/null 2>&1 || echo "antidote update failed (offline?), bundles unchanged"
+
+  rollback:
+    desc: 'Activate the previous generation'
+    cmds:
+      - sudo {{.REBUILD}} --rollback
+
+  show:
+    desc: 'Print the evaluated declaration for the selected machine (profile, system, apps, links, packages)'
+    preconditions: *need-machine
+    cmds:
+      - '{{.EVAL}} | jq .dotfiles'
+
+  diff:
+    desc: 'What install would change: the closure diff against the running generation, then the packages brew bundle would add'
+    preconditions: *need-machine
+    cmds:
+      - '{{.REBUILD}} build --flake "{{.ROOT_DIR}}#{{.MACHINE}}" && {{.NIX}} store diff-closures /run/current-system ./result'
       - |
-        # Source via TASKFILE_DIR (mirrors default: and show: above).
-        source '{{.TASKFILE_DIR}}/install/messages.zsh'
-        success "install complete"
+        bf=$(mktemp); trap 'rm -f "$bf"' EXIT
+        {{.EVAL}} | jq -r .brewfile > "$bf"
+        HOMEBREW_NO_AUTO_UPDATE=1 brew bundle check --no-upgrade --verbose --file="$bf" || true
+
+  validate:
+    desc: 'Read the whole declared state back from the live system (read-only; exits 1 on drift)'
+    preconditions: *need-machine
+    cmds:
+      - '{{.EVAL}} | MACHINE={{.MACHINE}} zsh "{{.ROOT_DIR}}/tasks/validate.zsh"'
+
+  audit:
+    desc: 'State beyond the declaration and known CVEs (read-only; -- --strict exits 1 on findings)'
+    preconditions: *need-machine
+    cmds:
+      - '{{.EVAL}} | zsh "{{.ROOT_DIR}}/tasks/audit.zsh" {{.CLI_ARGS}}'
+
+  shell:startup-time:
+    desc: 'Measure cold interactive zsh startup time (fails above {{.COLD_START_BUDGET}} ms)'
+    cmds:
+      - |
+        out=$(mktemp); trap 'rm -f "$out"' EXIT
+        hyperfine --warmup 1 --runs 5 --export-json "$out" 'zsh -lic exit' >/dev/null 2>&1
+        ms=$(jq -r '.results[0].summary.time_wall_clock.mean * 1000 | floor' "$out")
+        echo "cold shell start: ${ms} ms (budget {{.COLD_START_BUDGET}} ms)"
+        test "$ms" -le {{.COLD_START_BUDGET}}
+
+  check:
+    desc: 'Evaluate every machine and every profile inside the pinned nix image (CI runs the same)'
+    cmds:
+      - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && nix flake check --no-write-lock-file"'
+
+  lint:
+    desc: 'Static checks: zsh parse, set -euo, banners, no hardcoded prefix, every task in the menu; Nix formatting via nix fmt'
+    cmds:
+      - zsh '{{.ROOT_DIR}}/tasks/lint.zsh'
+      - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && nix fmt --no-write-lock-file -- --ci"'
+
+  fmt:
+    desc: 'Format every .nix file in place with the flake formatter, inside the pinned nix image'
+    cmds:
+      - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && nix fmt --no-write-lock-file"'
+
+  test:
+    desc: 'Smoke tests (orphan scan, trust scan, cleanup scan and link clearing, repo sync, ai checkout, the live shell on a Mac) and the negative evaluations'
+    cmds:
+      - for: [audit-brew-cleanup, audit-links, audit-trust, install-clear-links, install-repo-sync, ai-checkout]
+        cmd: DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/tasks/tests/{{.ITEM}}.zsh'
+      - '{{if eq OS "darwin"}}DOTFILEDIR="{{.ROOT_DIR}}" zsh "{{.ROOT_DIR}}/tasks/tests/shell-startup.zsh"{{else}}echo "shell-startup: skipped, it needs the live Mac shell"{{end}}'
+      - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && SRC=/work bash tasks/tests/negative.sh"'

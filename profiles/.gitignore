@@ -1,0 +1,9 @@
+# profiles/.gitignore -- a profile directory holds these five files and nothing
+# else, so a private key copied into one can never be committed. task validate
+# crosses on anything ignored here.
+/*/*
+!/*/default.nix
+!/*/git
+!/*/ssh
+!/*/key.pub
+!/*/agent.toml

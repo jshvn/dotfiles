@@ -1,2 +1,0 @@
-machine.description
-machine.description in stderr

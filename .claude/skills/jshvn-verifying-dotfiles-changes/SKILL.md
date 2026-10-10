@@ -1,54 +1,57 @@
 ---
 name: jshvn-verifying-dotfiles-changes
-description: Use after changing anything in this dotfiles repo - maps each change type to the task commands that prove convergence; five-tier testing model; one-check rule.
+description: Use after changing anything in this dotfiles repo - maps each change type to the task commands that prove convergence; the tier model; one-check rule.
 ---
 
 # Verifying Dotfiles Changes
 
-Run the narrowest check that can fail, then the relevant aggregate.
+Run the narrowest check that can fail, then the relevant aggregate. `git add -A` first:
+`task check` evaluates the git tree, and an untracked file is invisible to it.
 
 | You changed | Run | Proves |
 |---|---|---|
-| Any taskfile | `task lint` | LINT rules pass, banner drift caught |
-| Machine/base/feature TOML | `task setup -- "$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/machine")" && task manifest:audit` | resolver validates, resolved.json fresh |
-| Package declarations | `task diff` then `task install && task packages:audit` | preview is what you expected, Brewfile converges, no drift |
-| Symlink entries (links.yml) | `task diff` then `task install && task validate && task links:audit` | preview lists the intended links, they exist and point into the repo, no orphans |
-| Shell files (.zsh) | `task lint && task test && exec zsh` | parse-check, smoke tests, live shell loads |
-| `[ai]` table or the `ai` flag | `task setup -- "$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/machine")" && task install && task validate` | resolver accepts the table, the checkout is at the pinned ref, the ai repo's own validate passes |
-| os/defaults | `task install`, then log out/in for domains that need it | defaults applied |
+| A machine, profile, module, concern or app `.nix` | `task check` | every machine and profile still evaluates; an unaccounted switch, a redundant package or a bundled extension fails here, naming itself |
+| Package lists (`packages.*`, `provided.*`, base) | `task diff`, then `task install && task audit` | the preview is what you expected; brew bundle converges; nothing undeclared remains |
+| `dotfiles.links`, `shell.aliases`, `shell.env` | `task diff`, then `task install && task validate && task audit` | the closure diff lists the intended links; each resolves into the checkout; no orphans |
+| Shell files (`shell/`, an `aliases.zsh`, an `env.zsh`) | `task lint && task test && exec zsh` | parse-check, the live shell loads, the plugin markers hold |
+| `system/<concern>.nix` | `task install && task validate` | every defaults key reads back (log out and in for the domains that need it) |
+| `apps.claude-code.{profile,ref}` | `task install && task validate` | the checkout is at the ref, the ai repo's own validate passes |
+| `Taskfile.yml`, `tasks/*.zsh`, `tasks/tests/*` | `task lint && task test` | the rules and the smoke tests |
+| `.github/workflows/ci.yml` | push a branch, open a PR | the same `check`, `lint`, `test` with Docker; lerasium's closure builds on macOS |
 
 Aggregates: `task diff` (preview, read-only), `task validate` (installation state),
-`task test` (all smoke tests), `task audit` (all-domain drift, read-only).
+`task test` (smoke tests and the negative evaluations), `task audit` (drift beyond the
+declaration, read-only).
 
-## The five-tier model
+## The tier model
 
-1. Static lint (`task lint`) -- syntax and repo rules, no side effects
-2. Validate (`task validate`) -- is the machine in its declared state
-3. Reconcile (`task install`) -- converge; a second run must be a fast no-op, so a re-run
-   that does work is itself a failed check
-4. Smoke (`task test`) -- behavior probes
-5. System (`task audit`) -- cross-domain drift detection
+1. Static lint (`task lint`): syntax and repo rules, no side effects.
+2. Evaluate (`task check`): every machine and profile to its system closure, in the pinned
+   image, no Mac needed.
+3. Validate (`task validate`): is the machine in its declared state.
+4. Reconcile (`task install`): converge; a second run must change nothing (`task diff` shows
+   no closure change and `brew bundle check` is satisfied), so a re-run that does work is
+   itself a failed check.
+5. Smoke (`task test`): behavior probes.
+6. System (`task audit`): what is on the machine beyond the declaration, known CVEs.
 
 Each tier catches a different drift class; "looks installed but isn't" and
 "symlink-soup-after-refactor" are the two this repo has been burned by.
 
-`task diff` sits before tier 3: it compares the materialized build artifacts in
-`$XDG_STATE_HOME/dotfiles/build/` against the live system, so it answers "what would install
-change" without changing anything. Reach for it whenever an install is about to do more than
-you expect.
+`task diff` sits before tier 4: a closure diff against the running generation, then what brew
+bundle would add. Reach for it whenever an install is about to do more than you expect.
 
-One more check the staging discipline makes available: after a converged `task install`,
-`git status --short` must be empty. The repo tree holds source only, so anything showing up
-there is either a real edit or a generated file that escaped into the tree.
+After a converged `task install`, `git status --short` must be empty (the `result` symlink is
+ignored). The repo tree holds source only.
 
 ## The one-check rule here
 
-The rule itself is `jshvn-one-check-rule`. In this repo the check is an assert-based
-self-check or a smoke test wired into `task test`.
+The rule itself is `jshvn-one-check-rule`. In this repo the check is a probe in
+`tasks/tests/negative.sh` (a declaration rule, proven by breaking it) or a smoke test under
+`tasks/tests/` wired into `task test`.
 
-Interactive convenience functions (`shell/functions/*.zsh`, `shell/aliases/*.zsh`) are
-exempt, even when they contain parsing or formatting logic: `task lint` parse-checks them,
-and running the function once in a live shell is their verification. Do not write smoke
-tests for them or wire them into `task test`. The rule targets pipeline logic --
-resolver, checkout, audits -- where a silent break corrupts machine state rather
-than one prompt's output.
+Interactive convenience functions (`shell/functions/*.zsh`, any `aliases.zsh`) are exempt,
+even when they contain parsing or formatting logic: `task lint` parse-checks them, and running
+the function once in a live shell is their verification. Do not write smoke tests for them.
+The rule targets pipeline logic -- validate, audit, checkout, the scanners -- where a silent
+break corrupts machine state rather than one prompt's output.

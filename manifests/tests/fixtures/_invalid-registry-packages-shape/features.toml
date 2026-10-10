@@ -1,8 +1,0 @@
-# negative fixture registry -- a flag whose packages table names a bucket that
-# does not exist.
-
-[bad-flag]
-description = "flag with a bad packages bucket"
-
-[bad-flag.packages]
-notabucket = ["x"]

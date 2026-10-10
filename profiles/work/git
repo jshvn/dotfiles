@@ -1,0 +1,23 @@
+# profiles/work/git -- the work profile's git overlay.
+#
+# Linked to ~/.config/git/profile and included by apps/git/config for every
+# repository under ~/git/.
+# Sets: [user] email, signingkey; [gpg] format + program; [commit] gpgsign.
+#   The signing key is the profile's key.pub (linked to ~/.ssh/profile.pub).
+#
+# Not yet usable: the work email and profiles/work/key.pub are both missing.
+# Fill in both before a machine imports this profile.
+
+[user]
+    name = Josh Vaughen
+    # TODO: set work email -- email = <work>
+    signingkey = ~/.ssh/profile.pub
+
+[gpg]
+    format = ssh
+
+[gpg "ssh"]
+    program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+
+[commit]
+    gpgsign = true

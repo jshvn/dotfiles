@@ -1,2 +1,0 @@
-machine.os must be
-machine.os enum in stderr

@@ -1,0 +1,16 @@
+# profiles/personal/agent.toml -- which SSH keys the 1Password agent offers.
+#
+# Linked to ~/.config/1Password/ssh/agent.toml by apps/1password/default.nix.
+# Each [[ssh-keys]] section matches by item, vault and account (names or IDs,
+# combined as AND); sections are offered in file order, and an entry that
+# matches nothing is skipped. Most servers stop after six keys (MaxAuthTries).
+# The agent picks up a saved edit without a restart; a configuration error
+# stops it and shows under Settings > Developer.
+#
+# Schema: https://www.1password.dev/ssh/agent/config
+# Check: ssh-add -l (SSH_AUTH_SOCK is the agent; apps/1password/env.zsh).
+
+# The item holding key.pub's private half, by ID: a rename keeps it, a move to
+# another vault gives the item a new ID and breaks it (task validate crosses).
+[[ssh-keys]]
+item = "437vfxmjrpuzq6bt4wt2xmkb2i"

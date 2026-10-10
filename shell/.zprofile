@@ -3,17 +3,16 @@
 # =============================================================================
 # shell/.zprofile -- zsh login-shell initialization
 #
-# Purpose:      Load Homebrew shellenv; conditionally configure SSH_AUTH_SOCK
-#               to the 1Password agent socket (manifest-driven via
-#               features.one-password-ssh).
-# Depends on:   brew (at $HOMEBREW_PREFIX/bin/brew); resolved.json (read
-#               via jq for the one-password-ssh feature gate); .zshenv
-#               for XDG_STATE_HOME.
+# Purpose:      Load Homebrew shellenv, then the login-shell fragments the
+#               switch linked into $XDG_STATE_HOME/dotfiles/env.d/ (the
+#               1Password agent socket).
+# Depends on:   brew (at $HOMEBREW_PREFIX/bin/brew); .zshenv for
+#               XDG_STATE_HOME; $XDG_STATE_HOME/dotfiles/env.d/*.zsh.
 # Side effects: evals `brew shellenv` (PATH/MANPATH/INFOPATH/HOMEBREW_* exports);
-#               may export SSH_AUTH_SOCK to the 1Password agent socket.
+#               whatever the fragments export (SSH_AUTH_SOCK).
 # =============================================================================
 
-# Darwin only: every machine in manifests/machines/ sets machine.os = "darwin".
+# Darwin only: every machine file is a Mac (docs/DECISIONS.md).
 # A Linux machine needs a linuxbrew branch here.
 if [[ "$(uname -m)" == "arm64" ]]; then
     DIRECTORY="/opt/homebrew/bin/brew"
@@ -28,15 +27,8 @@ else
     echo "warn: brew not found at $DIRECTORY -- run bootstrap" >&2
 fi
 
-# SSH Agent. .zprofile runs BEFORE .zshrc, so the _dotfiles_feature helper
-# is not yet defined; use an inline jq read of resolved.json. On missing
-# resolved.json (fresh machine, before `task setup`), the block is skipped
-# and SSH_AUTH_SOCK stays unset (graceful degrade -- the system ssh-agent
-# handles key lookup).
-if [[ -r "${XDG_STATE_HOME}/dotfiles/resolved.json" ]]; then
-    _opssh=$(jq -r '.features."one-password-ssh" // false' "${XDG_STATE_HOME}/dotfiles/resolved.json" 2>/dev/null)
-    if [[ "$_opssh" == "true" ]]; then
-        export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
-    fi
-    unset _opssh
-fi
+# Login-shell fragments linked into env.d by the switch (the 1Password agent socket).
+# .zprofile runs before .zshrc, so nothing from functions/ exists yet.
+for file in "${XDG_STATE_HOME}/dotfiles/env.d/"*.zsh(-.N); do
+    source "$file"
+done
