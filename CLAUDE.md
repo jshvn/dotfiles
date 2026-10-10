@@ -59,8 +59,8 @@ What the file system will not tell you:
   `.zshrc` globs `shell/functions/` directly and never globs `shell/aliases/`.
 - Every read task runs one `nix eval` (`SHAPE`) and pipes the JSON on: `validate` and `audit`
   to a script in `tasks/`, `show` and `diff` to jq. `homebrew.casks` and `homebrew.taps` are
-  lists of records: read `.name`. The eval prints one
-  `trace: Obsolete option ... expose-group-by-app` line; it is noise.
+  lists of records: read `.name`. Reading a renamed option's alias prints a
+  `trace: Obsolete option` line, so `SHAPE` drops dock's `expose-group-by-app`.
 - Activation runs as root. A step that must run as the user is
   `sudo -u ${config.system.primaryUser} -H ...` with an explicit `PATH` if it needs Homebrew.
   What an activation script runs is copied into the store with its generation (`${./.}`,

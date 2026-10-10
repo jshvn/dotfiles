@@ -39,12 +39,13 @@ vars:
   PRELUDE: git config --global --add safe.directory /work
   # The evaluated declaration every read-only task consumes: the dotfiles namespace (links,
   # profile, apps, system ...), every defaults group (wrapped in tryEval: nix-darwin keeps
-  # removed groups such as alf that throw when touched), the ByHost keys, the generated
-  # Brewfile, taps, casks, the Homebrew prefix and the hostname.
+  # removed groups such as alf that throw when touched; renamed keys such as dock's
+  # expose-group-by-app are dropped, since reading one prints a trace), the ByHost keys, the
+  # generated Brewfile, taps, casks, the Homebrew prefix and the hostname.
   SHAPE: >-
     c: let safe = x: let r = builtins.tryEval (builtins.deepSeq x x); in if r.success then r.value else "<error>"; in {
       dotfiles = c.dotfiles;
-      defaults = builtins.mapAttrs (n: safe) c.system.defaults;
+      defaults = builtins.mapAttrs (n: safe) (c.system.defaults // { dock = removeAttrs c.system.defaults.dock [ "expose-group-by-app" ]; });
       currentHost = c.home-manager.users.josh.targets.darwin.currentHostDefaults;
       loginShell = c.users.users.josh.shell;
       brewfile = c.homebrew.brewfile;

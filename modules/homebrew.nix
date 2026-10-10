@@ -12,6 +12,9 @@
       autoUpdate = true;
       upgrade = true;
       cleanup = "none";
+      # XDG_CONFIG_HOME as shell/.zshenv exports it; sudo drops it, and brew keeps its trust store
+      # under it: the grants the Brewfile's `trusted: true` writes must land where the shell reads
+      extraEnv.XDG_CONFIG_HOME = "${config.users.users.${config.homebrew.user}.home}/.config";
     };
   };
 
