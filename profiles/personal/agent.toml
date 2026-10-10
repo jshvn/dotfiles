@@ -10,6 +10,7 @@
 # Schema: https://www.1password.dev/ssh/agent/config
 # Check: ssh-add -l (SSH_AUTH_SOCK is the agent; apps/1password/env.zsh).
 
+# The item holding key.pub's private half, by ID: a rename keeps it, a move to
+# another vault gives the item a new ID and breaks it (task validate crosses).
 [[ssh-keys]]
-item = "id_ed25519_personal"
-vault = "Personal"
+item = "437vfxmjrpuzq6bt4wt2xmkb2i"
