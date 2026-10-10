@@ -1,9 +1,9 @@
 # identity/git/identities/none -- no-op git identity.
 #
-# This file is the no-op identity used when machine.identity = "none" in the
-# machine manifest.
-# It is never loaded via any [includeIf] block because no gitdir pattern matches it.
+# Purpose: the git overlay for dotfiles.identity = "none", so every identity
+# value has one overlay file. It sets no git config keys; it is comment-only.
 #
-# Purpose: provides a named, committed artifact for the "none" enum value so that
-# identity selection logic has a concrete target even when no git identity is wanted.
-# No git config keys are set here; this file is intentionally comment-only.
+# The identities directory is linked whole to ~/.config/git/identities, so
+# this file is present on every machine, but no [includeIf] block in
+# identity/git/config names it and git never loads it. task validate reads
+# user.email from an overlay only for a real identity.

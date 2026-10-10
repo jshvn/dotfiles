@@ -39,13 +39,13 @@ is_under_repo() {
   [[ "$1" == "$repo_root" || "$1" == "$repo_prefix"* ]]
 }
 
-# Expected targets on stdin (blank lines ignored).
+# Registered link paths on stdin (blank lines ignored).
 expected=()
 while IFS= read -r line; do
   [[ -n "$line" ]] && expected+=("$line")
 done
 
-# Parent dirs of expected targets (so deep expected dirs like
+# Parent dirs of the registered link paths (so deep dirs like
 # ~/.config/zsh are reached). Deduplicated, word-split-safe -- NOT
 # the `array=($(...))` form, which word-splits on spaces in path components.
 parent_dirs=()
@@ -80,9 +80,9 @@ orphans=()
 # Pass A -- DANGLING repo-targeted links anywhere under the scan roots.
 # `! -e` is true only when the link target does not exist (dangling). Match on
 # the LITERAL target (readlink), since readlink -f yields nothing for a dead
-# link. No expected-membership filter: a dangling link whose source is gone is
-# removable regardless; a dangling EXPECTED link is a broken install that
-# links:validate reports, but it is still an orphan to clear here.
+# link. No registry filter: a dangling link whose source is gone is removable
+# regardless; a dangling REGISTERED link is a broken link that
+# `task validate` reports, but it is still an orphan to clear here.
 for dir in "${roots[@]}"; do
   [[ -d "$dir" ]] || continue
   while IFS= read -r lnk; do
@@ -95,10 +95,10 @@ for dir in "${roots[@]}"; do
   done < <(find "$dir" -maxdepth 2 -type l 2>/dev/null)
 done
 
-# Pass B -- LIVE repo-targeted links not in EXPECTED_TARGETS, scoped to
-# expected parent dirs (where EXPECTED_TARGETS is the authoritative inventory).
-# Match on the RESOLVED target so only live links count; dangling ones were
-# handled by pass A.
+# Pass B -- LIVE repo-targeted links that are not registered, scoped to the
+# registered links' parent dirs (the dotfiles.links registry, piped in on
+# stdin, is the authoritative inventory). Match on the RESOLVED target so
+# only live links count; dangling ones were handled by pass A.
 for dir in "${parent_dirs[@]}"; do
   [[ -d "$dir" ]] || continue
   while IFS= read -r lnk; do

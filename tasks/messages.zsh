@@ -4,7 +4,8 @@
 # tasks/messages.zsh -- shared messaging library
 #
 # Purpose:      Consistent ANSI-coloured info/success/warn/error/debug/
-#               header/step/check/cross output for every script under tasks/ and apps/.
+#               header/step/check/cross output for the scripts under tasks/
+#               and apps/claude-code/ that report progress.
 # Depends on:   nothing.
 # Side effects: defines DOTFILES_{RED,GREEN,YELLOW,BLUE,CYAN,BOLD,NC}
 #               globals; defines info/success/warn/error/debug/header/step/

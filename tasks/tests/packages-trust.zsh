@@ -4,10 +4,10 @@
 # tasks/tests/packages-trust.zsh -- smoke tests for packages-trust-scan.zsh
 #
 # Purpose:      Exercise the tap/trust drift detector against fixture inputs.
-#               Asserts it flags (a) an installed tap the declaration does not derive,
-#               (b) a trust grant whose tap is undeclared, and (c) a whole-tap
-#               grant for an undeclared tap, while NOT flagging a declared tap
-#               or a grant belonging to a declared tap.
+#               Asserts it flags (a) an installed tap the declaration does not
+#               derive, (b) a trust grant whose tap is undeclared, and (c) a
+#               whole-tap grant for an undeclared tap, while NOT flagging a
+#               declared tap or a grant belonging to a declared tap.
 # Depends on:   DOTFILEDIR env var (exported by Taskfile.yml);
 #               tasks/packages-trust-scan.zsh; tasks/messages.zsh; jq.
 # Side effects: creates fixture files under mktemp -d, removed via trap.
@@ -26,7 +26,7 @@ failed=0
 BASE="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-trust-test.XXXXXX")"
 trap 'rm -rf "$BASE"' EXIT INT TERM
 
-# Declared: one tap the manifest asked for.
+# Declared: one tap the declaration derives.
 printf 'declared/keep\n' > "${BASE}/declared"
 
 # Installed: the declared one plus a stray.

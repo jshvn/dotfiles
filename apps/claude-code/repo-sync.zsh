@@ -3,11 +3,11 @@
 # =============================================================================
 # apps/claude-code/repo-sync.zsh -- fast-forward the dotfiles repo from its remote
 #
-# Purpose:      Pull the latest jshvn/dotfiles before install (the `update`
-#               alias runs this, then `task install`, in two processes).
-#               Fetches then fast-forwards the current branch; never merges,
-#               rebases, or clobbers local work. apps/claude-code/checkout.zsh
-#               reuses it against the jshvn/ai checkout.
+# Purpose:      Pull the latest jshvn/dotfiles before the switch; the first
+#               thing `task install` runs. Fetches then fast-forwards the
+#               current branch; never merges, rebases, or clobbers local work.
+#               apps/claude-code/checkout.zsh reuses it against the jshvn/ai
+#               checkout.
 # Depends on:   DOTFILEDIR and REPO_NAME env vars (the repo to pull and its
 #               owner/repo label for messages; exported by
 #               apps/claude-code/checkout.zsh); git;
