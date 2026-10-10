@@ -28,15 +28,8 @@ else
     echo "warn: brew not found at $DIRECTORY -- run bootstrap" >&2
 fi
 
-# SSH Agent. .zprofile runs BEFORE .zshrc, so the _dotfiles_feature helper
-# is not yet defined; use an inline jq read of resolved.json. On missing
-# resolved.json (fresh machine, before `task setup`), the block is skipped
-# and SSH_AUTH_SOCK stays unset (graceful degrade -- the system ssh-agent
-# handles key lookup).
-if [[ -r "${XDG_STATE_HOME}/dotfiles/resolved.json" ]]; then
-    _opssh=$(jq -r '.features."one-password-ssh" // false' "${XDG_STATE_HOME}/dotfiles/resolved.json" 2>/dev/null)
-    if [[ "$_opssh" == "true" ]]; then
-        export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
-    fi
-    unset _opssh
-fi
+# Login-shell fragments linked into env.d by the switch (the 1Password agent socket when
+# that app is on). .zprofile runs before .zshrc, so nothing from functions/ exists yet.
+for file in "${XDG_STATE_HOME}/dotfiles/env.d/"*.zsh(-.N); do
+    source "$file"
+done

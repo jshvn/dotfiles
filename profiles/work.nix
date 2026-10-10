@@ -1,0 +1,70 @@
+# The work MacBook (was manifests/machines/work.toml).
+{ ... }:
+{
+  dotfiles = {
+    identity = "work";
+    system = {
+      dock = true;
+      finder = true;
+      input = true;
+      screenshots = true;
+      security = true;
+      appearance = true;
+      display = true;
+      animations = true;
+    };
+    apps = {
+      raycast = {
+        enable = true;
+        freeCmdSpace = false;
+      };
+      ghostty.enable = true;
+      herdr.enable = false;
+      vscode.enable = true;
+      claude-code = {
+        enable = true;
+        profile = "work";
+        ref = "2026.09.23";
+      };
+      conda.enable = true;
+      dust.enable = false;
+    };
+    shell.jgrid-net = false;
+    repo.devToolchain = true;
+    packages = {
+      formulae = [
+        "bat"
+        "bottom"
+        "container"
+        "doggo"
+        "duf"
+        "fd"
+        "gh"
+        "git-crypt"
+        "htop"
+        "hugo"
+        "poppler"
+        "uv"
+        "wget"
+      ];
+      casks = [
+        "1password-cli"
+        "alcove"
+        "appcleaner"
+        "cardhop"
+        "fantastical"
+        "firefox"
+        "gitfox"
+        "microsoft-excel"
+        "microsoft-powerpoint"
+        "microsoft-word"
+        "slack"
+        "spotify"
+        "standard-notes"
+        "zed"
+        "zoom"
+      ];
+      mas.Things3 = 904280696;
+    };
+  };
+}

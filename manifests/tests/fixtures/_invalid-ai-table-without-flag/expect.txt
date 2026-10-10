@@ -1,2 +1,0 @@
-is set but feature ai is not enabled
-ai table without the ai flag rejected

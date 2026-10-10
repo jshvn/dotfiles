@@ -132,7 +132,9 @@ for file in "${DOTFILEDIR}/shell/functions/helpers/"*.zsh(.N) \
     source "$file"
 done
 
-for file in "${DOTFILEDIR}/shell/aliases/"*.zsh(.N); do
+# Alias files are linked into aliases.d by the switch: the always-on shell topics, plus each
+# enabled app's or concern's aliases.zsh. Whether a file is there is the gate.
+for file in "${XDG_STATE_HOME}/dotfiles/aliases.d/"*.zsh(-.N); do
     source "$file"
 done
 

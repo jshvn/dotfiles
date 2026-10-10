@@ -1,2 +1,0 @@
-packages.taps entries must be <user>/<repo>
-malformed tap name rejected

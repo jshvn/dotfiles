@@ -14,8 +14,6 @@
 #               feature-on machines; no-op (returns 0) on feature-off.
 # =============================================================================
 
-[[ "$(_dotfiles_feature jgrid-net)" == "true" ]] || return 0
-
 METALS=(
     # standard metals
     "steel"

@@ -1,0 +1,26 @@
+#!/bin/zsh
+
+# =============================================================================
+# shell/aliases/finder.zsh -- Finder GUI wrappers
+#
+# Purpose:      Finder GUI wrappers (finder / findershow / finderhide);
+#               gated on features.macos-finder via wrapper-function pattern
+#               so calls on machines with macos-finder disabled surface a
+#               stderr message instead of silently no-opping.
+# Depends on:   shell/functions/helpers/_dotfiles_require_feature.zsh.
+# Side effects: defines functions finder / findershow / finderhide;
+#               feature-gated `open -a Finder` + `defaults write` +
+#               `killall Finder` on macos-finder=true machines.
+# =============================================================================
+
+function finder() {
+    open -a Finder ./
+}
+
+function findershow() {
+    defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder
+}
+
+function finderhide() {
+    defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder
+}
