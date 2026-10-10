@@ -54,6 +54,9 @@ in
       "nix-command"
       "flakes"
     ];
+    # Profile and defexpr under $XDG_STATE_HOME/nix: home-manager runs nix-env on every switch,
+    # and nix-env otherwise makes ~/.nix-profile and ~/.nix-defexpr
+    nix.settings.use-xdg-base-directories = true;
     nix.gc = {
       automatic = true;
       options = "--delete-older-than 14d";
