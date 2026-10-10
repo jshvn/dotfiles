@@ -20,7 +20,7 @@ typeset -r ROOT="${HERE:h}"
 source "$HERE/messages.zsh"
 failed=0
 
-zsh_files=("$ROOT"/{apps,system,tasks,shell,identity}/**/*.zsh(.N) "$ROOT"/shell/.z*(.N))
+zsh_files=("$ROOT"/*.zsh(.N) "$ROOT"/{apps,system,tasks,shell,identity}/**/*.zsh(.N) "$ROOT"/shell/.z*(.N))
 
 info "zsh -n"
 for f in $zsh_files; do

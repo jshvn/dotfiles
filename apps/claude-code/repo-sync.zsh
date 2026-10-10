@@ -9,8 +9,9 @@
 #               apps/claude-code/checkout.zsh reuses it against the jshvn/ai
 #               checkout.
 # Depends on:   DOTFILEDIR and REPO_NAME env vars (the repo to pull and its
-#               owner/repo label for messages; exported by
-#               apps/claude-code/checkout.zsh); git;
+#               owner/repo label for messages; exported by the Taskfile's
+#               `install` for this repo and by apps/claude-code/checkout.zsh
+#               for the jshvn/ai checkout); git;
 #               tasks/messages.zsh (sourced relative to this script, NOT
 #               from DOTFILEDIR, so the repo under operation is decoupled
 #               from the library location).

@@ -4,6 +4,7 @@
 { config, lib, ... }:
 let
   cfg = config.dotfiles.apps.raycast;
+  user = config.system.primaryUser;
 in
 {
   options.dotfiles.apps.raycast = {
@@ -19,9 +20,9 @@ in
     # ponytail: -dict-add rather than CustomUserPreferences, which would replace the whole
     # 22-entry hotkey table with this one entry. activateSettings reloads it without a logout.
     system.activationScripts.postActivation.text = lib.mkIf cfg.freeCmdSpace ''
-      sudo -u josh defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 \
+      sudo -u ${user} -H defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 \
         '{enabled = 0; value = { parameters = (32, 49, 1048576); type = standard; }; }'
-      sudo -u josh /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u || true
+      sudo -u ${user} -H /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u || true
     '';
   };
 }

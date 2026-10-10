@@ -241,12 +241,17 @@ done < <(j '
   | .key as $d | .value | to_entries[] | select(.value != null)
   | [$d, .key, (.value | tostring), (.value | type)] | @tsv')
 
+# display-mode.swift verify exits 0 at More Space, 1 in another mode, 2 with no active built-in
+# panel or no HiDPI mode (lid closed on a dock, a mirrored display), 64 on usage. Exit 2 leaves
+# nothing to read back, which is not drift.
 if [[ "$(j .dotfiles.system.display)" == true ]]; then
-  if out=$(swift "$ROOT/system/display-mode.swift" verify 2>&1); then
-    check "display.builtin = More Space ($out)"
-  else
-    fail "display.builtin: $out"
-  fi
+  rc=0
+  out=$(swift "$ROOT/system/display-mode.swift" verify 2>&1) || rc=$?
+  case $rc in
+    0) check "display.builtin = More Space ($out)" ;;
+    2) warn "display.builtin: not checked, no active built-in panel ($out)" ;;
+    *) fail "display.builtin: $out" ;;
+  esac
 fi
 
 # --getglobalstate needs no sudo: "Firewall is enabled. (State = 1)", or State = 2 for on and
