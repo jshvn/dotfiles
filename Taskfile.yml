@@ -8,10 +8,8 @@ set: [errexit, pipefail]
 silent: true
 
 env:
-  # flakes on before the first switch writes them into /etc/nix/nix.conf; nix on PATH for a
-  # non-interactive shell (the installer's /etc/zshrc block covers interactive ones)
+  # flakes on before the first switch writes them into /etc/nix/nix.conf
   NIX_CONFIG: 'experimental-features = nix-command flakes'
-  PATH: '/nix/var/nix/profiles/default/bin:{{.PATH}}'
 
 vars:
   STATE: '{{.XDG_STATE_HOME | default (printf "%s/.local/state" .HOME)}}/dotfiles'
@@ -20,6 +18,8 @@ vars:
   MACHINES:
     sh: for f in '{{.ROOT_DIR}}/machines'/*.nix; do b=${f##*/}; printf '%s ' "${b%.nix}"; done
   REBUILD: /run/current-system/sw/bin/darwin-rebuild
+  # the official installer's profile, called by path: a Taskfile env cannot override the caller's PATH
+  NIX: /nix/var/nix/profiles/default/bin/nix
   # Apple container when its daemon is up, else Docker; ENGINE=docker reproduces a CI run
   ENGINE:
     sh: |
@@ -50,7 +50,7 @@ vars:
       casks = c.homebrew.casks;
       hostName = c.networking.localHostName;
     }
-  EVAL: nix eval --json '{{.ROOT_DIR}}#darwinConfigurations.{{.MACHINE}}.config' --apply '{{.SHAPE}}'
+  EVAL: "{{.NIX}} eval --json '{{.ROOT_DIR}}#darwinConfigurations.{{.MACHINE}}.config' --apply '{{.SHAPE}}'"
 
 tasks:
   default:
@@ -99,7 +99,7 @@ tasks:
     desc: 'What install would change: the closure diff against the running generation, then the packages brew bundle would add'
     preconditions: *need-machine
     cmds:
-      - '{{.REBUILD}} build --flake "{{.ROOT_DIR}}#{{.MACHINE}}" && nix store diff-closures /run/current-system ./result'
+      - '{{.REBUILD}} build --flake "{{.ROOT_DIR}}#{{.MACHINE}}" && {{.NIX}} store diff-closures /run/current-system ./result'
       - |
         bf=$(mktemp); trap 'rm -f "$bf"' EXIT
         {{.EVAL}} | jq -r .brewfile > "$bf"
