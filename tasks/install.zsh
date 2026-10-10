@@ -12,7 +12,9 @@
 #               lets brew uninstall what is installed beyond the declaration
 #               only with consent: its own prompt on the terminal, or --yes.
 # Depends on:   DOTFILEDIR, MACHINE, NIX env vars (NIX_CONFIG when set); jq;
-#               brew; sudo; tasks/messages.zsh; tasks/clear-links.zsh.
+#               brew (under the declaration's brewPrefix, which the switch
+#               installs when missing); sudo; tasks/messages.zsh;
+#               tasks/clear-links.zsh.
 # Side effects: writes the `result` link in the checkout; on a first switch,
 #               removes or renames paths under $HOME and (sudo) renames
 #               /etc/zshenv and /etc/shells; activates the system (sudo);
@@ -51,7 +53,9 @@ sudo env NIX_CONFIG="${NIX_CONFIG:-}" "$DOTFILEDIR/result/sw/bin/darwin-rebuild"
 
 # --- uninstall what is no longer declared, with consent ------------------------
 # the switch already updated Homebrew; stdin from /dev/null keeps brew from prompting on the dry
-# run, which exits 1 only when something would be uninstalled (or brew fails, which removes nothing)
+# run, which exits 1 only when something would be uninstalled (or brew fails, which removes nothing).
+# A first switch installs Homebrew, so this shell may not have it on its PATH yet.
+export PATH="$(jq -r .brewPrefix <<< "$declared")/bin:$PATH"
 export HOMEBREW_NO_AUTO_UPDATE=1
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT

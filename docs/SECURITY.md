@@ -4,8 +4,8 @@
 
 The trust chain `bootstrap.zsh` establishes on a fresh machine: what is fetched, from where,
 how (or whether) each artifact is verified, and which trust anchors the installer inherits
-from. Scope is the three tools the script acquires (Homebrew, go-task, Nix) and the audit
-signals it emits before doing so. SSH keys live in the identity layer; Claude hook
+from. Scope is Nix, which the script installs; go-task, which it runs from the Nix store; and
+Homebrew, which the first switch installs; and the audit signals emitted before each. SSH keys live in the identity layer; Claude hook
 secret-scanning lives in the jshvn/ai repo.
 
 The per-machine security boundary is explicit selection: every switch keys off the machine
@@ -16,28 +16,7 @@ environment variable.
 
 ## Bootstrap Trust Chain
 
-### Step 1 -- Homebrew installer
-
-- **What is downloaded:** the Homebrew install shell script (`install.sh`).
-- **From where:** `https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh`.
-- **How it is verified:** HTTPS only. No checksum pin. No signature verification.
-- **Why this trust boundary is accepted:** the canonical install path published by `brew.sh`;
-  a checksum pin would need updating on every installer change for little gain over HTTPS.
-- **Audit signal:** before fetching, `bootstrap.zsh` prints an `AUDIT:` block to stderr
-  naming the source URL and the trust note, then requires a single keypress read from
-  `/dev/tty` (Enter to proceed; any other key aborts). Consent from the terminal means
-  bootstrap cannot run through a `curl ... | zsh` pipe.
-
-### Step 2 -- go-task
-
-- **What is downloaded:** the Homebrew bottle for `go-task`.
-- **From where:** `ghcr.io/homebrew/core/...`; formula metadata from `formulae.brew.sh`.
-- **How it is verified:** Homebrew checks the bottle's SHA-256 against the formula before
-  installing.
-- **Why this trust boundary is accepted:** stronger than Step 1; tampering with the bottle at
-  rest is caught by the checksum.
-
-### Step 3 -- Nix, the official multi-user installer
+### Step 1 -- Nix, the official multi-user installer
 
 - **What is downloaded:** the Nix install script, then the Nix release tarball it fetches.
 - **From where:** `https://nixos.org/nix/install` (a redirect to `releases.nixos.org`); the
@@ -52,17 +31,43 @@ environment variable.
   jgrid.net's Macs use. `bootstrap.zsh` downloads it to a file first and prints the path, so
   it can be read before the consent keypress; the script then runs from that file, not from a
   pipe.
-- **Audit signal:** the same `AUDIT:` block and keypress as Step 1.
+- **Audit signal:** before running it, `bootstrap.zsh` prints an `AUDIT:` block to stderr
+  naming the source URL and the trust note, then requires a single keypress read from
+  `/dev/tty` (Enter to proceed; any other key aborts). Consent from the terminal means
+  bootstrap cannot run through a `curl ... | zsh` pipe.
 
-### After bootstrap -- the switch
+### Step 2 -- go-task, for the first run
+
+- **What is downloaded:** the go-task store path the flake's locked nixpkgs names
+  (`nix run --inputs-from <checkout> nixpkgs#go-task`). Nothing is installed: every later run
+  uses the go-task Homebrew installs.
+- **From where:** `cache.nixos.org`; the nixpkgs source from GitHub.
+- **How it is verified:** Nix checks the store path's signature against the cache's key; the
+  nixpkgs source by the content hash `flake.lock` pins.
+- **Why this trust boundary is accepted:** the same anchors every switch already trusts.
+
+### Step 3 -- Homebrew installer, run by the first switch
+
+- **What is downloaded:** the Homebrew install shell script (`install.sh`).
+- **From where:** `https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh`.
+- **How it is verified:** HTTPS only. No checksum pin. No signature verification.
+- **What it does with sudo:** runs as the user (it refuses root), creates `/opt/homebrew` and
+  hands it to the user, and installs the Xcode Command Line Tools if they are missing. Its
+  sudo calls reuse the password the switch just asked for.
+- **Why this trust boundary is accepted:** the canonical install path published by `brew.sh`;
+  a checksum pin would need updating on every installer change for little gain over HTTPS.
+- **Audit signal:** none of its own. `modules/homebrew.nix` runs it inside the switch, only
+  when `/opt/homebrew/bin/brew` is missing, after printing `installing Homebrew...`; the
+  password the switch asks for is the consent.
+
+### Every switch
 
 `darwin-rebuild switch` fetches the nixpkgs, nix-darwin and home-manager sources
 `flake.lock` pins (by content hash) and any store paths from `cache.nixos.org`, each
 signature-checked against the cache's key. Nix supplies nix-darwin, home-manager, the Nix
 daemon nix-darwin runs in place of the installer's, and nixpkgs' CA bundle at
-`/etc/ssl/certs/ca-certificates.crt`; every package Josh uses comes from Homebrew, with its
-bottle checksums. `bootstrap.zsh` ends by running `task setup` and `task install`, whose switch
-asks for sudo.
+`/etc/ssl/certs/ca-certificates.crt`; every package Josh uses, go-task included, comes from
+Homebrew, with its bottle checksums.
 
 ---
 
@@ -108,14 +113,11 @@ asks for sudo.
 ## How to Audit
 
 ```bash
-# What bootstrap will run (Step 1):
-curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | less
-
-# What bootstrap will run (Step 3), or read the copy bootstrap.zsh saved:
+# What bootstrap will run (Step 1), or read the copy bootstrap.zsh saved:
 curl -fsSL https://nixos.org/nix/install | less
 
-# go-task's bottle SHA-256 (Step 2):
-brew info --json=v2 go-task | jq '.formulae[0].bottle.stable.files'
+# What the first switch will run when Homebrew is missing (Step 3):
+curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | less
 ```
 
 ---

@@ -18,10 +18,11 @@ cd ~/Git/personal/dotfiles
 ./bootstrap.zsh <machine>
 ```
 
-`bootstrap.zsh` installs Homebrew, go-task and Nix (each skipped when present; the Homebrew
-and Nix installers ask first, and Nix needs sudo), selects the machine with `task setup`, and
-runs the first `task install`. Re-running it is safe. Then open a new terminal; from then on
-`update` is the only command. The checkout path is fixed: `dotfiles.checkout` in
+`bootstrap.zsh` installs Nix (skipped when present; its installer asks first and needs sudo),
+then runs go-task from the flake's pinned nixpkgs to select the machine with `task setup` and
+run the first `task install`. That install's switch installs Homebrew with Homebrew's own
+installer, then every package, go-task included. Re-running it is safe. Then open a new
+terminal; from then on `update` is the only command. The checkout path is fixed: `dotfiles.checkout` in
 `modules/default.nix` is where every link points.
 
 On a factory-fresh Mac, before that:
@@ -37,10 +38,9 @@ home-manager will link, moves anything else there to `<path>.before-dotfiles` (c
 then delete them), and moves `/etc/zshenv` and `/etc/shells` to `*.before-nix-darwin`, all only
 after the build succeeds.
 
-If a first install stops partway (a cask download, the App Store), the terminal it ran in
-still works: fix the cause and run `task install` again. A terminal opened before a switch
-completes has an empty zsh config and no Homebrew on its PATH; there, run
-`/opt/homebrew/bin/task -d ~/Git/personal/dotfiles install`. If the switch stops at
+If a first install stops partway (a cask download, the App Store), fix the cause and run
+`./bootstrap.zsh <machine>` again: until the switch completes, a terminal has an empty zsh
+config and may have no Homebrew, so `task` is not on its PATH. If the switch stops at
 "Unexpected files in /etc", rename each file it lists to `<file>.before-nix-darwin` (sudo) and
 run `task install` again. If it stops at "Build user group has mismatching GID", set
 `ids.gids.nixbld` in `modules/default.nix` to the GID it reports and run `task install` again.

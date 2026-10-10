@@ -39,7 +39,7 @@ vars:
   # The evaluated declaration every read-only task consumes: the dotfiles namespace (links,
   # identity, apps, system ...), every defaults group (wrapped in tryEval: nix-darwin keeps
   # removed groups such as alf that throw when touched), the ByHost keys, the generated
-  # Brewfile, taps, casks and the hostname.
+  # Brewfile, taps, casks, the Homebrew prefix and the hostname.
   SHAPE: >-
     c: let safe = x: let r = builtins.tryEval (builtins.deepSeq x x); in if r.success then r.value else "<error>"; in {
       dotfiles = c.dotfiles;
@@ -49,6 +49,7 @@ vars:
       brewfile = c.homebrew.brewfile;
       taps = c.homebrew.taps;
       casks = c.homebrew.casks;
+      brewPrefix = c.homebrew.prefix;
       hostName = c.networking.localHostName;
     }
   EVAL: "{{.NIX}} eval --json '{{.ROOT_DIR}}#darwinConfigurations.{{.MACHINE}}.config' --apply '{{.SHAPE}}'"
@@ -83,7 +84,8 @@ tasks:
     cmds:
       - DOTFILEDIR='{{.ROOT_DIR}}' REPO_NAME=jshvn/dotfiles zsh '{{.ROOT_DIR}}/apps/claude-code/repo-sync.zsh'
       - '{{.EVAL}} | DOTFILEDIR="{{.ROOT_DIR}}" MACHINE={{.MACHINE}} NIX={{.NIX}} zsh "{{.ROOT_DIR}}/tasks/install.zsh" {{.CLI_ARGS}}'
-      - zsh -ic 'antidote update --bundles' >/dev/null 2>&1 || echo "antidote update failed (offline?), bundles unchanged"
+      # a login shell, because .zprofile puts Homebrew on the PATH and bootstrap's shell lacks it
+      - zsh -lic 'antidote update --bundles' >/dev/null 2>&1 || echo "antidote update failed (offline?), bundles unchanged"
 
   rollback:
     desc: 'Activate the previous generation'

@@ -3,7 +3,7 @@
 Reference material. Per-directory READMEs cover their own directory; this
 directory holds what spans several.
 
-- `SECURITY.md` -- bootstrap trust chain (Homebrew, go-task, Nix)
+- `SECURITY.md` -- bootstrap trust chain (Nix, go-task, Homebrew)
 - `MACHINES.md` -- per-machine prose (purpose, hardware, role)
 - `DECISIONS.md` -- locked decisions, scope boundaries, performance/security constraints
 
