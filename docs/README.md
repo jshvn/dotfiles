@@ -3,10 +3,12 @@
 Reference material. Per-directory READMEs cover their own directory; this
 directory holds what spans several.
 
-- `MANIFEST.md` -- manifest schema, package tiers, worked examples
-- `SECURITY.md` -- bootstrap trust chain
+- `SECURITY.md` -- bootstrap trust chain (Homebrew, go-task, Nix)
 - `MACHINES.md` -- per-machine prose (purpose, hardware, role)
 - `DECISIONS.md` -- locked decisions, scope boundaries, performance/security constraints
+
+The declaration's schema is the option descriptions in `modules/`, `system/` and `apps/`;
+`task show` prints a machine's evaluated declaration.
 
 Design records and implementation plans are not kept here. A decision worth
 preserving goes into `DECISIONS.md`; everything else is git history.

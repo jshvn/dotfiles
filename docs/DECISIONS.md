@@ -7,61 +7,70 @@ new evidence. Referenced from CLAUDE.md.
 
 | Decision | Rationale |
 |----------|-----------|
-| Symlinks + TOML manifests over Nix | Nix conflicts with go-task lock-in, slows AI iteration; manifest layer captures the declarative win without language overhead. |
-| Self-contained per-machine manifests + a feature registry | Picked clarity (per-machine, no inheritance) over DRY (tags); a machine file records every flag it wants and deliberately lacks, while `manifests/features.toml` keeps the flag vocabulary in one place. |
-| Explicit machine selection at setup | Hostname-based detection has bitten us; explicit selection beats clever auto-detect. |
-| macOS-only | All target machines are macOS laptops; avoids cross-platform complexity until a real Linux machine enters scope. |
+| nix-darwin evaluates and activates; Homebrew installs (v3, 2026-10-10) | The two earlier objections did not survive: go-task coexists with Nix (jgrid.net runs its fleet behind a go-task wrapper, and this repo keeps one), and the macOS 27 blocker (nix-darwin issue 1866) was a mac-app-util bug, not a nix-darwin one. What it buys: about 8,700 lines of zsh, YAML, TOML and fixtures became about 900 lines of Nix plus a handful of scripts; the three declaration rules are module-system errors; non-defaults state (login shell, `/etc` files, launchd jobs) is native; generations give rollback; CI is a two-minute Linux evaluation; one mental model with jgrid.net. What it costs: sudo on every switch, a switch of 30 s to 2 min instead of seconds, and `/nix` on disk holding only nix-darwin. |
+| No nixpkgs packages, no nix-homebrew, no `environment.systemPackages` | Every formula, cask, Mac App Store app and VS Code extension stays on Homebrew, rolling, against the existing prefix. The lock file pins only nix-darwin's own inputs. |
+| The terminal looks and behaves exactly as before | Homebrew zsh is the login shell; the repo's startup files, theme, MOTD, functions and aliases run. `programs.zsh` and `programs.bash` are off, so Apple's `/etc/zshrc`, `/etc/zprofile` and `/etc/bashrc` are untouched; the Nix installer's block in `/etc/zshrc` is the one startup change. The only `/etc` file declared is `/etc/zshenv` (the ZDOTDIR line). |
+| Five option namespaces, no concept called "features" | `dotfiles.system.<concern>`, `apps.<name>`, `identity`, the `shell` and `repo` knobs, `packages`. Every optional switch has no default: a profile sets each one true or false or evaluation fails naming it. That is the every-flag-accounted rule, enforced by the module system. |
+| One directory per application, owning everything about it | Install, config files, shell integration and any system setting that exists only for that app. Anything with configuration attached to its install is an app; anything merely installed is a package name in the profile. |
+| The redundancy rule and derived taps | A profile may not list a formula or cask base or an enabled app provides, nor an extension VS Code bundles: an assertion fails. A tap-qualified formula implies its tap; `homebrew/brew-vulns` is the one bare tap, in `modules/base.nix`. |
+| A real identity turns 1Password on, nothing else does | `dotfiles.identity` sets `apps."1password".enable` (readOnly); no capability flags, no sentinel comments. |
+| Every link goes through `dotfiles.links`; shell gates are links | home-manager installs each entry as an out-of-store symlink, so an edit is live without a switch and `task validate` reads each back. An enabled app's or concern's `aliases.zsh` is linked into `$XDG_STATE_HOME/dotfiles/aliases.d/`, login-env fragments into `env.d/`; the startup files source those directories, and a file's presence is the gate. |
+| Explicit machine selection at setup | `task setup -- <name>` writes the state file the Taskfile reads; the hostname lives in `machines/<name>.nix`. Nothing infers the machine from the live hostname; that has bitten us before. |
+| One machine file per physical laptop, named after it | `lerasium` and `harmonium` import `profiles/personal.nix`. The work laptop is out of scope until it has a machine file; `profiles/work.nix` stays and the flake check evaluates it under a synthetic machine so it cannot rot. |
+| `task install` always fast-forwards, then switches | No per-machine auto-update knob. The pull is warn-only: offline, a dirty tree or a diverged branch never block the switch. |
+| Read-back validation stays | Nix activates state but never reads it back. One evaluation of the declaration feeds `show`, `diff`, `validate` and `audit`; `tasks/validate.zsh` covers every domain the old tiers covered. |
+| CI is the container | `nix flake check`, `nix fmt -- --ci` and the negative suite run in the pinned `nixos/nix` image on an ubuntu runner, with lint and the hermetic smoke tests beside them. The switch, brew bundle, the live shell and the read-back tiers run only on a Mac. |
+| Homebrew cleanup uninstalls what is no longer declared | After the first switch on a machine, whose `task audit` shows what would go; that first switch runs with cleanup `none` (README, First switch). |
 | Keep alanpeabody-based prompt; reject Starship | The existing `theme.zsh` is small, fast, and not on life support; Starship would be a behavior change with no problem to solve. |
-| Bootstrap without curl-to-shell, except Homebrew's own installer | Removes supply-chain risk on every fresh install; the Homebrew installer is the one accepted exception, consent-gated and HTTPS-only (`docs/SECURITY.md`). |
+| Bootstrap without curl-to-shell, except Homebrew's and Nix's own installers | Both are consent-gated and HTTPS-only; the Nix installer is downloaded to a file first so it can be read before it runs (`docs/SECURITY.md`). |
 | One concept per file; README per top-level directory | Reduces AI's inference burden; every directory teaches itself. |
-| `task install` is the canonical entry; update path runs through the same task | Prevents the "add a package to update path, forget install, fresh machine breaks" drift class — single source of truth, single pipeline. |
-| Five-tier testing: static lint, validate, reconcile, smoke, system | Each tier catches different drift; without verify+reconcile we'd ship "looks installed but isn't" or "symlink-soup-after-refactor". |
-| Curated top-level surface (`install / setup / validate / test / lint / audit / diff / report`, plus `show`) + domain-first `<domain>:<verb>` diagnostics | Audited every exposed task; one grammar (pick a domain, pick a verb); bare verbs aggregate; lint enforces banner drift via LINT-08. |
-| Separate realize from activate; the repo tree holds source only | Compute the whole desired state into `$XDG_STATE_HOME/dotfiles/build/` before touching the system, so `task diff` is a file comparison rather than a recomputation, and no generated file is tracked. |
 | atium moved to `jshvn/jgrid.net` on 2026-09-23 | Its runtime needs (tunnel pair, secrets, nightly switch, healthcheck) were the NixOS common layer's; nix-darwin gave them a launchd backend. This repo is laptops-only. |
-| No Spaces / Mission Control speed tweak; `macos-animations` covers AppKit only | Measured on macOS 27.0 (2026-09-22): the Dock renders the ~1.2 s desktop slide itself and exposes no duration key. The legacy Dock keys (`expose-animation-duration`, `springboard-*-duration`, `workspaces-swoosh-animation-off`) exist in no macOS 27 binary, and `com.apple.WindowManager AnimationSpeed`, `ExposeSpringResponse`, `ExposeSpringDampingRatio` and `com.apple.dock mission-control-transition` all time identical to stock. Do not re-add them; revisit only if a later 27.x adds a key. |
-| AI tooling config lives in `jshvn/ai`, not here | Claude Code is one tool among several and its config had grown a resolver key, two taskfiles, a TOML addon runner and machine-local links inside the working tree. Dotfiles keeps a one-flag seam (`ai`, `[ai] profile / ref`) that clones the repo at a pinned ref and runs its `task install`; per-machine variation is a profile in that repo. ECC was dropped in the same move. |
+| No Spaces / Mission Control speed tweak; `system.animations` covers AppKit only | Measured on macOS 27.0 (2026-09-22): the Dock renders the ~1.2 s desktop slide itself and exposes no duration key. The legacy Dock keys (`expose-animation-duration`, `springboard-*-duration`, `workspaces-swoosh-animation-off`) exist in no macOS 27 binary, and `com.apple.WindowManager AnimationSpeed`, `ExposeSpringResponse`, `ExposeSpringDampingRatio` and `com.apple.dock mission-control-transition` all time identical to stock. Do not re-add them; revisit only if a later 27.x adds a key. |
+| AI tooling config lives in `jshvn/ai`, not here | Claude Code is one tool among several. The seam is `apps.claude-code.{profile,ref,dir}` and that repo's documented contract: the switch clones it at the ref and runs its `task setup -- <profile>` and `task install` (passing `CLAUDE_CONFIG_DIR`, which activation's environment lacks); `task validate` runs its `task validate`. No environment variable carries the profile. Per-machine variation is a profile in that repo. |
+| VS Code `settings.json` stays unmanaged | It lives under `~/Library/Application Support/Code/User`, not XDG; `apps/vscode/` is where it would go. |
 
 ## Out of Scope
 
 Explicit boundaries with reasoning. The point is to prevent re-litigation; revisit only with
 new evidence.
 
-- **Linux / Windows / WSL** — macOS-only is a deliberate simplification. All target machines
-  are macOS laptops. Platform-aware directory split, apt/dnf manifests, and Linux bootstrap
-  branch are deferred until a real Linux machine enters scope.
-- **Servers** — every server, Mac or not, is a jgrid.net fleet host.
-- **Nix / home-manager** — evaluated; conflicts with go-task lock-in, slows AI iteration loop,
-  Homebrew still needed for macOS GUI apps via `nix-darwin.homebrew` escape hatch. The
-  declarative-manifest goal is already achieved via TOML at lower cost.
-- **chezmoi / stow / yadm** — adds a tool dependency that overlaps with go-task; doesn't
-  solve the manifest problem.
-- **Starship prompt** — the existing alanpeabody-based `theme.zsh` is small, fast, and not on
-  life support. Starship would be a behavior change with no problem to solve.
-- **fish / nu / bash** — zsh is the chosen shell.
-- **Replacing go-task** — locked.
-- **Hostname-based machine detection** — burned us before (the legacy `.zprofile`
-  literal-hostname check). Explicit `task setup -- <machine>` only.
-- **Inline profile branching in shared files** — behavior varies only through manifest-driven
-  feature gates.
-- **Auto-detection of identity / capabilities** — the manifest is the source of truth; no
-  clever inference at runtime.
+- **Linux / Windows / WSL** -- macOS-only is a deliberate simplification. All target machines
+  are macOS laptops.
+- **Servers** -- every server, Mac or not, is a jgrid.net fleet host.
+- **nixpkgs packages, nix-homebrew, mac-app-util** -- Homebrew installs everything (above);
+  mac-app-util was the source of nix-darwin issue 1866.
+- **chezmoi / stow / yadm** -- a tool dependency that overlaps with what the switch does.
+- **Starship prompt** -- the existing alanpeabody-based `theme.zsh` is small, fast, and not on
+  life support.
+- **fish / nu / bash** -- zsh is the chosen shell.
+- **Replacing go-task** -- locked; it is the operator surface over darwin-rebuild and nix eval.
+- **Hostname-based machine detection** -- burned us before. Explicit `task setup -- <machine>`
+  only.
+- **Inline profile branching in shared files** -- behavior varies only through the
+  declaration: what a profile sets and the links the switch makes.
+- **Auto-detection of identity / capabilities** -- the declaration is the source of truth.
+- **The work laptop** -- until it has a machine file.
+- **`sysadminctl -screenLock immediate`** -- wants the account password on a tty a switch does
+  not have; a one-time manual step per machine.
+- **Raycast's own hotkey** -- Raycast keeps it in its own database; only Raycast cloud sync
+  carries it. The Spotlight half (symbolic hotkey 64) is declared.
 
 ## Performance and Security Constraints
 
-- **Performance target** — interactive shell cold start under 500ms (the
-  `task shell:startup-time` budget); `task install` re-run
-  under 30s on a converged machine (includes `brew update` network round-trip; under 5s
-  without network).
-- **Security** — no curl-to-shell except the consent-gated Homebrew installer
-  (`docs/SECURITY.md`); no secrets in repo; public SSH keys only.
-- **Idempotency** — every install task has a working `status:` check; re-running
-  `task install` is a fast no-op.
+- **Performance target** -- interactive shell cold start under 500 ms (the
+  `task shell:startup-time` budget); a converged `task install` is one `darwin-rebuild
+  switch` plus `brew update` and `brew bundle` (30 s to 2 min).
+- **Security** -- no curl-to-shell except the two consent-gated installers
+  (`docs/SECURITY.md`); no secrets in the repo; public SSH keys only.
+- **Idempotency** -- a converged `task install` changes nothing: `task diff` shows no closure
+  change and `brew bundle check` is satisfied.
 
 ## Tooling Versions
 
-| Tool | Minimum | Reason |
-|------|---------|--------|
-| `yq` (mikefarah) | 4.52.1 | Full TOML read/write roundtrip; TOML-to-JSON for the resolver |
-| `go-task` | 3.37 | `ref:` keyword + `fromJson` template function for structured vars |
-| `jq` | 1.7 | Sorted-key output (`-S`) for stable fixture diffs; `--argjson` |
+| Tool | Pinned by | Reason |
+|------|-----------|--------|
+| nixpkgs, nix-darwin, home-manager (26.05 line) | `flake.lock` | the evaluator; `task check` and CI evaluate against the lock |
+| Nix 2.35.2, the `nixos/nix` image by digest | `Taskfile.yml` | check, fmt, lint and the negative suite run the same image on a laptop and in CI |
+| `go-task` >= 3.37 | Homebrew, `modules/base.nix` | `for:` loops and the `OS` template function in `Taskfile.yml` |
+| `jq` >= 1.7 | Homebrew, `modules/base.nix` | the evaluation JSON every read task consumes |
+| GitHub Actions `uses:` versions | `gh api repos/<owner>/<repo>/releases/latest --jq .tag_name` | never written from memory |

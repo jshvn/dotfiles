@@ -1,62 +1,53 @@
 # shell
 
-Zsh startup files, theme, aliases, and functions. Sourced by every login or
-interactive shell on a converged machine. macOS-only; the flat layout (no
-platform subdirectories) reflects that single-platform scope.
+Zsh startup files, theme, functions, shell-level aliases and the MOTD. Sourced by every login
+or interactive shell on a converged machine. The switch links the five startup files into
+`$ZDOTDIR` (`~/.config/zsh`) out of the Nix store, so an edit here is live in the next shell.
 
 ## Key files
 
-- `.zshenv` / `.zprofile` / `.zshrc` / `.zlogin` / `.zlogout` -- startup
-  files in zsh's documented order; one role per file. `.zshenv` exports
-  XDG vars and is always sourced (must stay minimal). `.zprofile` runs on
-  login, `.zshrc` on interactive, `.zlogin` after `.zshrc` on login, and
-  `.zlogout` on login-shell exit.
-- `theme.zsh` -- alanpeabody-based prompt; consumed by `.zshrc` after
-  antidote loads OMZ lib + plugins (small, fast, not on life support;
-  no Starship swap).
-- `.zsh_plugins.txt` -- antidote plugin manifest; read via `antidote load`
-  in `.zshrc`. use-omz must stay first; OMZ `path:lib` provides
-  prompt_subst + git prompt helpers that `theme.zsh` requires.
-- `aliases/<topic>.zsh` -- flat layout, one topic per file. Gating
-  happens inside the file: wrapper functions for 1-3 aliases;
-  source-time `return 0` for bulk-alias loops.
-- `functions/<name>.zsh` -- one function per file; the filename equals the
-  function name. These are the functions you call at a prompt.
-- `functions/helpers/_dotfiles_<name>.zsh` -- same one-per-file rule, for the
-  private primitives the above build on: never called at a prompt, and sourced
-  first so nothing depends on glob ordering. `_dotfiles_feature` is the lazy
-  manifest reader callers use to test feature flags.
+- `.zshenv` / `.zprofile` / `.zshrc` / `.zlogin` / `.zlogout` -- startup files in zsh's
+  documented order; one role per file. `.zshenv` exports XDG vars and is always sourced (must
+  stay minimal). `.zprofile` runs on login (Homebrew shellenv, then every fragment in
+  `$XDG_STATE_HOME/dotfiles/env.d/`), `.zshrc` on interactive (antidote, theme, functions,
+  then every file in `$XDG_STATE_HOME/dotfiles/aliases.d/`), `.zlogin` after `.zshrc` on
+  login (MOTD), `.zlogout` on login-shell exit.
+- `theme.zsh` -- alanpeabody-based prompt; consumed by `.zshrc` after antidote loads OMZ lib
+  and plugins.
+- `.zsh_plugins.txt` -- antidote plugin manifest. use-omz must stay first.
+- `aliases/<topic>.zsh` -- shell-level topics only (general, dotfiles, hardware, networking,
+  jgrid), registered in `modules/shell.nix` under `dotfiles.shell.aliases`. An app's or a
+  System Settings concern's aliases live beside it (`apps/<name>/aliases.zsh`,
+  `system/finder/aliases.zsh`) and are registered there. There is no gate inside an alias
+  file: the switch links it into `aliases.d/` only when its owner is on, and `.zshrc` sources
+  what is there.
+- `functions/<name>.zsh` -- one function per file; the filename equals the function name.
+- `functions/helpers/_dotfiles_<name>.zsh` -- private primitives the above build on, sourced
+  first.
+- `motd/` -- the Tron quotes, the fastfetch config and the jgrid logo `motd.zsh` reads at
+  render time; nothing here is linked.
 
 ## Adding a pattern
 
-- **An alias.** Create `aliases/<topic>.zsh`. If the alias is GUI-coupled
-  or identity-coupled, gate inside the file: wrapper-function gate for
-  1-3 aliases -- each function begins with
-  `_dotfiles_require_feature <name> || return 1`; source-time gate for
-  bulk-alias loops --
-  prepend `[[ "$(_dotfiles_feature <name>)" == "true" ]] || return 0`.
-- **A function.** Create `functions/<name>.zsh`; the filename equals the
-  function name. Add a docstring as an inline comment on the
-  function-definition line (the `aliaslist` / `functionlist` discovery
-  convention). If it is a primitive other functions call rather than
-  something to run at a prompt, it goes in `functions/helpers/` instead and
-  its name starts with `_dotfiles_`.
-- **A feature flag.** Register the kebab-case key as a `[<key>]` block in
-  `../manifests/features.toml` (with a `description`). Then account for it in
-  every machine's `[features]`: add it to `enabled` on machines that want it,
-  `disabled` on those that don't. Consumers call `_dotfiles_feature <key>`
-  to test.
+- **A shell-level alias topic.** Create `aliases/<topic>.zsh` with the banner, add
+  `<topic> = "shell/aliases/<topic>.zsh"` to `dotfiles.shell.aliases` in `modules/shell.nix`
+  (under `lib.optionalAttrs` if it depends on a switch), `task install`.
+- **An app's or concern's aliases.** `apps/<name>/aliases.zsh` or
+  `system/<concern>/aliases.zsh`, registered in that `default.nix` as
+  `dotfiles.shell.aliases.<name>`.
+- **A login-shell fragment** (an environment variable an app needs). `apps/<name>/env.zsh`,
+  registered as `dotfiles.shell.env.<name>`; `.zprofile` sources it.
+- **A function.** `functions/<name>.zsh`; add the docstring comment on the
+  function-definition line (the `aliaslist` / `functionlist` convention). A primitive other
+  functions call goes in `functions/helpers/` with a `_dotfiles_` prefix.
 
 ## Performance budget
 
-Target: cold interactive shell start <= 200ms. Measured via
-`task shell:startup-time`, which runs `hyperfine --warmup 1 --runs 5 'zsh
--lic exit'` and fails non-zero when the 5-run mean exceeds the
-`COLD_START_BUDGET` gate (currently 500ms in `../taskfiles/shell.yml`).
-Re-measure on every plugin change or startup-file edit.
+Cold interactive shell start under 500 ms, measured by `task shell:startup-time`
+(`hyperfine --warmup 1 --runs 5 'zsh -lic exit'`, failing above the budget set in
+`Taskfile.yml`). Re-measure on every plugin change or startup-file edit.
 
 ## References
 
-- `../docs/MANIFEST.md` -- manifest schema and merge semantics
-- `../CLAUDE.md` -- project conventions (flat directories, one concept per
-  file, status-block templating rules)
+- `../CLAUDE.md` -- project conventions
+- `../docs/DECISIONS.md` -- why the terminal must not change

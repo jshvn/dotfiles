@@ -1,88 +1,102 @@
-# Dotfiles v2 -- Project Instructions for AI Agents
+# Dotfiles v3 -- Project Instructions for AI Agents
 
 ## What This Is
 
-Manifest-model dotfiles for macOS (Apple Silicon and Intel). Each machine is described by one
-self-contained TOML at `manifests/machines/<name>.toml`, validated against the feature-flag
-registry `manifests/features.toml`, and compiled by `install/resolver.zsh` into a JSON cache
-that every go-task task reads. No profile suffixes, no hostname inference, no hidden branching.
+macOS laptops declared as one nix-darwin configuration each. `machines/<name>.nix` names the
+laptop and imports `profiles/<name>.nix`; the profile sets every option; `modules/`, `system/`
+and `apps/` declare the options and turn them into nix-darwin and home-manager configuration.
+Nix evaluates and activates; Homebrew installs every package; the shell is the repo's own zsh,
+linked out of the store so an edit is live without a switch.
 
-The pipeline runs three stages: evaluate (resolver -> `resolved.json`), realize (compose ->
-`$XDG_STATE_HOME/dotfiles/build/`), activate (`task install` -> the live system).
+Three stages: evaluate (`nix eval` of the selected machine, the `SHAPE` in `Taskfile.yml`),
+activate (`task install`: fast-forward, `darwin-rebuild switch`, antidote bundles), read back
+(`task validate` walks the evaluation against the live system).
 
 | Concept | Location |
 |---------|----------|
-| Feature-flag registry | `manifests/features.toml` |
-| Per-machine declaration | `manifests/machines/<name>.toml` |
-| Unconditional package tier | `manifests/base.toml` |
-| Compiled output (machine-local) | `$XDG_STATE_HOME/dotfiles/resolved.json` |
-| Materialized desired state (machine-local) | `$XDG_STATE_HOME/dotfiles/build/` |
+| Machine (hostname, platform, profile import) | `machines/<name>.nix` |
+| Profile (every switch, identity, free packages) | `profiles/<name>.nix` |
+| Plumbing (user, link registry, packages, identity, shell, homebrew) | `modules/` |
+| macOS settings, one file per System Settings concern | `system/` |
+| Applications, one directory each | `apps/` |
+| What the Taskfile runs, and the tests | `tasks/`, `tasks/tests/` |
+| Shell startup files, theme, functions, shell-level aliases, MOTD | `shell/` |
+| Git and SSH identities, public keys | `identity/` |
 | Active machine name (machine-local) | `$XDG_STATE_HOME/dotfiles/machine` |
+| Alias and login-env gates (machine-local, made by the switch) | `$XDG_STATE_HOME/dotfiles/aliases.d/`, `env.d/` |
 
 ## Finding Things
 
-- Manifest schema: `docs/MANIFEST.md`.
-- Locked decisions, scope boundaries, performance/security constraints: `docs/DECISIONS.md`.
-  Revisit only with new evidence.
+- Locked decisions, scope boundaries, constraints: `docs/DECISIONS.md`. Revisit only with
+  new evidence.
 - Every top-level concept directory has a README saying what belongs there and how to name it.
-- Operator surface: the lifecycle commands (`install`, `setup`, `validate`, `test`, `lint`,
-  `audit`, `diff`, `report`) plus `<domain>:<verb>` diagnostics (`show`, `audit`, `diff`) and
-  `packages:vulns` (OSV.dev scan of the declared set). Bare `task`
-  prints the banner; `task --list` the full graph. Per-component install/validate tasks are
-  internal pipeline steps, not operator commands.
-- Verifying a change: use the `jshvn-verifying-dotfiles-changes` skill (change type to exact
-  commands, five-tier model, one-check rule).
+- Operator surface: `setup`, `install`, `rollback`; `show`, `diff`, `validate`, `audit`,
+  `shell:startup-time`; `check`, `lint`, `fmt`, `test`. Bare `task` prints the banner.
+- Verifying a change: the `jshvn-verifying-dotfiles-changes` skill (change type to exact
+  commands, the tier model, the one-check rule).
 
 ## Gotchas
 
 What the file system will not tell you:
 
-- Taskfiles read `resolved.json` (preloaded as `{{.MANIFEST}}`), never TOML. TOML parsing
-  lives only in `install/resolver.zsh`.
-- Kebab-case feature keys need the `index` form -- `{{if index .MANIFEST.features
-  "one-password-ssh"}}` -- because `-` breaks Go-template dot-access at parse time.
-  Snake_case keys (`identity.git`, `meta.description`) take dot-access as usual.
-- `status:` blocks evaluate before shell context exists: `{{.X}}` template vars only, never
-  `$X` (empty there; the task re-runs forever). Every install task has a `status:` block
-  returning 0 when converged.
-- The repo tree holds source only -- no generated file is tracked. Build artifacts live in
-  `$XDG_STATE_HOME/dotfiles/build/`.
-- AI tooling config (Claude Code instructions, hooks, skills, settings, plugins) is not here.
-  It lives in `jshvn/ai`, checked out at `~/Git/personal/ai`; the `ai` feature flag plus a
-  machine's `[ai] profile / ref` table make `task install` clone it at that ref and run its
-  own `task install`. Dotfiles reads nothing inside that checkout. The one repo-specific
-  skill, `jshvn-verifying-dotfiles-changes`, is project-scoped under `.claude/skills/`.
-- A machine's `[features]` must account for every registry flag applicable to its `os` in
-  either `enabled` or `disabled`; an unaccounted flag is a hard `task setup` error. A flag
-  whose `platforms` excludes the machine's os is inapplicable and appears in neither list.
-  Cross-field rules (e.g. identity overlays carrying `# capability:` sentinels require the
-  matching feature) live in `validate_manifest` in `install/resolver.zsh`.
-- Symlinks only via `_:safe-link` (`taskfiles/helpers.yml`); bare `ln -s` fails LINT-03b.
-  Machine-local links that land in the working tree go in `.git/info/exclude`, not
-  `.gitignore`.
-- No hardcoded `/opt/homebrew` or `/usr/local`: `$HOMEBREW_PREFIX` (shell) or
-  `{{.HOMEBREW_PREFIX}}` (task), resolved in the root Taskfile (LINT-10).
-- Repo root is the go-task built-in `{{.ROOT_DIR}}`; scripts receive it as the `DOTFILEDIR`
-  env var at invocation. No custom repo-root variable.
-- Machine identity is explicit (`task setup -- <name>`); never infer from hostname or any
-  environment heuristic.
-- Executable `.zsh`: `set -euo pipefail` (LINT-04), the three-label header banner
-  (Purpose / Depends on / Side effects between `# ===` 77-char rules, LINT-12), errors to
-  stderr via `install/messages.zsh`. XDG paths come from `shell/.zshenv` and `{{.XDG_*}}`.
-- Zsh startup order: `.zshenv` -> `.zprofile` (brew shellenv, 1Password socket) -> `.zshrc`
-  (antidote plugins, theme, functions, aliases) -> `.zlogin` (MOTD) -> `.zlogout`.
-- Lint rules: catalogue table in `taskfiles/README.md`, rule bodies in `taskfiles/lint.yml`;
-  `# LINT-NN:` comments cite them. LINT-01, LINT-06, and LINT-09 are retired numbers -- never
-  reuse them.
-- One concept per file, flat directories: one alias topic / function / taskfile / machine
-  manifest / defaults concern per file; no subdirectories under `shell/aliases/` and no
-  `os/darwin/` nesting. The one nesting that exists is `shell/functions/helpers/`, holding
-  the private `_dotfiles_*` primitives so the flat directory above it lists only what you
-  would run at a prompt; `.zshrc` sources helpers first.
-- Packages arrive in three tiers: `manifests/base.toml` (unconditional, no machine names it),
-  `[<flag>.packages]` in the registry (a concern owns its tooling), and a machine's
-  `[packages]` (free choices only). Listing something base or an enabled flag already provides
-  is a hard resolver error.
-- Tests live at `<domain>/tests/`; `task test` is the single aggregator.
-- No AI attribution and no emojis anywhere, markdown included (hooks enforce both). No
-  private keys in the repo; `identity/ssh/keys/` holds public keys only.
+- `nix flake check` on a git checkout sees only tracked or staged files. `git add -A` before
+  `task check`, or a new file is silently absent from the evaluation.
+- Every optional option has no default (`system.<concern>`, `apps.<name>.enable`,
+  `shell.jgrid-net`, `repo.devToolchain`, `apps.raycast.freeCmdSpace`). Adding one means
+  setting it in every profile, `work.nix` included, or `task check` fails naming it.
+- A profile may not list a formula or cask base or an enabled app provides, nor an extension
+  VS Code bundles: an assertion fails. Taps are derived from tap-qualified names; the one bare
+  tap is in `modules/base.nix`.
+- `dotfiles.apps."1password".enable` is readOnly: the identity sets it.
+- Links only through `dotfiles.links` (home path to checkout path). Shell integration only
+  through `dotfiles.shell.aliases` and `dotfiles.shell.env`: the switch links an enabled
+  owner's file into `aliases.d/` or `env.d/`, and the startup files source whatever is there.
+  `.zshrc` globs `shell/functions/` directly and never globs alias files.
+- Every read task runs one `nix eval` (`SHAPE`) and pipes JSON to a script in `tasks/`.
+  `homebrew.casks` and `homebrew.taps` are lists of records: read `.name`. The eval prints one
+  `trace: Obsolete option ... expose-group-by-app` line; it is noise.
+- Activation runs as root. A step that must run as the user is
+  `sudo -u ${config.system.primaryUser} -H ...` with an explicit `PATH` if it needs Homebrew.
+  What an activation script runs is copied into the store with its generation (`${./.}`,
+  `${./file}`); everything else is linked out of the store. nix-darwin's activate runs under
+  `set -e` and moves `/run/current-system` only after `postActivation`, so a user step that
+  depends on the network or hardware ends in `|| echo ... >&2` and leaves the read-back to
+  `task validate`.
+- nix-darwin writes a nested defaults value whole, never merging: the Spotlight hotkey (entry
+  64 of `AppleSymbolicHotKeys`) stays a `-dict-add` activation script in `apps/raycast/`.
+  nix-darwin has no `-currentHost` writes: ByHost keys go through home-manager's
+  `targets.darwin.currentHostDefaults`. `tasks/validate.zsh` reads every defaults key back; a
+  nix-darwin group it has no row for is a cross, so a new group needs a row in its `DOMAIN`
+  table.
+- The one `/etc` file declared is `/etc/zshenv` (the ZDOTDIR line). nix-darwin refuses any
+  `/etc` file it did not write ("Unexpected files in /etc"): rename it `.before-nix-darwin`.
+  `programs.zsh` and `programs.bash` stay off; Apple's `/etc/zshrc`, `/etc/zprofile` and
+  `/etc/bashrc` are untouched, and the Nix installer's block in `/etc/zshrc` is what puts
+  `nix` on an interactive shell's PATH. A non-interactive shell does not have it:
+  `Taskfile.yml` calls nix by that path (`NIX`), because a Taskfile `env:` entry cannot
+  override the caller's PATH.
+- `task install` and `task rollback` run `sudo darwin-rebuild`, which prompts for a password.
+  An agent cannot answer it: print the command, let Josh run it, read the result.
+- Homebrew cleanup uninstalls what is not declared. The first switch on a new machine runs
+  with `cleanup = "none"` and its `task audit` is read first (README, First switch).
+- `path` is the zsh array tied to `$PATH`; never use it as a variable name. The `nixos/nix`
+  image has no `sed`: mutate files in checks with bash `${var//old/new}`. `nix fmt` outside a
+  git checkout needs `--tree-root`.
+- `task diff` and the first switch leave a `result` symlink in the repo root; it is ignored.
+- Executable `.zsh`: `set -euo pipefail`, the three-label banner (Purpose / Depends on / Side
+  effects between `# ===` rules), messages via `tasks/messages.zsh`; `tasks/lint.zsh` enforces
+  these plus `zsh -n` and no hardcoded `/opt/homebrew` or `/usr/local` outside a
+  `# lint-allow: hardcoded-prefix` line. Scripts get the repo root as `DOTFILEDIR`; the
+  Taskfile uses `{{.ROOT_DIR}}`.
+- Machine identity is explicit (`task setup -- <name>`); never infer from hostname.
+- One concept per file, flat directories: one alias topic / function / machine / profile /
+  concern per file. The nestings that exist are `shell/functions/helpers/` (private
+  primitives), `system/finder/` (a concern with shell integration) and every `apps/<name>/`.
+- Tests live at `tasks/tests/`; `task test` is the single aggregator. The repo tree holds
+  source only; no generated file is tracked.
+- AI tooling config lives in `jshvn/ai` (`~/Git/personal/ai`): `apps.claude-code` clones it at
+  the pinned ref and calls that repo's contract, `task setup -- <profile>` then `task install`,
+  with `CLAUDE_CONFIG_DIR` passed explicitly (the claude CLI reads it; activation has no login
+  environment); `task validate` runs its `task validate`. Dotfiles reads nothing else inside it.
+- No AI attribution and no emojis anywhere, markdown included (hooks enforce both). Public
+  keys only under `identity/ssh/keys/`.
