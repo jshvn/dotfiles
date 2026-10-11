@@ -31,7 +31,7 @@ probe() { # probe NAME OLD NEW EXPECTED-SUBSTRING
     echo "  ok $name: fails with '$want'"
   else
     echo "  x $name: expected a failure mentioning '$want'"
-    echo "$out" | grep -E 'error|assert' | head -5 | sed 's/^/      /'
+    grep -E 'error|assert' <<< "$out" | head -5 | while IFS= read -r l; do echo "      $l"; done
     failed=1
   fi
 }
