@@ -24,13 +24,14 @@ Put the name of that package in the `packages` lists of the profile.
 | `herdr/` | `apps.herdr.enable` | Installs the formula. Links `config.toml`. |
 | `raycast/` | `apps.raycast.{enable,freeCmdSpace}` | Installs the cask. Contains the script command directory. You must register this directory in Raycast manually. When `freeCmdSpace` is true, turns off the Spotlight Cmd+Space shortcut. |
 | `ssh/` | None. This is a base app. | Installs openssh. Links `config`, which sends each host through the 1Password agent. `cloudflared.zsh` is the ProxyCommand for the tunnel. Links `ssh` and `key.pub` from the profile. Writes the GitHub host keys to `/etc/ssh/ssh_known_hosts`. |
+| `starship/` | None. This is a base app. | Installs the formula. Links `starship.toml`, the prompt. `shell/theme.zsh` starts it. |
 | `terraform/` | `apps.terraform.enable` | Installs the formula from the HashiCorp tap. `env.zsh` sets `CHECKPOINT_DISABLE`. |
 | `tlrc/` | None. This is a base app. | Installs the formula. Links `config.toml`. `env.zsh` sets `TLRC_CONFIG`. |
 | `vscode/` | `apps.vscode.{enable,extensions,vsix}` | Installs the cask and the bundled extensions. A profile can add more extensions. A profile can also add an extension from a VSIX in the repository of that extension. `vsix.zsh` installs these in an activation step. `env.zsh` sets `COPILOT_HOME`. |
 | `wget/` | `apps.wget.enable` | Installs the formula. Links `wgetrc`, which keeps the HSTS cache in `~/.cache`. `env.zsh` sets `WGETRC`. |
 
-A base app has no option and is always on. `shell/` does not work without eza and tlrc. The
-identity of each profile uses git, ssh and 1Password.
+A base app has no option and is always on. `shell/` does not work without eza, starship and
+tlrc. The identity of each profile uses git, ssh and 1Password.
 
 Each other app has an `enable` option with no default. Thus each profile must set it to true
 or false.

@@ -10,8 +10,8 @@
 # use-omz FIRST: sets $ZSH, $ZSH_CACHE_DIR, deferred compinit + compdef queue.
 getantidote/use-omz
 
-# All OMZ lib/*.zsh: prompt_subst + git_prompt_info/status (required by
-# shell/theme.zsh), the `l` alias, history/completion defaults.
+# All OMZ lib/*.zsh: the `l` alias, history, completion and key-binding
+# defaults.
 ohmyzsh/ohmyzsh path:lib
 
 ohmyzsh/ohmyzsh path:plugins/git

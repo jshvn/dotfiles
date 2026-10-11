@@ -21,7 +21,7 @@ new evidence. Referenced from CLAUDE.md.
 | Read-back validation stays | Nix activates state but never reads it back. One evaluation of the declaration feeds `show`, `diff`, `validate` and `audit`; `tasks/validate.zsh` reads each declared thing back from the live system: shell plumbing, hostname, links, identity, packages, the jshvn/ai checkout and every macOS default. |
 | CI is the container | `nix flake check`, `nix fmt -- --ci` and the negative suite run in the pinned `nixos/nix` image on an ubuntu runner, with lint and the hermetic smoke tests beside them. A macOS runner, in parallel, installs Nix and builds lerasium's closure without switching. The switch, brew bundle, the live shell and the read-back tiers run only on a Mac. |
 | `task install` uninstalls what is no longer declared, after asking | The switch never uninstalls (`cleanup = "none"`), so a first switch and a rollback never remove anything. `task install` then lets brew list what is installed beyond the declaration and uninstall it only on an explicit yes (or `-- --yes`). |
-| Keep alanpeabody-based prompt; reject Starship | The existing `theme.zsh` is small, fast, and not on life support; Starship would be a behavior change with no problem to solve. |
+| Starship draws the prompt | One file, `apps/starship/starship.toml`, declares a one-line prompt: `user@host:path$`, then pills for command time, exit code, sudo, jobs, terraform workspace, nix shell and git, each shown only when it applies. Starship renders synchronously, about 20 ms a prompt (measured 2026-10-11). Language-version modules stay off: `nodejs` adds about 60 ms a prompt, and `python` reports the system Python, not the one `uv` runs. Terminal.app draws no Nerd Font glyphs, so `theme.zsh` gives it a copy with square pill ends. |
 | One command per Mac; no curl-to-shell except Homebrew's and Nix's own installers | `./bootstrap.zsh <machine>` installs Nix, selects the machine and runs the first `task install`, which clears the way for nix-darwin and home-manager itself and installs Homebrew, so no one-time procedure needs remembering. Both installers are HTTPS-only. The Nix installer is consent-gated and downloaded to a file first so it can be read before it runs; Homebrew's runs inside the switch, as the user, with no prompt of its own: the password the switch asks for is the consent (`docs/SECURITY.md`). |
 | One concept per file; README per top-level directory | Reduces AI's inference burden; every directory teaches itself. |
 | atium moved to `jshvn/jgrid.net` on 2026-09-23 | Its runtime needs (tunnel pair, secrets, nightly switch, healthcheck) were the NixOS common layer's; nix-darwin gave them a launchd backend. This repo is laptops-only. |
@@ -40,8 +40,6 @@ new evidence.
 - **nixpkgs packages, nix-homebrew, mac-app-util** -- Homebrew installs everything (above);
   mac-app-util was the source of nix-darwin issue 1866.
 - **chezmoi / stow / yadm** -- a tool dependency that overlaps with what the switch does.
-- **Starship prompt** -- the existing alanpeabody-based `theme.zsh` is small, fast, and not on
-  life support.
 - **fish / nu / bash** -- zsh is the chosen shell.
 - **Replacing go-task** -- locked; it is the operator surface over darwin-rebuild and nix eval.
 - **Hostname-based machine detection** -- burned us before. Explicit `task setup -- <machine>`

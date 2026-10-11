@@ -1,0 +1,100 @@
+# The prompt, one line: user@host:path$ on the left; on the right, pills for the last command's
+# duration and exit code, sudo, background jobs, the terraform workspace and a nix shell, then a
+# git pill and the time. A pill shows only when it has something to say.
+#
+# The rounded pill ends are Nerd Font glyphs, written as [\ue0b6](fg:<colour>) and
+# [\ue0b4](fg:<colour>). Terminal.app draws no Nerd Font glyphs, so shell/theme.zsh gives it a copy
+# with each end as a plain coloured cell; keep every end in exactly that form.
+add_newline = false
+format = '$username$hostname:$directory$character'
+right_format = "$cmd_duration$status$sudo$jobs$terraform$nix_shell([\ue0b6](fg:bright-black)$git_branch$git_commit$git_status$git_metrics[\ue0b4](fg:bright-black) )$time"
+
+[username]
+show_always = true
+format = '[$user]($style)'
+style_user = 'green'
+style_root = 'red'
+
+[hostname]
+ssh_only = false
+format = '[@$hostname]($style)'
+style = 'green'
+
+[directory]
+truncation_length = 0
+truncate_to_repo = false
+format = '[$path]($style)[$read_only]($read_only_style)'
+style = 'blue'
+read_only = ' ro'
+
+[character]
+format = '$symbol '
+success_symbol = '\$'
+error_symbol = '\$'
+
+# A macOS notification when a command of 45 s or more finishes.
+[cmd_duration]
+format = "[\ue0b6](fg:yellow)[$duration]($style)[\ue0b4](fg:yellow) "
+style = 'bg:yellow fg:black'
+show_notifications = true
+min_time_to_notify = 45000
+
+[status]
+disabled = false
+format = "[\ue0b6](fg:red)[$status]($style)[\ue0b4](fg:red) "
+style = 'bg:red fg:black'
+
+# While sudo has a password cached.
+[sudo]
+disabled = false
+format = "[\ue0b6](fg:red)[sudo]($style)[\ue0b4](fg:red) "
+style = 'bg:red fg:black'
+
+# &1, &2: background or suspended jobs in this shell.
+[jobs]
+format = "[\ue0b6](fg:blue)[&$number]($style)[\ue0b4](fg:blue) "
+number_threshold = 1
+style = 'bg:blue fg:black'
+
+[terraform]
+format = "[\ue0b6](fg:purple)[tf:$workspace]($style)[\ue0b4](fg:purple) "
+style = 'bg:purple fg:black'
+
+[nix_shell]
+format = "[\ue0b6](fg:purple)[nix]($style)[\ue0b4](fg:purple) "
+style = 'bg:purple fg:black'
+
+# The git pill: branch (or the commit hash when detached), status symbols, lines added and deleted.
+[git_branch]
+format = '[$branch]($style)'
+style = 'bg:bright-black fg:green'
+only_attached = true
+
+[git_commit]
+format = '[$hash]($style)'
+style = 'bg:bright-black fg:green'
+
+[git_status]
+format = '([ $untracked$staged$modified$renamed$deleted$stashed$conflicted$ahead_behind](bg:bright-black))'
+untracked = '[✭](bg:bright-black fg:cyan)'
+staged = '[✚](bg:bright-black fg:green)'
+modified = '[✹](bg:bright-black fg:blue)'
+renamed = '[➜](bg:bright-black fg:purple)'
+deleted = '[✖](bg:bright-black fg:red)'
+stashed = '[⚑](bg:bright-black fg:blue)'
+conflicted = '[═](bg:bright-black fg:yellow)'
+ahead = '[↑](bg:bright-black fg:green)'
+behind = '[↓](bg:bright-black fg:red)'
+diverged = '[↕](bg:bright-black fg:yellow)'
+
+[git_metrics]
+disabled = false
+format = '([ +$added]($added_style))([ -$deleted]($deleted_style))'
+added_style = 'bg:bright-black fg:green'
+deleted_style = 'bg:bright-black fg:red'
+
+[time]
+disabled = false
+format = '[$time]($style)'
+style = 'cyan'
+time_format = '%H:%M'

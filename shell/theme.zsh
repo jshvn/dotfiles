@@ -3,43 +3,43 @@
 # =============================================================================
 # shell/theme.zsh -- prompt + man-page + grc colour setup
 #
-# Purpose:      Customize PROMPT / RPROMPT (alanpeabody-derived); set
+# Purpose:      Start the Starship prompt (apps/starship/starship.toml); set
 #               man + grc colours.
-# Depends on:   OMZ git_prompt_status / git_prompt_info (sourced via
-#               antidote in .zshrc); eza, grc on PATH.
-# Side effects: unsets LS_COLORS; sets PROMPT, RPROMPT,
-#               ZSH_THEME_GIT_PROMPT_*; redefines man() with LESS_TERMCAP_*
-#               colour env; aliases supported commands through
-#               `grc --colour=auto`.
+# Depends on:   starship, eza, grc on PATH; ~/.config/starship.toml (linked
+#               by the switch); XDG_CONFIG_HOME, XDG_CACHE_HOME (.zshenv).
+# Side effects: unsets LS_COLORS; exports STARSHIP_CONFIG, STARSHIP_CACHE;
+#               in Terminal.app writes $XDG_CACHE_HOME/starship/plain.toml;
+#               sets PROMPT, RPROMPT and Starship's precmd/preexec hooks;
+#               redefines man() with LESS_TERMCAP_* colour env; aliases
+#               supported commands through `grc --colour=auto`.
 # =============================================================================
 
 unset LS_COLORS
 
-# Native zsh prompt escapes (%F{color}...%f) for reliable width calculation.
-local user='%F{green}%n@%m%f'
-local pwd='%F{blue}%~%f'
-local return_code='%(?..%F{red}%? ↵%f)'
-local git_branch='$(git_prompt_status)%f$(git_prompt_info)%f'
-local time='%F{cyan}%T%f'
+# STARSHIP_CONFIG is set on every start, so a value inherited from another terminal never sticks.
+# Terminal.app draws no Nerd Font glyphs: it gets a copy of starship.toml in which each rounded
+# pill end (U+E0B6 or U+E0B4, escaped, coloured with fg:) is a plain cell coloured with bg:. The
+# copy is rebuilt whenever starship.toml is newer.
+export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship.toml"
+export STARSHIP_CACHE="$XDG_CACHE_HOME/starship"
+if [[ "$TERM_PROGRAM" == Apple_Terminal && -f "$STARSHIP_CONFIG" ]]; then
+  () {
+    setopt localoptions extendedglob
+    local plain="$STARSHIP_CACHE/plain.toml" toml
+    if [[ ! "$plain" -nt "$STARSHIP_CONFIG" ]]; then
+      mkdir -p "$STARSHIP_CACHE"
+      toml="$(<"$STARSHIP_CONFIG")"
+      print -r -- "${toml//(#b)\[\\ue0b[46]\]\(fg:([a-z-]##)\)/[ ](bg:${match[1]})}" >| "$plain"
+    fi
+    STARSHIP_CONFIG="$plain"
+  }
+fi
 
-ZSH_THEME_GIT_PROMPT_PREFIX="%F{green}"
-ZSH_THEME_GIT_PROMPT_SUFFIX="%f"
-ZSH_THEME_GIT_PROMPT_DIRTY=""
-ZSH_THEME_GIT_PROMPT_CLEAN=""
-
-ZSH_THEME_GIT_PROMPT_UNTRACKED="%F{cyan} ✭"
-ZSH_THEME_GIT_PROMPT_ADDED="%F{green} ✚"
-ZSH_THEME_GIT_PROMPT_MODIFIED="%F{blue} ✹"
-ZSH_THEME_GIT_PROMPT_RENAMED="%F{magenta} ➜"
-ZSH_THEME_GIT_PROMPT_DELETED="%F{red} ✖"
-ZSH_THEME_GIT_PROMPT_UNMERGED="%F{yellow} ═"
-ZSH_THEME_GIT_PROMPT_AHEAD="%F{green} ↑"
-ZSH_THEME_GIT_PROMPT_BEHIND="%F{red} ↓"
-ZSH_THEME_GIT_PROMPT_DIVERGED="%F{yellow} ↕"
-ZSH_THEME_GIT_PROMPT_STASHED="%F{blue} ⚑"
-
-PROMPT="${user}:${pwd}$ "
-RPROMPT="${return_code} ${git_branch} ${time}"
+if (( $+commands[starship] )); then
+  eval "$(starship init zsh)"
+else
+  echo "$(tput setaf 3)Warning: starship not found. Run 'task install' to complete setup.$(tput sgr0)" >&2
+fi
 
 # Colourise man pages. LESS_TERMCAP_* reference:
 # https://unix.stackexchange.com/questions/108699

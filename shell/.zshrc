@@ -35,9 +35,9 @@ export DOTFILEDIR
 
 # antidote (static plugin manager). getantidote/use-omz supplies OMZ
 # scaffolding ($ZSH, $ZSH_CACHE_DIR, deferred compinit before first prompt);
-# `ohmyzsh/ohmyzsh path:lib` provides prompt_subst, git_prompt_info/status,
-# the `l` alias, and history/completion defaults that theme.zsh and the rest
-# of this file rely on. Plugin set lives in shell/.zsh_plugins.txt.
+# `ohmyzsh/ohmyzsh path:lib` provides the `l` alias and the history,
+# completion and key-binding defaults the rest of this file relies on.
+# Plugin set lives in shell/.zsh_plugins.txt.
 export ANTIDOTE_HOME="$XDG_CACHE_HOME/antidote"
 _antidote_sh="$HOMEBREW_PREFIX/opt/antidote/share/antidote/antidote.zsh"
 _zsh_plugins_txt="$DOTFILEDIR/shell/.zsh_plugins.txt"
