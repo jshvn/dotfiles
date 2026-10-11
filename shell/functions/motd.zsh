@@ -17,10 +17,11 @@
 
 # Helpers rely on zsh dynamic scoping: motd() declares width/reset/cyan as
 # locals, and these helpers read them at call time.
+# An optional third argument centers on that many columns instead of the text.
 _motd_center() {
     local text="$1"
     local color="$2"
-    local padding=$(( (width - ${#text}) / 2 ))
+    local padding=$(( (width - ${3:-${#text}}) / 2 ))
     printf "%*s${color}%s${reset}\n" $padding "" "$text"
 }
 
@@ -32,29 +33,30 @@ _motd_line() {
 # iTerm2 protocol (iTerm2, WezTerm). Returns 1 where neither applies, and
 # inside tmux, which drops both unless passthrough is on.
 _motd_image() {
-    local png="${DOTFILEDIR}/shell/motd/motd_jgrid.png" rows=16
+    # Sized in columns, the unit the padding is in; the height follows the
+    # font. Odd, like the centered text lines, so both round the same way.
+    local png="${DOTFILEDIR}/shell/motd/motd_jgrid.png" cols=35
     [[ -r "$png" && -z "$TMUX" ]] || return 1
-    # ponytail: centers on a 2:1 cell; fonts with another ratio sit a column off
-    local pad=$(( (width - rows * 2) / 2 ))
+    local pad=$(( (width - cols) / 2 ))
     local b64=$(base64 < "$png" | tr -d '\n')
 
     if [[ "$TERM" == (xterm-kitty|xterm-ghostty) ]]; then
         # Chunks of 4096 (the protocol's limit); q=2 keeps replies out of the
-        # prompt, C=1 leaves the cursor so the rows are stepped over below.
+        # prompt. The terminal leaves the cursor on the image's last row.
         local i=0 more
         printf '%*s' $pad ''
         while (( i < ${#b64} )); do
             more=$(( i + 4096 < ${#b64} ))
             if (( i == 0 )); then
-                printf '\e_Gf=100,a=T,r=%d,C=1,q=2,m=%d;%s\e\\' $rows $more "${b64:$i:4096}"
+                printf '\e_Gf=100,a=T,c=%d,q=2,m=%d;%s\e\\' $cols $more "${b64:$i:4096}"
             else
                 printf '\e_Gm=%d;%s\e\\' $more "${b64:$i:4096}"
             fi
             (( i += 4096 ))
         done
-        printf '\n%.0s' {1..$rows}
+        printf '\n'
     elif [[ "$TERM_PROGRAM" == (iTerm.app|WezTerm) ]]; then
-        printf '%*s\e]1337;File=inline=1;height=%d;preserveAspectRatio=1:%s\a\n' $pad '' $rows "$b64"
+        printf '%*s\e]1337;File=inline=1;width=%d;preserveAspectRatio=1:%s\a\n' $pad '' $cols "$b64"
     else
         return 1
     fi
@@ -79,12 +81,14 @@ function motd() {    # motd() prints the Tron-themed message-of-the-day banner. 
     if _motd_image; then
         :
     elif [[ $width -ge 80 ]]; then
-        _motd_center "     ██╗ ██████╗ ██████╗ ██╗██████╗ " "${cyan}${bold}"
-        _motd_center "     ██║██╔════╝ ██╔══██╗██║██╔══██╗" "${cyan}${bold}"
-        _motd_center "     ██║██║  ███╗██████╔╝██║██║  ██║" "${cyan}${bold}"
-        _motd_center "██   ██║██║   ██║██╔══██╗██║██║  ██║" "${cyan}${bold}"
-        _motd_center "╚█████╔╝╚██████╔╝██║  ██║██║██████╔╝" "${cyan}${bold}"
-        _motd_center " ╚════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝╚═════╝ " "${cyan}${bold}"
+        # Centered on the solid letters (35 columns, odd like the text lines);
+        # the shadow hangs one column to the right.
+        _motd_center "     ██╗ ██████╗ ██████╗ ██╗██████╗ " "${cyan}${bold}" 35
+        _motd_center "     ██║██╔════╝ ██╔══██╗██║██╔══██╗" "${cyan}${bold}" 35
+        _motd_center "     ██║██║  ███╗██████╔╝██║██║  ██║" "${cyan}${bold}" 35
+        _motd_center "██   ██║██║   ██║██╔══██╗██║██║  ██║" "${cyan}${bold}" 35
+        _motd_center "╚█████╔╝╚██████╔╝██║  ██║██║██████╔╝" "${cyan}${bold}" 35
+        _motd_center " ╚════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝╚═════╝ " "${cyan}${bold}" 35
     else
         _motd_center "J G R I D" "${cyan}${bold}"
     fi
