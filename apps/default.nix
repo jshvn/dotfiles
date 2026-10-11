@@ -12,11 +12,13 @@
     ./conda
     ./dust
     ./eza
+    ./firefox
     ./ghostty
     ./git
     ./herdr
     ./raycast
     ./ssh
+    ./terraform
     ./tlrc
     ./vscode
     ./wget

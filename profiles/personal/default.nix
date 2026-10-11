@@ -34,11 +34,13 @@
       conda.enable = true;
       dust.enable = true;
       wget.enable = true;
+      firefox.enable = true;
+      terraform.enable = true;
     };
     shell.jgrid-net = true;
     repo.devToolchain = true;
     packages = {
-      # container: Apple's runtime. hashicorp/tap/terraform: BSL, from HashiCorp's own tap.
+      # container: Apple's runtime.
       formulae = [
         "bat"
         "bottom"
@@ -49,7 +51,6 @@
         "gh"
         "git-crypt"
         "go"
-        "hashicorp/tap/terraform"
         "htop"
         "hugo"
         "node"
@@ -65,7 +66,6 @@
         "discord"
         "dropbox"
         "fantastical"
-        "firefox"
         "gitfox"
         "microsoft-excel"
         "microsoft-powerpoint"

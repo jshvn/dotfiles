@@ -23,9 +23,10 @@ Nothing else may live in a profile directory: `profiles/.gitignore` ignores any 
 - `system.<concern>`: true or false for every file in `system/` (dock, finder, input,
   screenshots, security, appearance, display, animations).
 - `apps.<name>.enable`: true or false for every optional app in `apps/` (raycast, ghostty,
-  herdr, vscode, claude-code, conda, dust), plus the app's own knobs: `raycast.freeCmdSpace`,
-  `vscode.extensions` (extras beyond the bundled set), `claude-code.profile` and `.ref` (both,
-  when enabled). `claude-code.profile` names a profile in jshvn/ai, not one here.
+  herdr, vscode, claude-code, conda, dust, wget, firefox, terraform), plus the app's own knobs:
+  `raycast.freeCmdSpace`, `vscode.extensions` (extras beyond the bundled set),
+  `claude-code.profile` and `.ref` (both, when enabled). `claude-code.profile` names a profile
+  in jshvn/ai, not one here.
 - `shell.jgrid-net`: the jgrid.net fleet aliases.
 - `repo.devToolchain`: linters, formatters and hyperfine for working on this repo.
 - `packages.formulae`, `packages.casks`, `packages.mas`: free choices with no configuration

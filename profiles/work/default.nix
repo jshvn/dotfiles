@@ -30,6 +30,8 @@
       conda.enable = true;
       dust.enable = false;
       wget.enable = true;
+      firefox.enable = true;
+      terraform.enable = false;
     };
     shell.jgrid-net = false;
     repo.devToolchain = true;
@@ -54,7 +56,6 @@
         "appcleaner"
         "cardhop"
         "fantastical"
-        "firefox"
         "gitfox"
         "microsoft-excel"
         "microsoft-powerpoint"

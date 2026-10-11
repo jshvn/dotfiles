@@ -15,12 +15,14 @@ merely installed is a package name in the profile.
 | `conda/` | `apps.conda.enable` | the miniconda cask, `condarc` |
 | `dust/` | `apps.dust.enable` | the formula, `config.toml`, the `dust` alias |
 | `eza/` | none: a base app | the formula, `theme.yaml` |
+| `firefox/` | `apps.firefox.enable` | the cask, `env.zsh` (BROWSER) |
 | `ghostty/` | `apps.ghostty.enable` | the cask, `config`, the `g` launcher |
 | `git/` | none: a base app | git and git-delta, `config` (includes the profile's overlay under `~/git/`), `ignore`, the link to the profile's `git` |
 | `herdr/` | `apps.herdr.enable` | the formula, `config.toml` |
 | `raycast/` | `apps.raycast.{enable,freeCmdSpace}` | the cask, the script-command directory (registered in Raycast by hand), Spotlight's Cmd+Space |
 | `ssh/` | none: a base app | openssh, `config` (every host through the 1Password agent), `cloudflared.zsh` (the tunnel ProxyCommand), the links to the profile's `ssh` and `key.pub`, GitHub's host keys in `/etc/ssh/ssh_known_hosts` |
-| `tlrc/` | none: a base app | the formula, `config.toml` |
+| `terraform/` | `apps.terraform.enable` | the formula from HashiCorp's tap, `env.zsh` (CHECKPOINT_DISABLE) |
+| `tlrc/` | none: a base app | the formula, `config.toml`, `env.zsh` (TLRC_CONFIG) |
 | `vscode/` | `apps.vscode.{enable,extensions}` | the cask and the bundled extension set; a profile adds extras |
 | `wget/` | `apps.wget.enable` | the formula, `wgetrc` (the HSTS cache under `~/.cache`), `env.zsh` (WGETRC) |
 

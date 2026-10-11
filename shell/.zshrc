@@ -12,7 +12,7 @@
 #               shell/.zsh_plugins.txt; shell/theme.zsh;
 #               shell/functions/helpers/*.zsh; shell/functions/*.zsh;
 #               $XDG_STATE_HOME/dotfiles/aliases.d/*.zsh (linked by the switch).
-# Side effects: exports TLRC_CONFIG, DOTFILEDIR, ANTIDOTE_HOME, HISTFILE,
+# Side effects: exports DOTFILEDIR, ANTIDOTE_HOME, HISTFILE,
 #               HIST_STAMPS, HISTSIZE, SAVEHIST; creates HISTFILE parent
 #               dir; enables SHARE_HISTORY
 #               setopt; clones plugin repos + writes static init file under
@@ -20,8 +20,6 @@
 #               conditionally sources VS Code shell integration; prints
 #               stderr warning when no machine selected.
 # =============================================================================
-
-export TLRC_CONFIG="$XDG_CONFIG_HOME/tlrc/config.toml"
 
 # Resolve $DOTFILEDIR (absolute path to repo root) via symlink-walk.
 SOURCE="${(%):-%N}"

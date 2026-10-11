@@ -9,10 +9,9 @@
 # Depends on:   nothing.
 # Side effects: exports XDG_{CONFIG,DATA,STATE,CACHE}_HOME, XDG_{DATA,CONFIG}_DIRS,
 #               ZDOTDIR, CLAUDE_CONFIG_DIR, GNUPGHOME, GOPATH, NPM_CONFIG_CACHE,
-#               NODE_REPL_HISTORY, PYTHON_HISTORY, MPLCONFIGDIR, CHECKPOINT_DISABLE,
-#               EDITOR, VEDITOR, VISUAL, LANG, LC_ALL, BROWSER (gated),
-#               SHELL_SESSIONS_DISABLE, __CF_USER_TEXT_ENCODING,
-#               DOTFILES_MACHINE (gated).
+#               NODE_REPL_HISTORY, PYTHON_HISTORY, MPLCONFIGDIR, EDITOR,
+#               VEDITOR, VISUAL, LANG, LC_ALL, SHELL_SESSIONS_DISABLE,
+#               __CF_USER_TEXT_ENCODING, DOTFILES_MACHINE (gated).
 # =============================================================================
 
 # XDG Base Directory Specification (preserve any pre-set value).
@@ -38,8 +37,6 @@ export NPM_CONFIG_CACHE="${XDG_CACHE_HOME}/npm"
 export NODE_REPL_HISTORY="${XDG_STATE_HOME}/node_repl_history"
 export PYTHON_HISTORY="${XDG_STATE_HOME}/python_history"
 export MPLCONFIGDIR="${XDG_CONFIG_HOME}/matplotlib"
-# HashiCorp's version check, the only thing terraform writes to ~/.terraform.d unless logged in
-export CHECKPOINT_DISABLE=1
 
 export EDITOR="nano"
 export VEDITOR="code"
@@ -48,11 +45,6 @@ export VISUAL="code"
 # UTF-8 locale -- critical for prompt width calculation in zsh.
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
-
-# Guard with executable check so tools reading $BROWSER do not get a
-# path-to-nothing on machines without Firefox.
-[[ -x "/Applications/Firefox.app/Contents/MacOS/firefox" ]] && \
-    export BROWSER="/Applications/Firefox.app/Contents/MacOS/firefox"
 
 # Disable shell sessions to avoid creating .zsh/sessions/ directories.
 export SHELL_SESSIONS_DISABLE=1

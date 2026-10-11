@@ -7,13 +7,12 @@
 #               highlight + man + grc colours.
 # Depends on:   OMZ git_prompt_status / git_prompt_info (sourced via
 #               antidote in .zshrc); eza, highlight, grc on PATH.
-# Side effects: sets EZA_CONFIG_HOME; unsets LS_COLORS; sets PROMPT,
+# Side effects: unsets LS_COLORS; sets PROMPT,
 #               RPROMPT, ZSH_THEME_GIT_PROMPT_*; defines highlight alias;
 #               redefines man() with LESS_TERMCAP_* colour env; aliases
 #               supported commands through `grc --colour=auto`.
 # =============================================================================
 
-export EZA_CONFIG_HOME="$XDG_CONFIG_HOME/eza"
 unset LS_COLORS
 
 # Native zsh prompt escapes (%F{color}...%f) for reliable width calculation.
