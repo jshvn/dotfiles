@@ -73,3 +73,8 @@ new evidence.
 | `go-task` >= 3.37 | Homebrew, `modules/base.nix`; bootstrap's first run, the locked nixpkgs | `for:` loops and the `OS` template function in `Taskfile.yml` |
 | `jq` >= 1.7 | Homebrew, `modules/base.nix` | the evaluation JSON every read task consumes |
 | GitHub Actions `uses:` versions | `gh api repos/<owner>/<repo>/releases/latest --jq .tag_name` | never written from memory |
+
+`task install` moves none of these pins, nor macOS (`system/updates.nix` turns automatic installs
+off). It ends with `tasks/install-pins.zsh`, which warns about each one that is behind upstream
+and names the bump: a lock input only once it is behind and over seven days old, since
+nixpkgs' release branch moves every day or two.

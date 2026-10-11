@@ -91,7 +91,7 @@ tasks:
         row 'task fmt' 'Format every .nix file in place'
         group 'write -- changes this Mac'
         row 'task setup -- <name>' 'Select the machine; never inferred from the hostname'
-        row 'task install' 'Fast-forward, build and switch, refresh plugins; never uninstalls' 'sudo prompts; ends by listing what task prune would remove'
+        row 'task install' 'Fast-forward, build and switch, refresh plugins; never uninstalls' 'sudo prompts; ends with what task prune would remove and each stale pin'
         row 'task prune' 'Uninstall every package the declaration no longer lists; brew asks y/n' 'not only brew: App Store apps, VS Code extensions, go/cargo/uv/npm/krew tools'
         row 'task rollback' 'Activate the previous generation' 'sudo prompts'
         printf '\n%s\n\n' "${d}task --list for the generated view; ENGINE=docker forces Docker${r}"
@@ -106,7 +106,7 @@ tasks:
       - 'echo "machine: {{.CLI_ARGS}}"'
 
   install:
-    desc: 'Fast-forward the checkout (warn-only), build and switch the selected machine (a first run on a Mac clears the way itself), list what is no longer declared, refresh the zsh plugin bundles'
+    desc: 'Fast-forward the checkout (warn-only), build and switch the selected machine (a first run on a Mac clears the way itself), list what is no longer declared, warn about each pin it does not move, refresh the zsh plugin bundles'
     preconditions: &need-machine
       - sh: test -f '{{.ROOT_DIR}}/machines/{{.MACHINE}}.nix'
         msg: 'no machine selected (no machines/{{.MACHINE}}.nix): task setup -- <name>; the machines are: {{.MACHINES | trim}}'
@@ -182,9 +182,9 @@ tasks:
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && nix fmt --no-write-lock-file"'
 
   test:
-    desc: 'Smoke tests (orphan scan, trust scan, cleanup scan and link clearing, repo sync, ai checkout, VSIX install, the live shell on a Mac) and the negative evaluations'
+    desc: 'Smoke tests (orphan scan, trust scan, cleanup scan and link clearing, repo sync, pin check, ai checkout, VSIX install, the live shell on a Mac) and the negative evaluations'
     cmds:
-      - for: [audit-brew-cleanup, audit-links, audit-trust, install-clear-links, install-repo-sync, ai-checkout, vscode-vsix]
+      - for: [audit-brew-cleanup, audit-links, audit-trust, install-clear-links, install-repo-sync, install-pins, ai-checkout, vscode-vsix]
         cmd: DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/tasks/tests/{{.ITEM}}.zsh'
       - '{{if eq OS "darwin"}}DOTFILEDIR="{{.ROOT_DIR}}" zsh "{{.ROOT_DIR}}/tasks/tests/shell-startup.zsh"{{else}}echo "shell-startup: skipped, it needs the live Mac shell"{{end}}'
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && SRC=/work bash tasks/tests/negative.sh"'

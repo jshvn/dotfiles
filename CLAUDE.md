@@ -95,6 +95,8 @@ What the file system will not tell you:
   uv, npm and krew installs; it uninstalls only on a y at brew's prompt, so an agent's run lists
   and removes nothing. Brew is always read with `HOMEBREW_NO_AUTO_UPDATE=1` and stdin from
   `/dev/null` where nothing may prompt.
+- A version `task install` does not move (a lock input, the image tag, a `uses:` line, a tag
+  ref) needs a check in `tasks/install-pins.zsh`, or `update` never says it is stale.
 - A Mac's first `task install` (no `/run/current-system` yet) clears the way itself, after the
   build succeeds: the symlinks at every `dotfiles.links` path go, anything else there moves to
   `<path>.before-dotfiles`, and `/etc/zshenv` and `/etc/shells` move to `*.before-nix-darwin`.

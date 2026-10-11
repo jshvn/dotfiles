@@ -10,10 +10,11 @@
 #               paths home-manager will link and moves /etc/zshenv and
 #               /etc/shells aside; switches with the built darwin-rebuild; then
 #               lists what is installed beyond the declaration (prune.zsh
-#               --list), which only `task prune` uninstalls.
+#               --list), which only `task prune` uninstalls; then warns about
+#               each pin the install does not move (install-pins.zsh).
 # Depends on:   DOTFILEDIR, MACHINE, NIX env vars (NIX_CONFIG when set); jq;
 #               sudo; tasks/messages.zsh; tasks/install-clear-links.zsh;
-#               tasks/prune.zsh.
+#               tasks/prune.zsh; tasks/install-pins.zsh.
 # Side effects: writes the `result` link in the checkout; on a first switch,
 #               removes or renames paths under $HOME and (sudo) renames
 #               /etc/zshenv and /etc/shells; activates the system (sudo).
@@ -48,3 +49,6 @@ sudo env NIX_CONFIG="${NIX_CONFIG:-}" "$DOTFILEDIR/result/sw/bin/darwin-rebuild"
 
 # --- list what is no longer declared; task prune uninstalls it ----------------
 zsh "$HERE/prune.zsh" --list <<< "$declared" || true # a hint; the switch has already finished
+
+# --- warn about each pin the install does not move ------------------------------
+zsh "$HERE/install-pins.zsh" <<< "$declared" || warn "pins: the check failed (above); the install has finished"
