@@ -1,30 +1,65 @@
 # tasks
 
-What `Taskfile.yml` runs. The Taskfile holds one evaluation of the selected machine (`SHAPE`:
-the `dotfiles` namespace, every defaults group, the ByHost keys, the generated Brewfile, taps,
-casks, hostname) and pipes it as JSON to the scripts here.
+This directory contains the scripts that `Taskfile.yml` starts. The Taskfile evaluates the
+selected machine one time. This evaluation is `SHAPE`. The Taskfile sends it as JSON to the
+scripts here.
 
-Naming: `<task>.zsh` is the body of `task <task>`; `<task>-<thing>.zsh` is a helper of that task,
-so `ls` sorts each helper next to its owner; `messages.zsh` is the shared output library
-(`bootstrap.zsh` and `apps/claude-code/` source it too). A test in `tests/` takes the name of
-the script it tests.
+`SHAPE` contains:
 
-| Script | Task | Does |
-|--------|------|------|
-| `audit.zsh` | `task audit [-- --strict]` | the other direction from validate: what is on the machine beyond the declaration (brew bundle cleanup dry run, taps and trust grants, orphan links into the checkout) and `brew vulns`. Findings warn; `--strict` exits 1. |
-| `audit-brew-cleanup.zsh` | by audit | what `brew bundle cleanup` would uninstall, from its dry run |
-| `audit-links.zsh` | by audit | the orphan-link detector |
-| `audit-trust.zsh` | by audit | tap and trust-grant drift |
-| `install.zsh` | `task install` | builds the selected machine; on a Mac's first switch clears the way (`install-clear-links.zsh`, then `/etc/zshenv` and `/etc/shells` aside); switches; then lets brew uninstall what is installed beyond the declaration only after asking (`-- --yes` answers yes) |
-| `install-clear-links.zsh` | by install | removes the symlinks at the registered link paths and moves anything else there to `<path>.before-dotfiles` |
-| `install-repo-sync.zsh` | by install | fast-forwards this checkout before the build, warn-only; the claude-code activation runs it on the jshvn/ai checkout too (`$REPO_SYNC`) |
-| `lint.zsh` | `task lint` | every `.zsh` parses; every executable one sets `-euo pipefail`; every one carries the Purpose / Depends on / Side effects banner; no hardcoded Homebrew prefix outside a `# lint-allow: hardcoded-prefix` line. The Taskfile adds `nix fmt -- --ci` in the image; `task fmt` applies it. |
-| `validate.zsh` | `task validate` | reads the whole declaration back from the live system: shell plumbing, hostname, every link, the profile's identity (stray files in `profiles/`, git email, agent socket, `ssh-add -L`), `brew bundle check` and every cask's app artifact, the jshvn/ai checkout, every defaults key, the display preset, the Spotlight hotkey, the application firewall. Exits 1 on any cross. |
-| `messages.zsh` | sourced | info / success / warn / error / check / cross; the claude-code activation takes it by path (`$MESSAGES`) |
-| `tests/` | `task test` | one per helper above (hermetic, run in CI too); `ai-checkout` (`apps/claude-code/checkout.zsh`); `shell-startup` (the live shell: Mac only); `negative.sh` (the declaration rules, broken on purpose, inside the image) |
+- the `dotfiles` namespace
+- each defaults group
+- the ByHost keys
+- the generated Brewfile
+- the taps and the casks
+- the hostname
 
-Input contract: `validate.zsh` and `audit.zsh` read the evaluation on stdin and refuse empty
-input. They run read-only; the one side effect is a temp file for the Brewfile.
+File names:
 
-The one-check rule: pipeline logic here gets a test under `tests/`; interactive functions and
-aliases do not.
+- `<task>.zsh` is the body of `task <task>`.
+- `<task>-<thing>.zsh` is a helper of that task. With this name, `ls` sorts each helper next
+  to its task.
+- `messages.zsh` is the shared output library. `bootstrap.zsh` and the activation steps of
+  `apps/claude-code/` and `apps/vscode/` also use it.
+- A test in `tests/` has the name of the script that it tests.
+
+| Script | Task | Function |
+|--------|------|----------|
+| `audit.zsh` | `task audit [-- --strict]` | Does the opposite check of `validate.zsh`. Finds the state on the machine that is not in the configuration. Uses the three `audit-*` helpers. Also does `brew vulns`. Each finding is a warning. With `--strict`, exits with code 1 if there is a finding. |
+| `audit-brew-cleanup.zsh` | Used by `audit.zsh` | Finds the packages that `brew bundle cleanup` would remove. Uses its dry run. |
+| `audit-links.zsh` | Used by `audit.zsh` | Finds orphan links into the checkout. |
+| `audit-trust.zsh` | Used by `audit.zsh` | Finds changes in the taps and the trust grants. |
+| `install.zsh` | `task install` | Builds the selected machine. On the first switch on a Mac, it does `install-clear-links.zsh`. Then it moves `/etc/zshenv` and `/etc/shells` to `*.before-nix-darwin`. Then it does the switch. Then brew removes the packages that are not in the configuration. Brew asks first. `-- --yes` gives the answer yes. |
+| `install-clear-links.zsh` | Used by `install.zsh` | Removes the symlinks at the registered link paths. Moves each other file at these paths to `<path>.before-dotfiles`. |
+| `install-repo-sync.zsh` | Used by `install.zsh` | Fast-forwards this checkout before the build. If it cannot, it shows a warning and continues. The claude-code activation also uses it on the jshvn/ai checkout, through `$REPO_SYNC`. |
+| `lint.zsh` | `task lint` | Makes sure that each `.zsh` file parses. Makes sure that each executable file sets `-euo pipefail`. Makes sure that each file has the Purpose / Depends on / Side effects banner. Makes sure that no file has a hardcoded Homebrew prefix, except on a `# lint-allow: hardcoded-prefix` line. The Taskfile also does `nix fmt -- --ci` in the image. `task fmt` applies the format. |
+| `validate.zsh` | `task validate` | Reads the full configuration back from the live system. Exits with code 1 if a check fails. The list below shows the checks. |
+| `messages.zsh` | Sourced | Supplies the functions info, success, warn, error, check and cross. The claude-code and vscode activations get it by its path, through `$MESSAGES`. |
+| `tests/` | `task test` | Contains the tests. The list below shows them. |
+
+`validate.zsh` checks these items:
+
+- the shell plumbing
+- the hostname
+- each link
+- the identity of the profile. This includes stray files in `profiles/`, the git email, the
+  agent socket and `ssh-add -L`.
+- `brew bundle check` and the app of each cask
+- the jshvn/ai checkout
+- each defaults key
+- the display preset
+- the Spotlight hotkey
+- the application firewall
+
+`tests/` contains these tests:
+
+- One test for each helper above. These tests are hermetic. CI also does them.
+- `ai-checkout.zsh` tests `apps/claude-code/checkout.zsh`.
+- `vscode-vsix.zsh` tests `apps/vscode/vsix.zsh`.
+- `shell-startup.zsh` tests the live shell. It operates only on a Mac.
+- `negative.sh` breaks the configuration rules on purpose. It operates in the image.
+
+`validate.zsh` and `audit.zsh` read the evaluation on stdin. They refuse an empty input. They
+do not change the system. Their only side effect is a temporary file for the Brewfile.
+
+Pipeline logic in this directory must have a test in `tests/`. Interactive functions and
+aliases do not get tests.

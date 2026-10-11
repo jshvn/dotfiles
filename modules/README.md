@@ -1,29 +1,34 @@
 # modules
 
-Plumbing: the options every profile sets and the machinery that turns them into nix-darwin and
-home-manager configuration. Nothing here is named by a profile directly; a profile only sets
-`dotfiles.*` options.
+This directory contains the plumbing. It declares the options that each profile sets. It
+turns these options into nix-darwin and home-manager configuration. A profile does not refer
+to a file here. A profile only sets `dotfiles.*` options.
 
-| File | Owns |
-|------|------|
-| `default.nix` | the imports; `dotfiles.checkout` (where every link points), `dotfiles.profile` (an enum of the directories under `profiles/`) and `dotfiles.links` (the one link registry, installed by home-manager as out-of-store symlinks); the one user and its login shell; Nix's own housekeeping (flakes on, weekly GC) |
-| `packages.nix` | `dotfiles.packages.*` (a profile's free choices) and `dotfiles.provided.*` (what base and enabled apps contribute); the redundancy assertion; tap derivation; what reaches `homebrew.brews`, `casks`, `masApps`, `taps` |
-| `base.nix` | the unconditional formulae (the bootstrap toolchain and what `shell/` breaks without) and the one bare tap, `homebrew/brew-vulns` |
-| `homebrew.nix` | installing Homebrew itself when it is missing, just before `brew bundle`; `homebrew.onActivation`: update and upgrade on every switch; cleanup stays off, because `task install` uninstalls only after asking |
-| `shell.nix` | the login shell's entry in `/etc/shells`, `/etc/zshenv`, the startup-file links, `dotfiles.shell.aliases` and `.env` (what the switch links into `aliases.d/` and `env.d/`), `shell.jgrid-net` |
-| `repo.nix` | `repo.devToolchain` |
+| File | Contents |
+|------|----------|
+| `default.nix` | Imports the other modules. Declares `dotfiles.checkout`, the path that all links point into. Declares `dotfiles.profile`, an enum of the directories in `profiles/`. Declares `dotfiles.links`, the only link registry. home-manager installs each link as an out-of-store symlink. Declares the user and its login shell. Turns on Nix flakes. Starts the Nix garbage collection each week. |
+| `packages.nix` | Declares `dotfiles.packages.*`, the free choices of a profile. Declares `dotfiles.provided.*`, the packages that the base and the enabled apps supply. Contains the assertion against redundant packages. Gets the taps from the package names. Sets `homebrew.brews`, `homebrew.casks`, `homebrew.masApps` and `homebrew.taps`. |
+| `base.nix` | Lists the formulae that each machine gets. These include the bootstrap toolchain and the formulae that `shell/` needs. Contains the only bare tap, `homebrew/brew-vulns`. |
+| `homebrew.nix` | Installs Homebrew if it is missing, just before `brew bundle`. Sets `homebrew.onActivation`. Each switch updates and upgrades the packages. Cleanup stays off, because `task install` asks before it removes a package. |
+| `shell.nix` | Adds the login shell to `/etc/shells`. Writes `/etc/zshenv`. Links the startup files. Declares `dotfiles.shell.aliases` and `dotfiles.shell.env`. The switch links these files into `aliases.d/` and `env.d/`. Declares `shell.jgrid-net`. |
+| `repo.nix` | Declares `repo.devToolchain`. |
 
-Rules that live here and fail evaluation when broken:
+The modules enforce these rules. If you break a rule, the evaluation fails.
 
-- an unaccounted switch: every optional option is declared without a default;
-- a redundant package: `packages.nix` intersects a profile's lists with `provided`;
-- a bundled extension listed again: `apps/vscode/default.nix`;
-- a profile naming no `profiles/` directory: `dotfiles.profile` in `default.nix`.
+- Each optional option has no default. Thus each profile must set it.
+- A profile must not list a package that the base or an app supplies. `packages.nix` compares
+  the lists of the profile with `provided`.
+- A profile must not list a bundled VS Code extension again. `apps/vscode/default.nix` makes
+  this check.
+- `dotfiles.profile` must name a directory in `profiles/`. `default.nix` makes this check.
 
-`tasks/tests/negative.sh` proves each by breaking it.
+`tasks/tests/negative.sh` breaks each rule to prove that the rule works.
 
-## Adding a module
+## Add a module
 
-Declare options with `lib.mkOption` and no default where a profile must choose. Contribute
-packages through `dotfiles.provided.*`, links through `dotfiles.links`, shell integration
-through `dotfiles.shell.aliases` and `.env`. Import it from `default.nix`.
+1. Declare each option with `lib.mkOption`. If a profile must choose a value, do not give a
+   default.
+2. Supply packages through `dotfiles.provided.*`.
+3. Supply links through `dotfiles.links`.
+4. Supply shell integration through `dotfiles.shell.aliases` and `dotfiles.shell.env`.
+5. Import the module in `default.nix`.

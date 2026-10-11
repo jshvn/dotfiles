@@ -1,48 +1,60 @@
 # profiles
 
-A profile is what a kind of laptop wants and who it is: every choice the modules leave open,
-and the identity it signs and connects as. One directory per profile; a machine file imports
-exactly one.
+A profile contains the configuration for one type of laptop. It sets each choice that the
+modules leave open. It also contains the identity that the laptop uses to sign and connect.
+Each profile has one directory. Each machine file imports one profile.
 
-| File | Linked to | By |
-|------|-----------|----|
-| `default.nix` | (imported by the machine file) | `machines/<name>.nix` |
-| `git` | `~/.config/git/profile`: email, signing key; `apps/git/config` includes it under `~/git/` | `apps/git/` |
-| `ssh` | `~/.ssh/profile`: host blocks; `apps/ssh/config` includes it | `apps/ssh/` |
-| `key.pub` | `~/.ssh/profile.pub`: the public key; `git` signs with it, `ssh` pins it | `apps/ssh/` |
-| `agent.toml` | `~/.config/1Password/ssh/agent.toml`: which keys the agent offers | `apps/1password/` |
+| File | Link | Linked by |
+|------|------|-----------|
+| `default.nix` | None. The machine file imports it. | `machines/<name>.nix` |
+| `git` | `~/.config/git/profile`. Contains the email and the signing key. `apps/git/config` includes it for repositories under `~/git/`. | `apps/git/` |
+| `ssh` | `~/.ssh/profile`. Contains the host blocks. `apps/ssh/config` includes it. | `apps/ssh/` |
+| `key.pub` | `~/.ssh/profile.pub`. Contains the public key. `git` signs with this key. `ssh` pins it. | `apps/ssh/` |
+| `agent.toml` | `~/.config/1Password/ssh/agent.toml`. Selects the keys that the agent offers. | `apps/1password/` |
 
-Nothing else may live in a profile directory: `profiles/.gitignore` ignores any other file
-(a private key copied in by mistake), and `task validate` crosses on it. Private keys stay in
-1Password.
+A profile directory must contain only these files. `profiles/.gitignore` ignores all other
+files, so a private key that you copy in by mistake does not get committed. `task validate`
+reports a failure for each other file. Keep private keys in 1Password.
 
-`default.nix` sets, under `dotfiles`:
+`default.nix` sets these options under `dotfiles`:
 
-- `profile`: its own directory name. The type is an enum of the directories here, so a typo
-  fails evaluation.
-- `system.<concern>`: true or false for every file in `system/` (dock, finder, input,
-  screenshots, security, appearance, display, animations).
-- `apps.<name>.enable`: true or false for every optional app in `apps/` (raycast, ghostty,
-  herdr, vscode, claude-code, conda, dust, wget, firefox, terraform), plus the app's own knobs:
-  `raycast.freeCmdSpace`, `vscode.extensions` (extras beyond the bundled set),
-  `claude-code.profile` and `.ref` (both, when enabled). `claude-code.profile` names a profile
-  in jshvn/ai, not one here.
-- `shell.jgrid-net`: the jgrid.net fleet aliases.
-- `repo.devToolchain`: linters, formatters and hyperfine for working on this repo.
-- `packages.formulae`, `packages.casks`, `packages.mas`: free choices with no configuration
-  attached. Not what base or an enabled app already provides (an assertion fails), and never
-  a tap: `hashicorp/tap/terraform` implies its tap.
+- `profile` is the name of the profile directory. Its type is an enum of the directories
+  here. Thus an incorrect name causes the evaluation to fail.
+- `system.<concern>` is true or false. Set it for each concern in `system/`.
+- `apps.<name>.enable` is true or false. Set it for each optional app in `apps/`.
+- Some apps have more options:
+  - `raycast.freeCmdSpace` turns off the Spotlight Cmd+Space shortcut.
+  - `vscode.extensions` adds extensions to the bundled set. This option is optional.
+  - `vscode.vsix` adds extensions from a VSIX. This option is optional.
+  - `claude-code.profile` and `claude-code.ref` select the jshvn/ai profile and ref. Set
+    both when claude-code is on. `claude-code.profile` is a profile in jshvn/ai, not a
+    profile here.
+- `shell.jgrid-net` turns on the fleet aliases for jgrid.net.
+- `repo.devToolchain` installs the linters, the formatters and hyperfine. You need these
+  tools to work on this repository.
+- `packages.formulae`, `packages.casks` and `packages.mas` list the free choices. These are
+  packages with no configuration.
+  - Do not list a package that the base or an enabled app supplies. If you do, an assertion
+    fails.
+  - Do not list a tap. The package name supplies the tap. For example,
+    `hashicorp/tap/terraform` adds the `hashicorp/tap` tap.
 
-Every switch above has no default. Leave one out and evaluation fails naming it; that is how a
-new concern or app is forced to be a decision on every profile.
+Each option above has no default, except the two optional `vscode` options. If a profile does
+not set an option, the evaluation fails and shows the name of the option. Thus each new
+concern or app needs a decision in each profile.
 
-`work/` has no machine file yet; `flake.nix` evaluates it under a synthetic machine so it
-cannot rot. Keep it current when adding a switch. Its email and `key.pub` are filled in when
-the work laptop comes into scope.
+The `work/` profile has no machine file yet. `flake.nix` evaluates it with a synthetic
+machine. This keeps the profile correct. When you add an option, set it in `work/` too. When
+the work laptop is in scope, add its email and its `key.pub`.
 
-## Adding a profile
+## Add a profile
 
-1. Copy an existing directory to `profiles/<name>/` and set `profile = "<name>"`.
-2. Set its email in `git`, its host blocks in `ssh`, its public key in `key.pub` (copy it from
-   the 1Password item), and the item in `agent.toml`.
-3. `git add` it, `task check`; then a machine file imports it (`machines/README.md`).
+1. Copy an existing directory to `profiles/<name>/`.
+2. In `default.nix`, set `profile = "<name>"`.
+3. In `git`, set the email.
+4. In `ssh`, set the host blocks.
+5. In `key.pub`, put the public key. Copy the key from the 1Password item.
+6. In `agent.toml`, set the 1Password item.
+7. Enter `git add profiles/<name>`.
+8. Enter `task check`.
+9. Import the profile in a machine file. See `machines/README.md`.

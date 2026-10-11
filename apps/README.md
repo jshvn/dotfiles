@@ -1,50 +1,63 @@
 # apps
 
-One directory per application, owning everything about it: the install (a formula or cask in
-`dotfiles.provided`), the config files beside it (linked straight from the checkout through
-`dotfiles.links`), the shell integration (`aliases.zsh` linked into `aliases.d/`, `env.zsh`
-into `env.d/`, only when the app is on), and any system setting that exists only for that app.
+Each application has one directory. The directory contains all the parts of that application:
 
-The rule for what is an app: anything with configuration attached to its install. Anything
-merely installed is a package name in the profile.
+- The install. This is a formula or a cask in `dotfiles.provided`.
+- The configuration files. `dotfiles.links` links each file from the checkout.
+- The shell integration. The switch links `aliases.zsh` into `aliases.d/` and `env.zsh` into
+  `env.d/`. The switch does this only when the app is on.
+- The system settings that only this app uses.
 
-| App | Option | Owns |
-|-----|--------|------|
-| `1password/` | none: a base app | the cask, `env.zsh` (SSH_AUTH_SOCK), the link to the profile's `agent.toml`; `README.md` on the agent's by-hand switch |
-| `claude-code/` | `apps.claude-code.{enable,profile,ref,dir}` | the cask; the jshvn/ai checkout at its ref, its profile, its own `task install` (an activation step: `checkout.zsh`, which fast-forwards with `tasks/install-repo-sync.zsh`) |
-| `conda/` | `apps.conda.enable` | the miniconda cask, `condarc` |
-| `dust/` | `apps.dust.enable` | the formula, `config.toml`, the `dust` alias |
-| `eza/` | none: a base app | the formula, `theme.yaml` |
-| `firefox/` | `apps.firefox.enable` | the cask, `env.zsh` (BROWSER) |
-| `ghostty/` | `apps.ghostty.enable` | the cask, `config`, the `g` launcher |
-| `git/` | none: a base app | git and git-delta, `config` (includes the profile's overlay under `~/git/`), `ignore`, the link to the profile's `git` |
-| `herdr/` | `apps.herdr.enable` | the formula, `config.toml` |
-| `raycast/` | `apps.raycast.{enable,freeCmdSpace}` | the cask, the script-command directory (registered in Raycast by hand), Spotlight's Cmd+Space |
-| `ssh/` | none: a base app | openssh, `config` (every host through the 1Password agent), `cloudflared.zsh` (the tunnel ProxyCommand), the links to the profile's `ssh` and `key.pub`, GitHub's host keys in `/etc/ssh/ssh_known_hosts` |
-| `terraform/` | `apps.terraform.enable` | the formula from HashiCorp's tap, `env.zsh` (CHECKPOINT_DISABLE) |
-| `tlrc/` | none: a base app | the formula, `config.toml`, `env.zsh` (TLRC_CONFIG) |
-| `vscode/` | `apps.vscode.{enable,extensions,vsix}` | the cask and the bundled extension set; a profile adds extras, and extensions from a VSIX committed to their own repo (an activation step: `vsix.zsh`), `env.zsh` (COPILOT_HOME) |
-| `wget/` | `apps.wget.enable` | the formula, `wgetrc` (the HSTS cache under `~/.cache`), `env.zsh` (WGETRC) |
+An app is a package that has configuration. A package without configuration is not an app.
+Put the name of that package in the `packages` lists of the profile.
 
-A base app declares no option and is always on: `shell/` breaks without eza and tlrc, and
-every profile's identity runs through git, ssh and 1Password. Every other app's `enable` has
-no default, so a profile must say yes or no.
+| App | Option | Contents |
+|-----|--------|----------|
+| `1password/` | None. This is a base app. | Installs the cask. Links `agent.toml` from the profile. `env.zsh` sets `SSH_AUTH_SOCK`. `README.md` tells how to turn on the SSH agent. |
+| `claude-code/` | `apps.claude-code.{enable,profile,ref,dir}` | Installs the cask. Keeps the jshvn/ai checkout at its ref. Selects the profile in that checkout and does its `task install`. `checkout.zsh` does these steps in an activation step. It uses `tasks/install-repo-sync.zsh` to fast-forward. |
+| `conda/` | `apps.conda.enable` | Installs the miniconda cask. Links `condarc`. |
+| `dust/` | `apps.dust.enable` | Installs the formula. Links `config.toml`. Adds the `dust` alias. |
+| `eza/` | None. This is a base app. | Installs the formula. Links `theme.yaml`. |
+| `firefox/` | `apps.firefox.enable` | Installs the cask. `env.zsh` sets `BROWSER`. |
+| `ghostty/` | `apps.ghostty.enable` | Installs the cask. Links `config`. Adds the `g` launcher. |
+| `git/` | None. This is a base app. | Installs git and git-delta. Links `config` and `ignore`. Links the `git` file of the profile. `config` includes that file for repositories under `~/git/`. |
+| `herdr/` | `apps.herdr.enable` | Installs the formula. Links `config.toml`. |
+| `raycast/` | `apps.raycast.{enable,freeCmdSpace}` | Installs the cask. Contains the script command directory. You must register this directory in Raycast manually. When `freeCmdSpace` is true, turns off the Spotlight Cmd+Space shortcut. |
+| `ssh/` | None. This is a base app. | Installs openssh. Links `config`, which sends each host through the 1Password agent. `cloudflared.zsh` is the ProxyCommand for the tunnel. Links `ssh` and `key.pub` from the profile. Writes the GitHub host keys to `/etc/ssh/ssh_known_hosts`. |
+| `terraform/` | `apps.terraform.enable` | Installs the formula from the HashiCorp tap. `env.zsh` sets `CHECKPOINT_DISABLE`. |
+| `tlrc/` | None. This is a base app. | Installs the formula. Links `config.toml`. `env.zsh` sets `TLRC_CONFIG`. |
+| `vscode/` | `apps.vscode.{enable,extensions,vsix}` | Installs the cask and the bundled extensions. A profile can add more extensions. A profile can also add an extension from a VSIX in the repository of that extension. `vsix.zsh` installs these in an activation step. `env.zsh` sets `COPILOT_HOME`. |
+| `wget/` | `apps.wget.enable` | Installs the formula. Links `wgetrc`, which keeps the HSTS cache in `~/.cache`. `env.zsh` sets `WGETRC`. |
 
-Conventions:
+A base app has no option and is always on. `shell/` does not work without eza and tlrc. The
+identity of each profile uses git, ssh and 1Password.
 
-- The config file's basename equals its destination basename (`apps/tlrc/config.toml` links
-  to `~/.config/tlrc/config.toml`).
-- Shell integration files carry the three-label banner and define functions, aliases or
-  exports only; there is no gate inside the file. Whether the switch linked it is the gate.
-- `apps/raycast/` is read by Raycast from the checkout path: Raycast > Settings > Extensions
-  > Script Commands > Add Directories, once per machine.
+Each other app has an `enable` option with no default. Thus each profile must set it to true
+or false.
 
-## Adding an app
+## Conventions
 
-1. Create `apps/<name>/default.nix` declaring `options.dotfiles.apps.<name>.enable` (no
-   default) and, under `config = lib.mkIf ...`, its `dotfiles.provided.{formulae,casks}`,
-   `dotfiles.links`, `dotfiles.shell.aliases.<name>` or `.env.<name>`.
-2. Put its config files and `aliases.zsh` beside it.
-3. Import it from `apps/default.nix`.
-4. Set `dotfiles.apps.<name>.enable` in every profile; `task check` fails until you do.
-5. Remove the formula or cask from any profile's `packages` list; it is provided now.
+- A configuration file has the same basename as its destination. For example,
+  `apps/tlrc/config.toml` links to `~/.config/tlrc/config.toml`.
+- Each shell integration file has the three-label banner. It contains only functions, aliases
+  or exports.
+- A shell integration file has no gate. The switch links the file only when the app is on.
+  That is the gate.
+- Raycast reads `apps/raycast/` from the checkout path. Add this directory one time on each
+  machine. Go to Raycast > Settings > Extensions > Script Commands > Add Directories.
+
+## Add an app
+
+1. Create `apps/<name>/default.nix`. Declare `options.dotfiles.apps.<name>.enable` with no
+   default.
+2. Under `config = lib.mkIf ...`, declare the parts of the app:
+   - `dotfiles.provided.formulae` or `dotfiles.provided.casks` for the install.
+   - `dotfiles.links` for the configuration files.
+   - `dotfiles.shell.aliases.<name>` or `dotfiles.shell.env.<name>` for the shell
+     integration.
+3. Put the configuration files and `aliases.zsh` in the same directory.
+4. Import the directory in `apps/default.nix`.
+5. Set `dotfiles.apps.<name>.enable` in each profile. If a profile does not set it,
+   `task check` fails.
+6. Remove the formula or the cask from the `packages` lists of each profile. The app supplies
+   it now. If a profile still lists it, an assertion fails.

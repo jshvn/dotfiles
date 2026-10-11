@@ -78,8 +78,8 @@ What the file system will not tell you:
   (Homebrew zsh, through `environment.shells` in `modules/shell.nix`) and
   `/etc/ssh/ssh_known_hosts` (GitHub's host keys, `apps/ssh/`); nix-darwin also writes
   `/etc/nix/nix.conf` and others of its own. nix-darwin refuses any `/etc` file it did not
-  write ("Unexpected files in /etc"): rename it `.before-nix-darwin`, as the README's First
-  switch does for `/etc/zshenv` and `/etc/shells`. `programs.zsh` and `programs.bash` stay
+  write ("Unexpected files in /etc"): rename it `.before-nix-darwin`, as a Mac's first
+  `task install` does for `/etc/zshenv` and `/etc/shells`. `programs.zsh` and `programs.bash` stay
   off; nix-darwin leaves Apple's `/etc/zshrc`, `/etc/zprofile` and `/etc/bashrc` alone, and
   the Nix installer's block at the top of `/etc/zshrc` and `/etc/bashrc` is what puts `nix`
   on an interactive shell's PATH. A non-interactive shell does not have it: `Taskfile.yml`

@@ -1,40 +1,53 @@
 # system
 
-macOS settings, one file per System Settings concern. Each file declares its own switch,
-`options.dotfiles.system.<concern>` (bool, no default), and its own configuration under
-`config = lib.mkIf config.dotfiles.system.<concern> { ... }`. A profile sets every concern
+This directory contains the macOS settings. Each System Settings concern has one file. Each
+file declares its own option, `options.dotfiles.system.<concern>`. This option is a bool with
+no default. The file declares its configuration under
+`config = lib.mkIf config.dotfiles.system.<concern> { ... }`. A profile sets each concern to
 true or false.
 
-| Concern | Covers |
-|---------|--------|
-| `dock.nix` | Desktop & Dock, Spaces edge switch, window tiling |
-| `finder/` | Finder defaults, and `aliases.zsh` (finder, findershow, finderhide) linked into `aliases.d/` |
-| `input.nix` | keyboard and trackpad |
-| `screenshots.nix` | location, format, shadow, thumbnail |
-| `security.nix` | guest account off; ImageCapture hot-plug off (a ByHost key, through home-manager); application firewall on |
-| `appearance.nix` | Dark mode, icon style |
-| `display/` | the built-in panel at the More Space preset, via `display-mode.swift` beside it in an activation script |
-| `animations.nix` | short AppKit window and Quick Look animations |
+| Concern | Settings |
+|---------|----------|
+| `dock.nix` | Sets Desktop & Dock, the Spaces edge switch and window tiling. |
+| `finder/` | Sets the Finder defaults. `aliases.zsh` adds `finder`, `findershow` and `finderhide`. The switch links it into `aliases.d/`. |
+| `input.nix` | Sets the keyboard and the trackpad. |
+| `screenshots.nix` | Sets the location, the format, the shadow and the thumbnail of screenshots. |
+| `security.nix` | Turns off the guest account. Turns off ImageCapture hot-plug. This is a ByHost key, so home-manager writes it. Turns on the application firewall. |
+| `appearance.nix` | Sets Dark mode and the icon style. |
+| `display/` | Sets the built-in panel to the More Space preset. An activation script uses `display-mode.swift` in the same directory. |
+| `animations.nix` | Makes the AppKit window animations and the Quick Look animations short. |
 
-How a setting is expressed, in order of preference: a typed nix-darwin option
-(`system.defaults.<group>.<key>`) where one exists; `system.defaults.CustomUserPreferences`
-for a plain key it lacks; an activation script only where `defaults write` is the wrong tool
-(the display mode is a CoreGraphics reconfiguration). A concern with any file beside its nix
-(an `aliases.zsh`, a helper script) is a directory holding them.
+Use the first method that works for a setting:
 
-What nix-darwin cannot do: it writes a nested value whole, never merging (so the Spotlight
-hotkey lives in `apps/raycast/`, as a `-dict-add`), and it has no `-currentHost` writes
-(home-manager's `targets.darwin.currentHostDefaults` does those). `sysadminctl -screenLock`
-needs a password on a tty and stays manual.
+1. A typed nix-darwin option, `system.defaults.<group>.<key>`.
+2. `system.defaults.CustomUserPreferences`, for a plain key that has no typed option.
+3. An activation script. Use a script only when `defaults write` is not the correct tool. For
+   example, the display mode needs a CoreGraphics reconfiguration.
 
-`tasks/validate.zsh` reads every key back from the live system: typed groups through its
-`DOMAIN` table (group to defaults domain), `CustomUserPreferences` and ByHost keys directly.
-A new typed group needs a `DOMAIN` row or validate crosses on it.
+If a concern has other files next to its nix file, make the concern a directory. For example,
+an `aliases.zsh` or a helper script.
 
-## Adding a concern
+nix-darwin has these limits:
 
-1. Create `system/<concern>.nix`, or `system/<concern>/default.nix` with its files beside it;
-   an `aliases.zsh` is registered as `dotfiles.shell.aliases.<concern>`.
-2. Import it from `system/default.nix`.
-3. Set `dotfiles.system.<concern>` in every profile; `task check` fails until you do.
-4. `task install && task validate` on a machine that enables it.
+- nix-darwin writes a nested value as a whole. It does not merge. Thus the Spotlight hotkey is
+  a `-dict-add` in `apps/raycast/`.
+- nix-darwin cannot write `-currentHost` keys. home-manager writes them through
+  `targets.darwin.currentHostDefaults`.
+- `sysadminctl -screenLock` needs a password on a tty. Thus you must set the screen lock
+  manually.
+
+`tasks/validate.zsh` reads each key back from the live system. For a typed group, it uses its
+`DOMAIN` table. This table maps each group to a defaults domain. It reads
+`CustomUserPreferences` and ByHost keys directly. If you add a typed group, add a `DOMAIN`
+row. If you do not, `task validate` reports a failure.
+
+## Add a concern
+
+1. Create `system/<concern>.nix`. If the concern has other files, create
+   `system/<concern>/default.nix` and put the files next to it.
+2. If the concern has an `aliases.zsh`, register it as `dotfiles.shell.aliases.<concern>`.
+3. Import the concern in `system/default.nix`.
+4. Set `dotfiles.system.<concern>` in each profile. If a profile does not set it, `task check`
+   fails.
+5. On a machine that turns on the concern, enter `task install`.
+6. Enter `task validate`.
