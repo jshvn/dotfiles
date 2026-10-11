@@ -25,13 +25,14 @@ File names:
 | Script | Task | Function |
 |--------|------|----------|
 | `audit.zsh` | `task audit [-- --strict]` | Does the opposite check of `validate.zsh`. Finds the state on the machine that is not in the configuration. Uses the three `audit-*` helpers. Also does `brew vulns`. Each finding is a warning. With `--strict`, exits with code 1 if there is a finding. |
-| `audit-brew-cleanup.zsh` | Used by `audit.zsh` | Finds the packages that `brew bundle cleanup` would remove. Uses its dry run. |
+| `audit-brew-cleanup.zsh` | Used by `audit.zsh` and `prune.zsh` | Finds the packages that `brew bundle cleanup` would remove. Uses its dry run. |
 | `audit-links.zsh` | Used by `audit.zsh` | Finds orphan links into the checkout. |
 | `audit-trust.zsh` | Used by `audit.zsh` | Finds changes in the taps and the trust grants. |
-| `install.zsh` | `task install` | Builds the selected machine. On the first switch on a Mac, it does `install-clear-links.zsh`. Then it moves `/etc/zshenv` and `/etc/shells` to `*.before-nix-darwin`. Then it does the switch. Then brew removes the packages that are not in the configuration. Brew asks first. `-- --yes` gives the answer yes. |
+| `install.zsh` | `task install` | Builds the selected machine. On the first switch on a Mac, it does `install-clear-links.zsh`. Then it moves `/etc/zshenv` and `/etc/shells` to `*.before-nix-darwin`. Then it does the switch. Then it lists the packages that are not in the configuration, with `prune.zsh --list`. |
 | `install-clear-links.zsh` | Used by `install.zsh` | Removes the symlinks at the registered link paths. Moves each other file at these paths to `<path>.before-dotfiles`. |
 | `install-repo-sync.zsh` | Used by `install.zsh` | Fast-forwards this checkout before the build. If it cannot, it shows a warning and continues. The claude-code activation also uses it on the jshvn/ai checkout, through `$REPO_SYNC`. |
 | `lint.zsh` | `task lint` | Makes sure that each `.zsh` file parses. Makes sure that each executable file sets `-euo pipefail`. Makes sure that each file has the Purpose / Depends on / Side effects banner. Makes sure that no file has a hardcoded Homebrew prefix, except on a `# lint-allow: hardcoded-prefix` line. The Taskfile also does `nix fmt -- --ci` in the image. `task fmt` applies the format. |
+| `prune.zsh` | `task prune` | Removes the packages that are not in the configuration, with `brew bundle cleanup`. Brew shows the list and asks first. Without a terminal, it only shows the list. |
 | `validate.zsh` | `task validate` | Reads the full configuration back from the live system. Exits with code 1 if a check fails. The list below shows the checks. |
 | `messages.zsh` | Sourced | Supplies the functions info, success, warn, error, check and cross. The claude-code and vscode activations get it by its path, through `$MESSAGES`. |
 | `tests/` | `task test` | Contains the tests. The list below shows them. |

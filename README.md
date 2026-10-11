@@ -57,7 +57,8 @@ command again. You can do the install or the update more than one time. The resu
 | Command | Purpose |
 |---------|---------|
 | `task setup -- <machine>` | Saves the machine selection. |
-| `task install [-- --yes]` | Updates the checkout and applies the configuration. Asks before it removes packages that are not declared. `--yes` gives the answer yes. Updates the zsh plugin bundles. |
+| `task install` | Updates the checkout and applies the configuration. Updates the zsh plugin bundles. Lists the packages that are not declared, but does not remove them. |
+| `task prune` | Removes each package that the configuration does not declare. Brew shows the list and asks first. This includes Mac App Store apps, VS Code extensions, and go, cargo, uv, npm and krew installs. |
 | `task rollback` | Activates the previous generation. |
 | `task show` | Shows the evaluated configuration as JSON. |
 | `task diff` | Shows the changes that `task install` will make. The Nix closure diff shows first. The new Homebrew packages show second. |

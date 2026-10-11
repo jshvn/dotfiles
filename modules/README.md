@@ -9,7 +9,7 @@ to a file here. A profile only sets `dotfiles.*` options.
 | `default.nix` | Imports the other modules. Declares `dotfiles.checkout`, the path that all links point into. Declares `dotfiles.profile`, an enum of the directories in `profiles/`. Declares `dotfiles.links`, the only link registry. home-manager installs each link as an out-of-store symlink. Declares the user and its login shell. Turns on Nix flakes. Starts the Nix garbage collection each week. |
 | `packages.nix` | Declares `dotfiles.packages.*`, the free choices of a profile. Declares `dotfiles.provided.*`, the packages that the base and the enabled apps supply. Contains the assertion against redundant packages. Gets the taps from the package names. Sets `homebrew.brews`, `homebrew.casks`, `homebrew.masApps` and `homebrew.taps`. |
 | `base.nix` | Lists the formulae that each machine gets. These include the bootstrap toolchain and the formulae that `shell/` needs. Contains the only bare tap, `homebrew/brew-vulns`. |
-| `homebrew.nix` | Installs Homebrew if it is missing, just before `brew bundle`. Sets `homebrew.onActivation`. Each switch updates and upgrades the packages. Cleanup stays off, because `task install` asks before it removes a package. |
+| `homebrew.nix` | Installs Homebrew if it is missing, just before `brew bundle`. Sets `homebrew.onActivation`. Each switch updates and upgrades the packages. Cleanup stays off, because `task prune` asks before it removes a package. |
 | `shell.nix` | Adds the login shell to `/etc/shells`. Writes `/etc/zshenv`. Links the startup files. Declares `dotfiles.shell.aliases` and `dotfiles.shell.env`. The switch links these files into `aliases.d/` and `env.d/`. Declares `shell.jgrid-net`. |
 | `repo.nix` | Declares `repo.devToolchain`. |
 

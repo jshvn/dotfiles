@@ -11,7 +11,7 @@ Run the narrowest check that can fail, then the relevant aggregate. `git add -A`
 | You changed | Run | Proves |
 |---|---|---|
 | A machine, profile, module, concern or app `.nix` | `task check` | every machine and profile still evaluates; an unaccounted switch, a redundant package or a bundled extension fails here, naming itself |
-| Package lists (`packages.*`, `provided.*`, base) | `task diff`, then `task install && task audit` | the preview is what you expected; brew bundle converges; nothing undeclared remains |
+| Package lists (`packages.*`, `provided.*`, base) | `task diff`, then `task install && task audit`; after a removal, Josh runs `task prune` | the preview is what you expected; brew bundle converges; nothing undeclared remains |
 | `dotfiles.links`, `shell.aliases`, `shell.env` | `task diff`, then `task install && task validate && task audit` | the closure diff lists the intended links; each resolves into the checkout; no orphans |
 | Shell files (`shell/`, an `aliases.zsh`, an `env.zsh`) | `task lint && task test && exec zsh` | parse-check, the live shell loads, the plugin markers hold |
 | `system/<concern>.nix` | `task install && task validate` | every defaults key reads back (log out and in for the domains that need it) |

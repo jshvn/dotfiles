@@ -1,9 +1,8 @@
 # Homebrew installs everything, rolling, against /opt/homebrew. The switch installs Homebrew
 # itself when it is missing, with Homebrew's own installer, and Homebrew updates itself on every
 # switch after that. A switch is an update, so `task install` upgrades. The switch never
-# uninstalls: `task install` then lets brew list what is installed beyond the declaration and
-# uninstall it only after asking (tasks/install.zsh), so a first switch and a rollback never
-# remove anything.
+# uninstalls, so a first switch and a rollback never remove anything: `task prune` lets brew
+# list what is installed beyond the declaration and uninstall it only after asking.
 { config, lib, ... }:
 {
   homebrew = {
