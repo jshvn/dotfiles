@@ -10,10 +10,12 @@
 #               autosuggestions), that Starship owns the prompt, that
 #               Terminal.app gets the plain-ended starship.toml, plus
 #               deferred compinit via a simulated prompt (use-omz runs
-#               compinit from precmd).
-# Depends on:   DOTFILEDIR env var (exported by Taskfile.yml);
-#               tasks/messages.zsh; antidote + bundles and starship
-#               installed (task install).
+#               compinit from precmd), and that a cold start, the mean of
+#               five after a warmup, is within $COLD_START_BUDGET ms.
+# Depends on:   DOTFILEDIR and COLD_START_BUDGET env vars (exported by
+#               Taskfile.yml); tasks/messages.zsh; antidote + bundles and
+#               starship installed (task install); hyperfine and jq
+#               (repo.devToolchain).
 # Side effects: spawns interactive zsh subshells (sources live .zshrc; may
 #               write antidote static file / zcompdump caches and
 #               $XDG_CACHE_HOME/starship/plain.toml).
@@ -22,6 +24,7 @@
 set -euo pipefail
 
 : "${DOTFILEDIR:?DOTFILEDIR must be set (run via task test)}"
+: "${COLD_START_BUDGET:?COLD_START_BUDGET must be set (run via task test)}"
 
 # shellcheck source=tasks/messages.zsh
 source "${DOTFILEDIR}/tasks/messages.zsh"
@@ -118,6 +121,22 @@ if [[ "$compinit_markers" == *git_completion* ]]; then
     check "compinit: git completion registered"
 else
     cross "compinit: _comps[git] missing -- completions not initialized"
+    failed=$(( failed + 1 ))
+fi
+
+# --- 6. Cold start within the budget ----------------------------------------
+# Measure again after each change to a plugin or a startup file.
+out=$(mktemp); trap 'rm -f "$out"' EXIT
+if hyperfine --warmup 1 --runs 5 --export-json "$out" 'zsh -lic exit' >/dev/null 2>&1; then
+    ms=$(jq -r '.results[0].summary.time_wall_clock.mean * 1000 | floor' "$out")
+    if (( ms <= COLD_START_BUDGET )); then
+        check "startup time: ${ms} ms (budget ${COLD_START_BUDGET} ms)"
+    else
+        cross "startup time: ${ms} ms is over the ${COLD_START_BUDGET} ms budget"
+        failed=$(( failed + 1 ))
+    fi
+else
+    cross "startup time: hyperfine failed (repo.devToolchain installs it)"
     failed=$(( failed + 1 ))
 fi
 

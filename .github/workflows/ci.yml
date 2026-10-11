@@ -26,8 +26,8 @@
 #   that evaluates but fails to build (a script or generated file, a
 #   home-manager generation, a package that does not build on darwin).
 # DOES NOT COVER (a Mac only): the switch and its activation scripts, brew
-#   bundle and every formula and cask name, the live shell (shell-startup,
-#   shell:startup-time), task validate and task audit.
+#   bundle and every formula and cask name, the live shell and its cold
+#   start (shell-startup), task validate and task audit.
 
 name: ci
 

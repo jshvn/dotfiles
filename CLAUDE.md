@@ -30,8 +30,8 @@ activate (`task install`: fast-forward, `darwin-rebuild switch`, antidote bundle
 - Locked decisions, scope boundaries, constraints: `docs/DECISIONS.md`. Revisit only with
   new evidence.
 - Every top-level concept directory has a README saying what belongs there and how to name it.
-- Operator surface: `setup`, `install`, `rollback`; `show`, `diff`, `validate`, `audit`,
-  `shell:startup-time`; `check`, `lint`, `fmt`, `test`. Bare `task` prints the banner.
+- Operator surface: `setup`, `install`, `prune`, `rollback`; `show`, `diff`, `validate`, `audit`;
+  `check`, `lint`, `fmt`, `test`. Bare `task` prints the banner.
 - Verifying a change: the `jshvn-verifying-dotfiles-changes` skill (change type to exact
   commands, the tier model, the one-check rule).
 

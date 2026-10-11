@@ -24,7 +24,7 @@ File names:
 
 | Script | Task | Function |
 |--------|------|----------|
-| `audit.zsh` | `task audit [-- --strict]` | Does the opposite check of `validate.zsh`. Finds the state on the machine that is not in the configuration. Uses the three `audit-*` helpers. Also does `brew vulns`. Each finding is a warning. With `--strict`, exits with code 1 if there is a finding. |
+| `audit.zsh` | `task audit` | Does the opposite check of `validate.zsh`. Finds the state on the machine that is not in the configuration. Uses the three `audit-*` helpers. Also does `brew vulns`. Each finding is a warning. |
 | `audit-brew-cleanup.zsh` | Used by `audit.zsh` and `prune.zsh` | Finds the packages that `brew bundle cleanup` would remove. Uses its dry run. |
 | `audit-links.zsh` | Used by `audit.zsh` | Finds orphan links into the checkout. |
 | `audit-trust.zsh` | Used by `audit.zsh` | Finds changes in the taps and the trust grants. |
@@ -57,7 +57,7 @@ File names:
 - One test for each helper above. These tests are hermetic. CI also does them.
 - `ai-checkout.zsh` tests `apps/claude-code/checkout.zsh`.
 - `vscode-vsix.zsh` tests `apps/vscode/vsix.zsh`.
-- `shell-startup.zsh` tests the live shell. It operates only on a Mac.
+- `shell-startup.zsh` tests the live shell and measures its cold start time. The limit is 500 ms. It operates only on a Mac.
 - `negative.sh` breaks the configuration rules on purpose. It operates in the image.
 
 `validate.zsh` and `audit.zsh` read the evaluation on stdin. They refuse an empty input. They

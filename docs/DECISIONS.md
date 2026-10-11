@@ -55,8 +55,8 @@ new evidence.
 
 ## Performance and Security Constraints
 
-- **Performance target** -- interactive shell cold start under 500 ms (the
-  `task shell:startup-time` budget); a converged `task install` is one `darwin-rebuild
+- **Performance target** -- interactive shell cold start under 500 ms (`task test`
+  measures it on a Mac); a converged `task install` is one `darwin-rebuild
   switch` plus `brew update` and `brew bundle` (30 s to 2 min).
 - **Security** -- no curl-to-shell except the Nix and Homebrew installers
   (`docs/SECURITY.md`); no secrets in the repo; public SSH keys only.

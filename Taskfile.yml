@@ -76,18 +76,17 @@ tasks:
         elif [ ! -f "{{.ROOT_DIR}}/machines/$m.nix" ]; then m="$m is not a machine, run task setup -- <name>"
         else m="${b}$m${r}"; fi
         printf '\n%s\n%s\n' \
-          "${b}dotfiles${r}   ${d}this Mac as one nix-darwin configuration${r}" \
+          "${b}jshvn/dotfiles${r}   ${d}this Mac as one nix-darwin configuration${r}" \
           "machine: $m   ${d}(machines: {{.MACHINES | trim}})${r}"
         group 'read -- looks at this Mac, changes nothing'
         row 'task show' 'The evaluated declaration: profile, system, apps, links, packages'
         row 'task diff' 'What install would change: closure diff, then what brew would add' 'builds the closure and leaves ./result (ignored)'
         row 'task validate' 'Read the whole declaration back from the live system' 'exits 1 on drift; run it after every install'
-        row 'task audit [-- --strict]' 'State beyond the declaration, and known CVEs' '--strict exits 1 on findings'
-        row 'task shell:startup-time' 'Cold interactive zsh start against the {{.COLD_START_BUDGET}} ms budget'
-        group 'checks -- the checkout, not this Mac; nix runs in the pinned image via {{.ENGINE}}'
+        row 'task audit' 'State beyond the declaration, and known CVEs' 'task prune uninstalls the packages it finds installed but not declared'
+        group 'checks -- tests the files in this repo; the Nix steps run in a Linux container'
         row 'task check' 'Evaluate every machine and profile, as CI does' 'git add -A first: the flake sees only tracked or staged files'
         row 'task lint' 'zsh parse, set -euo, banners, hardcoded prefixes, this menu; nix fmt --ci'
-        row 'task test' 'Smoke tests and the negative evaluations' 'shell-startup runs only on a Mac'
+        row 'task test' 'Smoke tests and the negative evaluations' 'shell-startup and the {{.COLD_START_BUDGET}} ms cold-start budget run only on a Mac'
         row 'task fmt' 'Format every .nix file in place'
         group 'write -- changes this Mac'
         row 'task setup -- <name>' 'Select the machine; never inferred from the hostname'
@@ -150,20 +149,10 @@ tasks:
       - '{{.EVAL}} | MACHINE={{.MACHINE}} DOTFILES_STATE="{{.STATE}}" zsh "{{.ROOT_DIR}}/tasks/validate.zsh"'
 
   audit:
-    desc: 'State beyond the declaration and known CVEs (read-only; -- --strict exits 1 on findings)'
+    desc: 'State beyond the declaration and known CVEs (read-only; findings warn)'
     preconditions: *need-machine
     cmds:
-      - '{{.EVAL}} | DOTFILES_STATE="{{.STATE}}" zsh "{{.ROOT_DIR}}/tasks/audit.zsh" {{.CLI_ARGS}}'
-
-  shell:startup-time:
-    desc: 'Measure cold interactive zsh startup time (fails above {{.COLD_START_BUDGET}} ms)'
-    cmds:
-      - |
-        out=$(mktemp); trap 'rm -f "$out"' EXIT
-        hyperfine --warmup 1 --runs 5 --export-json "$out" 'zsh -lic exit' >/dev/null 2>&1
-        ms=$(jq -r '.results[0].summary.time_wall_clock.mean * 1000 | floor' "$out")
-        echo "cold shell start: ${ms} ms (budget {{.COLD_START_BUDGET}} ms)"
-        test "$ms" -le {{.COLD_START_BUDGET}}
+      - '{{.EVAL}} | DOTFILES_STATE="{{.STATE}}" zsh "{{.ROOT_DIR}}/tasks/audit.zsh"'
 
   check:
     desc: 'Evaluate every machine and every profile inside the pinned nix image (CI runs the same)'
@@ -182,9 +171,9 @@ tasks:
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && nix fmt --no-write-lock-file"'
 
   test:
-    desc: 'Smoke tests (orphan scan, trust scan, cleanup scan and link clearing, repo sync, pin check, ai checkout, VSIX install, the live shell on a Mac) and the negative evaluations'
+    desc: 'Smoke tests (orphan scan, trust scan, cleanup scan and link clearing, repo sync, pin check, ai checkout, VSIX install, the live shell and its cold-start budget on a Mac) and the negative evaluations'
     cmds:
       - for: [audit-brew-cleanup, audit-links, audit-trust, install-clear-links, install-repo-sync, install-pins, ai-checkout, vscode-vsix]
         cmd: DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/tasks/tests/{{.ITEM}}.zsh'
-      - '{{if eq OS "darwin"}}DOTFILEDIR="{{.ROOT_DIR}}" zsh "{{.ROOT_DIR}}/tasks/tests/shell-startup.zsh"{{else}}echo "shell-startup: skipped, it needs the live Mac shell"{{end}}'
+      - '{{if eq OS "darwin"}}DOTFILEDIR="{{.ROOT_DIR}}" COLD_START_BUDGET={{.COLD_START_BUDGET}} zsh "{{.ROOT_DIR}}/tasks/tests/shell-startup.zsh"{{else}}echo "shell-startup: skipped, it needs the live Mac shell"{{end}}'
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && SRC=/work bash tasks/tests/negative.sh"'

@@ -63,12 +63,11 @@ command again. You can do the install or the update more than one time. The resu
 | `task show` | Shows the evaluated configuration as JSON. |
 | `task diff` | Shows the changes that `task install` will make. The Nix closure diff shows first. The new Homebrew packages show second. |
 | `task validate` | Compares the live system with the configuration. Exits with code 1 if they are different. |
-| `task audit [-- --strict]` | Shows the state that is not in the configuration. Shows known CVEs. With `--strict`, exits with code 1 if it finds a problem. |
-| `task shell:startup-time` | Measures the cold start time of an interactive zsh. The limit is 500 ms. |
+| `task audit` | Shows the state that is not in the configuration. Shows known CVEs. |
 | `task check` | Evaluates each machine and each profile in the pinned Nix image. |
 | `task lint` | Checks the zsh scripts and the Nix format. `tasks/lint.zsh` contains the rules. |
 | `task fmt` | Formats the Nix files. |
-| `task test` | Does the smoke tests and the negative evaluations. |
+| `task test` | Does the smoke tests and the negative evaluations. On a Mac, it also measures the cold start time of an interactive zsh. The limit is 500 ms. |
 
 The `check`, `lint`, `fmt` and `test` tasks operate in the pinned Nix image. These tasks need
 Apple `container` or Docker. If the Apple `container` daemon is on, the Taskfile uses it. If

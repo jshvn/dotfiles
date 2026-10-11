@@ -9,7 +9,7 @@
 #               declared, symlinks into the checkout nothing registered) and
 #               which declared packages carry known vulnerabilities. Takes the
 #               evaluated declaration on stdin (`task audit`). Findings are
-#               warnings; exits 1 only with --strict.
+#               warnings and never change the exit code.
 # Depends on:   DOTFILES_STATE env var (the Taskfile's STATE); jq; brew (with
 #               the homebrew/brew-vulns tap); tasks/messages.zsh;
 #               tasks/audit-brew-cleanup.zsh; tasks/audit-trust.zsh;
@@ -23,9 +23,6 @@ typeset -r HERE="${0:A:h}"
 source "$HERE/messages.zsh"
 # read-only: brew must not update itself mid-audit (its update report would land in the output)
 export HOMEBREW_NO_AUTO_UPDATE=1
-
-strict=0
-[[ "${1:-}" == --strict ]] && strict=1
 
 declared=$(cat)
 if ! jq -e '.dotfiles | type == "object"' <<< "$declared" >/dev/null 2>&1; then
@@ -107,9 +104,6 @@ fi
 
 if (( drift == 0 )); then
   success "audit: clean"
-elif (( strict )); then
-  error "audit: $drift finding(s)"
-  exit 1
 else
-  warn "audit: $drift finding(s); --strict makes this exit 1"
+  warn "audit: $drift finding(s)"
 fi

@@ -66,9 +66,9 @@ A primitive that other functions call goes in `functions/helpers/`. Its name sta
 
 ## Performance budget
 
-A cold interactive shell must start in less than 500 ms. `task shell:startup-time` measures
-the start time with `hyperfine --warmup 1 --runs 5 'zsh -lic exit'`. The task fails if the
-time is more than the limit in `Taskfile.yml`. Measure again after each change to a plugin or
+A cold interactive shell must start in less than 500 ms. On a Mac, `task test` measures the
+start time with `hyperfine --warmup 1 --runs 5 'zsh -lic exit'`. The test fails if the time is
+more than the limit in `Taskfile.yml`. Measure again after each change to a plugin or
 a startup file.
 
 ## References
