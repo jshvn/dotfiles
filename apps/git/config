@@ -9,7 +9,9 @@
 # sandbox under $TMPDIR) never asks 1Password to sign.
 #
 # The signing key is the profile's key.pub, linked to ~/.ssh/profile.pub;
-# op-ssh-sign asks the 1Password agent to sign with it.
+# op-ssh-sign asks the 1Password agent to sign with it. allowed_signers, which
+# apps/git/default.nix writes from the same key.pub, is what local
+# verification (git verify-tag, git log --show-signature) trusts.
 
 [user]
     name = Josh Vaughen
@@ -31,6 +33,7 @@
 
 [gpg "ssh"]
     program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+    allowedSignersFile = ~/.config/git/allowed_signers
 
 [credential]
     # Keep HTTPS auth out of the macOS keychain. Homebrew and Apple both ship

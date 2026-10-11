@@ -3,7 +3,7 @@
 # Linked to ~/.config/git/profile and included by apps/git/config for every
 # repository under ~/git/. apps/git/config holds the name and the signing
 # setup; this file holds the identity and turns signing on.
-# Sets: [user] email; [commit] gpgsign.
+# Sets: [user] email; [commit] gpgsign; [tag] gpgSign.
 #
 # Not yet usable: the work email and profiles/work/key.pub are both missing.
 # Fill in both before a machine imports this profile.
@@ -13,3 +13,6 @@
 
 [commit]
     gpgsign = true
+
+[tag]
+    gpgSign = true

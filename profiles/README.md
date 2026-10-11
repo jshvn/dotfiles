@@ -7,7 +7,7 @@ Each profile has one directory. Each machine file imports one profile.
 | File | Link | Linked by |
 |------|------|-----------|
 | `default.nix` | None. The machine file imports it. | `machines/<name>.nix` |
-| `git` | `~/.config/git/profile`. Contains the email. Turns on commit signing. `apps/git/config` includes it for repositories under `~/git/`. | `apps/git/` |
+| `git` | `~/.config/git/profile`. Contains the email. Turns on commit and tag signing. `apps/git/config` includes it for repositories under `~/git/`. | `apps/git/` |
 | `ssh` | `~/.ssh/profile`. Contains the host blocks. `apps/ssh/config` includes it. | `apps/ssh/` |
 | `key.pub` | `~/.ssh/profile.pub`. Contains the public key. `git` signs with this key. `ssh` pins it. | `apps/ssh/` |
 | `agent.toml` | `~/.config/1Password/ssh/agent.toml`. Selects the keys that the agent offers. | `apps/1password/` |
