@@ -7,11 +7,12 @@
 #               plugins via shell/.zsh_plugins.txt; use-omz owns deferred
 #               compinit), lazy conda, optional VS Code shell integration,
 #               theme + functions + aliases sourcing, missing-machine warning.
-# Depends on:   .zshenv (XDG vars + DOTFILES_MACHINE); .zprofile (brew
-#               shellenv); antidote at $HOMEBREW_PREFIX/opt/antidote/;
+# Depends on:   .zshenv (XDG vars, DOTFILES_STATE, DOTFILES_MACHINE);
+#               .zprofile (brew shellenv); antidote at
+#               $HOMEBREW_PREFIX/opt/antidote/;
 #               shell/.zsh_plugins.txt; shell/theme.zsh;
 #               shell/functions/helpers/*.zsh; shell/functions/*.zsh;
-#               $XDG_STATE_HOME/dotfiles/aliases.d/*.zsh (linked by the switch).
+#               $DOTFILES_STATE/aliases.d/*.zsh (linked by the switch).
 # Side effects: exports DOTFILEDIR, ANTIDOTE_HOME, HISTFILE,
 #               HIST_STAMPS, HISTSIZE, SAVEHIST; creates HISTFILE parent
 #               dir; enables SHARE_HISTORY
@@ -115,10 +116,6 @@ export SAVEHIST=50000
 mkdir -p "${HISTFILE%/*}"
 setopt SHARE_HISTORY
 
-# Source order matters. theme.zsh defines `alias highlight=...`; zsh
-# expands aliases at function PARSE time, so functions that pipe through
-# `highlight` (aliaslist, functionlist) need the alias in scope when their
-# body is sourced. theme FIRST, functions SECOND, aliases THIRD.
 source "${DOTFILEDIR}/shell/theme.zsh"
 
 # helpers/ holds the private `_dotfiles_*` primitives the user-facing
@@ -130,7 +127,7 @@ done
 
 # Alias files are linked into aliases.d by the switch: the always-on shell topics, plus each
 # enabled app's or concern's aliases.zsh. Whether a file is there is the gate.
-for file in "${XDG_STATE_HOME}/dotfiles/aliases.d/"*.zsh(-.N); do
+for file in "${DOTFILES_STATE}/aliases.d/"*.zsh(-.N); do
     source "$file"
 done
 

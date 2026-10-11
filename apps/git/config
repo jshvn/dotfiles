@@ -1,13 +1,19 @@
 # apps/git/config -- main git config; linked to ~/.config/git/config by
 # apps/git/default.nix.
 #
-# The profile's overlay (profiles/<name>/git: email, signing key) is linked to
-# ~/.config/git/profile and included for every repository under ~/git/. The
-# include is an includeIf, not a plain include, because the git-identity hook
-# in jshvn/ai reads the expected commit email from includeIf blocks.
+# The profile's overlay (profiles/<name>/git: the email, and signing on) is
+# linked to ~/.config/git/profile and included for every repository under
+# ~/git/. The include is an includeIf, not a plain include, because the
+# git-identity hook in jshvn/ai reads the expected commit email from includeIf
+# blocks. Signing stays in the overlay so a repository elsewhere (a test
+# sandbox under $TMPDIR) never asks 1Password to sign.
+#
+# The signing key is the profile's key.pub, linked to ~/.ssh/profile.pub;
+# op-ssh-sign asks the 1Password agent to sign with it.
 
 [user]
     name = Josh Vaughen
+    signingkey = ~/.ssh/profile.pub
 
 [includeIf "gitdir/i:~/git/"]
     path = profile
@@ -19,6 +25,12 @@
 
 [init]
     defaultBranch = main
+
+[gpg]
+    format = ssh
+
+[gpg "ssh"]
+    program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
 
 [credential]
     # Keep HTTPS auth out of the macOS keychain. Homebrew and Apple both ship
@@ -51,7 +63,7 @@
 
 [alias]
     # list all git aliases
-    aliases = !git config -l | grep alias | cut -c 7- | highlight --style=duotone-dark-sky --syntax=bash --out-format=xterm256
+    aliases = !git config -l | grep alias | cut -c 7- | highlight --syntax=bash
 
     # useful aliases
     tags = tag -l

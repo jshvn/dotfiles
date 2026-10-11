@@ -1,16 +1,16 @@
 #!/bin/zsh
 
 # =============================================================================
-# shell/theme.zsh -- prompt + syntax-highlight + man-page + grc colour setup
+# shell/theme.zsh -- prompt + man-page + grc colour setup
 #
 # Purpose:      Customize PROMPT / RPROMPT (alanpeabody-derived); set
-#               highlight + man + grc colours.
+#               man + grc colours.
 # Depends on:   OMZ git_prompt_status / git_prompt_info (sourced via
-#               antidote in .zshrc); eza, highlight, grc on PATH.
-# Side effects: unsets LS_COLORS; sets PROMPT,
-#               RPROMPT, ZSH_THEME_GIT_PROMPT_*; defines highlight alias;
-#               redefines man() with LESS_TERMCAP_* colour env; aliases
-#               supported commands through `grc --colour=auto`.
+#               antidote in .zshrc); eza, grc on PATH.
+# Side effects: unsets LS_COLORS; sets PROMPT, RPROMPT,
+#               ZSH_THEME_GIT_PROMPT_*; redefines man() with LESS_TERMCAP_*
+#               colour env; aliases supported commands through
+#               `grc --colour=auto`.
 # =============================================================================
 
 unset LS_COLORS
@@ -40,8 +40,6 @@ ZSH_THEME_GIT_PROMPT_STASHED="%F{blue} ⚑"
 
 PROMPT="${user}:${pwd}$ "
 RPROMPT="${return_code} ${git_branch} ${time}"
-
-alias highlight="highlight --out-format=xterm256 --style=duotone-dark-sky"
 
 # Colourise man pages. LESS_TERMCAP_* reference:
 # https://unix.stackexchange.com/questions/108699

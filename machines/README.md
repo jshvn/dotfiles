@@ -1,23 +1,19 @@
 # machines
 
 Each physical laptop has one file. The file has the name of the laptop. A machine file
-contains only the data that a profile cannot contain. This data is the names of the laptop
-and its platform. The profile that the file imports supplies all other configuration.
+contains only the data that a profile cannot contain. This data is the platform of the laptop.
+The profile that the file imports supplies all other configuration.
 
 ```nix
 {
   imports = [ ../profiles/personal ];
-  networking = {
-    hostName = "lerasium";
-    computerName = "lerasium";
-    localHostName = "lerasium";
-  };
   nixpkgs.hostPlatform = "aarch64-darwin";
 }
 ```
 
 `flake.nix` reads this directory. Each `<name>.nix` file becomes
-`darwinConfigurations.<name>`. `task check` evaluates each one.
+`darwinConfigurations.<name>`. `flake.nix` sets `<name>` as the `hostName`, `computerName` and
+`localHostName` of that configuration. `task check` evaluates each one.
 
 You must select the machine explicitly. `task setup -- <name>` writes the name to
 `$XDG_STATE_HOME/dotfiles/machine`. Each task reads that file. No part of this repository gets
@@ -35,5 +31,5 @@ the machine name from the live hostname.
    machine.
 6. Describe the machine in `docs/MACHINES.md`.
 
-This file contains the hostname. To change the hostname of a machine, edit this file. Then
-enter `task install`.
+The file name is the hostname. To change the hostname of a machine, rename this file. Then
+enter `task setup -- <new-name>` and `task install`.

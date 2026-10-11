@@ -1,6 +1,8 @@
 # The shell is Homebrew zsh with the repo's own startup files, theme, functions and aliases, so
 # nothing visible changes. nix-darwin's zsh and bash wiring stays off (Apple's /etc/zshrc,
-# /etc/zprofile and /etc/bashrc untouched); the one system file declared is the ZDOTDIR line.
+# /etc/zprofile and /etc/bashrc untouched); the one startup file declared is /etc/zshenv: ZDOTDIR,
+# and HOMEBREW_PREFIX for every zsh, including the ones that never read .zprofile (an ssh
+# ProxyCommand).
 #
 # Shell integration that belongs to an app or a System Settings concern lives beside it and is
 # registered here: aliases.zsh files are linked into $XDG_STATE_HOME/dotfiles/aliases.d/ and
@@ -50,6 +52,9 @@ in
     programs.zsh.enable = false;
     programs.bash.enable = false;
     environment.shells = [ "${config.homebrew.prefix}/bin/zsh" ]; # /etc/shells, so chsh accepts it
-    environment.etc."zshenv".text = ''export ZDOTDIR="$HOME/.config/zsh"'';
+    environment.etc."zshenv".text = ''
+      export ZDOTDIR="$HOME/.config/zsh"
+      export HOMEBREW_PREFIX="${config.homebrew.prefix}"
+    '';
   };
 }

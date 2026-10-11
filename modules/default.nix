@@ -5,6 +5,8 @@
 { config, lib, ... }:
 let
   cfg = config.dotfiles;
+  user = "josh";
+  home = "/Users/${user}";
 in
 {
   imports = [
@@ -20,7 +22,7 @@ in
   options.dotfiles = {
     checkout = lib.mkOption {
       type = lib.types.str;
-      default = "/Users/josh/Git/personal/dotfiles";
+      default = "${home}/Git/personal/dotfiles";
       description = "the checkout that shell/, profiles/, apps/ and system/ files are linked from, outside the store";
     };
     profile = lib.mkOption {
@@ -37,15 +39,15 @@ in
   };
 
   config = {
-    system.primaryUser = "josh"; # activation runs as root; user-scoped defaults apply to this user
+    system.primaryUser = user; # activation runs as root; user-scoped defaults apply to this user
     # ponytail: listing the login account in knownUsers is what lets nix-darwin own its shell,
     # though nix-darwin's option text says not to list the admin user. At the locked rev an
     # existing user only gets PrimaryGroupID and UserShell re-set and deletion is guarded;
     # isHidden is pinned in case a later rev starts syncing it. Recheck on every flake update.
-    users.knownUsers = [ "josh" ];
-    users.users.josh = {
+    users.knownUsers = [ user ];
+    users.users.${user} = {
       uid = 501;
-      home = "/Users/josh";
+      inherit home;
       shell = "${config.homebrew.prefix}/bin/zsh"; # Homebrew's zsh
       isHidden = false;
     };
@@ -65,7 +67,7 @@ in
     home-manager = {
       useGlobalPkgs = true;
       useUserPackages = true;
-      users.josh =
+      users.${user} =
         { config, ... }:
         {
           home.stateVersion = "26.05";

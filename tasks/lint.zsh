@@ -54,7 +54,7 @@ done
 info "no hardcoded Homebrew prefix"
 # comment lines are prose, not paths
 pattern='/opt/homebrew|/usr/local' # lint-allow: hardcoded-prefix
-hits=$(ggrep -rnE "$pattern" "$ROOT" --include='*.nix' --include='*.zsh' --include='Taskfile.yml' \
+hits=$(ggrep -rnE "$pattern" "$ROOT" --include='*.nix' --include='*.zsh' --include='.z*' --include='Taskfile.yml' \
   | ggrep -vE '^[^:]+:[0-9]+:[[:space:]]*#' | ggrep -vF 'lint-allow: hardcoded-prefix' || true)
 if [[ -n "$hits" ]]; then
   while IFS= read -r line; do

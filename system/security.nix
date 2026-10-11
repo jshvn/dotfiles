@@ -8,7 +8,7 @@
   config = lib.mkIf config.dotfiles.system.security {
     system.defaults.loginwindow.GuestEnabled = false;
     # a ByHost plist: nix-darwin cannot write -currentHost, home-manager can
-    home-manager.users.josh.targets.darwin.currentHostDefaults."com.apple.ImageCapture".disableHotPlug =
+    home-manager.users.${config.system.primaryUser}.targets.darwin.currentHostDefaults."com.apple.ImageCapture".disableHotPlug =
       true;
     # just the global switch (socketfilterfw --setglobalstate on); block-all, stealth mode and the
     # signed-software allowances stay unset, and the module leaves an unset option alone

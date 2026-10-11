@@ -14,8 +14,9 @@
 #               One check/cross line per item; exits 1 on any drift.
 # Depends on:   jq; git; brew; defaults; dscl; PlistBuddy; scutil; ssh-add;
 #               socketfilterfw; swift (Xcode CLT); tasks/messages.zsh;
-#               system/display/display-mode.swift; MACHINE env var (the selected
-#               machine name, optional).
+#               system/display/display-mode.swift; DOTFILES_STATE env var (the
+#               Taskfile's STATE); MACHINE env var (the selected machine name,
+#               optional).
 # Side effects: none (read-only; one temp file for the Brewfile).
 # =============================================================================
 
@@ -36,7 +37,7 @@ j() { jq -r "$1" <<< "$declared"; }
 
 typeset -r CHECKOUT="$(j .dotfiles.checkout)"
 typeset -r PROFILE="$(j .dotfiles.profile)"
-typeset -r STATE="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
+typeset -r STATE="${DOTFILES_STATE:?DOTFILES_STATE must be set (run via task validate)}"
 failed=0
 fail() {
   cross "$1"
@@ -50,10 +51,10 @@ for dir in "${XDG_CONFIG_HOME:-$HOME/.config}" "${XDG_DATA_HOME:-$HOME/.local/sh
            "${ZDOTDIR:-$HOME/.config/zsh}"; do
   if [[ -d "$dir" ]]; then check "dir $dir"; else fail "dir $dir missing"; fi
 done
-if [[ -f /etc/zshenv ]] && grep -qF 'ZDOTDIR="$HOME/.config/zsh"' /etc/zshenv; then
-  check "/etc/zshenv exports ZDOTDIR"
+if [[ -f /etc/zshenv && "$(</etc/zshenv)" == "$(j .zshenv)" ]]; then
+  check "/etc/zshenv matches environment.etc.zshenv"
 else
-  fail "/etc/zshenv does not export ZDOTDIR (nix-darwin environment.etc.zshenv)"
+  fail "/etc/zshenv differs from environment.etc.zshenv (nix-darwin writes it on the switch)"
 fi
 login_shell=$(j .loginShell)
 have_shell=$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{ print $2 }')

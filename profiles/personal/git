@@ -1,24 +1,15 @@
 # profiles/personal/git -- the personal profile's git overlay.
 #
 # Linked to ~/.config/git/profile and included by apps/git/config for every
-# repository under ~/git/.
-# Sets: [user] email, signingkey; [github] user; [gpg] format + program;
-#   [commit] gpgsign. The signing key is the profile's key.pub (linked to
-#   ~/.ssh/profile.pub); op-ssh-sign asks the 1Password agent to sign with it.
+# repository under ~/git/. apps/git/config holds the name and the signing
+# setup; this file holds the identity and turns signing on.
+# Sets: [user] email; [github] user; [commit] gpgsign.
 
 [user]
-    name = Josh Vaughen
     email = josh@vaughen.net
-    signingkey = ~/.ssh/profile.pub
 
 [github]
     user = jshvn
-
-[gpg]
-    format = ssh
-
-[gpg "ssh"]
-    program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
 
 [commit]
     gpgsign = true

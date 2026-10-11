@@ -10,7 +10,8 @@
 #               which declared packages carry known vulnerabilities. Takes the
 #               evaluated declaration on stdin (`task audit`). Findings are
 #               warnings; exits 1 only with --strict.
-# Depends on:   jq; brew (with the homebrew/brew-vulns tap); tasks/messages.zsh;
+# Depends on:   DOTFILES_STATE env var (the Taskfile's STATE); jq; brew (with
+#               the homebrew/brew-vulns tap); tasks/messages.zsh;
 #               tasks/audit-brew-cleanup.zsh; tasks/audit-trust.zsh;
 #               tasks/audit-links.zsh.
 # Side effects: none (read-only; temp files for the Brewfile and scan inputs).
@@ -33,6 +34,7 @@ if ! jq -e '.dotfiles | type == "object"' <<< "$declared" >/dev/null 2>&1; then
 fi
 j() { jq -r "$1" <<< "$declared"; }
 typeset -r CHECKOUT="$(j .dotfiles.checkout)"
+: "${DOTFILES_STATE:?DOTFILES_STATE must be set (run via task audit)}"
 drift=0
 
 tmpdir=$(mktemp -d)
@@ -76,7 +78,7 @@ fi
 # --- symlinks into the checkout that nothing registers -----------------------
 info "orphan links"
 orphans=$(j '.dotfiles.links | keys[]' | sed "s|^|$HOME/|" | zsh "$HERE/audit-links.zsh" "$CHECKOUT" \
-  "${XDG_CONFIG_HOME:-$HOME/.config}" "${ZDOTDIR:-$HOME/.config/zsh}" "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles" "$HOME/.ssh")
+  "${XDG_CONFIG_HOME:-$HOME/.config}" "${ZDOTDIR:-$HOME/.config/zsh}" "$DOTFILES_STATE" "$HOME/.ssh")
 if [[ -z "$orphans" ]]; then
   check "no orphan links into the checkout"
 else

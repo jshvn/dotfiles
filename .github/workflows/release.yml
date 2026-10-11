@@ -28,7 +28,7 @@ jobs:
     steps:
       # fetch-depth 0 pulls full history for all branches and tags -- needed
       # for the master-ancestry check and the previous-tag range.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 

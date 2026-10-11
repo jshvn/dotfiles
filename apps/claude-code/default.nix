@@ -26,7 +26,7 @@ in
     };
     dir = lib.mkOption {
       type = lib.types.str;
-      default = "/Users/josh/Git/personal/ai";
+      default = "${config.users.users.${user}.home}/Git/personal/ai";
       description = "where the jshvn/ai checkout lives";
     };
   };

@@ -3,8 +3,8 @@
 ## What This Is
 
 Per-machine prose the Nix files cannot express: purpose, hardware narrative, role, special
-handling. Declarative state lives in `machines/<name>.nix` (the names a laptop answers to,
-its platform, the profile it imports) and `profiles/<name>/` (every System Settings concern,
+handling. Declarative state lives in `machines/<name>.nix` (its file name is the name a laptop
+answers to; its platform, the profile it imports) and `profiles/<name>/` (every System Settings concern,
 every optional app, the shell and pipeline knobs, free packages, and the identity files) and is
 authoritative; `task show` prints the evaluated result for the selected machine.
 

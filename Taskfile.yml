@@ -14,7 +14,7 @@ env:
 vars:
   STATE: '{{.XDG_STATE_HOME | default (printf "%s/.local/state" .HOME)}}/dotfiles'
   MACHINE:
-    sh: cat "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/machine" 2>/dev/null || true
+    sh: cat '{{.STATE}}/machine' 2>/dev/null || true
   MACHINES:
     sh: for f in '{{.ROOT_DIR}}/machines'/*.nix; do b=${f##*/}; printf '%s ' "${b%.nix}"; done
   REBUILD: /run/current-system/sw/bin/darwin-rebuild
@@ -35,7 +35,7 @@ vars:
   # Docker the mount keeps the caller's uid and libgit2 refuses a repository root does not own
   CONTAINER: >-
     {{.ENGINE}} run --rm --memory 4g -v "{{.ROOT_DIR}}":/work -w /work
-    -e NIX_CONFIG='experimental-features = nix-command flakes' {{.IMAGE}}
+    -e NIX_CONFIG="$NIX_CONFIG" {{.IMAGE}}
   PRELUDE: git config --global --add safe.directory /work
   # The evaluated declaration every read-only task consumes: the dotfiles namespace (links,
   # profile, apps, system ...), every defaults group (wrapped in tryEval: nix-darwin keeps
@@ -43,18 +43,19 @@ vars:
   # expose-group-by-app are dropped, since reading one prints a trace), the ByHost keys, the
   # generated Brewfile plus a `vscode` line per apps.vscode.vsix extension (installed by an
   # activation step, so read back, kept by the cleanup and never fetched from the Marketplace),
-  # taps, casks, the Homebrew prefix and the hostname.
+  # taps, casks, the Homebrew prefix, the hostname and the text of /etc/zshenv.
   SHAPE: >-
-    c: let safe = x: let r = builtins.tryEval (builtins.deepSeq x x); in if r.success then r.value else "<error>"; in {
+    c: let safe = x: let r = builtins.tryEval (builtins.deepSeq x x); in if r.success then r.value else "<error>"; u = c.system.primaryUser; in {
       dotfiles = c.dotfiles;
       defaults = builtins.mapAttrs (n: safe) (c.system.defaults // { dock = removeAttrs c.system.defaults.dock [ "expose-group-by-app" ]; });
-      currentHost = c.home-manager.users.josh.targets.darwin.currentHostDefaults;
-      loginShell = c.users.users.josh.shell;
+      currentHost = c.home-manager.users.${u}.targets.darwin.currentHostDefaults;
+      loginShell = c.users.users.${u}.shell;
       brewfile = c.homebrew.brewfile + builtins.concatStringsSep "" (map (id: "vscode \"${id}\"\n") (builtins.attrNames (if c.dotfiles.apps.vscode.enable then c.dotfiles.apps.vscode.vsix else { })));
       taps = c.homebrew.taps;
       casks = c.homebrew.casks;
       brewPrefix = c.homebrew.prefix;
       hostName = c.networking.localHostName;
+      zshenv = c.environment.etc.zshenv.text;
     }
   EVAL: "{{.NIX}} eval --json '{{.ROOT_DIR}}#darwinConfigurations.{{.MACHINE}}.config' --apply '{{.SHAPE}}'"
 
@@ -138,13 +139,13 @@ tasks:
     desc: 'Read the whole declared state back from the live system (read-only; exits 1 on drift)'
     preconditions: *need-machine
     cmds:
-      - '{{.EVAL}} | MACHINE={{.MACHINE}} zsh "{{.ROOT_DIR}}/tasks/validate.zsh"'
+      - '{{.EVAL}} | MACHINE={{.MACHINE}} DOTFILES_STATE="{{.STATE}}" zsh "{{.ROOT_DIR}}/tasks/validate.zsh"'
 
   audit:
     desc: 'State beyond the declaration and known CVEs (read-only; -- --strict exits 1 on findings)'
     preconditions: *need-machine
     cmds:
-      - '{{.EVAL}} | zsh "{{.ROOT_DIR}}/tasks/audit.zsh" {{.CLI_ARGS}}'
+      - '{{.EVAL}} | DOTFILES_STATE="{{.STATE}}" zsh "{{.ROOT_DIR}}/tasks/audit.zsh" {{.CLI_ARGS}}'
 
   shell:startup-time:
     desc: 'Measure cold interactive zsh startup time (fails above {{.COLD_START_BUDGET}} ms)'

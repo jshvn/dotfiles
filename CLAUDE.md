@@ -15,7 +15,7 @@ activate (`task install`: fast-forward, `darwin-rebuild switch`, antidote bundle
 
 | Concept | Location |
 |---------|----------|
-| Machine (hostname, platform, profile import) | `machines/<name>.nix` |
+| Machine (platform, profile import; the file name is the hostname) | `machines/<name>.nix` |
 | Profile: every switch, free packages (`default.nix`) and the identity (git overlay, ssh host blocks, public key, 1Password agent config) | `profiles/<name>/` |
 | Plumbing (user, profile, link registry, packages, shell, homebrew) | `modules/` |
 | macOS settings, one file per System Settings concern | `system/` |
@@ -74,7 +74,7 @@ What the file system will not tell you:
   `targets.darwin.currentHostDefaults`. `tasks/validate.zsh` reads every defaults key back; a
   nix-darwin group it has no row for is a cross, so a new group needs a row in its `DOMAIN`
   table.
-- This repo declares three `/etc` files: `/etc/zshenv` (the ZDOTDIR line), `/etc/shells`
+- This repo declares three `/etc` files: `/etc/zshenv` (ZDOTDIR and HOMEBREW_PREFIX), `/etc/shells`
   (Homebrew zsh, through `environment.shells` in `modules/shell.nix`) and
   `/etc/ssh/ssh_known_hosts` (GitHub's host keys, `apps/ssh/`); nix-darwin also writes
   `/etc/nix/nix.conf` and others of its own. nix-darwin refuses any `/etc` file it did not

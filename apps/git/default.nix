@@ -1,5 +1,5 @@
 # git: a base app, always on. The shared config and global ignore, and the profile's overlay (its
-# email and signing key), which the config includes for every repository under ~/git/.
+# email, and signing on), which the config includes for every repository under ~/git/.
 { config, ... }:
 {
   dotfiles.provided.formulae = [

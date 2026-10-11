@@ -1,10 +1,6 @@
-# harmonium, the second personal MacBook. Confirm `uname -m` before the first switch.
+# harmonium, the second personal MacBook. Confirm `uname -m` before the first switch. flake.nix
+# derives its network names from this file name.
 {
   imports = [ ../profiles/personal ];
-  networking = {
-    hostName = "harmonium";
-    computerName = "harmonium";
-    localHostName = "harmonium";
-  };
   nixpkgs.hostPlatform = "aarch64-darwin";
 }

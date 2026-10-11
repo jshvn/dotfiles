@@ -35,6 +35,7 @@
       profiles = builtins.attrNames (
         lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./profiles)
       );
+      # the file name is the name the laptop answers to on the network
       mkDarwin =
         name:
         nix-darwin.lib.darwinSystem {
@@ -42,6 +43,9 @@
             home-manager.darwinModules.home-manager
             ./modules
             ./machines/${name}.nix
+            {
+              networking = lib.genAttrs [ "hostName" "computerName" "localHostName" ] (_: name);
+            }
           ];
         };
       # a profile no machine file imports yet (work, until that laptop's name is known) is still
