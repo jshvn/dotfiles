@@ -32,7 +32,7 @@ print '{"version": "0.2.0"}' > "$sandbox/src/extension/package.json"
 git init -q -b main "$seed"
 git -C "$seed" add title-buttons.vsix
 git -C "$seed" -c user.name=t -c user.email=t@t commit -q -m "vsix"
-git init -q --bare "$remote"
+git init -q --bare -b main "$remote"  # the clone checks out HEAD, whatever init.defaultBranch says
 git -C "$seed" push -q "$remote" main
 
 # the fake code lists $sandbox/installed and appends each install's VSIX name to $sandbox/calls
