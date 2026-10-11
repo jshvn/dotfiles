@@ -2,10 +2,13 @@
 {
   options.dotfiles.system.display = lib.mkOption {
     type = lib.types.bool;
-    description = "built-in panel at the More Space HiDPI preset";
+    description = "built-in panel at the More Space HiDPI preset, Universal Control off";
   };
 
   config = lib.mkIf config.dotfiles.system.display {
+    # Displays > Advanced, "Link to Mac or iPad"; a ByHost key, so home-manager writes it
+    home-manager.users.${config.system.primaryUser}.targets.darwin.currentHostDefaults."com.apple.universalcontrol".Disable =
+      true;
     # a live CoreGraphics reconfiguration, not a defaults key: the Swift helper beside this file
     # is copied into the store with the generation that runs it; activation is root, the display
     # belongs to the user's session. A failure warns instead of aborting the switch (exit 2 is

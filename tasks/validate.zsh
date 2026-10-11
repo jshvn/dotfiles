@@ -9,7 +9,7 @@
 #               the machine matches it: shell plumbing, hostname, every link,
 #               the profile identity (git email, ssh agent), every Homebrew
 #               package and cask artifact, the jshvn/ai checkout, and every
-#               macOS default plus the display preset, the Spotlight hotkey
+#               macOS default plus the display preset, the symbolic hotkeys
 #               and the application firewall.
 #               One check/cross line per item; exits 1 on any drift.
 # Depends on:   jq; git; brew; defaults; dscl; PlistBuddy; scutil; ssh-add;
@@ -211,6 +211,7 @@ typeset -A DOMAIN=(
   controlcenter   com.apple.controlcenter
   menuExtraClock  com.apple.menuextra.clock
   screensaver     com.apple.screensaver
+  SoftwareUpdate  /Library/Preferences/com.apple.SoftwareUpdate
 )
 
 # compare DOMAIN KEY EXPECTED TYPE [SCOPE]: one defaults read, bools read back
@@ -251,12 +252,13 @@ done < <(j '
   | select(.value != null and (.value | type) != "object" and (.value | type) != "array")
   | [$g, .key, (.value | tostring), (.value | type)] | @tsv')
 
+# CustomSystemPreferences domains are full /Library/Preferences paths (system/README.md)
 while IFS=$'\t' read -r domain key value type; do
   [[ -n "$domain" ]] || continue
   [[ "$domain" == NSGlobalDomain ]] && domain=-g
   compare "$domain" "$key" "$value" "$type"
 done < <(j '
-  (.defaults.CustomUserPreferences // {}) | to_entries[]
+  (.defaults.CustomUserPreferences // {}), (.defaults.CustomSystemPreferences // {}) | to_entries[]
   | .key as $d | .value | to_entries[] | select(.value != null)
   | [$d, .key, (.value | tostring), (.value | type)] | @tsv')
 
@@ -292,16 +294,27 @@ if [[ "$(j .dotfiles.system.security)" == true ]]; then
   fi
 fi
 
-if [[ "$(j '.dotfiles.apps.raycast.enable and .dotfiles.apps.raycast.freeCmdSpace')" == true ]]; then
-  tmp=$(mktemp)
-  defaults export com.apple.symbolichotkeys "$tmp" 2>/dev/null || true
-  enabled=$(/usr/libexec/PlistBuddy -c 'Print :AppleSymbolicHotKeys:64:enabled' "$tmp" 2>/dev/null || echo "<unset>")
-  rm -f "$tmp"
+# symbolic hotkeys written with -dict-add (apps/raycast/, system/input.nix): one export, read
+# per entry; -dict-add stores enabled as the string 0, System Settings as false
+hotkeys=$(mktemp)
+defaults export com.apple.symbolichotkeys "$hotkeys" 2>/dev/null || true
+hotkey_off() {
+  local enabled
+  enabled=$(/usr/libexec/PlistBuddy -c "Print :AppleSymbolicHotKeys:${1}:enabled" "$hotkeys" 2>/dev/null || echo "<unset>")
   if [[ "$enabled" == false || "$enabled" == 0 ]]; then
-    check "spotlight.cmd-space disabled (freed for Raycast)"
+    check "$2 disabled"
   else
-    fail "spotlight.cmd-space: expected disabled, got enabled='$enabled'"
+    fail "$2: expected disabled, got enabled='$enabled'"
   fi
+}
+if [[ "$(j '.dotfiles.apps.raycast.enable and .dotfiles.apps.raycast.freeCmdSpace')" == true ]]; then
+  hotkey_off 64 "spotlight.cmd-space (freed for Raycast)"
 fi
+if [[ "$(j .dotfiles.system.input)" == true ]]; then
+  hotkey_off 60 "input.ctrl-space (previous input source)"
+  hotkey_off 61 "input.ctrl-opt-space (next input source)"
+  hotkey_off 65 "finder.cmd-opt-space (search window)"
+fi
+rm -f "$hotkeys"
 
 exit $failed

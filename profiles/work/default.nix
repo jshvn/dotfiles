@@ -10,9 +10,11 @@
       input = true;
       screenshots = true;
       security = true;
+      updates = false;
       appearance = true;
       display = true;
       animations = true;
+      dockApps = null;
     };
     apps = {
       raycast = {

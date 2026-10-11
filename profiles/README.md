@@ -21,6 +21,8 @@ reports a failure for each other file. Keep private keys in 1Password.
 - `profile` is the name of the profile directory. Its type is an enum of the directories
   here. Thus an incorrect name causes the evaluation to fail.
 - `system.<concern>` is true or false. Set it for each concern in `system/`.
+- `system.dockApps` lists the paths of the Dock apps, from left to right. `null` leaves the
+  Dock apps alone.
 - `apps.<name>.enable` is true or false. Set it for each optional app in `apps/`.
 - Some apps have more options:
   - `raycast.freeCmdSpace` turns off the Spotlight Cmd+Space shortcut.
