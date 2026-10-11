@@ -1,8 +1,8 @@
 # Visual Studio Code: the cask (it provides the `code` CLI the extensions install through) and
 # the extension set that travels with it. A profile adds its own extras; listing one of these
 # again is an error. An extension that is not on the Marketplace comes from a VSIX committed to
-# its own repo (`vsix`), installed by an activation step. Settings live under
-# ~/Library/Application Support/Code/User, not XDG, and are not managed yet.
+# its own repo (`vsix`), installed by an activation step. env.zsh exports COPILOT_HOME. Settings
+# live under ~/Library/Application Support/Code/User, not XDG, and are not managed yet.
 { config, lib, ... }:
 let
   cfg = config.dotfiles.apps.vscode;
@@ -68,6 +68,7 @@ in
       }
     ];
     dotfiles.provided.casks = [ "visual-studio-code" ];
+    dotfiles.shell.env.vscode = "apps/vscode/env.zsh";
     homebrew.vscode = bundled ++ cfg.extensions;
     # after brew bundle, which installs the cask and so `code`. Warns instead of aborting the
     # switch (offline, no SSH agent yet); Taskfile's SHAPE adds these ids to the Brewfile it hands
