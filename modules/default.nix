@@ -69,6 +69,9 @@ in
         { config, ... }:
         {
           home.stateVersion = "26.05";
+          # Homebrew installs every app; without this home-manager makes an empty
+          # ~/Applications/Home Manager Apps on every switch
+          targets.darwin.copyApps.enable = false;
           home.file = lib.mapAttrs (target: source: {
             source = config.lib.file.mkOutOfStoreSymlink "${cfg.checkout}/${source}";
           }) cfg.links;
