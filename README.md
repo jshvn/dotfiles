@@ -2,90 +2,84 @@
 
 [![ci](https://github.com/jshvn/dotfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/jshvn/dotfiles/actions/workflows/ci.yml)
 
-macOS laptops declared as one nix-darwin configuration per machine. Nix evaluates the
-declaration and activates it; Homebrew installs every package; the shell is the repo's own
-zsh, linked straight from the checkout (out-of-store symlinks) so an edit is live in the next
-shell.
+This repository declares personal macOS machines. Each machine has one nix-darwin
+configuration.
+
+- Nix applies the system configuration. This includes the macOS settings, the user account and
+  the files in `/etc`.
+- Homebrew installs all packages. Homebrew uses `mas` to install the App Store apps.
+- Each configuration file in the home directory is a symbolic link to a file in this checkout.
+  A change to a file applies in the next shell. You do not have to build again.
 
 ## Install
 
-One command per Mac, fresh or already set up:
+Before you start:
+
+1. Install the Xcode Command Line Tools. These tools supply `git`. The first `git` command
+   asks you to install them.
+2. Sign in to the App Store. If you do not sign in, the install stops when `mas` installs the
+   App Store apps.
+
+Enter these commands:
 
 ```zsh
 git clone https://github.com/jshvn/dotfiles.git ~/Git/personal/dotfiles
 cd ~/Git/personal/dotfiles
-# lerasium or harmonium
 ./bootstrap.zsh <machine>
 ```
 
-`bootstrap.zsh` installs Nix (skipped when present; its installer asks first and needs sudo),
-then runs go-task from the flake's pinned nixpkgs to select the machine with `task setup` and
-run the first `task install`. That install's switch installs Homebrew with Homebrew's own
-installer, then every package, go-task included. Re-running it is safe. Then open a new
-terminal; from then on `update` is the only command. The checkout path is fixed: `dotfiles.checkout` in
-`modules/default.nix` is where every link points.
+Replace `<machine>` with the name of a file in `machines/`, without `.nix`. Do not clone to a
+different path. All links point into this path.
 
-On a factory-fresh Mac, before that:
+After the install:
 
-- The first `git` command offers to install the Xcode Command Line Tools; accept, then clone.
-- Sign in to the App Store: the profile installs Mac App Store apps through `mas`, and
-  `brew bundle` fails without a signed-in App Store, which stops the switch.
-- The jshvn/ai checkout clones over SSH through 1Password's agent, so on a fresh Mac that step
-  only warns. Once 1Password is signed in with its SSH agent on, run `task install` again.
+1. Open a new terminal.
+2. Sign in to 1Password.
+3. Turn on the 1Password SSH agent.
+4. Enter `update`.
 
-The first `task install` on a Mac clears the way itself: it removes the symlinks at every path
-home-manager will link, moves anything else there to `<path>.before-dotfiles` (check those,
-then delete them), and moves `/etc/zshenv` and `/etc/shells` to `*.before-nix-darwin`, all only
-after the build succeeds.
-
-If a first install stops partway (a cask download, the App Store), fix the cause and run
-`./bootstrap.zsh <machine>` again: until the switch completes, a terminal has an empty zsh
-config and may have no Homebrew, so `task` is not on its PATH. If the switch stops at
-"Unexpected files in /etc", rename each file it lists to `<file>.before-nix-darwin` (sudo) and
-run `task install` again. If it stops at "Build user group has mismatching GID", set
-`ids.gids.nixbld` in `modules/default.nix` to the GID it reports and run `task install` again.
-If home-manager reports a path it "would clobber" (a file that appeared where a newly
-registered link goes), move it aside and run `task install` again.
+The `jshvn/ai` and `jshvn/vscode-title-buttons` repositories clone over SSH. The first install
+cannot clone them and shows a warning. Run update after configuring 1Password to install them.
 
 ### Update
 
 ```zsh
-# the update alias runs task install from any directory
 update
 ```
 
-`task install` fast-forwards the checkout (warn-only: offline, dirty or diverged never block),
-builds and activates the selected machine with `darwin-rebuild switch` (sudo), then lists what
-Homebrew has installed beyond the declaration and uninstalls it only if you say yes (`task install
--- --yes` answers yes up front; the switch itself never uninstalls), and refreshes the antidote
-bundles.
+`update` is an alias for `task install`. You can use it in any directory.
+
+If the install or the update stops before it completes, correct the cause. Then enter the same
+command again. You can do the install or the update more than one time. The result is the same.
 
 ## Commands
 
 | Command | Purpose |
 |---------|---------|
-| `task setup -- <machine>` | Persist the machine selection |
-| `task install [-- --yes]` | Fast-forward, build and switch, uninstall what is no longer declared after asking, refresh plugin bundles |
-| `task rollback` | Activate the previous generation |
-| `task show` | The evaluated declaration as JSON |
-| `task diff` | What install would change: the closure diff, then what brew bundle would add |
-| `task validate` | Read the whole declaration back from the live system (exits 1 on drift) |
-| `task audit [-- --strict]` | State beyond the declaration, known CVEs |
-| `task shell:startup-time` | Cold interactive zsh start against the 500 ms budget |
-| `task check` | Evaluate every machine and profile in the pinned nix image |
-| `task lint` | zsh parse, `set -euo`, banners, no hardcoded prefix, every task in the menu; `nix fmt -- --ci` |
-| `task fmt` | Format the Nix sources in place |
-| `task test` | Smoke tests and the negative evaluations |
+| `task setup -- <machine>` | Saves the machine selection. |
+| `task install [-- --yes]` | Updates the checkout and applies the configuration. Asks before it removes packages that are not declared. `--yes` gives the answer yes. Updates the zsh plugin bundles. |
+| `task rollback` | Activates the previous generation. |
+| `task show` | Shows the evaluated configuration as JSON. |
+| `task diff` | Shows the changes that `task install` will make. The Nix closure diff shows first. The new Homebrew packages show second. |
+| `task validate` | Compares the live system with the configuration. Exits with code 1 if they are different. |
+| `task audit [-- --strict]` | Shows the state that is not in the configuration. Shows known CVEs. With `--strict`, exits with code 1 if it finds a problem. |
+| `task shell:startup-time` | Measures the cold start time of an interactive zsh. The limit is 500 ms. |
+| `task check` | Evaluates each machine and each profile in the pinned Nix image. |
+| `task lint` | Checks the zsh scripts and the Nix format. `tasks/lint.zsh` contains the rules. |
+| `task fmt` | Formats the Nix files. |
+| `task test` | Does the smoke tests and the negative evaluations. |
 
-`task check`, `lint`, `fmt` and `test` run in the pinned nix image, so they need Apple
-`container` (daemon up) or Docker; the Taskfile uses `container` when its daemon is up, else
-Docker, and `ENGINE=docker` forces Docker.
+The `check`, `lint`, `fmt` and `test` tasks operate in the pinned Nix image. These tasks need
+Apple `container` or Docker. If the Apple `container` daemon is on, the Taskfile uses it. If
+not, the Taskfile uses Docker. To always use Docker, set `ENGINE=docker`.
 
-Run `task` for the menu, grouped by what each task does to the Mac; `task --list` for the
-generated view.
+Enter `task` to show the menu. The menu groups the tasks by their effect on the Mac. Enter
+`task --list` to show the generated list.
 
 ## Where things live
 
-- `docs/DECISIONS.md` -- locked decisions and scope; `docs/SECURITY.md` -- bootstrap trust
-  chain; `docs/MACHINES.md` -- per-machine purpose and hardware.
-- Each top-level directory's README says what belongs there; `CLAUDE.md` has the gotchas.
+- `docs/DECISIONS.md` contains the locked decisions and the scope.
+- `docs/SECURITY.md` describes the trust chain of the bootstrap.
+- `docs/MACHINES.md` describes the purpose and the hardware of each machine.
+- The README in each top-level directory tells what belongs in that directory.
+- `CLAUDE.md` lists the constraints that the files do not show.
