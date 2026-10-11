@@ -2,7 +2,12 @@
 # profile the machine imports, the link registry, Nix's own housekeeping, and the module tree. Nix
 # installs nothing of its own; it evaluates the declaration and activates it. Homebrew installs
 # everything.
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.dotfiles;
   user = "josh";
@@ -52,6 +57,14 @@ in
       isHidden = false;
     };
 
+    # One Nix on the Mac: the daemon, the GC job and darwin-rebuild run this package, and the
+    # switch points the default profile (the interactive shell's nix and the Taskfile's NIX) at
+    # it too. `latest` follows each upstream release on the nixpkgs release branch; `stable`
+    # stays on one minor line for the branch's life.
+    nix.package = pkgs.nixVersions.latest;
+    system.activationScripts.postActivation.text = ''
+      ${config.nix.package}/bin/nix-env --profile /nix/var/nix/profiles/default --set ${config.nix.package}
+    '';
     nix.settings.experimental-features = [
       "nix-command"
       "flakes"

@@ -65,9 +65,9 @@ environment variable.
 `darwin-rebuild switch` fetches the nixpkgs, nix-darwin and home-manager sources
 `flake.lock` pins (by content hash) and any store paths from `cache.nixos.org`, each
 signature-checked against the cache's key. Nix supplies nix-darwin, home-manager, the Nix
-daemon nix-darwin runs in place of the installer's, and nixpkgs' CA bundle at
-`/etc/ssl/certs/ca-certificates.crt`; every package Josh uses, go-task included, comes from
-Homebrew, with its bottle checksums.
+(`nixVersions.latest`) that replaces the installer's as both the daemon and the default
+profile, and nixpkgs' CA bundle at `/etc/ssl/certs/ca-certificates.crt`; every package Josh
+uses, go-task included, comes from Homebrew, with its bottle checksums.
 
 ---
 

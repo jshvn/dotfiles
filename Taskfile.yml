@@ -43,7 +43,7 @@ vars:
   # expose-group-by-app are dropped, since reading one prints a trace), the ByHost keys, the
   # generated Brewfile plus a `vscode` line per apps.vscode.vsix extension (installed by an
   # activation step, so read back, kept by the cleanup and never fetched from the Marketplace),
-  # taps, casks, the Homebrew prefix, the hostname and the text of /etc/zshenv.
+  # taps, casks, the Homebrew prefix, the hostname, the text of /etc/zshenv and the Nix package.
   SHAPE: >-
     c: let safe = x: let r = builtins.tryEval (builtins.deepSeq x x); in if r.success then r.value else "<error>"; u = c.system.primaryUser; in {
       dotfiles = c.dotfiles;
@@ -56,6 +56,7 @@ vars:
       brewPrefix = c.homebrew.prefix;
       hostName = c.networking.localHostName;
       zshenv = c.environment.etc.zshenv.text;
+      nixPackage = c.nix.package.outPath;
     }
   EVAL: "{{.NIX}} eval --json '{{.ROOT_DIR}}#darwinConfigurations.{{.MACHINE}}.config' --apply '{{.SHAPE}}'"
 

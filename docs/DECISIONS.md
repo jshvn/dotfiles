@@ -70,6 +70,7 @@ new evidence.
 | Tool | Pinned by | Reason |
 |------|-----------|--------|
 | nixpkgs, nix-darwin, home-manager (26.05 line) | `flake.lock` | the evaluator; `task check` and CI evaluate against the lock |
+| Nix on the Mac: the daemon, the GC job, the default profile | `nixVersions.latest` in `flake.lock`'s nixpkgs | one Nix for the shell, the Taskfile and the switch; move the image below with it |
 | Nix 2.35.2, the `nixos/nix` image by digest | `Taskfile.yml` | check, fmt, lint and the negative suite run the same image on a laptop and in CI |
 | `go-task` >= 3.37 | Homebrew, `modules/base.nix`; bootstrap's first run, the locked nixpkgs | `for:` loops and the `OS` template function in `Taskfile.yml` |
 | `jq` >= 1.7 | Homebrew, `modules/base.nix` | the evaluation JSON every read task consumes |

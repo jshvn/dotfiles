@@ -68,6 +68,12 @@ if grep -qxF "$login_shell" /etc/shells 2>/dev/null; then
 else
   fail "/etc/shells does not list $login_shell"
 fi
+nix_package=$(j .nixPackage)
+if [[ "$(readlink -f /nix/var/nix/profiles/default)" == "$nix_package" ]]; then
+  check "default profile is nix.package (${nix_package#*-})"
+else
+  fail "default profile is not nix.package $nix_package (the switch sets it)"
+fi
 if [[ -r "$STATE/machine" ]]; then
   if [[ -z "${MACHINE:-}" || "$(<"$STATE/machine")" == "$MACHINE" ]]; then
     check "machine state file: $(<"$STATE/machine")"

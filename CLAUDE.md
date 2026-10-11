@@ -84,7 +84,8 @@ What the file system will not tell you:
   the Nix installer's block at the top of `/etc/zshrc` and `/etc/bashrc` is what puts `nix`
   on an interactive shell's PATH. A non-interactive shell does not have it: `Taskfile.yml`
   calls nix by its absolute path, `/nix/var/nix/profiles/default/bin/nix` (`NIX`), because a
-  Taskfile `env:` entry cannot override the caller's PATH.
+  Taskfile `env:` entry cannot override the caller's PATH. The switch points that default profile
+  at `nix.package`, so the installer's own Nix lasts only until the first switch.
 - `task install` and `task rollback` run `sudo darwin-rebuild`, which prompts for a password.
   An agent cannot answer it: print the command, let Josh run it, read the result.
 - The switch never uninstalls (`homebrew.onActivation.cleanup = "none"`): `task install`

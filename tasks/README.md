@@ -38,7 +38,7 @@ File names:
 
 `validate.zsh` checks these items:
 
-- the shell plumbing
+- the shell plumbing. This includes the Nix in the default profile, which must be `nix.package`.
 - the hostname
 - each link
 - the identity of the profile. This includes stray files in `profiles/`, the git email, the
