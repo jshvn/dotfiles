@@ -23,9 +23,14 @@
 [credential]
     # Keep HTTPS auth out of the macOS keychain. Homebrew and Apple both ship
     # git with a system-level "helper = osxkeychain"; the empty value below
-    # resets the helper list so that default is ignored. Remotes should use
-    # SSH, which the 1Password agent handles.
+    # resets the helper list so that default is ignored. Pushes go over SSH
+    # instead (below), which the 1Password agent handles.
     helper =
+
+[url "git@github.com:"]
+    # Pushes to GitHub go over SSH; fetches stay on HTTPS, which needs no
+    # credentials for public repositories and never waits on 1Password.
+    pushInsteadOf = https://github.com/
 
 [fetch]
     prune = true  # Auto-prune deleted remote branches
