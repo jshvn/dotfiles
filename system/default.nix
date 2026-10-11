@@ -13,6 +13,6 @@
     ./screenshots.nix
     ./animations.nix
     ./security.nix
-    ./display.nix
+    ./display
   ];
 }

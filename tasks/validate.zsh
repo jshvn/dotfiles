@@ -14,7 +14,7 @@
 #               One check/cross line per item; exits 1 on any drift.
 # Depends on:   jq; git; brew; defaults; dscl; PlistBuddy; scutil; ssh-add;
 #               socketfilterfw; swift (Xcode CLT); tasks/messages.zsh;
-#               system/display-mode.swift; MACHINE env var (the selected
+#               system/display/display-mode.swift; MACHINE env var (the selected
 #               machine name, optional).
 # Side effects: none (read-only; one temp file for the Brewfile).
 # =============================================================================
@@ -266,7 +266,7 @@ done < <(j '
 # nothing to read back, which is not drift.
 if [[ "$(j .dotfiles.system.display)" == true ]]; then
   rc=0
-  out=$(swift "$ROOT/system/display-mode.swift" verify 2>&1) || rc=$?
+  out=$(swift "$ROOT/system/display/display-mode.swift" verify 2>&1) || rc=$?
   case $rc in
     0) check "display.builtin = More Space ($out)" ;;
     2) warn "display.builtin: not checked, no active built-in panel ($out)" ;;

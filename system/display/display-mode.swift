@@ -1,5 +1,5 @@
 // =============================================================================
-// system/display-mode.swift -- built-in display "More Space" scaler
+// system/display/display-mode.swift -- built-in display "More Space" scaler
 //
 // Purpose:      Drive the built-in (laptop) panel to its "More Space" preset --
 //               the largest 2x HiDPI mode the Displays panel exposes -- and
