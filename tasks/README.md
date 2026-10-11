@@ -47,7 +47,7 @@ File names:
 - the jshvn/ai checkout
 - each defaults key
 - the display preset
-- the Spotlight hotkey
+- the symbolic hotkeys (Spotlight, input source, Finder search)
 - the application firewall
 
 `tests/` contains these tests:

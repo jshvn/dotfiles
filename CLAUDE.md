@@ -68,8 +68,9 @@ What the file system will not tell you:
   runs under `set -e` and moves `/run/current-system` only after `postActivation`, so a user
   step that depends on the network or hardware ends in `|| echo ... >&2` and leaves the
   read-back to `task validate`.
-- nix-darwin writes a nested defaults value whole, never merging: the Spotlight hotkey (entry
-  64 of `AppleSymbolicHotKeys`) stays a `-dict-add` activation script in `apps/raycast/`.
+- nix-darwin writes a nested defaults value whole, never merging: the symbolic hotkeys
+  (`AppleSymbolicHotKeys` 64 in `apps/raycast/`; 60, 61, 65 in `system/input.nix`) stay
+  `-dict-add` activation scripts.
   nix-darwin has no `-currentHost` writes: ByHost keys go through home-manager's
   `targets.darwin.currentHostDefaults`. `tasks/validate.zsh` reads every defaults key back; a
   nix-darwin group it has no row for is a cross, so a new group needs a row in its `DOMAIN`
