@@ -5,7 +5,7 @@
 #
 # Purpose:      The body of `task install`, the same on a Mac's first run and
 #               every later one. Takes the evaluated declaration on stdin.
-#               Builds the selected machine's closure (nothing changes if that
+#               Stops unless it runs from dotfiles.checkout. Builds the selected machine's closure (nothing changes if that
 #               fails); on a Mac where nix-darwin is not active yet, clears the
 #               paths home-manager will link and moves /etc/zshenv and
 #               /etc/shells aside; switches with the built darwin-rebuild; then
@@ -29,6 +29,14 @@ source "$HERE/messages.zsh"
 declared=$(cat)
 if ! jq -e '.dotfiles | type == "object"' <<< "$declared" >/dev/null 2>&1; then
   cross "no declaration on stdin (expected the JSON task install produces with nix eval)"
+  exit 1
+fi
+
+# --- the links point at dotfiles.checkout, so this must be that clone -----------
+# -ef (same file), not a string compare: APFS ignores case and either path may be a symlink
+checkout=$(jq -r .dotfiles.checkout <<< "$declared")
+if [[ ! "$DOTFILEDIR" -ef "$checkout" ]]; then
+  cross "this clone is $DOTFILEDIR but dotfiles.checkout is $checkout: run task install from there, or set dotfiles.checkout in machines/$MACHINE.nix"
   exit 1
 fi
 

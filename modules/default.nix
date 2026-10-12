@@ -28,7 +28,7 @@ in
     checkout = lib.mkOption {
       type = lib.types.str;
       default = "${home}/Git/personal/dotfiles";
-      description = "the checkout that shell/, profiles/, apps/ and system/ files are linked from, outside the store";
+      description = "the checkout that shell/, profiles/, apps/ and system/ files are linked from, outside the store; machines/<name>.nix sets it when that laptop clones elsewhere, and task install refuses any other clone";
     };
     profile = lib.mkOption {
       type = lib.types.enum (

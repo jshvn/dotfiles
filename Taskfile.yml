@@ -194,9 +194,9 @@ tasks:
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && nix fmt --no-write-lock-file"'
 
   test:
-    desc: 'Smoke tests (orphan scan, trust scan, cleanup scan and link clearing, repo sync, pin check, ai checkout, VSIX install, the live shell and its cold-start budget on a Mac) and the negative evaluations'
+    desc: 'Smoke tests (orphan scan, trust scan, cleanup scan and link clearing, clone guard, repo sync, pin check, ai checkout, VSIX install, the live shell and its cold-start budget on a Mac) and the negative evaluations'
     cmds:
-      - for: [audit-brew-cleanup, audit-links, audit-trust, install-clear-links, install-repo-sync, install-pins, ai-checkout, vscode-vsix]
+      - for: [audit-brew-cleanup, audit-links, audit-trust, install-clear-links, install-checkout, install-repo-sync, install-pins, ai-checkout, vscode-vsix]
         cmd: DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/tasks/tests/{{.ITEM}}.zsh'
       - '{{if eq OS "darwin"}}DOTFILEDIR="{{.ROOT_DIR}}" COLD_START_BUDGET={{.COLD_START_BUDGET}} zsh "{{.ROOT_DIR}}/tasks/tests/shell-startup.zsh"{{else}}echo "shell-startup: skipped, it needs the live Mac shell"{{end}}'
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && SRC=/work bash tasks/tests/negative.sh"'

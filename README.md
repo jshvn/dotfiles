@@ -28,8 +28,9 @@ cd ~/Git/personal/dotfiles
 ./bootstrap.zsh <machine>
 ```
 
-Replace `<machine>` with the name of a file in `machines/`, without `.nix`. Do not clone to a
-different path. All links point into this path.
+Replace `<machine>` with the name of a file in `machines/`, without `.nix`. All links point into
+the clone. To clone to a different path, first set `dotfiles.checkout` to that path in
+`machines/<machine>.nix`. `task install` stops when it runs from any other clone.
 
 After the install:
 

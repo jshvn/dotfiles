@@ -1,13 +1,16 @@
 # machines
 
 Each physical laptop has one file. The file has the name of the laptop. A machine file
-contains only the data that a profile cannot contain. This data is the platform of the laptop.
-The profile that the file imports supplies all other configuration.
+contains only the data that a profile cannot contain. This data is the platform of the laptop,
+and the path of the clone when it is not `~/Git/personal/dotfiles`. The profile that the file
+imports supplies all other configuration.
 
 ```nix
 {
   imports = [ ../profiles/personal ];
   nixpkgs.hostPlatform = "aarch64-darwin";
+  # only when the clone is not at the default path
+  # dotfiles.checkout = "/Users/josh/src/dotfiles";
 }
 ```
 

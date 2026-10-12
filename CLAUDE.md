@@ -15,7 +15,7 @@ activate (`task install`: fast-forward, `darwin-rebuild switch`, antidote bundle
 
 | Concept | Location |
 |---------|----------|
-| Machine (platform, profile import; the file name is the hostname) | `machines/<name>.nix` |
+| Machine (platform, profile import, clone path when not the default; the file name is the hostname) | `machines/<name>.nix` |
 | Profile: every switch, free packages (`default.nix`) and the identity (git overlay, ssh host blocks, public key, 1Password agent config) | `profiles/<name>/` |
 | Plumbing (user, profile, link registry, packages, shell, homebrew) | `modules/` |
 | macOS settings, one file per System Settings concern | `system/` |
@@ -41,6 +41,10 @@ What the file system will not tell you:
 
 - `nix flake check` on a git checkout sees only tracked or staged files. `git add -A` before
   `task check`, or a new file is silently absent from the evaluation.
+- The clone's path is `dotfiles.checkout` and nothing else: `~/Git/personal/dotfiles` unless
+  the machine file sets it. Every link points there, `.zshrc` finds `$DOTFILEDIR` by following
+  its own link, `validate` and `audit` read it from `SHAPE`, and `tasks/install.zsh` refuses
+  to run from any other clone. No module or script writes the path itself.
 - Every optional option has no default (`system.<concern>`, `apps.<name>.enable`,
   `shell.jgrid-net`, `repo.devToolchain`, `apps.raycast.freeCmdSpace`). Adding one means
   setting it in every profile, `profiles/work/` included, or `task check` fails naming it.
