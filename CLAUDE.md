@@ -70,7 +70,9 @@ What the file system will not tell you:
   read-back to `task validate`.
 - nix-darwin writes a nested defaults value whole, never merging: the symbolic hotkeys
   (`AppleSymbolicHotKeys` 64 in `apps/raycast/`; 60, 61, 65 in `system/input.nix`) stay
-  `-dict-add` activation scripts.
+  `-dict-add` activation scripts, each value an XML plist from `lib.generators.toPlist`:
+  `defaults` reads old-style text (`{enabled = 0;}`) as strings, and macOS keeps a
+  string-typed hotkey on.
   nix-darwin has no `-currentHost` writes: ByHost keys go through home-manager's
   `targets.darwin.currentHostDefaults`. `tasks/validate.zsh` reads every defaults key back; a
   nix-darwin group it has no row for is a cross, so a new group needs a row in its `DOMAIN`

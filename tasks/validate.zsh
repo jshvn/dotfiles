@@ -323,13 +323,14 @@ if [[ "$(j .dotfiles.system.security)" == true ]]; then
 fi
 
 # symbolic hotkeys written with -dict-add (apps/raycast/, system/input.nix): one export, read
-# per entry; -dict-add stores enabled as the string 0, System Settings as false
+# per entry. Only the bool false counts: PlistBuddy prints a string "0" as 0, and macOS keeps a
+# string-typed hotkey on
 hotkeys=$(mktemp)
 defaults export com.apple.symbolichotkeys "$hotkeys" 2>/dev/null || true
 hotkey_off() {
   local enabled
   enabled=$(/usr/libexec/PlistBuddy -c "Print :AppleSymbolicHotKeys:${1}:enabled" "$hotkeys" 2>/dev/null || echo "<unset>")
-  if [[ "$enabled" == false || "$enabled" == 0 ]]; then
+  if [[ "$enabled" == false ]]; then
     check "$2 disabled"
   else
     fail "$2: expected disabled, got enabled='$enabled'"

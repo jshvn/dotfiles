@@ -1,6 +1,22 @@
 { config, lib, ... }:
 let
   user = config.system.primaryUser;
+  # an XML plist, as in apps/raycast/: old-style text stores strings, which macOS does not honor
+  off =
+    modifiers:
+    lib.escapeShellArg (
+      lib.generators.toPlist { escape = true; } {
+        enabled = false;
+        value = {
+          parameters = [
+            32
+            49
+            modifiers
+          ];
+          type = "standard";
+        };
+      }
+    );
 in
 {
   options.dotfiles.system.input = lib.mkOption {
@@ -18,9 +34,9 @@ in
     # one -dict-add takes every pair (a second -dict-add is a defaults error)
     system.activationScripts.postActivation.text = ''
       sudo -u ${user} -H defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add \
-        60 '{enabled = 0; value = { parameters = (32, 49, 262144); type = standard; }; }' \
-        61 '{enabled = 0; value = { parameters = (32, 49, 786432); type = standard; }; }' \
-        65 '{enabled = 0; value = { parameters = (32, 49, 1572864); type = standard; }; }'
+        60 ${off 262144} \
+        61 ${off 786432} \
+        65 ${off 1572864}
       sudo -u ${user} -H /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u || true
     '';
   };

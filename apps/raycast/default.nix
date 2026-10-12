@@ -5,6 +5,19 @@
 let
   cfg = config.dotfiles.apps.raycast;
   user = config.system.primaryUser;
+  # an XML plist, so enabled is a bool and parameters are integers: defaults reads old-style
+  # text ({enabled = 0;}) as strings, and macOS keeps a string-typed hotkey on
+  off = lib.generators.toPlist { escape = true; } {
+    enabled = false;
+    value = {
+      parameters = [
+        32
+        49
+        1048576
+      ];
+      type = "standard";
+    };
+  };
 in
 {
   options.dotfiles.apps.raycast = {
@@ -21,7 +34,7 @@ in
     # 22-entry hotkey table with this one entry. activateSettings reloads it without a logout.
     system.activationScripts.postActivation.text = lib.mkIf cfg.freeCmdSpace ''
       sudo -u ${user} -H defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 \
-        '{enabled = 0; value = { parameters = (32, 49, 1048576); type = standard; }; }'
+        ${lib.escapeShellArg off}
       sudo -u ${user} -H /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u || true
     '';
   };
