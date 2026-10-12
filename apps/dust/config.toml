@@ -5,5 +5,8 @@
 # File Provider excludes (~/Library/CloudStorage, iCloud Drive) live on the
 # `dust` alias in apps/dust/aliases.zsh instead.
 
+# Show only the target's direct children; `-d N` on the command line wins.
+depth = 1
+
 # Keep .git trees folded so repo scans show the working tree, not objects.
 collapse = [".git"]

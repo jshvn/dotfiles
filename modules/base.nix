@@ -14,7 +14,6 @@
     "jq"
     "libpsl"
     "mas"
-    "ncdu"
     "onefetch"
     "rdap"
     "trippy"

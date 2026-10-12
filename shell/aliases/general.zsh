@@ -6,16 +6,15 @@
 # Purpose:      Reload, env inspection, PATH pretty-print, repo navigation,
 #               directory listing (eza when present), history with colours,
 #               and the `t` shorthand for `task`.
-# Depends on:   eza (optional), ncdu, highlight, omz_history, HIST_STAMPS
+# Depends on:   eza (optional), highlight, omz_history, HIST_STAMPS
 #               (shell/.zshrc), task.
-# Side effects: defines aliases reload, path, dotfiles, fsa, perms,
+# Side effects: defines aliases reload, path, dotfiles, perms,
 #               ls (when eza present), ll, lastinstalled, history, t.
 # =============================================================================
 
 alias reload='source "$ZDOTDIR"/.zshrc'
 alias path='echo -e ${PATH//:/\\n} | highlight --syntax=bash'
 alias dotfiles='cd "$DOTFILEDIR"'
-alias fsa='ncdu'
 alias perms='permissions'
 
 # Lazy expansion (single quotes) + presence guard: when eza is absent,
