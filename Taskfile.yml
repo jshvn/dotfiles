@@ -152,7 +152,10 @@ tasks:
     desc: 'Print the evaluated declaration for the selected machine (profile, system, apps, links, packages)'
     preconditions: *need-machine
     cmds:
-      - '{{.EVAL}} | jq .dotfiles'
+      # apps.vscode.installs is not an option: it is every extension id the Brewfile carries,
+      # the bundled set, the profile's extras and its VSIX ids
+      - |
+        {{.EVAL}} | jq '.dotfiles.apps.vscode.installs = [.brewfile | scan("vscode \"([^\"]+)\"")[0]] | .dotfiles'
 
   diff:
     desc: 'What install would change: the closure diff against the running generation, then the packages brew bundle would add'
