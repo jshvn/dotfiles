@@ -1,6 +1,7 @@
-# git: a base app, always on. The shared config and global ignore, the profile's overlay (its
-# email, and signing on), which the config includes for every repository under ~/git/, and the
-# allowed_signers file local signature verification reads, written from the profile's key.pub.
+# git: a base app, always on. The shared config and global ignore, the functions directory the
+# config's multi-line aliases run, the profile's overlay (its email, and signing on), which the
+# config includes for every repository under ~/git/, and the allowed_signers file local
+# signature verification reads, written from the profile's key.pub.
 { config, lib, ... }:
 let
   key = ../../profiles + "/${config.dotfiles.profile}/key.pub";
@@ -15,6 +16,7 @@ in
   dotfiles.links = {
     ".config/git/config" = "apps/git/config";
     ".config/git/ignore" = "apps/git/ignore";
+    ".config/git/functions" = "apps/git/functions";
     ".config/git/profile" = "profiles/${config.dotfiles.profile}/git";
   };
 

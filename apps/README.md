@@ -19,7 +19,7 @@ Put the name of that package in the `packages` lists of the profile.
 | `eza/` | None. This is a base app. | Installs the formula. Links `theme.yaml`. |
 | `firefox/` | `apps.firefox.enable` | Installs the cask. `env.zsh` sets `BROWSER`. Writes a Firefox policy with what Firefox Sync does not carry: the toolbar from `toolbar.json`, the sidebar, the default search engine and a few preferences. `default.nix` tells how to copy a toolbar changed in Firefox back. `task validate` warns when Sync starts carrying one of them. |
 | `ghostty/` | `apps.ghostty.enable` | Installs the cask. Links `config`. Adds the `g` launcher. |
-| `git/` | None. This is a base app. | Installs git and git-delta. Links `config` and `ignore`. Links the `git` file of the profile. `config` includes that file for repositories under `~/git/`. |
+| `git/` | None. This is a base app. | Installs git and git-delta. Links `config` and `ignore`. Links `functions/`, one script per alias too long for one line; the alias in `config` runs it. Links the `git` file of the profile. `config` includes that file for repositories under `~/git/`. |
 | `herdr/` | `apps.herdr.enable` | Installs the formula. Links `config.toml`. |
 | `raycast/` | `apps.raycast.{enable,freeCmdSpace}` | Installs the cask. Contains the script command directory. You must register this directory in Raycast manually. When `freeCmdSpace` is true, turns off the Spotlight Cmd+Space shortcut. |
 | `ssh/` | None. This is a base app. | Installs openssh. Links `config`, which sends each host through the 1Password agent. `cloudflared.zsh` is the ProxyCommand for the tunnel. Links `ssh` and `key.pub` from the profile. Writes the GitHub host keys to `/etc/ssh/ssh_known_hosts`. |

@@ -121,7 +121,8 @@ What the file system will not tell you:
 - Machine identity is explicit (`task setup -- <name>`); never infer from hostname.
 - One concept per file, flat directories: one alias topic / function / machine / concern per
   file. The nestings that exist are `shell/functions/helpers/` (private primitives),
-  `system/finder/` and `system/display/` (a concern with a file beside its nix), every
+  `system/finder/` and `system/display/` (a concern with a file beside its nix),
+  `apps/git/functions/` (one script per git alias too long for one line), every
   `apps/<name>/` and every `profiles/<name>/`.
 - Tests live at `tasks/tests/`; `task test` is the single aggregator. The repo tree holds
   source only; no generated file is tracked.
