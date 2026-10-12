@@ -59,16 +59,14 @@
       wget.enable = true;
       firefox.enable = true;
       terraform.enable = true;
+      tlrc.enable = true;
     };
     shell.jgrid-net = true;
     repo.devToolchain = true;
     packages = {
-      # container: Apple's runtime.
       formulae = [
         "bat"
         "bottom"
-        "container"
-        "doggo"
         "duf"
         "fd"
         "gh"
@@ -77,7 +75,6 @@
         "htop"
         "hugo"
         "node"
-        "poppler"
         "uv"
       ];
       casks = [

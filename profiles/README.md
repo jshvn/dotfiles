@@ -32,8 +32,9 @@ reports a failure for each other file. Keep private keys in 1Password.
     both when claude-code is on. `claude-code.profile` is a profile in jshvn/ai, not a
     profile here.
 - `shell.jgrid-net` turns on the fleet aliases for jgrid.net.
-- `repo.devToolchain` installs the linters, the formatters and hyperfine. You need these
-  tools to work on this repository.
+- `repo.devToolchain` installs the linters, the formatters, hyperfine and Apple `container`,
+  the engine for `task check`, `lint`, `fmt` and `test`. You need these tools to work on this
+  repository.
 - `packages.formulae`, `packages.casks` and `packages.mas` list the free choices. These are
   packages with no configuration.
   - Do not list a package that the base or an enabled app supplies. If you do, an assertion

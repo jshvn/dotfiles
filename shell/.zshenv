@@ -10,9 +10,8 @@
 # Side effects: exports XDG_{CONFIG,DATA,STATE,CACHE}_HOME, XDG_{DATA,CONFIG}_DIRS,
 #               ZDOTDIR, CLAUDE_CONFIG_DIR, GNUPGHOME, GOPATH, NPM_CONFIG_CACHE,
 #               NODE_REPL_HISTORY, PYTHON_HISTORY, MPLCONFIGDIR, EDITOR,
-#               VEDITOR, VISUAL, HIGHLIGHT_OPTIONS, LANG, LC_ALL,
-#               SHELL_SESSIONS_DISABLE, __CF_USER_TEXT_ENCODING, DOTFILES_STATE,
-#               DOTFILES_MACHINE (gated).
+#               HIGHLIGHT_OPTIONS, LANG, LC_ALL, SHELL_SESSIONS_DISABLE,
+#               __CF_USER_TEXT_ENCODING, DOTFILES_STATE, DOTFILES_MACHINE (gated).
 # =============================================================================
 
 # XDG Base Directory Specification (preserve any pre-set value).
@@ -39,9 +38,9 @@ export NODE_REPL_HISTORY="${XDG_STATE_HOME}/node_repl_history"
 export PYTHON_HISTORY="${XDG_STATE_HOME}/python_history"
 export MPLCONFIGDIR="${XDG_CONFIG_HOME}/matplotlib"
 
+# The fallback editor; git and the rest prefer VISUAL, which apps/vscode/env.zsh
+# exports when VS Code is on.
 export EDITOR="nano"
-export VEDITOR="code"
-export VISUAL="code --wait"
 
 # highlight reads its default options from here, so every caller (aliases,
 # functions, git aliases) gets the same output format and theme.

@@ -34,6 +34,7 @@
       wget.enable = true;
       firefox.enable = true;
       terraform.enable = false;
+      tlrc.enable = true;
     };
     shell.jgrid-net = false;
     repo.devToolchain = true;
@@ -41,15 +42,12 @@
       formulae = [
         "bat"
         "bottom"
-        "container"
-        "doggo"
         "duf"
         "fd"
         "gh"
         "git-crypt"
         "htop"
         "hugo"
-        "poppler"
         "uv"
       ];
       casks = [

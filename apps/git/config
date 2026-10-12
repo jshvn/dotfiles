@@ -21,7 +21,6 @@
     path = profile
 
 [core]
-    editor = code --wait
     pager = delta
 
 [init]
