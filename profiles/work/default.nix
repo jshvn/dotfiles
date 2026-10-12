@@ -28,7 +28,7 @@
       claude-code = {
         enable = true;
         profile = "work";
-        ref = "2026.09.23";
+        ref = "main";
       };
       conda.enable = true;
       dust.enable = false;
