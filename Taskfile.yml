@@ -80,7 +80,7 @@ tasks:
         }
         note() { printf '  %-26s %s\n' '' "$d$1$r"; }
 
-        printf '\n%s   %s\n' "${b}dotfiles${r}" "${d}this Mac as one nix-darwin configuration${r}"
+        printf '\n%s   %s\n' "${b}jshvn/dotfiles${r}" "${d}this Mac as one nix-darwin configuration${r}"
 
         group machines 'task setup -- <name> picks one; never inferred from the hostname'
         g=
