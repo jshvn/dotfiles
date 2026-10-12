@@ -106,7 +106,7 @@ tasks:
         group checks 'tests the files in this repo; the Nix steps run in a Linux container via {{.ENGINE}}'
         row 'task check' 'Evaluate every machine and profile, as CI does' 'git add -A first: the flake sees only tracked or staged files'
         row 'task lint' 'zsh parse, set -euo, banners, hardcoded prefixes, this menu; nix fmt --ci'
-        row 'task test' 'Smoke tests and the negative evaluations' 'shell-startup and the {{.COLD_START_BUDGET}} ms cold-start budget run only on a Mac'
+        row 'task test' 'Smoke tests and the negative evaluations' 'shell-startup, its {{.COLD_START_BUDGET}} ms cold-start budget and validate run only on a Mac'
         row 'task fmt' 'Format every .nix file in place'
 
         group write 'changes this Mac'
@@ -197,11 +197,12 @@ tasks:
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && nix fmt --no-write-lock-file"'
 
   test:
-    desc: 'Smoke tests (orphan scan, trust scan, cleanup scan and link clearing, clone guard, repo sync, pin check, ai checkout, VSIX install, the live shell and its cold-start budget on a Mac) and the negative evaluations'
+    desc: 'Smoke tests (orphan scan, trust scan, cleanup scan and link clearing, clone guard, repo sync, pin check, ai checkout, VSIX install; on a Mac, the live shell and its cold-start budget, and validate reading back a whole dictionary and warning on a preference Firefox Sync carries) and the negative evaluations'
     cmds:
       - for: [audit-brew-cleanup, audit-links, audit-trust, install-clear-links, install-checkout, install-repo-sync, install-pins, ai-checkout, vscode-vsix]
         cmd: DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/tasks/tests/{{.ITEM}}.zsh'
       - '{{if eq OS "darwin"}}DOTFILEDIR="{{.ROOT_DIR}}" COLD_START_BUDGET={{.COLD_START_BUDGET}} zsh "{{.ROOT_DIR}}/tasks/tests/shell-startup.zsh"{{else}}echo "shell-startup: skipped, it needs the live Mac shell"{{end}}'
+      - '{{if eq OS "darwin"}}DOTFILEDIR="{{.ROOT_DIR}}" zsh "{{.ROOT_DIR}}/tasks/tests/validate.zsh"{{else}}echo "validate: skipped, it reads macOS defaults"{{end}}'
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && SRC=/work bash tasks/tests/negative.sh"'
 
   # Every public task has a desc and a menu row, and every row names a task. default and

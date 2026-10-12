@@ -10,11 +10,12 @@
 #               the profile identity (git email, ssh agent), every Homebrew
 #               package and cask artifact, the jshvn/ai checkout, and every
 #               macOS default plus the Dock's tiles, the display preset, the
-#               symbolic hotkeys, the application firewall and Terminal's
-#               profile.
+#               symbolic hotkeys, the application firewall, Terminal's
+#               profile and Firefox's policy, warning for each policy
+#               preference Firefox Sync now carries.
 #               One check/cross line per item; exits 1 on any drift.
 # Depends on:   jq; git; brew; defaults; dscl; PlistBuddy; plutil; scutil; ssh-add;
-#               socketfilterfw; swift (Xcode CLT); tasks/messages.zsh;
+#               socketfilterfw; swift (Xcode CLT); unzip; tasks/messages.zsh;
 #               system/display/display-mode.swift;
 #               apps/terminal/clear-dark.terminal; DOTFILES_STATE env var (the
 #               Taskfile's STATE); MACHINE env var (the selected machine name,
@@ -262,8 +263,26 @@ while IFS=$'\t' read -r domain key value type; do
   compare "$domain" "$key" "$value" "$type"
 done < <(j '
   (.defaults.CustomUserPreferences // {}), (.defaults.CustomSystemPreferences // {}) | to_entries[]
-  | .key as $d | .value | to_entries[] | select(.value != null)
+  | .key as $d | .value | to_entries[]
+  | select(.value != null and (.value | type) != "object" and (.value | type) != "array")
   | [$d, .key, (.value | tostring), (.value | type)] | @tsv')
+
+# a dictionary or list value (Firefox's policy) is written whole and compares whole, as JSON: jq's
+# == ignores key order and 1000.0 against 1000; join, unlike @tsv, keeps the JSON's backslashes.
+# ponytail: plutil -extract reads a dot in the key as a path, so a dotted key crosses; PlistBuddy
+# -x -c 'Print :<key>' piped to plutil -convert json would read it
+while IFS=$'\t' read -r domain key want; do
+  [[ -n "$domain" ]] || continue
+  got=$(defaults export "$domain" - 2>/dev/null | plutil -extract "$key" json -o - - 2>/dev/null) || got=null
+  if jq -en --argjson w "$want" --argjson g "$got" '$w == $g' >/dev/null; then
+    check "$domain.$key matches the declaration"
+  else
+    fail "$domain.$key: differs from the declaration (defaults read $domain $key; task install writes it)"
+  fi
+done < <(j '
+  (.defaults.CustomUserPreferences, .defaults.CustomSystemPreferences) | objects | to_entries[]
+  | .key as $d | .value | to_entries[] | select(.value | iterables)
+  | [$d, .key, (.value | tojson)] | join("\t")')
 
 while IFS=$'\t' read -r domain key value type; do
   [[ -n "$domain" ]] || continue
@@ -358,6 +377,27 @@ if [[ "$(j .dotfiles.apps.terminal.enable)" == true ]]; then
     fail "Terminal profile Clear Dark differs from apps/terminal/clear-dark.terminal (switch, then quit and reopen Terminal; or copy it back, apps/terminal/default.nix)"
   fi
   rm -f "$terminal"
+fi
+
+# Firefox's policy holds only what Firefox Sync does not carry (apps/firefox/): a preference that
+# joins Sync's list, a services.sync.prefs.sync.<pref> default in the installed app, is a warning
+# to remove it. unzip exits 2 on omni.ja's layout but extracts the files, so only its output counts
+if [[ "$(j .dotfiles.apps.firefox.enable)" == true ]]; then
+  info "firefox"
+  ff=/Applications/Firefox.app/Contents/Resources
+  synced=(${${(f)"$({ unzip -p "$ff/browser/omni.ja" 'defaults/preferences/*.js'; unzip -p "$ff/omni.ja" greprefs.js; } \
+    2>/dev/null | grep -o 'services\.sync\.prefs\.sync\.[^"]*' || true)"}#services.sync.prefs.sync.})
+  managed=(${(f)"$(j '.defaults.CustomUserPreferences."org.mozilla.firefox".Preferences | keys[]')"})
+  now=(${managed:*synced})
+  if (( ! ${#synced} )); then
+    warn "firefox: could not read Firefox Sync's preference list from /Applications/Firefox.app"
+  elif (( ${#now} )); then
+    for pref in $now; do
+      warn "firefox: Firefox Sync now carries $pref; remove it from apps/firefox/default.nix"
+    done
+  else
+    check "firefox: Sync carries none of the ${#managed} policy preferences (it carries ${#synced})"
+  fi
 fi
 
 exit $failed

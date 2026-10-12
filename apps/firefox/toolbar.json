@@ -1,0 +1,53 @@
+{
+  "placements": {
+    "widget-overflow-fixed-list": [],
+    "unified-extensions-area": [],
+    "nav-bar": [
+      "back-button",
+      "forward-button",
+      "stop-reload-button",
+      "vertical-spacer",
+      "urlbar-container",
+      "downloads-button",
+      "fxa-toolbar-menu-button",
+      "unified-extensions-button",
+      "jid1-mnnxcxisbpnsxq_jetpack-browser-action",
+      "ublock0_raymondhill_net-browser-action",
+      "_d634138d-c276-4fc8-924b-40a0ea21d284_-browser-action",
+      "reset-pbm-toolbar-button",
+      "_531906d3-e22f-4a6c-a102-8057b88a1a63_-browser-action"
+    ],
+    "TabsToolbar": [
+      "tabbrowser-tabs",
+      "new-tab-button",
+      "customizableui-special-spring4",
+      "alltabs-button",
+      "ai-window-toggle",
+      "smartwindow-group-tabs-button"
+    ],
+    "vertical-tabs": [],
+    "PersonalToolbar": [
+      "personal-bookmarks"
+    ]
+  },
+  "seen": [
+    "developer-button",
+    "screenshot-button",
+    "_d634138d-c276-4fc8-924b-40a0ea21d284_-browser-action",
+    "jid1-mnnxcxisbpnsxq_jetpack-browser-action",
+    "ublock0_raymondhill_net-browser-action",
+    "reset-pbm-toolbar-button",
+    "_531906d3-e22f-4a6c-a102-8057b88a1a63_-browser-action",
+    "ai-window-toggle",
+    "smartwindow-group-tabs-button"
+  ],
+  "dirtyAreaCache": [
+    "nav-bar",
+    "vertical-tabs",
+    "PersonalToolbar",
+    "unified-extensions-area",
+    "TabsToolbar"
+  ],
+  "currentVersion": 26,
+  "newElementCount": 4
+}

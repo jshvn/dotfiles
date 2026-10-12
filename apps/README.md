@@ -17,7 +17,7 @@ Put the name of that package in the `packages` lists of the profile.
 | `claude-code/` | `apps.claude-code.{enable,profile,ref,dir}` | Installs the cask. Keeps the jshvn/ai checkout at its ref. Selects the profile in that checkout and does its `task install`. `checkout.zsh` does these steps in an activation step. It uses `tasks/install-repo-sync.zsh` to fast-forward. |
 | `dust/` | `apps.dust.enable` | Installs the formula. Links `config.toml`. Adds the `dust` and `fs` aliases. |
 | `eza/` | None. This is a base app. | Installs the formula. Links `theme.yaml`. |
-| `firefox/` | `apps.firefox.enable` | Installs the cask. `env.zsh` sets `BROWSER`. |
+| `firefox/` | `apps.firefox.enable` | Installs the cask. `env.zsh` sets `BROWSER`. Writes a Firefox policy with what Firefox Sync does not carry: the toolbar from `toolbar.json`, the sidebar, the default search engine and a few preferences. `default.nix` tells how to copy a toolbar changed in Firefox back. `task validate` warns when Sync starts carrying one of them. |
 | `ghostty/` | `apps.ghostty.enable` | Installs the cask. Links `config`. Adds the `g` launcher. |
 | `git/` | None. This is a base app. | Installs git and git-delta. Links `config` and `ignore`. Links the `git` file of the profile. `config` includes that file for repositories under `~/git/`. |
 | `herdr/` | `apps.herdr.enable` | Installs the formula. Links `config.toml`. |
