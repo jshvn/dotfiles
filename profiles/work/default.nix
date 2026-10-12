@@ -30,7 +30,6 @@
         profile = "work";
         ref = "main";
       };
-      conda.enable = true;
       dust.enable = false;
       wget.enable = true;
       firefox.enable = true;

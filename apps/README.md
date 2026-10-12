@@ -15,7 +15,6 @@ Put the name of that package in the `packages` lists of the profile.
 |-----|--------|----------|
 | `1password/` | None. This is a base app. | Installs the cask. Links `agent.toml` from the profile. `env.zsh` sets `SSH_AUTH_SOCK`. `README.md` tells how to turn on the SSH agent. |
 | `claude-code/` | `apps.claude-code.{enable,profile,ref,dir}` | Installs the cask. Keeps the jshvn/ai checkout at its ref. Selects the profile in that checkout and does its `task install`. `checkout.zsh` does these steps in an activation step. It uses `tasks/install-repo-sync.zsh` to fast-forward. |
-| `conda/` | `apps.conda.enable` | Installs the miniconda cask. Links `condarc`. |
 | `dust/` | `apps.dust.enable` | Installs the formula. Links `config.toml`. Adds the `dust` alias. |
 | `eza/` | None. This is a base app. | Installs the formula. Links `theme.yaml`. |
 | `firefox/` | `apps.firefox.enable` | Installs the cask. `env.zsh` sets `BROWSER`. |

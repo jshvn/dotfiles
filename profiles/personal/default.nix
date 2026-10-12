@@ -55,7 +55,6 @@
         profile = "personal";
         ref = "main";
       };
-      conda.enable = true;
       dust.enable = true;
       wget.enable = true;
       firefox.enable = true;

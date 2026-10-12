@@ -9,7 +9,6 @@
   imports = [
     ./1password
     ./claude-code
-    ./conda
     ./dust
     ./eza
     ./firefox

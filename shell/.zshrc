@@ -5,7 +5,7 @@
 #
 # Purpose:      Interactive-only setup: antidote plugin manager (OMZ lib +
 #               plugins via shell/.zsh_plugins.txt; use-omz owns deferred
-#               compinit), lazy conda, optional VS Code shell integration,
+#               compinit), optional VS Code shell integration,
 #               theme + functions + aliases sourcing, missing-machine warning.
 # Depends on:   .zshenv (XDG vars, DOTFILES_STATE, DOTFILES_MACHINE);
 #               .zprofile (brew shellenv); antidote at
@@ -74,18 +74,6 @@ else
     compinit -d "$XDG_CACHE_HOME/zsh/zcompdump-fallback"
 fi
 unset _antidote_sh _zsh_plugins_txt _zsh_plugins_static
-
-# Lazy conda init: wrapper replaces itself after performing hook, then
-# re-runs the original command.
-if command -v conda >/dev/null 2>&1; then
-    function conda() {
-    unfunction conda 2>/dev/null
-        local __conda_bin
-        __conda_bin="$(command -v conda)"
-        eval "$("$__conda_bin" shell.$(basename "${SHELL}") hook)"
-        conda "$@"
-    }
-fi
 
 # VS Code shell integration: only when running inside VSCode AND the `code`
 # CLI is on PATH. Skips noisily-failing `source ""` when the CLI is not
