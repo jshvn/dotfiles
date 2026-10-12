@@ -22,7 +22,7 @@ function vnc() {    # vnc() opens Screen Sharing to a host; <m>-vnc.jgrid.net ri
         echo "ERROR: No domain specified." >&2
         return 1
     fi
-    if [[ ! "${1}" =~ ^[A-Za-z0-9.:_-]+$ ]]; then
+    if [[ ! "${1}" =~ ^[A-Za-z0-9.:_][A-Za-z0-9.:_-]*$ ]]; then
         echo "ERROR: invalid host/ip: ${1}" >&2
         return 2
     fi

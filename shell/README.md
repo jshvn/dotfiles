@@ -17,8 +17,8 @@ links are out-of-store symlinks to the checkout. Thus a change here applies in t
   - `.zlogout` operates when a login shell exits.
 - `theme.zsh` starts the Starship prompt and sets the man-page and grc colours. `.zshrc` reads
   it after antidote loads the OMZ library and the plugins. The prompt itself is
-  `apps/starship/starship.toml`. Terminal.app cannot draw the rounded pill ends, so
-  `theme.zsh` gives it a copy with square ends, in `$XDG_CACHE_HOME/starship/`.
+  `apps/starship/starship.toml`. Its rounded pill ends need a Nerd Font: Ghostty has
+  one built in, and `apps/terminal/` sets Terminal.app's.
 - `.zsh_plugins.txt` is the antidote plugin manifest. `use-omz` must be the first entry.
 - `aliases/<topic>.zsh` contains the aliases for one shell-level topic. The topics are
   general, dotfiles, hardware, networking and jgrid. `modules/shell.nix` registers each file

@@ -19,6 +19,7 @@
     ./raycast
     ./ssh
     ./starship
+    ./terminal
     ./terraform
     ./tlrc
     ./vscode

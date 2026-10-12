@@ -9,15 +9,18 @@
 #               the machine matches it: shell plumbing, hostname, every link,
 #               the profile identity (git email, ssh agent), every Homebrew
 #               package and cask artifact, the jshvn/ai checkout, and every
-#               macOS default plus the display preset, the symbolic hotkeys
-#               and the application firewall.
+#               macOS default plus the Dock's tiles, the display preset, the
+#               symbolic hotkeys, the application firewall and Terminal's
+#               profile.
 #               One check/cross line per item; exits 1 on any drift.
-# Depends on:   jq; git; brew; defaults; dscl; PlistBuddy; scutil; ssh-add;
+# Depends on:   jq; git; brew; defaults; dscl; PlistBuddy; plutil; scutil; ssh-add;
 #               socketfilterfw; swift (Xcode CLT); tasks/messages.zsh;
-#               system/display/display-mode.swift; DOTFILES_STATE env var (the
+#               system/display/display-mode.swift;
+#               apps/terminal/clear-dark.terminal; DOTFILES_STATE env var (the
 #               Taskfile's STATE); MACHINE env var (the selected machine name,
 #               optional).
-# Side effects: none (read-only; one temp file for the Brewfile).
+# Side effects: none (read-only; temp files for the Brewfile, the hotkeys, the
+#               Dock and Terminal).
 # =============================================================================
 
 set -euo pipefail
@@ -270,6 +273,31 @@ done < <(j '
   | .key as $d | .value | to_entries[] | select(.value != null)
   | [$d, .key, (.value | tostring), (.value | type)] | @tsv')
 
+# The Dock's tile lists (the arrays the loop above skips). The Dock keeps each tile as a
+# percent-encoded file:// URL ending in /, so the lists compare as decoded paths, in order; a
+# spacer has no URL on either side. The Dock drops a tile whose app is missing when it restarts,
+# as a cask app is on a Mac's first switch (system/dock.nix).
+dock=$(mktemp)
+defaults export com.apple.dock "$dock" 2>/dev/null || true
+tile_path() { local u=${${1#file://}%/}; printf '%b' "${u//\%/\\x}"; }
+for key in ${(f)"$(j '.defaults.dock | objects | to_entries[] | select(.value | type == "array") | .key')"}; do
+  want=() got=()
+  for u in ${(f)"$(j ".defaults.dock.\"$key\"[] | .\"tile-data\".\"file-data\"._CFURLString // \"spacer\"")"}; do
+    want+=("$(tile_path "$u")")
+  done
+  for (( i = 0; i < $(plutil -extract "$key" raw -o - "$dock" 2>/dev/null || echo 0); i++ )); do
+    u=$(plutil -extract "$key.$i.tile-data.file-data._CFURLString" raw -o - "$dock" 2>/dev/null || echo spacer)
+    got+=("$(tile_path "$u")")
+  done
+  missing=(${want:|got})
+  if [[ "${(pj:\n:)want}" == "${(pj:\n:)got}" ]]; then
+    check "dock.$key = ${#want} tiles"
+  else
+    fail "dock.$key: expected ${#want} tiles in order, got ${#got}; missing: ${(j:, :)missing:-none}"
+  fi
+done
+rm -f "$dock"
+
 # display-mode.swift verify exits 0 at More Space, 1 in another mode, 2 with no active built-in
 # panel or no HiDPI mode (lid closed on a dock, a mirrored display), 64 on usage. Exit 2 leaves
 # nothing to read back, which is not drift.
@@ -316,5 +344,19 @@ if [[ "$(j .dotfiles.system.input)" == true ]]; then
   hotkey_off 65 "finder.cmd-opt-space (search window)"
 fi
 rm -f "$hotkeys"
+
+# Terminal's Clear Dark profile (apps/terminal/), written with -dict-add, compared whole: a font or
+# colour changed in Terminal since the switch shows here until it is copied back
+if [[ "$(j .dotfiles.apps.terminal.enable)" == true ]]; then
+  terminal=$(mktemp)
+  defaults export com.apple.Terminal "$terminal" 2>/dev/null || true
+  if cmp -s <(plutil -convert xml1 -o - "$ROOT/apps/terminal/clear-dark.terminal") \
+            <(plutil -extract 'Window Settings.Clear Dark' xml1 -o - "$terminal" 2>/dev/null); then
+    check "Terminal profile Clear Dark = apps/terminal/clear-dark.terminal"
+  else
+    fail "Terminal profile Clear Dark differs from apps/terminal/clear-dark.terminal (switch, then quit and reopen Terminal; or copy it back, apps/terminal/default.nix)"
+  fi
+  rm -f "$terminal"
+fi
 
 exit $failed

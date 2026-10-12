@@ -21,7 +21,7 @@ function getcertnames() {    # getcertnames() prints a domain's TLS cert Common 
 
 	# Permissive host/IP guard (matches geoip/vnc) before passing to openssl.
 	# Applied to the parsed domain, not $1, so URL input is still accepted.
-	if [[ ! "$domain" =~ ^[A-Za-z0-9.:_-]+$ ]]; then
+	if [[ ! "$domain" =~ ^[A-Za-z0-9.:_][A-Za-z0-9.:_-]*$ ]]; then
 		echo "ERROR: invalid domain: ${domain}" >&2
 		return 2
 	fi

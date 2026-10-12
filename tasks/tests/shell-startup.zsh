@@ -7,8 +7,7 @@
 #               five startup files, verify a login
 #               interactive shell exits 0, and assert the plugin-layer
 #               markers (`l` alias, extract, syntax highlighting,
-#               autosuggestions), that Starship owns the prompt, that
-#               Terminal.app gets the plain-ended starship.toml, plus
+#               autosuggestions), that Starship owns the prompt, plus
 #               deferred compinit via a simulated prompt (use-omz runs
 #               compinit from precmd), and that a cold start, the mean of
 #               five after a warmup, is within $COLD_START_BUDGET ms.
@@ -17,8 +16,7 @@
 #               starship installed (task install); hyperfine and jq
 #               (repo.devToolchain).
 # Side effects: spawns interactive zsh subshells (sources live .zshrc; may
-#               write antidote static file / zcompdump caches and
-#               $XDG_CACHE_HOME/starship/plain.toml).
+#               write antidote static file / zcompdump caches).
 # =============================================================================
 
 set -euo pipefail
@@ -74,24 +72,7 @@ for marker in starship extract alias_l highlight autosuggest; do
     fi
 done
 
-# --- 4. Terminal.app reads a starship.toml whose pill ends are plain cells ---
-# theme.zsh turns every [<escaped glyph>](fg:<colour>) end into [ ](bg:<colour>); a convertible
-# end left over would draw as a box in Terminal.app.
-plain=$(TERM_PROGRAM=Apple_Terminal zsh -lic '
-    [[ "$STARSHIP_CONFIG" == */plain.toml && -f "$STARSHIP_CONFIG" ]] \
-        && grep -qF "[ ](bg:" "$STARSHIP_CONFIG" \
-        && ! grep -qE "\[\\\\ue0b[46]\]\(fg:[a-z]" "$STARSHIP_CONFIG" \
-        && echo plain_config
-' 2>/dev/null) || true
-
-if [[ "$plain" == *plain_config* ]]; then
-    check "starship: Terminal.app reads the plain-ended copy"
-else
-    cross "starship: Terminal.app copy missing or still has Nerd Font pill ends"
-    failed=$(( failed + 1 ))
-fi
-
-# --- 5. Deferred compinit ran (use-omz flushes it from precmd) --------------
+# --- 4. Deferred compinit ran (use-omz flushes it from precmd) --------------
 # `zsh -lic exit` never draws a prompt, so precmd never fires; the hooks are
 # fired by hand to simulate that first prompt. After they run, compdef must be
 # a real function (the use-omz queue wrapper has been replaced) and _git must
@@ -124,7 +105,7 @@ else
     failed=$(( failed + 1 ))
 fi
 
-# --- 6. Cold start within the budget ----------------------------------------
+# --- 5. Cold start within the budget ----------------------------------------
 # Measure again after each change to a plugin or a startup file.
 out=$(mktemp); trap 'rm -f "$out"' EXIT
 if hyperfine --warmup 1 --runs 5 --export-json "$out" 'zsh -lic exit' >/dev/null 2>&1; then

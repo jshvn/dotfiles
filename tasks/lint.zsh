@@ -4,10 +4,11 @@
 # tasks/lint.zsh -- static checks on the zsh and Nix sources
 #
 # Purpose:      The rules that survive the move to Nix: every .zsh parses
-#               (zsh -n), every executable .zsh sets -euo pipefail, every .zsh
-#               carries the Purpose / Depends on / Side effects banner, and no
-#               source hardcodes /opt/homebrew or /usr/local outside a line
-#               marked `# lint-allow: hardcoded-prefix`. `task lint` checks
+#               (zsh -n), every .zsh that is run, not sourced, sets -euo
+#               pipefail, every .zsh carries the Purpose / Depends on / Side
+#               effects banner, and no source hardcodes /opt/homebrew or
+#               /usr/local outside a line marked
+#               `# lint-allow: hardcoded-prefix`. `task lint` checks
 #               the Nix formatting (`nix fmt -- --ci`) and the menu
 #               (menu-drift) separately.
 # Depends on:   zsh; ggrep (GNU grep); tasks/messages.zsh.
@@ -32,10 +33,13 @@ for f in $zsh_files; do
 done
 check "${#zsh_files} files parsed"
 
-info "executables set -euo pipefail"
+info "scripts set -euo pipefail"
+# a script is every .zsh that is run, not sourced: sourced are shell/, the aliases and env
+# files the startup files source, and tasks/messages.zsh
 for f in $zsh_files; do
-  if [[ -x "$f" ]] && ! head -30 "$f" | ggrep -qE '^set -euo pipefail$'; then
-    cross "${f#$ROOT/}: executable without set -euo pipefail"
+  [[ "$f" == $ROOT/shell/* || ${f:t} == (aliases|env|messages).zsh ]] && continue
+  if ! head -30 "$f" | ggrep -qE '^set -euo pipefail$'; then
+    cross "${f#$ROOT/}: script without set -euo pipefail"
     failed=1
   fi
 done

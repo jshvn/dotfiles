@@ -18,7 +18,7 @@ function geoip() {    # geoip() prints geolocation data for an IP or host. ex: $
     # Reduce a URL to its host; a bare hostname or IP passes through untouched.
     # Validated after parsing, not on $1, so URL input is still accepted.
     local target="$(_dotfiles_url_host "${1}")"
-    if [[ ! "$target" =~ ^[A-Za-z0-9.:_-]+$ ]]; then
+    if [[ ! "$target" =~ ^[A-Za-z0-9.:_][A-Za-z0-9.:_-]*$ ]]; then
         echo "ERROR: invalid host/ip: ${target}" >&2
         return 2
     fi

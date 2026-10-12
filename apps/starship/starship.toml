@@ -2,9 +2,8 @@
 # duration and exit code, sudo, background jobs, the terraform workspace and a nix shell, then a
 # git pill and the time. A pill shows only when it has something to say.
 #
-# The rounded pill ends are Nerd Font glyphs, written as [\ue0b6](fg:<colour>) and
-# [\ue0b4](fg:<colour>). Terminal.app draws no Nerd Font glyphs, so shell/theme.zsh gives it a copy
-# with each end as a plain coloured cell; keep every end in exactly that form.
+# The rounded pill ends are Nerd Font glyphs, U+E0B6 and U+E0B4: Ghostty draws them with its
+# built-in symbols, Terminal.app (apps/terminal/) and VS Code in JetBrainsMono Nerd Font Mono.
 add_newline = false
 format = '$username$hostname:$directory$character'
 right_format = "$cmd_duration$status$sudo$jobs$terraform$nix_shell([\ue0b6](fg:bright-black)$git_branch$git_commit$git_status$git_metrics[\ue0b4](fg:bright-black) )$time"
@@ -44,7 +43,9 @@ disabled = false
 format = "[\ue0b6](fg:red)[$status]($style)[\ue0b4](fg:red) "
 style = 'bg:red fg:black'
 
-# While sudo has a password cached.
+# While sudo has a password cached. The check is `sudo -n true`, which sudo counts as a use, so each
+# prompt also restarts the timeout: sudo stays unlocked while commands keep coming in this terminal
+# and lapses once they stop. Intended.
 [sudo]
 disabled = false
 format = "[\ue0b6](fg:red)[sudo]($style)[\ue0b4](fg:red) "

@@ -43,6 +43,7 @@
         freeCmdSpace = true;
       };
       ghostty.enable = true;
+      terminal.enable = true;
       herdr.enable = true;
       vscode = {
         enable = true;

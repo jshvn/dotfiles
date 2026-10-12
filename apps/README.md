@@ -25,6 +25,7 @@ Put the name of that package in the `packages` lists of the profile.
 | `raycast/` | `apps.raycast.{enable,freeCmdSpace}` | Installs the cask. Contains the script command directory. You must register this directory in Raycast manually. When `freeCmdSpace` is true, turns off the Spotlight Cmd+Space shortcut. |
 | `ssh/` | None. This is a base app. | Installs openssh. Links `config`, which sends each host through the 1Password agent. `cloudflared.zsh` is the ProxyCommand for the tunnel. Links `ssh` and `key.pub` from the profile. Writes the GitHub host keys to `/etc/ssh/ssh_known_hosts`. |
 | `starship/` | None. This is a base app. | Installs the formula. Links `starship.toml`, the prompt. `shell/theme.zsh` starts it. |
+| `terminal/` | `apps.terminal.enable` | Installs the JetBrains Mono Nerd Font cask. Writes the Clear Dark profile from `clear-dark.terminal` in an activation step, and makes it the default and startup profile. `default.nix` tells how to copy a profile changed in Terminal back. |
 | `terraform/` | `apps.terraform.enable` | Installs the formula from the HashiCorp tap. `env.zsh` sets `CHECKPOINT_DISABLE`. |
 | `tlrc/` | None. This is a base app. | Installs the formula. Links `config.toml`. `env.zsh` sets `TLRC_CONFIG`. |
 | `vscode/` | `apps.vscode.{enable,extensions,vsix}` | Installs the cask and the bundled extensions. A profile can add more extensions. A profile can also add an extension from a VSIX in the repository of that extension. `vsix.zsh` installs these in an activation step. `env.zsh` sets `COPILOT_HOME`. |

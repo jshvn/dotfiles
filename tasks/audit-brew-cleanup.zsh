@@ -9,8 +9,9 @@
 #               untap. Only the "Would uninstall <kind>:" and "Would untap:"
 #               sections count: brew's cache housekeeping ("Would `brew
 #               cleanup`:"), its closing "Run ..." line and any update report
-#               before the sections are not drift. Items may be printed in
-#               columns, so every word in a section is one item.
+#               before the sections are not drift. Brew prints one item per
+#               line when stdout is not a terminal, and an item may hold spaces
+#               (an App Store app is "<name> (<id>)"), so each line is one item.
 # Depends on:   awk.
 # Side effects: none.
 # =============================================================================
@@ -21,5 +22,5 @@ awk '
   /^Would uninstall .*:$/ { kind = substr($0, 17, length($0) - 17); next }
   /^Would untap:$/        { kind = "taps"; next }
   /^(Would|Run) /         { kind = ""; next }
-  kind != ""              { for (i = 1; i <= NF; i++) print kind "\t" $i }
+  kind != "" && NF        { gsub(/^[ \t]+|[ \t]+$/, ""); print kind "\t" $0 }
 '

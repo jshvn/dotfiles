@@ -3,4 +3,5 @@
 {
   dotfiles.provided.formulae = [ "eza" ];
   dotfiles.links.".config/eza/theme.yaml" = "apps/eza/theme.yaml";
+  dotfiles.shell.env.eza = "apps/eza/env.zsh";
 }

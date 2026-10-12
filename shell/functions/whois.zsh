@@ -35,6 +35,14 @@ function whois() {    # whois() looks up a domain, IP, or URL over RDAP, falling
     # port removed); a bare domain or IP passes through untouched.
     local target="$(_dotfiles_url_host "$1")"
 
+    # Guard the parsed target (a bare domain or IP after URL stripping) before
+    # it reaches psl or either client; a leading dash would reach them as a
+    # flag. Validated here, not on $1, so URL input is still accepted.
+    if [[ ! "$target" =~ ^[A-Za-z0-9.:_][A-Za-z0-9.:_-]*$ ]]; then
+        echo "ERROR: invalid whois target: ${target}" >&2
+        return 2
+    fi
+
     # Reduce subdomains to the registrable domain -- the eTLD+1, e.g.
     # www.bbc.co.uk -> bbc.co.uk -- so the query hits the registry record.
     # This delegates to libpsl's `psl` tool, which embeds the full, current
@@ -55,14 +63,6 @@ function whois() {    # whois() looks up a domain, IP, or URL over RDAP, falling
         else
             echo "whois: libpsl not installed (provides 'psl'); querying '$target' without subdomain reduction -- run 'task install'" >&2
         fi
-    fi
-
-    # Guard the parsed target (a bare domain or IP after URL stripping) before
-    # it reaches either client. Validated here, not on $1, so URL input is
-    # still accepted and reduced above.
-    if [[ ! "$target" =~ ^[A-Za-z0-9.:_-]+$ ]]; then
-        echo "ERROR: invalid whois target: ${target}" >&2
-        return 2
     fi
 
     # RDAP, tried first. `rdap` bootstraps the TLD -> service mapping off IANA

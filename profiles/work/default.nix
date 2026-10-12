@@ -22,6 +22,7 @@
         freeCmdSpace = false;
       };
       ghostty.enable = true;
+      terminal.enable = true;
       herdr.enable = false;
       vscode.enable = true;
       claude-code = {

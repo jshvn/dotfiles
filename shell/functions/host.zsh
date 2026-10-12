@@ -24,7 +24,7 @@ function host() {    # host() looks up A/AAAA/MX/TXT/NS/CNAME records via 1.1.1.
 
     # Permissive host/IP guard (matches geoip/vnc) before passing to doggo.
     # Applied to the parsed target, not $1, so URL input is still accepted.
-    if [[ ! "$target" =~ ^[A-Za-z0-9.:_-]+$ ]]; then
+    if [[ ! "$target" =~ ^[A-Za-z0-9.:_][A-Za-z0-9.:_-]*$ ]]; then
         echo "ERROR: invalid host/ip: ${target}" >&2
         return 2
     fi

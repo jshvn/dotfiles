@@ -10,9 +10,9 @@ filekinds:
   normal: {foreground: Default}
   directory: {foreground: Blue, is_bold: true}  # di=01;34
   symlink: {foreground: Cyan, is_bold: true}  # ln=01;36
-  pipe: {foreground: Yellow, background: Yellow}  # pi=40;33
-  block_device: {foreground: Yellow, background: Yellow, is_bold: true}  # bd=40;33;01
-  char_device: {foreground: Yellow, background: Yellow, is_bold: true}  # cd=40;33;01
+  pipe: {foreground: Yellow, background: Black}  # pi=40;33
+  block_device: {foreground: Yellow, background: Black, is_bold: true}  # bd=40;33;01
+  char_device: {foreground: Yellow, background: Black, is_bold: true}  # cd=40;33;01
   socket: {foreground: Magenta, is_bold: true}  # so=01;35
   special: {foreground: Magenta, is_bold: true}  # do=01;35
   executable: {foreground: Green, is_bold: true}  # ex=01;32

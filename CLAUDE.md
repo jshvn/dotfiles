@@ -105,11 +105,13 @@ What the file system will not tell you:
   image has no `sed`: mutate files in checks with bash `${var//old/new}`. `nix fmt` outside a
   git checkout needs `--tree-root`.
 - `task install` and `task diff` leave a `result` symlink in the repo root; it is ignored.
-- Executable `.zsh`: `set -euo pipefail`, the three-label banner (Purpose / Depends on / Side
-  effects between `# ===` rules), messages via `tasks/messages.zsh`; `tasks/lint.zsh` enforces
+- Every `.zsh` carries the three-label banner (Purpose / Depends on / Side effects between
+  `# ===` rules); one that is run, not sourced (anything outside `shell/` but an `aliases.zsh`,
+  an `env.zsh` or `tasks/messages.zsh`), sets `set -euo pipefail`. `tasks/lint.zsh` enforces
   these plus `zsh -n` and no hardcoded `/opt/homebrew` or `/usr/local` outside a
-  `# lint-allow: hardcoded-prefix` line. Scripts get the repo root as `DOTFILEDIR`; the
-  Taskfile uses `{{.ROOT_DIR}}`.
+  `# lint-allow: hardcoded-prefix` line. A script that talks to the user does it through
+  `tasks/messages.zsh`; lint does not check that. Scripts get the repo root as `DOTFILEDIR`;
+  the Taskfile uses `{{.ROOT_DIR}}`.
 - Machine identity is explicit (`task setup -- <name>`); never infer from hostname.
 - One concept per file, flat directories: one alias topic / function / machine / concern per
   file. The nestings that exist are `shell/functions/helpers/` (private primitives),

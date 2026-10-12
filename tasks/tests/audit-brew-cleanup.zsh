@@ -5,8 +5,8 @@
 #
 # Purpose:      Feed the scanner the dry-run shapes brew prints (items with a
 #               clean cache and its closing "Run ..." line, items plus a cache
-#               section, an update report before the sections, columns,
-#               nothing to remove) and assert the exact items.
+#               section, an update report before the sections, an App Store
+#               name with spaces, nothing to remove) and assert the exact items.
 # Depends on:   DOTFILEDIR env var (exported by Taskfile.yml);
 #               tasks/audit-brew-cleanup.zsh; tasks/messages.zsh.
 # Side effects: none.
@@ -60,11 +60,12 @@ Would untap:
 hashicorp/tap
 '
 
-scan "items in columns" "formulae${tab}bat
-formulae${tab}fd
-formulae${tab}htop" \
-'Would uninstall formulae:
-bat     fd      htop
+scan "an App Store name with spaces" "Mac App Store apps${tab}Things 3 (904280696)
+formulae${tab}bat" \
+'Would uninstall Mac App Store apps:
+Things 3 (904280696)
+Would uninstall formulae:
+bat
 '
 
 scan "nothing to remove" "" ''

@@ -1,7 +1,7 @@
 # apps/git/ignore -- global gitignore; linked to ~/.config/git/ignore.
 #
-# Callers: apps/git/config [core] excludesfile = ignore (relative path resolved
-#   from the git config directory, i.e., ~/.config/git/).
+# Callers: git, which reads $XDG_CONFIG_HOME/git/ignore when core.excludesfile
+#   is unset (apps/git/config leaves it unset).
 # Side effects: none.
 
 *~

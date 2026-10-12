@@ -20,7 +20,7 @@ function fs() {    # fs() reports human-readable size of the given paths (or cwd
 		du $arg -- "$@";
 	else
         if [[ $(uname) == "Darwin" ]]; then
-            du $arg .[^.]* ./* | highlight --syntax=bash
+            du $arg ./*(ND) | highlight --syntax=bash
         else
             find . -type f | du -ah -d1 | highlight --syntax=bash
         fi

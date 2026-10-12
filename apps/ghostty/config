@@ -42,8 +42,10 @@
 # # Just for example:
 # resize-overlay-duration = 4s 200ms
 
-# Set the terminal font to SF Mono Terminal at size 12
-font-family = SFMonoTerminal-Regular
+# No font-family: Ghostty's built-in JetBrains Mono, with its own Nerd Font
+# symbols for the prompt's pill ends. Terminal.app (apps/terminal/, which
+# installs the font) and VS Code (set by hand) use the same face,
+# JetBrainsMono Nerd Font Mono.
 font-size = 12
 
 # set the macOS icon style to "paper" for a cleaner look

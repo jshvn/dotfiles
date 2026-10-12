@@ -41,7 +41,7 @@ export MPLCONFIGDIR="${XDG_CONFIG_HOME}/matplotlib"
 
 export EDITOR="nano"
 export VEDITOR="code"
-export VISUAL="code"
+export VISUAL="code --wait"
 
 # highlight reads its default options from here, so every caller (aliases,
 # functions, git aliases) gets the same output format and theme.

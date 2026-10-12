@@ -21,8 +21,7 @@
     path = profile
 
 [core]
-    editor = code
-    excludesfile = ignore
+    editor = code --wait
     pager = delta
 
 [init]
