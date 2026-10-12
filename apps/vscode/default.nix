@@ -2,7 +2,9 @@
 # the extension set that travels with it. A profile adds its own extras; listing one of these
 # again is an error. An extension that is not on the Marketplace comes from a VSIX committed to
 # its own repo (`vsix`), installed by an activation step. env.zsh exports COPILOT_HOME. Settings
-# live under ~/Library/Application Support/Code/User, not XDG, and are not managed yet.
+# live under ~/Library/Application Support/Code/User, not XDG, and VS Code's Settings Sync carries
+# them between machines; its Extensions category is off, so this list alone decides what is
+# installed.
 { config, lib, ... }:
 let
   cfg = config.dotfiles.apps.vscode;
@@ -19,8 +21,8 @@ let
     "charliermarsh.ruff"
     "eamodio.gitlens"
     "github.vscode-github-actions"
-    "github.vscode-pull-request-github"
     "golang.go"
+    "hashicorp.terraform"
     "jnoortheen.nix-ide"
     "mathematic.vscode-pdf"
     "mechatroner.rainbow-csv"
