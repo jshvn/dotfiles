@@ -40,7 +40,7 @@ probe() { # probe NAME OLD NEW EXPECTED-SUBSTRING [FILE]
 probe unaccounted-app 'herdr.enable = true;' '# herdr omitted' "dotfiles.apps.herdr.enable' was accessed but has no value"
 probe unaccounted-concern 'dock = true;' '# dock omitted' "dotfiles.system.dock' was accessed but has no value"
 probe redundant-cask '"1password-cli"' '"1password-cli" "raycast"' 'packages.casks lists what base or an enabled app already provides: raycast'
-probe vscode-overlap 'extensions = [ "golang.go" ];' 'extensions = [ "golang.go" "biomejs.biome" ];' 'apps.vscode.extensions lists what the app already bundles: biomejs.biome'
+probe vscode-overlap 'vsix."jshvn.title-buttons"' 'extensions = [ "biomejs.biome" ]; vsix."jshvn.title-buttons"' 'apps.vscode.extensions lists what the app already bundles: biomejs.biome'
 probe unknown-profile 'profile = "personal";' 'profile = "nobody";' "dotfiles.profile' is not of type"
 probe key-without-email ' josh@vaughen.net' '' 'key.pub: expected "<type> <key> <email>"' profiles/personal/key.pub
 

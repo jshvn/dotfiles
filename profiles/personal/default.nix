@@ -47,7 +47,6 @@
       herdr.enable = true;
       vscode = {
         enable = true;
-        extensions = [ "golang.go" ];
         vsix."jshvn.title-buttons" = "git@github.com:jshvn/vscode-title-buttons.git";
       };
       claude-code = {
