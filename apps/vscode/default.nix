@@ -14,12 +14,12 @@ let
     lib.mapAttrsToList (id: remote: "${lib.escapeShellArg id} ${lib.escapeShellArg remote}") cfg.vsix
   );
   bundled = [
-    "1password.op-vscode"
     "anthropic.claude-code"
     "biomejs.biome"
     "charliermarsh.ruff"
     "eamodio.gitlens"
     "github.vscode-github-actions"
+    "github.vscode-pull-request-github"
     "golang.go"
     "jnoortheen.nix-ide"
     "mathematic.vscode-pdf"
