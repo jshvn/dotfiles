@@ -63,37 +63,59 @@ vars:
 tasks:
   default:
     desc: 'Print the menu'
-    # ponytail: hand-maintained listing -- go-task can neither group nor annotate, so a new task
-    # means a row below (task lint fails on a task missing here). `task --list` is the generated view.
+    # ponytail: hand-maintained listing -- go-task can neither group nor annotate, so a new
+    # task means a row below; menu-drift fails until it has one. `task --list` stays the
+    # generated view.
     cmds:
       - |
         b= c= d= r=
-        if [ -t 1 ]; then b=$(printf '\033[1m'); c=$(printf '\033[1;36m'); d=$(printf '\033[2m'); r=$(printf '\033[0m'); fi
-        group() { printf '\n%s\n' "${c}$1${r}"; }
-        row() { printf '  %-25s %s\n' "$1" "$2"; [ -z "$3" ] || printf '  %-25s %s\n' '' "${d}$3${r}"; }
-        m='{{.MACHINE}}'
-        if [ -z "$m" ]; then m='none selected, run task setup -- <name>'
-        elif [ ! -f "{{.ROOT_DIR}}/machines/$m.nix" ]; then m="$m is not a machine, run task setup -- <name>"
-        else m="${b}$m${r}"; fi
-        printf '\n%s\n%s\n' \
-          "${b}jshvn/dotfiles${r}   ${d}this Mac as one nix-darwin configuration${r}" \
-          "machine: $m   ${d}(machines: {{.MACHINES | trim}})${r}"
-        group 'read -- looks at this Mac, changes nothing'
+        if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+          b=$(printf '\033[1m'); c=$(printf '\033[1;36m'); d=$(printf '\033[2m'); r=$(printf '\033[0m')
+        fi
+        group() { printf '\n%s   %s\n' "$c$1$r" "$d$2$r"; }
+        row() {
+          if [ ${#1} -le 26 ]; then printf '  %-26s %s\n' "$1" "$2"
+          else printf '  %s\n  %-26s %s\n' "$1" '' "$2"; fi
+          [ -z "${3:-}" ] || note "$3"
+        }
+        note() { printf '  %-26s %s\n' '' "$d$1$r"; }
+
+        printf '\n%s   %s\n' "${b}jshvn/dotfiles${r}" "${d}this Mac as one nix-darwin configuration${r}"
+
+        group machines 'task setup -- <name> picks one; never inferred from the hostname'
+        g=
+        if [ -n "$r" ]; then g=$(printf '\033[32m'); fi
+        machines='{{.MACHINES | trim}}'
+        w=$(printf '%s\n' $machines | awk '{ if (length > w) w = length } END { print w }')
+        for m in $machines; do
+          p=$(sed -n 's|.*\.\./profiles/\([a-z0-9-]*\).*|\1|p' "{{.ROOT_DIR}}/machines/$m.nix")
+          if [ "$m" = '{{.MACHINE}}' ]; then printf "  %-${w}s  %s  %s\n" "$m" "$p" "${g}selected${r}"
+          else printf "  %-${w}s  %s\n" "$m" "$p"; fi
+        done
+        case " $machines " in
+          *' {{.MACHINE}} '*) ;;
+          *) printf '  %s\n' "${d}none selected: task setup -- <name>${r}" ;;
+        esac
+
+        group read 'looks at this Mac, changes nothing'
         row 'task show' 'The evaluated declaration: profile, system, apps, links, packages'
         row 'task diff' 'What install would change: closure diff, then what brew would add' 'builds the closure and leaves ./result (ignored)'
         row 'task validate' 'Read the whole declaration back from the live system' 'exits 1 on drift; run it after every install'
         row 'task audit' 'State beyond the declaration, and known CVEs' 'task prune uninstalls the packages it finds installed but not declared'
-        group 'checks -- tests the files in this repo; the Nix steps run in a Linux container'
+
+        group checks 'tests the files in this repo; the Nix steps run in a Linux container via {{.ENGINE}}'
         row 'task check' 'Evaluate every machine and profile, as CI does' 'git add -A first: the flake sees only tracked or staged files'
         row 'task lint' 'zsh parse, set -euo, banners, hardcoded prefixes, this menu; nix fmt --ci'
         row 'task test' 'Smoke tests and the negative evaluations' 'shell-startup and the {{.COLD_START_BUDGET}} ms cold-start budget run only on a Mac'
         row 'task fmt' 'Format every .nix file in place'
-        group 'write -- changes this Mac'
-        row 'task setup -- <name>' 'Select the machine; never inferred from the hostname'
+
+        group write 'changes this Mac'
+        row 'task setup -- <name>' 'Select the machine'
         row 'task install' 'Fast-forward, build and switch, refresh plugins; never uninstalls' 'sudo prompts; ends with what task prune would remove and each stale pin'
         row 'task prune' 'Uninstall every package the declaration no longer lists; brew asks y/n' 'not only brew: App Store apps, VS Code extensions, go/cargo/uv/npm/krew tools'
         row 'task rollback' 'Activate the previous generation' 'sudo prompts'
-        printf '\n%s\n\n' "${d}task --list for the generated view; ENGINE=docker forces Docker${r}"
+
+        printf '\n%s\n\n' "${d}task --list is the generated view; ENGINE=docker forces Docker${r}"
 
   setup:
     desc: 'Persist the machine selection: task setup -- <name>'
@@ -163,6 +185,7 @@ tasks:
     desc: 'Static checks: zsh parse, set -euo, banners, no hardcoded prefix, every task in the menu; Nix formatting via nix fmt'
     cmds:
       - zsh '{{.ROOT_DIR}}/tasks/lint.zsh'
+      - task: menu-drift
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && nix fmt --no-write-lock-file -- --ci"'
 
   fmt:
@@ -177,3 +200,18 @@ tasks:
         cmd: DOTFILEDIR='{{.ROOT_DIR}}' zsh '{{.ROOT_DIR}}/tasks/tests/{{.ITEM}}.zsh'
       - '{{if eq OS "darwin"}}DOTFILEDIR="{{.ROOT_DIR}}" COLD_START_BUDGET={{.COLD_START_BUDGET}} zsh "{{.ROOT_DIR}}/tasks/tests/shell-startup.zsh"{{else}}echo "shell-startup: skipped, it needs the live Mac shell"{{end}}'
       - '{{.CONTAINER}} sh -c "{{.PRELUDE}} && SRC=/work bash tasks/tests/negative.sh"'
+
+  # Every public task has a desc and a menu row, and every row names a task. default and
+  # help are the menu itself. Needs task and jq wherever lint runs.
+  menu-drift:
+    internal: true
+    cmds:
+      - |
+        rows=$(grep -oE "row ['\"]task [^ '\"]+" '{{.ROOT_TASKFILE}}' | sed -E "s/^row ['\"]task //" || true)
+        bad=$(task -t '{{.ROOT_TASKFILE}}' --list-all --json --no-status | jq -r --arg rows "$rows" '
+          ($rows | split("\n") | map(select(. != ""))) as $r
+          | [.tasks[] | select(.task != "default" and .task != "help")] as $t
+          | ($t[] | select(.desc == "") | "task \(.task): no desc; describe it or mark it internal"),
+            ($t[] | select(.task | IN($r[]) | not) | "task \(.task): no row in the menu"),
+            ($r[] | select(IN($t[].task) | not) | "row task \(.): no such task")')
+        [ -z "$bad" ] || { printf '%s\n' "$bad" >&2; exit 1; }

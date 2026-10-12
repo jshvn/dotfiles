@@ -65,7 +65,7 @@ command again. You can do the install or the update more than one time. The resu
 | `task validate` | Compares the live system with the configuration. Exits with code 1 if they are different. |
 | `task audit` | Shows the state that is not in the configuration. Shows known CVEs. |
 | `task check` | Evaluates each machine and each profile in the pinned Nix image. |
-| `task lint` | Checks the zsh scripts and the Nix format. `tasks/lint.zsh` contains the rules. |
+| `task lint` | Checks the zsh scripts, the Nix format and the menu. `tasks/lint.zsh` contains the rules. |
 | `task fmt` | Formats the Nix files. |
 | `task test` | Does the smoke tests and the negative evaluations. On a Mac, it also measures the cold start time of an interactive zsh. The limit is 500 ms. |
 
