@@ -10,9 +10,8 @@
 #               Linked into $XDG_STATE_HOME/dotfiles/env.d/ by the switch when
 #               the app is on, and sourced from there by shell/.zprofile.
 # Depends on:   the `code` CLI on PATH.
-# Side effects: exports VISUAL, VEDITOR, COPILOT_HOME.
+# Side effects: exports VISUAL, COPILOT_HOME.
 # =============================================================================
 
 export VISUAL="code --wait"
-export VEDITOR="code"
 export COPILOT_HOME="$XDG_CONFIG_HOME/copilot"
