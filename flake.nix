@@ -45,6 +45,9 @@
             ./machines/${name}.nix
             {
               networking = lib.genAttrs [ "hostName" "computerName" "localHostName" ] (_: name);
+              # the commit the switch was built from, in darwin-version.json, where the MOTD
+              # compares it with the checkout
+              system.configurationRevision = self.rev or self.dirtyRev or null;
             }
           ];
         };

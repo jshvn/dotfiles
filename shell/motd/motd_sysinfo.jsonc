@@ -3,11 +3,15 @@
   "logo": {
     "type": "none"
   },
+  // motd.zsh pipes this through sed, which fastfetch would take as a cue to drop color.
+  // Keys and values are the brand's --text-muted and --text-body, unbolded.
   "display": {
+    "pipe": false,
+    "brightColor": false,
     "separator": " › ",
     "color": {
-      "keys": "cyan",
-      "title": "yellow"
+      "keys": "38;2;154;167;180",
+      "output": "38;2;198;208;218"
     }
   },
   "modules": [
