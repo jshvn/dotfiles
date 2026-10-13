@@ -10,7 +10,7 @@ to a file here. A profile only sets `dotfiles.*` options.
 | `packages.nix` | Declares `dotfiles.packages.*`, the free choices of a profile. Declares `dotfiles.provided.*`, the packages that the base and the enabled apps supply. Contains the assertion against redundant packages. Gets the taps from the package names. Sets `homebrew.brews`, `homebrew.casks`, `homebrew.masApps` and `homebrew.taps`. |
 | `base.nix` | Lists the formulae that each machine gets. These include the bootstrap toolchain and the formulae that `shell/` needs. Contains the only bare tap, `homebrew/brew-vulns`. |
 | `homebrew.nix` | Installs Homebrew if it is missing, just before `brew bundle`. Sets `homebrew.onActivation`. Each switch updates and upgrades the packages. Cleanup stays off, because `task prune` asks before it removes a package. |
-| `shell.nix` | Adds the login shell to `/etc/shells`. Writes `/etc/zshenv`. Links the startup files. Declares `dotfiles.shell.aliases` and `dotfiles.shell.env`. The switch links these files into `aliases.d/` and `env.d/`. Declares `shell.jgrid-net`. |
+| `shell.nix` | Adds the login shell to `/etc/shells`. Writes `/etc/zshenv`. Links the startup files. Declares `dotfiles.shell.aliases` and `dotfiles.shell.env`. The switch links these files into `aliases.d/` and `env.d/`. Declares `shell.jgrid-net` and `shell.motd`. |
 | `repo.nix` | Declares `repo.devToolchain`. |
 
 The modules enforce these rules. If you break a rule, the evaluation fails.

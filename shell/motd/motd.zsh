@@ -1,10 +1,10 @@
 #!/bin/zsh
 
 # =============================================================================
-# shell/functions/motd.zsh -- message-of-the-day banner in the jshvn brand
+# shell/motd/motd.zsh -- message-of-the-day banner in the jshvn brand
 #
-# Purpose:      Display a centered banner: the jshvn mark and name, fastfetch
-#               system info, the dotfiles repo (last commit, uncommitted
+# Purpose:      Display a centered banner: the jshvn mark and name, the
+#               machine name and fastfetch system info, the dotfiles repo (last commit, uncommitted
 #               count, switch drift) and git news (open pull requests,
 #               failing workflows, local repos left dirty or unpushed), in the
 #               brand's greys for a dark surface. Anything slow or networked
@@ -14,7 +14,8 @@
 #               from motd()'s locals. Terminals with an image protocol get the
 #               mark as a PNG; others the brand's block-character mark.
 # Depends on:   tput, curl, gh, git, fastfetch (optional), sed, tr, base64,
-#               zsh/stat, zsh/datetime, $DOTFILEDIR, $XDG_CACHE_HOME,
+#               zsh/stat, zsh/datetime, $DOTFILEDIR, $DOTFILES_STATE/machine,
+#               $XDG_CACHE_HOME,
 #               shell/motd/motd_sysinfo.jsonc,
 #               /run/current-system/darwin-version.json,
 #               https://brand.ijosh.com/mark/jshvn-mark-on-dark-512.png.
@@ -73,12 +74,22 @@ _motd_image() {
 }
 
 # Sets REPLY to the seconds since $1 last changed; a missing file is ancient.
+# -L reads a symlink's own time: /run/current-system's is when it switched,
+# while its target, like everything in the store, dates from 1970.
 _motd_age() {
     local -a mtime
-    if zstat -A mtime +mtime -- "$1" 2>/dev/null; then
+    if zstat -L -A mtime +mtime -- "$1" 2>/dev/null; then
         REPLY=$(( EPOCHSECONDS - mtime[1] ))
     else
         REPLY=$EPOCHSECONDS
+    fi
+}
+
+# Sets REPLY to $1 seconds in the largest whole unit: 45m, 3h, 2d.
+_motd_ago() {
+    if (( $1 < 3600 )); then REPLY="$(( $1 / 60 ))m"
+    elif (( $1 < 86400 )); then REPLY="$(( $1 / 3600 ))h"
+    else REPLY="$(( $1 / 86400 ))d"
     fi
 }
 
@@ -94,15 +105,21 @@ _motd_kill_tree() {
 }
 
 # Rewrites cache file $1 from the output of function $3, in the background,
-# when the file is older than $2 minutes. A mkdir lock keeps it to one job
-# however many shells start at once; a lock older than 5 minutes belongs to a
-# job that died, and is taken over. A watchdog kills the job's whole tree at
-# 60 s (a hung gh with it), and the file is replaced only on success, so a
-# failure keeps the last good copy.
+# when the file is older than $2 minutes, or than path $4 when one is given
+# (a switch makes a read-back of the system before it due). A mkdir lock keeps
+# it to one job however many shells start at once; a lock older than 5
+# minutes belongs to a job that died, and is taken over. A watchdog kills the
+# job's whole tree at 60 s (a hung gh with it), and the file is replaced only
+# on success, so a failure keeps the last good copy.
 _motd_refresh() {
-    local file="$1" lock="$1.lock"
+    local file="$1" lock="$1.lock" age
     _motd_age "$file"
-    (( REPLY < $2 * 60 )) && return
+    age=$REPLY
+    if [[ -n $4 ]]; then
+        _motd_age "$4"
+        (( REPLY < age )) && age=$(( $2 * 60 ))
+    fi
+    (( age < $2 * 60 )) && return
     mkdir -p "${file:h}"
     if ! mkdir "$lock" 2>/dev/null; then
         _motd_age "$lock"
@@ -129,11 +146,8 @@ _motd_cached() {
     [[ -s "$file" ]] || return
     _motd_age "$file"
     if (( REPLY > 3 * $3 * 60 )); then
-        if (( REPLY < 3600 )); then ago="$(( REPLY / 60 ))m"
-        elif (( REPLY < 86400 )); then ago="$(( REPLY / 3600 ))h"
-        else ago="$(( REPLY / 86400 ))d"
-        fi
-        ago=" ${muted}· ${ago} ago"
+        _motd_ago $REPLY
+        ago=" ${muted}· $REPLY ago"
     fi
     print -r -- "   ${muted}$1${reset} › ${body}$(<$file)${ago}${reset}"
 }
@@ -205,18 +219,45 @@ _motd_repos() {
     print -r -- "${${(j: · :)parts}:-clean}"
 }
 
+# The repo's read-backs: task validate (the live system against the
+# declaration; one cross line per item that drifted, exit 1) and task audit
+# (state beyond the declaration and known CVEs; "audit: N finding(s)"). A
+# read-back that could not run fails the refresh, keeping the last verdict.
+_motd_health() {
+    local out cross=$'\xe2\x9c\x97'    # U+2717, tasks/messages.zsh's cross, in UTF-8
+    local -a parts drifted
+    out=$(task -d "$DOTFILEDIR" validate 2>&1)
+    if (( $? )); then
+        drifted=( ${(M)${(f)out}:#*${cross}*} )
+        (( $#drifted )) || return 1
+        parts+=( "validate: $#drifted drifted" )
+    fi
+    out=$(task -d "$DOTFILEDIR" audit 2>&1) || return 1
+    if [[ $out =~ 'audit: ([0-9]+) finding' ]]; then
+        parts+=( "audit: $match[1] finding${${match[1]:#1}:+s}" )
+    elif [[ $out != *'audit: clean'* ]]; then
+        return 1
+    fi
+    print -r -- "${${(j: · :)parts}:-clean}"
+}
+
 # The switch against the checkout: commits since the activated revision that
 # touch the Nix side. Files linked from the checkout are live without one.
 # ponytail: counts *.nix and flake.lock only, so a file an activation script
 # copies into the store (${./file}) is missed. Upgrade: compare the evaluated
 # toplevel with /run/current-system in a background job.
 _motd_switch() {
-    local json=/run/current-system/darwin-version.json n
+    local json=/run/current-system/darwin-version.json n ago
     [[ -r $json && "$(<$json)" =~ '"configurationRevision": *"([0-9a-f]+)(-dirty)?"' ]] || return
-    [[ -n $match[2] ]] && { print "built from uncommitted changes"; return }
+    _motd_age /run/current-system
+    _motd_ago $REPLY
+    # A build from a dirty tree is counted from its commit like any other:
+    # uncommitted shell edits, live without a switch, are the usual dirt
+    ago="${match[2]:+ · dirty tree} ${muted}· $REPLY ago"
     n=$(git -C "$DOTFILEDIR" rev-list --count "$match[1]..HEAD" -- '*.nix' flake.lock 2>/dev/null) ||
-        { print "unknown revision ${match[1]:0:7}"; return }
-    (( n == 0 )) && print current || print "$n commit${${n:#1}:+s} behind · task install"
+        { print -r -- "unknown revision ${match[1]:0:7}$ago"; return }
+    (( n == 0 )) && print -r -- "current$ago" ||
+        print -r -- "$n commit${${n:#1}:+s} behind$ago${body} · task install"
 }
 
 _motd_dotfiles() {
@@ -229,6 +270,7 @@ _motd_dotfiles() {
     echo "   ${muted}Last commit${reset} › ${body}${last_commit}${reset}"
     echo "   ${muted}Changes${reset} › ${body}${changes}${reset}"
     [[ -n $switch ]] && echo "   ${muted}Switch${reset} › ${body}${switch}${reset}"
+    _motd_cached "Health" health 60
     echo
 }
 
@@ -253,14 +295,16 @@ function motd() {    # motd() prints the message-of-the-day banner. ex: $ motd
     local muted=$'\e[38;2;154;167;180m'
     local reset=$(tput sgr0)
     local width=$(tput cols)
-    local cache="${XDG_CACHE_HOME}/dotfiles/motd"
+    local cache="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/motd"
 
     # Refresh ages in minutes: the mark daily, GitHub every few, local repos
-    # every shell that starts a minute after the last
+    # every shell that starts a minute after the last, the read-backs hourly
+    # and after every switch
     _motd_refresh "$cache/mark.png" 1440 _motd_mark
     _motd_refresh "$cache/prs" 5 _motd_prs
     _motd_refresh "$cache/runs" 15 _motd_runs
     _motd_refresh "$cache/repos" 1 _motd_repos
+    _motd_refresh "$cache/health" 60 _motd_health /run/current-system
 
     echo
     _motd_line
@@ -277,8 +321,9 @@ function motd() {    # motd() prints the message-of-the-day banner. ex: $ motd
     _motd_center "JOSH VAUGHEN" "$strong"
     echo
 
-    # System info via fastfetch
+    # The machine `task setup` selected, then system info via fastfetch
     echo "${strong}SYSTEM${reset}"
+    [[ -r "$DOTFILES_STATE/machine" ]] && echo "   ${muted}Host${reset} › ${body}$(<"$DOTFILES_STATE/machine")${reset}"
     local ff_config="${DOTFILEDIR}/shell/motd/motd_sysinfo.jsonc"
     if [[ -f "$ff_config" ]]; then
         fastfetch --config "$ff_config" 2>/dev/null | sed "s/^/   /"

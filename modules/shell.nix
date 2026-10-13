@@ -31,6 +31,10 @@ in
       type = lib.types.bool;
       description = "the jgrid.net fleet aliases";
     };
+    motd = lib.mkOption {
+      type = lib.types.bool;
+      description = "the login banner, shell/motd/motd.zsh, and gh for its GitHub lines";
+    };
     aliases = fragments; # sourced by .zshrc, interactive shells
     env = fragments; # sourced by .zprofile, login shells
   };
@@ -42,7 +46,12 @@ in
       hardware = "shell/aliases/hardware.zsh";
       networking = "shell/aliases/networking.zsh";
     }
-    // lib.optionalAttrs cfg.shell.jgrid-net { jgrid = "shell/aliases/jgrid.zsh"; };
+    // lib.optionalAttrs cfg.shell.jgrid-net { jgrid = "shell/aliases/jgrid.zsh"; }
+    // lib.optionalAttrs cfg.shell.motd { motd = "shell/motd/motd.zsh"; };
+
+    # The banner's other tools come with every profile (fastfetch and go-task from base.nix)
+    # or with macOS (curl, git, pgrep); without one, its lines are left out
+    dotfiles.provided.formulae = lib.mkIf cfg.shell.motd [ "gh" ];
 
     dotfiles.links =
       lib.listToAttrs (map (n: lib.nameValuePair ".config/zsh/${n}" "shell/${n}") startup)

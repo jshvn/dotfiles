@@ -46,8 +46,9 @@ What the file system will not tell you:
   its own link, `validate` and `audit` read it from `SHAPE`, and `tasks/install.zsh` refuses
   to run from any other clone. No module or script writes the path itself.
 - Every optional option has no default (`system.<concern>`, `apps.<name>.enable`,
-  `shell.jgrid-net`, `repo.devToolchain`, `apps.raycast.freeCmdSpace`). Adding one means
-  setting it in every profile, `profiles/work/` included, or `task check` fails naming it.
+  `shell.jgrid-net`, `shell.motd`, `repo.devToolchain`, `apps.raycast.freeCmdSpace`). Adding
+  one means setting it in every profile, `profiles/work/` included, or `task check` fails
+  naming it.
 - A profile may not list a formula or cask base or an enabled app provides, nor an extension
   VS Code bundles: an assertion fails. Taps are derived from tap-qualified names; the one bare
   tap is in `modules/base.nix`.

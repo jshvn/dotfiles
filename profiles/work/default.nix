@@ -37,6 +37,7 @@
       tlrc.enable = true;
     };
     shell.jgrid-net = false;
+    shell.motd = false;
     repo.devToolchain = true;
     packages = {
       formulae = [

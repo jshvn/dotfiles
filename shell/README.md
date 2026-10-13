@@ -31,10 +31,11 @@ links are out-of-store symlinks to the checkout. Thus a change here applies in t
 - `functions/<name>.zsh` contains one function. The filename is the function name.
 - `functions/helpers/_dotfiles_<name>.zsh` contains a private primitive. The functions use
   these primitives. `.zshrc` reads them first.
-- `motd/` contains the fastfetch configuration that `motd.zsh` reads when it shows the MOTD.
-  The switch links no file in this directory. The mark (from brand.ijosh.com), the GitHub
-  lines and the local-repo line are cached in `$XDG_CACHE_HOME/dotfiles/motd/` by background
-  jobs, so the banner never waits on the network.
+- `motd/` contains the MOTD: `motd.zsh` and the fastfetch configuration it reads. The switch
+  links `motd.zsh` into `aliases.d/` when the profile sets `shell.motd`, so the `motd`
+  function exists only there. The mark (from brand.ijosh.com), the GitHub lines, the
+  local-repo line and the health line are cached in `$XDG_CACHE_HOME/dotfiles/motd/` by
+  background jobs, so the banner never waits on the network.
 
 ## Add a shell-level alias topic
 

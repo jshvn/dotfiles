@@ -61,6 +61,7 @@
       tlrc.enable = true;
     };
     shell.jgrid-net = true;
+    shell.motd = true;
     repo.devToolchain = true;
     packages = {
       formulae = [
@@ -68,7 +69,6 @@
         "bottom"
         "duf"
         "fd"
-        "gh"
         "git-crypt"
         "go"
         "htop"
