@@ -13,7 +13,7 @@ sets.
 | `finder/` | Sets the Finder defaults. `aliases.zsh` adds `finder`, `findershow` and `finderhide`. The switch links it into `aliases.d/`. |
 | `input.nix` | Sets the keyboard and the trackpad. Turns off Genmoji suggestions. Turns off the input source shortcuts and the Finder search shortcut. |
 | `screenshots.nix` | Sets the location, the format, the shadow and the thumbnail of screenshots. |
-| `security.nix` | Turns off the guest account. Turns off ImageCapture hot-plug. This is a ByHost key, so home-manager writes it. Turns on the application firewall. |
+| `security.nix` | Turns off the guest account. Turns off ImageCapture hot-plug. This is a ByHost key, so home-manager writes it. Turns on the application firewall. Turns on Touch ID for `sudo`. |
 | `updates.nix` | Turns off the automatic install of macOS updates. Turns off App Store app updates. |
 | `appearance.nix` | Sets Dark mode and the icon style. |
 | `display/` | Sets the built-in panel to the More Space preset. An activation script uses `display-mode.swift` in the same directory. Turns off Universal Control. This is a ByHost key, so home-manager writes it. |
