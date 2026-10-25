@@ -9,13 +9,13 @@
 #               the machine matches it: shell plumbing, hostname, every link,
 #               the profile identity (git email, ssh agent), every Homebrew
 #               package and cask artifact, the jshvn/ai checkout, and every
-#               macOS default plus the Dock's tiles, the display preset, the
+#               macOS default plus the Dock's tiles, the display preset and sleep, the
 #               symbolic hotkeys, the application firewall, Terminal's
 #               profile and Firefox's policy, warning for each policy
 #               preference Firefox Sync now carries.
 #               One check/cross line per item; exits 1 on any drift.
 # Depends on:   jq; git; brew; defaults; dscl; PlistBuddy; plutil; scutil; ssh-add;
-#               socketfilterfw; swift (Xcode CLT); unzip; tasks/messages.zsh;
+#               pmset; socketfilterfw; swift (Xcode CLT); unzip; tasks/messages.zsh;
 #               system/display/display-mode.swift;
 #               apps/terminal/clear-dark.terminal; DOTFILES_STATE env var (the
 #               Taskfile's STATE); MACHINE env var (the selected machine name,
@@ -328,6 +328,13 @@ if [[ "$(j .dotfiles.system.display)" == true ]]; then
     2) warn "display.builtin: not checked, no active built-in panel ($out)" ;;
     *) fail "display.builtin: $out" ;;
   esac
+  # pmset -g custom needs no sudo: one displaysleep line per power source (AC, battery)
+  sleeps=(${(f)"$(pmset -g custom | awk '$1 == "displaysleep" { print $2 }')"})
+  if (( ${#sleeps} )) && [[ "${(u)sleeps}" == "$(j .displaySleep)" ]]; then
+    check "display.sleep = $(j .displaySleep) min on every power source"
+  else
+    fail "display.sleep: expected $(j .displaySleep) on every power source, got ${sleeps:-<unset>}"
+  fi
 fi
 
 # --getglobalstate needs no sudo: "Firewall is enabled. (State = 1)", or State = 2 for on and

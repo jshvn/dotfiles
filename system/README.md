@@ -16,7 +16,7 @@ sets.
 | `security.nix` | Turns off the guest account. Turns off ImageCapture hot-plug. This is a ByHost key, so home-manager writes it. Turns on the application firewall. Turns on Touch ID for `sudo`. |
 | `updates.nix` | Turns off the automatic install of macOS updates. Turns off App Store app updates. |
 | `appearance.nix` | Sets Dark mode and the icon style. |
-| `display/` | Sets the built-in panel to the More Space preset. An activation script uses `display-mode.swift` in the same directory. Turns off Universal Control. This is a ByHost key, so home-manager writes it. |
+| `display/` | Sets the built-in panel to the More Space preset. An activation script uses `display-mode.swift` in the same directory. Sets display sleep to 10 minutes on battery and on power. Turns off Universal Control. This is a ByHost key, so home-manager writes it. |
 | `animations.nix` | Makes the AppKit window animations and the Quick Look animations short. |
 
 Use the first method that works for a setting:

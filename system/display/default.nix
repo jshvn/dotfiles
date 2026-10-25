@@ -2,10 +2,13 @@
 {
   options.dotfiles.system.display = lib.mkOption {
     type = lib.types.bool;
-    description = "built-in panel at the More Space HiDPI preset, Universal Control off";
+    description = "built-in panel at the More Space HiDPI preset, display sleep at 10 minutes, Universal Control off";
   };
 
   config = lib.mkIf config.dotfiles.system.display {
+    # Lock Screen, "Turn display off on battery / on power adapter when inactive": systemsetup
+    # sets every power source; task validate reads each back from pmset
+    power.sleep.display = 10;
     # Displays > Advanced, "Link to Mac or iPad"; a ByHost key, so home-manager writes it
     home-manager.users.${config.system.primaryUser}.targets.darwin.currentHostDefaults."com.apple.universalcontrol".Disable =
       true;

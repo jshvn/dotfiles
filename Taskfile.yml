@@ -57,6 +57,7 @@ vars:
       hostName = c.networking.localHostName;
       zshenv = c.environment.etc.zshenv.text;
       nixPackage = c.nix.package.outPath;
+      displaySleep = c.power.sleep.display;
     }
   EVAL: "{{.NIX}} eval --json '{{.ROOT_DIR}}#darwinConfigurations.{{.MACHINE}}.config' --apply '{{.SHAPE}}'"
 
