@@ -13,6 +13,7 @@
 function ipv4lookup() {    # ipv4lookup() lists local and public IPv4 addresses. ex: $ ipv4lookup
     # list of public ipv4 providers to query (tried in order).
     local public_ipv4_providers=(
+        "https://ip.me"
         "https://simpip.com"
         "https://ifconfig.co"
         "https://icanhazip.com"
