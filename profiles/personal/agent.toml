@@ -13,4 +13,4 @@
 # The item holding key.pub's private half, by ID: a rename keeps it, a move to
 # another vault gives the item a new ID and breaks it (task validate crosses).
 [[ssh-keys]]
-item = "437vfxmjrpuzq6bt4wt2xmkb2i"
+item = "mcrvvun2i2xwclze2k4prvt36u"
