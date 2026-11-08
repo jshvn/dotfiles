@@ -4,7 +4,7 @@
 # apps/dust/aliases.zsh -- dust with the File Provider folders excluded
 #
 # Purpose:      Every `dust` invocation, from any CWD, skips
-#               ~/Library/CloudStorage (Dropbox, Proton Drive) and
+#               ~/Library/CloudStorage (Proton Drive) and
 #               ~/Library/Mobile Documents (iCloud Drive). Those are File
 #               Provider mounts: each stat round-trips through the provider
 #               extension, so a walk into them takes minutes. dust's config
