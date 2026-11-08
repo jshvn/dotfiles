@@ -15,6 +15,7 @@
       appearance = true;
       display = true;
       animations = true;
+      siri = true;
       dockApps = [
         "/System/Applications/Apps.app"
         "/System/Applications/Maps.app"

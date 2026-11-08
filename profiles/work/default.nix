@@ -14,6 +14,7 @@
       appearance = true;
       display = true;
       animations = true;
+      siri = true;
       dockApps = null;
     };
     apps = {

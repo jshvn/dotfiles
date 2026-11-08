@@ -18,6 +18,7 @@ sets.
 | `appearance.nix` | Sets Dark mode and the icon style. |
 | `display/` | Sets the built-in panel to the More Space preset. An activation script uses `display-mode.swift` in the same directory. Sets display sleep to 10 minutes on battery and on power. Turns off Universal Control. This is a ByHost key, so home-manager writes it. |
 | `animations.nix` | Makes the AppKit window animations and the Quick Look animations short. |
+| `siri.nix` | Turns off Siri and its menu bar icon. |
 
 Use the first method that works for a setting:
 

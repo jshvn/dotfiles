@@ -15,5 +15,6 @@
     ./security.nix
     ./updates.nix
     ./display
+    ./siri.nix
   ];
 }
