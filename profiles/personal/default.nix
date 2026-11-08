@@ -83,7 +83,6 @@
         "cardhop"
         "cloudflare-warp"
         "discord"
-        "dropbox"
         "fantastical"
         "gitfox"
         "nvidia-geforce-now"
