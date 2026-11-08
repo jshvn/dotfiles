@@ -29,7 +29,7 @@ vars:
       elif command -v docker >/dev/null 2>&1; then echo docker
       else echo container
       fi
-  IMAGE: nixos/nix:2.35.2@sha256:7a007c766426c1877758ddc5cb87a965ac131fc78c582ce0083d922d51ae945c
+  IMAGE: nixos/nix:2.35.3@sha256:ff480dbb23511aa1c10710aa068ceea5b93fed9bfce5f5379f3a6b07282cbc7b
   # root inside the image, because nix owns its store there; 4g because the evaluation dies at
   # exit 137 under Apple container's 1 GiB default; safe.directory (PRELUDE) because under
   # Docker the mount keeps the caller's uid and libgit2 refuses a repository root does not own
