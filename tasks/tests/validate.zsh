@@ -1,17 +1,18 @@
 #!/usr/bin/env zsh
 
 # =============================================================================
-# tasks/tests/validate.zsh -- smoke test for two read-backs in tasks/validate.zsh
+# tasks/tests/validate.zsh -- smoke test for three read-backs in tasks/validate.zsh
 #
 # Purpose:      Run the real validate against a small declaration, with fake
-#               defaults, unzip and brew answering from a sandbox. A
-#               dictionary that matches (keys in another order, 1000.0
-#               declared and 1000 read back) and a matching list check; a
-#               dictionary that differs and one that is absent cross; none
+#               defaults, unzip, brew, pmset and swift answering from a
+#               sandbox. A dictionary that matches (keys in another order,
+#               1000.0 declared and 1000 read back) and a matching list check;
+#               a dictionary that differs and one that is absent cross; none
 #               goes through the scalar compare. Each managed Firefox
 #               preference on the fake Sync list (one split across lines, as
 #               in firefox.js) warns; an unmanaged or unlisted one does not.
-#               Only those lines are asserted: the rest of validate runs
+#               Display sleep at the declared value on two power sources
+#               checks. Only those lines are asserted: the rest of validate runs
 #               against nothing, and its exit code is ignored.
 # Depends on:   DOTFILEDIR env var (exported by Taskfile.yml); macOS
 #               (validate reads dscl and scutil); tasks/validate.zsh;
@@ -30,7 +31,8 @@ trap 'rm -rf "$sandbox"' EXIT INT TERM
 mkdir -p "$sandbox/bin" "$sandbox/plist" "$sandbox/state"
 
 # --- the fakes: defaults export serves $SANDBOX/plist/<domain>.plist; unzip prints a Sync list and
-# exits 2, as it does on omni.ja; brew finds nothing ---
+# exits 2, as it does on omni.ja; brew finds nothing; pmset reports display sleep 10 on battery
+# and on AC; swift's display check exits 2, no active built-in panel ---
 print -r -- '#!/bin/sh
 [ "$1" = export ] && [ -f "$SANDBOX/plist/$2.plist" ] && exec cat "$SANDBOX/plist/$2.plist"; exit 1' > "$sandbox/bin/defaults"
 print -r -- '#!/bin/sh
@@ -40,6 +42,10 @@ printf "%s\n" "pref(\"services.sync.prefs.sync.browser.synced\", true);" \
 exit 2' > "$sandbox/bin/unzip"
 print -r -- '#!/bin/sh
 exit 1' > "$sandbox/bin/brew"
+print -r -- '#!/bin/sh
+printf "%s\n" "Battery Power:" " displaysleep         10" "AC Power:" " displaysleep         10"' > "$sandbox/bin/pmset"
+print -r -- '#!/bin/sh
+echo "no active built-in panel"; exit 2' > "$sandbox/bin/swift"
 chmod +x "$sandbox/bin/"*
 
 # --- the live side: Same and List hold what is declared, Changed differs, Absent is missing ---
@@ -50,7 +56,8 @@ print -r -- '<?xml version="1.0" encoding="UTF-8"?>
 <key>Changed</key><dict><key>n</key><integer>4</integer></dict>
 </dict></plist>' > "$sandbox/plist/test.dict.plist"
 declared=$(jq -n '{
-  dotfiles: {checkout: "/nonexistent", profile: "none", links: {}, apps: {firefox: {enable: true}}, system: {}},
+  dotfiles: {checkout: "/nonexistent", profile: "none", links: {}, apps: {firefox: {enable: true}}, system: {display: true}},
+  displaySleep: 10,
   defaults: {CustomUserPreferences: {
     "test.dict": {Same: {t: true, n: 5, r: 1000.0, s: "a\\b\"c"}, List: ["a", "b"], Changed: {n: 5}, Absent: {n: 1}},
     "org.mozilla.firefox": {Preferences: {"browser.synced": {}, "browser.wrapped": {}, "browser.local": {}}}}},
@@ -80,6 +87,7 @@ expect sync-carried 'Sync now carries browser\.synced'
 expect sync-wrapped 'Sync now carries browser\.wrapped'
 expect sync-local 'carries browser\.local' absent
 expect sync-unmanaged 'carries browser\.other' absent
+expect display-sleep 'display\.sleep = 10 min on every power source'
 
 (( failures == 0 )) || print -r -- "$out" | sed 's/^/      /'
 exit $failures

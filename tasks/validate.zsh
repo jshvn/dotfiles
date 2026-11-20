@@ -329,9 +329,11 @@ if [[ "$(j .dotfiles.system.display)" == true ]]; then
     2) warn "display.builtin: not checked, no active built-in panel ($out)" ;;
     *) fail "display.builtin: $out" ;;
   esac
-  # pmset -g custom needs no sudo: one displaysleep line per power source (AC, battery)
+  # pmset -g custom needs no sudo: one displaysleep line per power source (AC, battery).
+  # distinct is (u) of the array itself: inside double quotes zsh joins the array first
   sleeps=(${(f)"$(pmset -g custom | awk '$1 == "displaysleep" { print $2 }')"})
-  if (( ${#sleeps} )) && [[ "${(u)sleeps}" == "$(j .displaySleep)" ]]; then
+  distinct=(${(u)sleeps})
+  if (( ${#distinct} == 1 )) && [[ "$distinct[1]" == "$(j .displaySleep)" ]]; then
     check "display.sleep = $(j .displaySleep) min on every power source"
   else
     fail "display.sleep: expected $(j .displaySleep) on every power source, got ${sleeps:-<unset>}"
