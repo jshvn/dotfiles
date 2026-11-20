@@ -1,13 +1,15 @@
 # NextDNS: the formula, and a launchd daemon that runs it as a DNS-over-HTTPS proxy on
-# 127.0.0.1:53 for one NextDNS profile. -auto-activate points the DNS of every network service at
-# the proxy while it runs and gives DNS back when it stops, so a stopped daemon never leaves the
-# Mac without DNS. -report-client-info sends the computer name, which the switch sets from the
-# machine file, so each Mac is its own device in NextDNS. With Proton VPN on, the tunnel's DNS
-# wins: Proton's custom DNS server is 127.0.0.1, set by hand once per Mac (docs/MACHINES.md),
-# because Proton keeps the setting in a sandboxed container the switch cannot write. Custom DNS
-# turns Proton's NetShield off. task validate reads both paths back. The proxy's hold on port 53
-# breaks DNS inside Apple container VMs, so with the container runtime installed, container/
-# config.toml gives containers their own resolvers.
+# 127.0.0.1:53 for one NextDNS profile, for Proton VPN. With the VPN on, the tunnel's DNS wins
+# over every other setting, so Proton's custom DNS server is 127.0.0.1, set by hand once per Mac
+# (docs/MACHINES.md): Proton keeps it in a sandboxed container the switch cannot write. Custom
+# DNS turns NetShield off, and Proton keeps its own server second, so a stopped daemon costs
+# filtering, not DNS. With the VPN off, macOS uses the NextDNS configuration profile, also
+# installed by hand once per Mac, and never this proxy. The daemon changes no network service:
+# -auto-activate sets DNS on every one, Proton's VPN service included, and Proton's WireGuard
+# handshake then fails. -report-client-info sends the computer name, which the switch sets from
+# the machine file. task validate reads the path in use back. The proxy's hold on port 53 breaks
+# DNS inside Apple container VMs, so with the container runtime installed, container/config.toml
+# gives containers their own resolvers.
 { config, lib, ... }:
 let
   cfg = config.dotfiles.apps.nextdns;
@@ -43,8 +45,6 @@ in
           "127.0.0.1:53"
           "-profile"
           cfg.profile
-          "-auto-activate"
-          "-detect-captive-portals"
           "-report-client-info"
         ];
         KeepAlive = true;
