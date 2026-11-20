@@ -17,6 +17,7 @@
     # belongs to the user's session. A failure warns instead of aborting the switch (exit 2 is
     # normal with the lid closed on a dock or a mirrored display); task validate reads it back.
     system.activationScripts.postActivation.text = ''
+      pmset -a displaysleep ${toString config.power.sleep.display}
       sudo -u ${config.system.primaryUser} -H /usr/bin/swift ${./display-mode.swift} apply \
         || echo "display: More Space not applied (exit $?; 2 = no active built-in panel)" >&2
     '';
