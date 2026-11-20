@@ -408,10 +408,10 @@ if [[ "$(j .dotfiles.apps.firefox.enable)" == true ]]; then
   fi
 fi
 
-# NextDNS (apps/nextdns/): the daemon runs, and test.nextdns.io sees this Mac's queries arrive
-# for the profile. The test answers for the path curl's own lookup took: the proxy (nextdns-cli)
-# with Proton VPN on, the NextDNS configuration profile (apple-profile) with it off. Its profile
-# field is a fingerprint, not the ID, so the device name stands in for it.
+# NextDNS (apps/nextdns/): the daemon runs, and test.nextdns.io sees this Mac's queries come
+# through it. The test answers for the path curl's own lookup took: Proton's custom DNS with the
+# VPN on, the network service's DNS (or a configuration profile that overrides it) with it off.
+# Its profile field is a fingerprint, not the ID, so the device name stands in for it.
 if [[ "$(j .dotfiles.apps.nextdns.enable)" == true ]]; then
   info "nextdns"
   if launchctl print system/org.nixos.nextdns 2>/dev/null | grep -q 'state = running'; then
@@ -424,10 +424,10 @@ if [[ "$(j .dotfiles.apps.nextdns.enable)" == true ]]; then
     | jq -r '"\(.status) \(.clientName) \(.deviceName)"' 2>/dev/null || true)
   if [[ -z "$seen" ]]; then
     warn "nextdns: could not reach test.nextdns.io"
-  elif [[ "$seen" == "ok nextdns-cli $host" || "$seen" == "ok apple-profile $host" ]]; then
-    check "nextdns: test.nextdns.io sees $host (${${seen#ok }% *})"
+  elif [[ "$seen" == "ok nextdns-cli $host" ]]; then
+    check "nextdns: test.nextdns.io sees $host through the proxy"
   else
-    fail "nextdns: test.nextdns.io reports '$seen' (VPN on: Proton's custom DNS must be 127.0.0.1; VPN off: install the NextDNS configuration profile; docs/MACHINES.md)"
+    fail "nextdns: test.nextdns.io reports '$seen', not 'ok nextdns-cli $host' (VPN on: Proton's custom DNS must be 127.0.0.1; VPN off: remove every DNS configuration profile; docs/MACHINES.md)"
   fi
 fi
 

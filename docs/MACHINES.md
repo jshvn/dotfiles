@@ -18,10 +18,9 @@ answers it in one file.
 - Profile: `personal`. Full GUI, dev and personal set; the personal git/ssh identity with
   SSH auth and commit signing through the 1Password agent; the jgrid.net aliases.
 - Special handling, each by hand, once: Raycast's script-command directory (`apps/raycast/`)
-  is registered in Raycast; the NextDNS configuration profile for profile `2bb66f`, with the
-  device name `lerasium` (apple.nextdns.io), is the only DNS configuration profile installed
-  (System Settings > General > Device Management); Proton VPN's custom DNS server is
-  `127.0.0.1` (`apps/nextdns/`).
+  is registered in Raycast; Proton VPN's custom DNS server is `127.0.0.1` (`apps/nextdns/`);
+  no DNS configuration profile is installed (System Settings > General > Device Management),
+  because one overrides the NextDNS proxy while the VPN is off.
 
 ## harmonium
 
@@ -30,8 +29,8 @@ answers it in one file.
   `nixpkgs.hostPlatform` in `machines/harmonium.nix` to `x86_64-darwin` if it prints `x86_64`.
 - Profile: `personal`, identical to lerasium's.
 - Special handling: `./bootstrap.zsh harmonium` installs it. Then, by hand, once, as on
-  lerasium: the NextDNS configuration profile, with the device name `harmonium`, and Proton
-  VPN's custom DNS server `127.0.0.1`.
+  lerasium: Proton VPN's custom DNS server is `127.0.0.1`, and no DNS configuration profile is
+  installed.
 
 ## work (profile only)
 

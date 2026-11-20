@@ -1,15 +1,18 @@
 # NextDNS: the formula, and a launchd daemon that runs it as a DNS-over-HTTPS proxy on
-# 127.0.0.1:53 for one NextDNS profile, for Proton VPN. With the VPN on, the tunnel's DNS wins
-# over every other setting, so Proton's custom DNS server is 127.0.0.1, set by hand once per Mac
-# (docs/MACHINES.md): Proton keeps it in a sandboxed container the switch cannot write. Custom
-# DNS turns NetShield off, and Proton keeps its own server second, so a stopped daemon costs
-# filtering, not DNS. With the VPN off, macOS uses the NextDNS configuration profile, also
-# installed by hand once per Mac, and never this proxy. The daemon changes no network service:
-# -auto-activate sets DNS on every one, Proton's VPN service included, and Proton's WireGuard
-# handshake then fails. -report-client-info sends the computer name, which the switch sets from
-# the machine file. task validate reads the path in use back. The proxy's hold on port 53 breaks
-# DNS inside Apple container VMs, so with the container runtime installed, container/config.toml
-# gives containers their own resolvers.
+# 127.0.0.1:53 for one NextDNS profile: the Mac's DNS with Proton VPN on or off. The switch
+# points the physical network services at the proxy (a service a Mac lacks is skipped). The
+# daemon itself changes no service: -auto-activate sets DNS on every one, Proton's VPN service
+# included, and Proton's WireGuard handshake then fails. With the VPN on, the tunnel's DNS wins,
+# so Proton's custom DNS server is 127.0.0.1, set by hand once per Mac (docs/MACHINES.md): Proton
+# keeps it in a sandboxed container the switch cannot write. Custom DNS turns NetShield off. A
+# DNS configuration profile overrides the proxy while the VPN is off, so none is installed.
+# -detect-captive-portals lets the proxy use the network's own DNS after a network change (the
+# VPN going up or down, a hotel login page) while DoH does not answer. -report-client-info sends
+# the computer name, which the switch sets from the machine file. task validate reads the path
+# back. The proxy's hold on port 53 breaks DNS inside Apple container VMs, so with the container
+# runtime installed, container/config.toml gives containers their own resolvers.
+# ponytail: turning the app off leaves 127.0.0.1 on those services; `networksetup
+# -setdnsservers <service> empty` gives each back to DHCP.
 { config, lib, ... }:
 let
   cfg = config.dotfiles.apps.nextdns;
@@ -45,11 +48,19 @@ in
           "127.0.0.1:53"
           "-profile"
           cfg.profile
+          "-detect-captive-portals"
           "-report-client-info"
         ];
         KeepAlive = true;
         RunAtLoad = true;
       };
+    };
+    networking = lib.mkIf cfg.enable {
+      knownNetworkServices = [
+        "Wi-Fi"
+        "USB 10/100/1000 LAN"
+      ];
+      dns = [ "127.0.0.1" ];
     };
     # launchd activation runs before Homebrew's, so on a Mac's first switch the daemon loads
     # before its binary exists; this starts it once Homebrew has installed it, and leaves a
