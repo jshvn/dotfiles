@@ -427,7 +427,7 @@ if [[ "$(j .dotfiles.apps.nextdns.enable)" == true ]]; then
   elif [[ "$seen" == "ok nextdns-cli $host" ]]; then
     check "nextdns: test.nextdns.io sees $host through the proxy"
   else
-    fail "nextdns: test.nextdns.io reports '$seen', not 'ok nextdns-cli $host' (VPN on: Proton's custom DNS must be 127.0.0.1; VPN off: remove every DNS configuration profile; docs/MACHINES.md)"
+    fail "nextdns: test.nextdns.io reports '$seen', not 'ok nextdns-cli $host' (within a minute of a network change the backup can answer: run again; VPN on: Proton's custom DNS must be 127.0.0.1; VPN off: remove every DNS configuration profile; docs/MACHINES.md)"
   fi
 fi
 

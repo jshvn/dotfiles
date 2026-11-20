@@ -6,8 +6,11 @@
 # so Proton's custom DNS server is 127.0.0.1, set by hand once per Mac (docs/MACHINES.md): Proton
 # keeps it in a sandboxed container the switch cannot write. Custom DNS turns NetShield off. A
 # DNS configuration profile overrides the proxy while the VPN is off, so none is installed.
-# -detect-captive-portals lets the proxy use the network's own DNS after a network change (the
-# VPN going up or down, a hotel login page) while DoH does not answer. -report-client-info sends
+# After a network change (the VPN going up or down, joining Wi-Fi, waking) the proxy needs about
+# 5 s to reach NextDNS again, a fixed probe timeout in the CLI, so 1.1.1.1 is the services'
+# second server: macOS asks it while the proxy does not answer, without NextDNS filtering, as
+# Proton does with its own server while the VPN is on. -detect-captive-portals lets the proxy
+# use the network's own DNS while a hotel login page blocks DoH. -report-client-info sends
 # the computer name, which the switch sets from the machine file. task validate reads the path
 # back. The proxy's hold on port 53 breaks DNS inside Apple container VMs, so with the container
 # runtime installed, container/config.toml gives containers their own resolvers.
@@ -60,7 +63,10 @@ in
         "Wi-Fi"
         "USB 10/100/1000 LAN"
       ];
-      dns = [ "127.0.0.1" ];
+      dns = [
+        "127.0.0.1"
+        "1.1.1.1"
+      ];
     };
     # launchd activation runs before Homebrew's, so on a Mac's first switch the daemon loads
     # before its binary exists; this starts it once Homebrew has installed it, and leaves a
