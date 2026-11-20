@@ -15,6 +15,7 @@
     ./ghostty
     ./git
     ./herdr
+    ./nextdns
     ./raycast
     ./ssh
     ./starship

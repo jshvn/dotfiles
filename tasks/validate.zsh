@@ -12,10 +12,11 @@
 #               macOS default plus the Dock's tiles, the display preset and sleep, the
 #               symbolic hotkeys, the application firewall, Terminal's
 #               profile and Firefox's policy, warning for each policy
-#               preference Firefox Sync now carries.
+#               preference Firefox Sync now carries, and the NextDNS proxy.
 #               One check/cross line per item; exits 1 on any drift.
 # Depends on:   jq; git; brew; defaults; dscl; PlistBuddy; plutil; scutil; ssh-add;
-#               pmset; socketfilterfw; swift (Xcode CLT); unzip; tasks/messages.zsh;
+#               pmset; socketfilterfw; swift (Xcode CLT); unzip; launchctl; curl;
+#               tasks/messages.zsh;
 #               system/display/display-mode.swift;
 #               apps/terminal/clear-dark.terminal; DOTFILES_STATE env var (the
 #               Taskfile's STATE); MACHINE env var (the selected machine name,
@@ -404,6 +405,29 @@ if [[ "$(j .dotfiles.apps.firefox.enable)" == true ]]; then
     done
   else
     check "firefox: Sync carries none of the ${#managed} policy preferences (it carries ${#synced})"
+  fi
+fi
+
+# NextDNS (apps/nextdns/): the daemon runs, and test.nextdns.io sees this Mac's queries come
+# through it. The test answers for the path curl's own lookup took: Proton's custom DNS with the
+# VPN on, the network service's DNS (or a configuration profile that overrides it) with it off.
+# Its profile field is a fingerprint, not the ID, so the device name stands in for it.
+if [[ "$(j .dotfiles.apps.nextdns.enable)" == true ]]; then
+  info "nextdns"
+  if launchctl print system/org.nixos.nextdns 2>/dev/null | grep -q 'state = running'; then
+    check "nextdns: daemon org.nixos.nextdns running"
+  else
+    fail "nextdns: daemon org.nixos.nextdns not running (task install)"
+  fi
+  host=$(j .hostName)
+  seen=$(curl -fsSL --max-time 5 https://test.nextdns.io 2>/dev/null \
+    | jq -r '"\(.status) \(.clientName) \(.deviceName)"' 2>/dev/null || true)
+  if [[ -z "$seen" ]]; then
+    warn "nextdns: could not reach test.nextdns.io"
+  elif [[ "$seen" == "ok nextdns-cli $host" ]]; then
+    check "nextdns: test.nextdns.io sees $host through the proxy"
+  else
+    fail "nextdns: test.nextdns.io reports '$seen', not 'ok nextdns-cli $host' (within a minute of a network change the backup can answer: run again; VPN on: Proton's custom DNS must be 127.0.0.1; VPN off: remove every DNS configuration profile; docs/MACHINES.md)"
   fi
 fi
 
