@@ -36,6 +36,7 @@
       firefox.enable = true;
       terraform.enable = false;
       tlrc.enable = true;
+      nextdns.enable = false;
     };
     shell.jgrid-net = false;
     shell.motd = false;

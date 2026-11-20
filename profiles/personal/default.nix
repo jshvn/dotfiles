@@ -60,6 +60,10 @@
       firefox.enable = true;
       terraform.enable = true;
       tlrc.enable = true;
+      nextdns = {
+        enable = true;
+        profile = "2bb66f";
+      };
     };
     shell.jgrid-net = true;
     shell.motd = true;

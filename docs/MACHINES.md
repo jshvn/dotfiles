@@ -17,8 +17,10 @@ answers it in one file.
 - Hardware: Apple Silicon (`nixpkgs.hostPlatform = "aarch64-darwin"`).
 - Profile: `personal`. Full GUI, dev and personal set; the personal git/ssh identity with
   SSH auth and commit signing through the 1Password agent; the jgrid.net aliases.
-- Special handling: Raycast's script-command directory (`apps/raycast/`) is registered in
-  Raycast by hand, once.
+- Special handling, each by hand, once: Raycast's script-command directory (`apps/raycast/`)
+  is registered in Raycast; Proton VPN's custom DNS server is `127.0.0.1` (`apps/nextdns/`);
+  no DNS configuration profile is installed (System Settings > General > Device Management),
+  because one overrides the NextDNS proxy while the VPN is off.
 
 ## harmonium
 
@@ -26,7 +28,9 @@ answers it in one file.
 - Hardware: assumed Apple Silicon; confirm `uname -m` before its first switch and change
   `nixpkgs.hostPlatform` in `machines/harmonium.nix` to `x86_64-darwin` if it prints `x86_64`.
 - Profile: `personal`, identical to lerasium's.
-- Special handling: none; `./bootstrap.zsh harmonium` installs it.
+- Special handling: `./bootstrap.zsh harmonium` installs it. Then, by hand, once, as on
+  lerasium: Proton VPN's custom DNS server is `127.0.0.1`, and no DNS configuration profile is
+  installed.
 
 ## work (profile only)
 

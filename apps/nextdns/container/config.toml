@@ -1,0 +1,7 @@
+# Apple container's user config, linked by apps/nextdns/. The NextDNS proxy holds 127.0.0.1:53,
+# so macOS cannot start its DNS proxy on port 53 for VM networks, and a container's default
+# nameserver (the network gateway) refuses every query. Containers ask these resolvers instead.
+# The container service reads this file when it starts: `container system stop` then
+# `container system start` applies a change.
+[container.dns]
+nameservers = ["1.1.1.1", "1.0.0.1"]
